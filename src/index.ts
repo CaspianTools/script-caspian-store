@@ -56,6 +56,7 @@ export {
   type CollectionDetailPageProps,
 } from './components/collection-detail-page';
 export { SearchResultsPage, type SearchResultsPageProps } from './components/search-results-page';
+export { SearchDialog, type SearchDialogProps } from './components/search-dialog';
 export { ProductGallery } from './components/product-gallery';
 export {
   SizeSelector,
@@ -287,6 +288,7 @@ export {
   ExternalLinkIcon,
   HelpIcon,
   SearchIcon,
+  XIcon,
   ChevronDownIcon,
   FieldHelp,
   type FieldHelpProps,
@@ -364,6 +366,11 @@ export {
 
 // --- Client hooks ---
 export { useCheckout } from './hooks/use-checkout';
+export {
+  useProductSearch,
+  type UseProductSearchOptions,
+  type UseProductSearchResult,
+} from './hooks/use-product-search';
 
 // --- Payment plugins ---
 export {

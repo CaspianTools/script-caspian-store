@@ -16,6 +16,35 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.10.0 — Header search is now an icon button + popup with live product results
+
+The storefront `<SiteHeader>` previously embedded a 320px-wide inline search input that competed with the brand, nav, wishlist, cart, and account chips for horizontal space — uncomfortable on tablet widths and forced consumers with longer brand wordmarks to set `showSearch={false}` to get a clean header. This release replaces the inline input with a single icon button. Clicking it opens a centred dialog (`<SearchDialog>`) containing the search input, a close (X) button, and a live list of matching products that updates as the user types. Pressing Enter (or clicking "View all N results" when matches exceed eight) navigates to the existing `/search?q=...` results page, preserving the canonical full-results UX. Clicking a result navigates straight to that product's page and dismisses the dialog. Escape, click-on-overlay, and the X button all close the dialog.
+
+The matching algorithm is the same lowercase `name + brand + category` substring filter used by `<SearchResultsPage>` (no extra Firestore queries beyond loading the active catalog once on first dialog open), so popup and full-page results stay consistent. The product catalog and brand/category label maps are fetched lazily and cached for the dialog's lifetime — closing and reopening the dialog does not refetch.
+
+The `showSearch` prop on `<SiteHeader>` is unchanged in name and type; it now controls whether the icon-button + popup affordance renders (previously: whether the inline input rendered). Existing consumers passing `showSearch={false}` see no change. Existing consumers relying on `showSearch={true}` (or its default) will see the new icon-only UI after upgrading.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.10.0
+```
+
+No code changes on consumer sites. The new UI ships automatically once the pin is bumped and the package is reinstalled.
+
+### Added
+
+- [src/components/search-dialog.tsx](src/components/search-dialog.tsx): new `<SearchDialog>` component (`SearchDialogProps`) — controlled dialog with live product results. Re-exported from the main barrel.
+- [src/hooks/use-product-search.ts](src/hooks/use-product-search.ts): new `useProductSearch(query, { enabled, max })` hook (`UseProductSearchOptions`, `UseProductSearchResult`) — lazy catalog + client-side filter shared by the dialog and any future search surface.
+- [src/ui/icons.tsx](src/ui/icons.tsx): new `XIcon` (close glyph) re-exported from `src/ui` and the main barrel.
+- [src/i18n/messages.ts](src/i18n/messages.ts): four new keys — `navigation.openSearch`, `navigation.closeSearch`, `search.loading`, `search.viewAllResults`.
+
+### Changed
+
+- [src/components/site-header.tsx](src/components/site-header.tsx): replaced the inline `<form>` + `<input>` block with an icon button that toggles `<SearchDialog>`. JSDoc on `showSearch` updated to "Whether to show the search button (opens a popup with live product search)." `logSearchTerm` import moved to `<SearchDialog>` (where the submission now happens). `useCaspianNavigation` and `FormEvent` imports removed from this file (no longer used here).
+
+---
+
 ## v8.9.2 — App Hosting auto-heal works without consumer file edits
 
 v8.9.0 fixed App Hosting build failures *if* the consumer applied a two-line change to `src/lib/caspian-adapters.tsx` and `next.config.mjs`. That violated this repo's "releases must never require consumer hand-edits" rule, and in practice consumers were upgrading the package version without applying the file edits — leaving them stuck on the same `auth/invalid-api-key` prerender crash that v8.9.0 was supposed to solve. This release closes the loop so a plain `npm install github:Caspian-Explorer/script-caspian-store#v8.9.2` is sufficient — no `caspian-adapters.tsx` edit, no `next.config.mjs` env: block. Two changes:

@@ -658,6 +658,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'navigation.shop': 'Shop',
   'navigation.collections': 'Collections',
   'navigation.searchPlaceholder': 'Search…',
+  'navigation.openSearch': 'Open search',
+  'navigation.closeSearch': 'Close search',
 
   // Collections storefront
   'collections.subtitle': 'Curated groups of products.',
@@ -671,6 +673,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'search.resultCount': '{count, plural, one {# match} other {# matches}}',
   'search.noResults': 'No products matched your search.',
   'search.emptyQuery': 'Type a query in the header search to see results.',
+  'search.loading': 'Searching…',
+  'search.viewAllResults': 'View all {count} results',
 
   'navigation.signIn': 'Sign in',
   'navigation.openCart': 'Open cart',

@@ -27,6 +27,7 @@ export {
   MenuIcon,
   HelpIcon,
   SearchIcon,
+  XIcon,
   ChevronDownIcon,
 } from './icons';
 export { FieldHelp, type FieldHelpProps } from './field-help';
