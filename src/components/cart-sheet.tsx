@@ -119,7 +119,9 @@ export function CartSheet({
               {t('cart.checkout')}
             </Button>
             <div style={{ textAlign: 'center', marginTop: 8 }}>
-              <Link href="/cart">{t('cart.viewFullCart')}</Link>
+              <Link href="/cart" onClick={() => onOpenChange(false)}>
+                {t('cart.viewFullCart')}
+              </Link>
             </div>
           </footer>
         )}
