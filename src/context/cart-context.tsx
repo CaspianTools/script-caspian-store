@@ -137,12 +137,9 @@ export function CartProvider({ db, children }: { db: Firestore; children: ReactN
   const addToCart = useCallback(
     (product: Product, quantity = 1, selectedSize?: string, selectedColor?: string) => {
       setRefs((prev) => {
-        const incoming: CartItemRef = {
-          productId: product.id,
-          quantity,
-          selectedSize,
-          selectedColor,
-        };
+        const incoming: CartItemRef = { productId: product.id, quantity };
+        if (selectedSize !== undefined) incoming.selectedSize = selectedSize;
+        if (selectedColor !== undefined) incoming.selectedColor = selectedColor;
         const idx = prev.findIndex((r) => sameLine(r, incoming));
         const next =
           idx === -1
