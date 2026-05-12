@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '../context/auth-context';
 import { useCart } from '../context/cart-context';
-import { useWishlist } from '../hooks/use-wishlist';
+import { useWishlist } from '../context/wishlist-context';
 import { useT } from '../i18n/locale-context';
 import {
   useCaspianFirebase,

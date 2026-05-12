@@ -76,6 +76,14 @@ export {
   type OrderHistoryListProps,
 } from './components/order-history-list';
 export { WishlistButton, type WishlistButtonProps } from './components/wishlist-button';
+export {
+  WishlistPage,
+  type WishlistPageProps,
+} from './components/wishlist/wishlist-page';
+export {
+  WishlistGrid,
+  type WishlistGridProps,
+} from './components/wishlist/wishlist-grid';
 
 // Site shell (v1.6) — header / footer / layout / favicon
 export {
@@ -346,7 +354,13 @@ export {
   updateOrderStatus,
 } from './services/order-service';
 export { loadUserCart, saveUserCart } from './services/cart-service';
-export { addToWishlist, removeFromWishlist } from './services/wishlist-service';
+export {
+  addToWishlist,
+  removeFromWishlist,
+  loadUserWishlist,
+  saveUserWishlist,
+  mergeWishlistOnSignIn,
+} from './services/wishlist-service';
 export {
   updateDisplayName,
   updatePhone,
@@ -421,7 +435,7 @@ export {
   type EmailPluginInstallWriteInput,
 } from './services/email-plugin-service';
 
-export { useWishlist } from './hooks/use-wishlist';
+export { useWishlist } from './context/wishlist-context';
 export {
   validatePromoCode,
   listPromoCodes,

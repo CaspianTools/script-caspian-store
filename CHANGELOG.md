@@ -16,6 +16,42 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.12.0 — Public /wishlist works for anonymous shoppers; anon list merges into the account on sign-in
+
+The `/wishlist` route was previously a placeholder that read "Your wishlist lives inside the account page." This release turns it into a real page that works for everyone. Anonymous shoppers can now add products to their wishlist (the heart button on product cards no longer rejects them with a "Sign in to save" toast); the saved IDs persist in `localStorage` (`caspian-wishlist-v1`) for the session. When an anonymous shopper signs in, their local list is **merged** (union, dedup) into their server-side wishlist on `users/{uid}.wishlist` rather than being thrown away — the deliberate improvement over `<CartProvider>`'s hard-switch behavior.
+
+The shared grid (product cards + add-to-cart + remove buttons + empty state) lives in a new `<WishlistGrid>` component used by both `<WishlistPage>` (mounted at `/wishlist`) and `<WishlistPanel>` (inside `<AccountPage>` at `/account?section=wishlist`). The two access points stay in sync — items removed in one show as removed in the other after the wishlist refreshes.
+
+Anonymous shoppers see a dismissible soft banner above the grid: "Sign in to save your wishlist across devices." It's stashed per-tab via `sessionStorage` so dismissing once doesn't re-show on every navigation but does re-show in a fresh tab.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.12.0
+```
+
+No code changes on consumer sites. `useWishlist()` keeps the same shape (`{ wishlist, isSaved, add, remove, toggle, signedIn }`) plus new fields (`products`, `loading`, `count`, `clear`); existing call sites continue to work.
+
+### Added
+
+- [src/context/wishlist-context.tsx](src/context/wishlist-context.tsx): new `<WishlistProvider>` + `useWishlist()` modeled on `<CartProvider>`. Two-tier state (id list + lazy-hydrated product map), dual-storage (`localStorage` when anon, Firestore `users/{uid}.wishlist` when signed-in), and a merge-on-sign-in hydration step.
+- [src/components/wishlist/wishlist-page.tsx](src/components/wishlist/wishlist-page.tsx): new `<WishlistPage>` standalone route at `/wishlist`. Renders the shared grid plus a dismissible sign-in banner for anon shoppers.
+- [src/components/wishlist/wishlist-grid.tsx](src/components/wishlist/wishlist-grid.tsx): shared product-grid UI used by both the page and the account panel — empty state, loading state, product cards with add-to-cart + remove actions.
+- [src/services/wishlist-service.ts](src/services/wishlist-service.ts): new `loadUserWishlist`, `saveUserWishlist`, and `mergeWishlistOnSignIn` helpers alongside the existing `addToWishlist`/`removeFromWishlist`.
+- [src/i18n/messages.ts](src/i18n/messages.ts): `wishlist.page.anonBanner`, `wishlist.page.anonBannerCta`, `common.dismiss`.
+
+### Changed
+
+- [src/components/caspian-root.tsx](src/components/caspian-root.tsx): `/wishlist` now renders `<WishlistPage>` instead of the placeholder.
+- [src/components/auth/wishlist-panel.tsx](src/components/auth/wishlist-panel.tsx): now wraps the shared `<WishlistGrid>` in the account-card chrome. The "Sign in required" fallback was removed — the panel only renders inside `<AccountPage>`, which already gates on auth.
+- [src/components/wishlist-button.tsx](src/components/wishlist-button.tsx): no longer shows a "Sign in to save" toast for anon shoppers. The heart button now toggles for everyone; `<WishlistProvider>` routes the write to local or server depending on auth state.
+- [src/provider/caspian-store-provider.tsx](src/provider/caspian-store-provider.tsx): mounts `<WishlistProvider>` inside `<CartProvider>` so wishlist consumers can also call `useCart()` (the grid's "Add to cart" button uses both).
+- [src/index.ts](src/index.ts): `useWishlist` is now re-exported from `./context/wishlist-context`; the old `./hooks/use-wishlist` location is gone. New public exports: `WishlistPage`, `WishlistPageProps`, `WishlistGrid`, `WishlistGridProps`, `loadUserWishlist`, `saveUserWishlist`, `mergeWishlistOnSignIn`.
+
+### Removed
+
+- [src/hooks/use-wishlist.ts](src/hooks/use-wishlist.ts): deleted. Superseded by `<WishlistProvider>` + `useWishlist()` in `src/context/wishlist-context.tsx`. The `useWishlist` named export still resolves at the same path from the package root.
+
 ## v8.11.0 — Default 100px breathing room between header/footer and page content
 
 Internal storefront pages (Shop, Sign in, Register, Forgot password, Account, Cart, Checkout, Collections, FAQs, Contact, Shipping & Returns, Size Guide, Journal, Search, Order Confirmation, static content pages, 404) previously rendered their first content block flush against the bottom of the sticky `<SiteHeader>`, so page titles like "Shop" or "Sign in" visually touched the header. They were similarly flush against the top border of `<SiteFooter>`. `<LayoutShell>` now wraps its `{children}` in a `<div>` with `paddingTop: 100` and `paddingBottom: 100` so every internal route gets uniform breathing room without each page component having to opt in.

@@ -13,6 +13,7 @@ import {
 } from '../primitives';
 import { AuthProvider } from '../context/auth-context';
 import { CartProvider } from '../context/cart-context';
+import { WishlistProvider } from '../context/wishlist-context';
 import { ScriptSettingsProvider } from '../context/script-settings-context';
 import { ThemeInjector } from '../context/theme-context';
 import { FontLoader } from '../context/font-loader';
@@ -140,11 +141,13 @@ export function CaspianStoreProvider({
           <ToastProvider>
             <AuthProvider firebase={value.firebase}>
               <CartProvider db={value.firebase.db}>
-                <ScriptSettingsProvider collections={value.collections}>
-                  <ThemeInjector />
-                  <FontLoader />
-                  {children}
-                </ScriptSettingsProvider>
+                <WishlistProvider db={value.firebase.db}>
+                  <ScriptSettingsProvider collections={value.collections}>
+                    <ThemeInjector />
+                    <FontLoader />
+                    {children}
+                  </ScriptSettingsProvider>
+                </WishlistProvider>
               </CartProvider>
             </AuthProvider>
           </ToastProvider>

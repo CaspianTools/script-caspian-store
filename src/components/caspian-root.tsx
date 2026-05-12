@@ -28,6 +28,7 @@ import { SizeGuidePage } from './size-guide';
 import { PageContentView } from './content';
 import { SetupWizard, SetupInitPage } from './setup';
 import { LayoutShell } from './layout-shell';
+import { WishlistPage } from './wishlist/wishlist-page';
 import type { SiteHeaderProps } from './site-header';
 import type { SiteFooterProps } from './site-footer';
 
@@ -157,13 +158,7 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
     if (m) return <ProductDetailPage productSlugOrId={m[1]} />;
   }
   if (path === '/search') return <SearchResultsPage />;
-  if (path === '/wishlist') {
-    return (
-      <div style={{ padding: 24 }}>
-        Your wishlist lives inside the account page.
-      </div>
-    );
-  }
+  if (path === '/wishlist') return <WishlistPage />;
 
   if (path === '/orders/success') {
     const sessionId = nav.searchParams?.get('session_id');

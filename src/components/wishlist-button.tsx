@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useWishlist } from '../hooks/use-wishlist';
+import { useWishlist } from '../context/wishlist-context';
 import { useToast } from '../ui/toast';
 import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
@@ -19,17 +19,13 @@ export function WishlistButton({
   size = 20,
   ariaLabel,
 }: WishlistButtonProps) {
-  const { isSaved, toggle, signedIn } = useWishlist();
+  const { isSaved, toggle } = useWishlist();
   const { toast } = useToast();
   const t = useT();
   const [busy, setBusy] = useState(false);
   const saved = isSaved(productId);
 
   const handleClick = async () => {
-    if (!signedIn) {
-      toast({ title: t('wishlist.savePrompt'), variant: 'destructive' });
-      return;
-    }
     setBusy(true);
     try {
       await toggle(productId);

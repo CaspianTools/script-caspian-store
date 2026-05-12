@@ -17,6 +17,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'common.edit': 'Edit',
   'common.loading': 'Loading…',
   'common.back': 'Back',
+  'common.dismiss': 'Dismiss',
 
   // Auth — Login
   'auth.login.title': 'Sign in',
@@ -383,6 +384,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'wishlist.panel.addToCart': 'Add to cart',
   'wishlist.panel.remove': 'Remove',
   'wishlist.panel.signInRequired': 'Sign in to see your saved items.',
+  'wishlist.page.anonBanner': 'Sign in to save your wishlist across devices.',
+  'wishlist.page.anonBannerCta': 'Sign in',
 
   // Script settings page
   'settings.title': 'Script Settings',
