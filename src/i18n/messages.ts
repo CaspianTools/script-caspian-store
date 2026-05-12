@@ -277,6 +277,11 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'cart.remove': 'Remove',
   'cart.sizePrefix': 'Size',
 
+  // Quick add-to-cart (v8.18.0) — product card icon
+  'cart.added': 'Added to cart',
+  'cart.addFailed': 'Could not add to cart',
+  'cart.aria.quickAdd': 'Add to cart',
+
   // Full-page cart (v2.5)
   'cart.page.title': 'Your Shopping Bag',
   'cart.page.orderSummary': 'Order Summary',
@@ -516,6 +521,13 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.appearance.preview.applying': 'Applying…',
   'admin.appearance.preview.applied': 'Applied ✓',
   'admin.appearance.preview.close': 'Close',
+  'admin.appearance.productCard.title': 'Product card',
+  'admin.appearance.productCard.subtitle':
+    'Choose which icons appear on product cards across the storefront.',
+  'admin.appearance.productCard.showWishlist': 'Show wishlist (heart) icon on product cards',
+  'admin.appearance.productCard.showQuickAdd': 'Show quick add-to-cart icon on product cards',
+  'admin.appearance.productCard.saved': 'Product card settings saved',
+  'admin.appearance.productCard.saveFailed': 'Failed to save product card settings',
   'settings.sections.features': 'Features',
   'settings.saveButton': 'Save settings',
   'settings.saving': 'Saving…',

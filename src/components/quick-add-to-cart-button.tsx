@@ -1,40 +1,40 @@
 'use client';
 
 import { useState } from 'react';
-import { useWishlist } from '../context/wishlist-context';
+import type { Product } from '../types';
+import { useCart } from '../context/cart-context';
 import { useToast } from '../ui/toast';
 import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
 
-export interface WishlistButtonProps {
-  productId: string;
+export interface QuickAddToCartButtonProps {
+  product: Product;
   className?: string;
   size?: number;
   ariaLabel?: string;
 }
 
-export function WishlistButton({
-  productId,
+export function QuickAddToCartButton({
+  product,
   className,
   size = 20,
   ariaLabel,
-}: WishlistButtonProps) {
-  const { isSaved, toggle } = useWishlist();
+}: QuickAddToCartButtonProps) {
+  const { addToCart } = useCart();
   const { toast } = useToast();
   const t = useT();
   const [busy, setBusy] = useState(false);
-  const saved = isSaved(productId);
 
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setBusy(true);
     try {
-      await toggle(productId);
-      toast({ title: saved ? t('wishlist.removed') : t('wishlist.saved') });
+      addToCart(product, 1, product.sizes?.[0]);
+      toast({ title: t('cart.added') });
     } catch (error) {
-      console.error('[caspian-store] Wishlist toggle failed:', error);
-      toast({ title: t('wishlist.failed'), variant: 'destructive' });
+      console.error('[caspian-store] Quick add failed:', error);
+      toast({ title: t('cart.addFailed'), variant: 'destructive' });
     } finally {
       setBusy(false);
     }
@@ -43,11 +43,10 @@ export function WishlistButton({
   return (
     <button
       type="button"
-      aria-label={ariaLabel ?? (saved ? t('wishlist.aria.remove') : t('wishlist.aria.save'))}
-      aria-pressed={saved}
+      aria-label={ariaLabel ?? t('cart.aria.quickAdd')}
       onClick={handleClick}
       disabled={busy}
-      className={cn('caspian-wishlist-btn', className)}
+      className={cn('caspian-quick-add-btn', className)}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -58,7 +57,7 @@ export function WishlistButton({
         border: 0,
         background: 'transparent',
         cursor: busy ? 'wait' : 'pointer',
-        color: saved ? '#dc2626' : '#666',
+        color: '#666',
         transition: 'transform 0.1s',
       }}
     >
@@ -67,13 +66,15 @@ export function WishlistButton({
         width={size}
         height={size}
         viewBox="0 0 24 24"
-        fill={saved ? 'currentColor' : 'none'}
+        fill="none"
         stroke="currentColor"
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+        <path d="M3 6h18" />
+        <path d="M16 10a4 4 0 0 1-8 0" />
       </svg>
     </button>
   );

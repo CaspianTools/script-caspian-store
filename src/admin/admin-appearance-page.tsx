@@ -220,7 +220,74 @@ export function AdminAppearancePage({
           )}
         </div>
       </div>
+
+      <ProductCardSettingsSection />
     </div>
+  );
+}
+
+function ProductCardSettingsSection() {
+  const { settings, saving, save } = useScriptSettings();
+  const { toast } = useToast();
+  const t = useT();
+  const showWishlist = settings.productCard?.showWishlistIcon ?? true;
+  const showQuickAdd = settings.productCard?.showQuickAddIcon ?? true;
+
+  const update = async (next: { showWishlistIcon: boolean; showQuickAddIcon: boolean }) => {
+    try {
+      await save({ productCard: next });
+      toast({ title: t('admin.appearance.productCard.saved') });
+    } catch (error) {
+      console.error('[caspian-store] Failed to save product card settings:', error);
+      toast({ title: t('admin.appearance.productCard.saveFailed'), variant: 'destructive' });
+    }
+  };
+
+  return (
+    <section
+      style={{
+        marginTop: 32,
+        paddingTop: 24,
+        borderTop: '1px solid rgba(0,0,0,0.08)',
+      }}
+    >
+      <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 4px' }}>
+        {t('admin.appearance.productCard.title')}
+      </h2>
+      <p style={{ color: '#666', margin: '0 0 16px', fontSize: 14 }}>
+        {t('admin.appearance.productCard.subtitle')}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={showWishlist}
+            disabled={saving}
+            onChange={(e) =>
+              update({
+                showWishlistIcon: e.target.checked,
+                showQuickAddIcon: showQuickAdd,
+              })
+            }
+          />
+          <span>{t('admin.appearance.productCard.showWishlist')}</span>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={showQuickAdd}
+            disabled={saving}
+            onChange={(e) =>
+              update({
+                showWishlistIcon: showWishlist,
+                showQuickAddIcon: e.target.checked,
+              })
+            }
+          />
+          <span>{t('admin.appearance.productCard.showQuickAdd')}</span>
+        </label>
+      </div>
+    </section>
   );
 }
 

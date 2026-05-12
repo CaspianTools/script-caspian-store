@@ -4,10 +4,13 @@ import type { InventorySettings, Product, TaxConfig } from '../types';
 import { useCaspianLink, useCaspianImage } from '../provider/caspian-store-provider';
 import { useBrandName } from '../hooks/use-brands';
 import { useT } from '../i18n/locale-context';
+import { useScriptSettings } from '../context/script-settings-context';
 import { Badge } from '../ui/misc';
 import { cn } from '../utils/cn';
 import { resolveStockBadge } from '../utils/inventory';
 import { renderPriceSuffix } from '../utils/tax';
+import { WishlistButton } from './wishlist-button';
+import { QuickAddToCartButton } from './quick-add-to-cart-button';
 
 export interface ProductCardProps {
   product: Product;
@@ -41,9 +44,13 @@ export function ProductCard({
   const Image = useCaspianImage();
   const t = useT();
   const brandName = useBrandName(product.brand);
+  const { settings } = useScriptSettings();
   const img = product.images?.[0];
   const stockBadge = inventory ? resolveStockBadge(product, inventory) : null;
   const priceSuffix = renderPriceSuffix(taxConfig);
+  const showWishlistIcon =
+    (settings.productCard?.showWishlistIcon ?? true) && settings.features.wishlist;
+  const showQuickAddIcon = settings.productCard?.showQuickAddIcon ?? true;
 
   return (
     <Link href={getProductHref(product.slug ?? product.id)} className={cn('caspian-product-card', className)}>
@@ -81,20 +88,28 @@ export function ProductCard({
             {stockBadge === 'low-stock' && <Badge variant="default">Low stock</Badge>}
             {stockBadge === 'in-stock' && <Badge variant="secondary">In stock</Badge>}
           </div>
+          {showWishlistIcon && (
+            <div style={{ position: 'absolute', top: 4, right: 4 }}>
+              <WishlistButton productId={product.id} />
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', margin: 0 }}>
-            {brandName}
-          </p>
-          <p style={{ fontSize: 15, fontWeight: 500, margin: 0, lineHeight: 1.3 }}>{product.name}</p>
-          <p style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>
-            {formatPrice(product.price)}
-            {priceSuffix && (
-              <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 6 }}>
-                {priceSuffix}
-              </span>
-            )}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', margin: 0 }}>
+              {brandName}
+            </p>
+            <p style={{ fontSize: 15, fontWeight: 500, margin: 0, lineHeight: 1.3 }}>{product.name}</p>
+            <p style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>
+              {formatPrice(product.price)}
+              {priceSuffix && (
+                <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 6 }}>
+                  {priceSuffix}
+                </span>
+              )}
+            </p>
+          </div>
+          {showQuickAddIcon && <QuickAddToCartButton product={product} />}
         </div>
       </div>
     </Link>

@@ -946,6 +946,14 @@ export interface FeatureFlags {
   multiLanguage: boolean;
 }
 
+/** Per-card UI display toggles for `<ProductCard />`. Added in v8.18.0. */
+export interface ProductCardSettings {
+  /** Render a heart icon on the top-right of the card image to toggle wishlist. */
+  showWishlistIcon: boolean;
+  /** Render a cart icon at the bottom-right of the card to quick-add to cart. */
+  showQuickAddIcon: boolean;
+}
+
 export interface ScriptSettings {
   id: 'site';
   brandName: string;
@@ -961,6 +969,8 @@ export interface ScriptSettings {
   /** Optional — added in v1.4. Drives the `<SizeGuidePage />`. */
   sizeGuide?: SizeGuideConfig;
   features: FeatureFlags;
+  /** Optional — added in v8.18.0. Drives icon visibility on `<ProductCard />`. */
+  productCard?: ProductCardSettings;
   updatedAt: Timestamp;
 }
 
@@ -997,5 +1007,9 @@ export const DEFAULT_SCRIPT_SETTINGS: Omit<ScriptSettings, 'updatedAt'> = {
     promoCodes: true,
     guestCheckout: true,
     multiLanguage: false,
+  },
+  productCard: {
+    showWishlistIcon: true,
+    showQuickAddIcon: true,
   },
 };

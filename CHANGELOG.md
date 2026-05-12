@@ -16,6 +16,34 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.20.0 — Product cards now expose wishlist + quick-add icons (with admin toggles)
+
+`<ProductCard />` previously rendered only image, badges, brand, name, and price — to save to wishlist or add to cart a customer had to open the PDP. This release adds two icons directly on each card: a **heart** at the top-right of the image (toggles wishlist via the existing `useWishlist().toggle()`) and a **shopping-bag** at the bottom-right of the card (quick-adds one unit via `useCart().addToCart()`). For products with `sizes`, the quick-add auto-picks `sizes[0]`; products without sizes add as-is.
+
+Two new admin toggles in `/admin/appearance` let merchants enable/disable each icon independently. Both default to **on**, so existing stores get the new icons immediately on upgrade. The wishlist heart is additionally gated on `ScriptSettings.features.wishlist` — turning wishlist off globally hides the heart on cards too, even when `productCard.showWishlistIcon` is true.
+
+Both icon buttons call `e.preventDefault(); e.stopPropagation()` inside their click handlers so they don't bubble up to the card's wrapping `<Link>` and trigger PDP navigation.
+
+### No consumer action required
+
+Pin the new tag and reinstall — the icons render automatically and existing Firestore `scriptSettings/site` docs fall through to default-on behaviour because the new `productCard` field is optional.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.20.0
+```
+
+### Added
+
+- [src/components/quick-add-to-cart-button.tsx](src/components/quick-add-to-cart-button.tsx): new public `<QuickAddToCartButton>` (exported alongside `WishlistButton`). Single circular icon button, picks `product.sizes?.[0]` for variant products, shows `cart.added` / `cart.addFailed` toasts.
+- [src/types.ts](src/types.ts): new `ProductCardSettings` interface (`showWishlistIcon`, `showQuickAddIcon`) and optional `ScriptSettings.productCard` field with both defaults `true` in `DEFAULT_SCRIPT_SETTINGS`.
+- [src/admin/admin-appearance-page.tsx](src/admin/admin-appearance-page.tsx): new "Product card" section below the theme catalog with two checkboxes persisted via `useScriptSettings().save({ productCard })`.
+- [src/i18n/messages.ts](src/i18n/messages.ts): `cart.added`, `cart.addFailed`, `cart.aria.quickAdd`, and `admin.appearance.productCard.*` keys.
+
+### Changed
+
+- [src/components/product-card.tsx](src/components/product-card.tsx): reads `useScriptSettings()` and renders `<WishlistButton>` (absolutely positioned top-right inside the image container, sibling of the badges row) and `<QuickAddToCartButton>` (right-aligned next to the price block via a flex `space-between` wrapper). Card layout otherwise unchanged.
+- [src/components/wishlist-button.tsx](src/components/wishlist-button.tsx): `handleClick` now accepts a `React.MouseEvent` and calls `e.preventDefault(); e.stopPropagation()` so the button works inside a wrapping `<Link>`. Behaviour outside a link is unchanged.
+
 ## v8.18.0 — Newly-installed payment / email plugins now reach storefront checkout without a manual Enable step
 
 Closes a v8.17.0 regression where a merchant who installed Stripe (or any payment / email plugin) saw it as "installed" in the admin but the storefront `/checkout` still showed "Checkout is not available — The store owner hasn't set up a payment provider yet." Root cause: new payment + email installs were created with `enabled: false` (the deliberate "force admin to verify" pattern), and the storefront checkout gate (`listPaymentPluginInstalls(db, { onlyEnabled: true })` at [src/hooks/use-checkout.ts](src/hooks/use-checkout.ts#L37-L45)) treats disabled installs as nonexistent. The v8.17.0 post-install redirect to `/admin/plugins` removed the prior visibility merchants had on `/admin/plugins/manage/<category>` (where the install table surfaces an Enable toggle), so the new install became invisible everywhere — both in admin and on the storefront.

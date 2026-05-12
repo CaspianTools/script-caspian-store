@@ -77,6 +77,10 @@ export {
 } from './components/order-history-list';
 export { WishlistButton, type WishlistButtonProps } from './components/wishlist-button';
 export {
+  QuickAddToCartButton,
+  type QuickAddToCartButtonProps,
+} from './components/quick-add-to-cart-button';
+export {
   WishlistPage,
   type WishlistPageProps,
 } from './components/wishlist/wishlist-page';
@@ -683,6 +687,7 @@ export type {
   SizeTable,
   SizeGuideConfig,
   FeatureFlags,
+  ProductCardSettings,
   // v1.1 additions — Firestore admin types
   FaqItem,
   JournalArticle,
