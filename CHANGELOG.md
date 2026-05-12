@@ -16,6 +16,31 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.11.0 — Default 100px breathing room between header/footer and page content
+
+Internal storefront pages (Shop, Sign in, Register, Forgot password, Account, Cart, Checkout, Collections, FAQs, Contact, Shipping & Returns, Size Guide, Journal, Search, Order Confirmation, static content pages, 404) previously rendered their first content block flush against the bottom of the sticky `<SiteHeader>`, so page titles like "Shop" or "Sign in" visually touched the header. They were similarly flush against the top border of `<SiteFooter>`. `<LayoutShell>` now wraps its `{children}` in a `<div>` with `paddingTop: 100` and `paddingBottom: 100` so every internal route gets uniform breathing room without each page component having to opt in.
+
+The homepage opts out: `<CaspianRoot>` passes `contentPaddingY={0}` when the path is `/` so the full-bleed `<Hero>` continues to sit flush against the header (unchanged appearance). Admin routes, the appearance-preview popup, and the setup wizard all bypass `<LayoutShell>` entirely and are unaffected. The Coming Soon splash short-circuits before the padding wrapper and is also unaffected.
+
+Consumers who want a different gap (or no gap) on a custom mount can pass `contentPaddingY` directly to `<LayoutShell>` — it accepts any number of pixels. The `LayoutShellMountedContext` self-heal sentinel still short-circuits nested mounts so double-wrapping doesn't stack to 200px.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.11.0
+```
+
+No code changes on consumer sites. Internal pages will visually shift down by 100px once the pin is bumped and the package is reinstalled.
+
+### Added
+
+- [src/components/layout-shell.tsx](src/components/layout-shell.tsx): new `contentPaddingY?: number` prop on `LayoutShellProps` (default `100`) — vertical padding inserted between the header / footer and the page content. Set to `0` for full-bleed pages.
+
+### Changed
+
+- [src/components/layout-shell.tsx](src/components/layout-shell.tsx): `{children}` is now wrapped in a `<div style={{ paddingTop, paddingBottom }}>` between the `<SiteHeader>` and `<SiteFooter>` siblings.
+- [src/components/caspian-root.tsx](src/components/caspian-root.tsx): passes `contentPaddingY={path === '/' ? 0 : 100}` to `<LayoutShell>` so the homepage hero stays flush while every other storefront route gets the default 100px gap.
+
 ## v8.10.0 — Header search is now an icon button + popup with live product results
 
 The storefront `<SiteHeader>` previously embedded a 320px-wide inline search input that competed with the brand, nav, wishlist, cart, and account chips for horizontal space — uncomfortable on tablet widths and forced consumers with longer brand wordmarks to set `showSearch={false}` to get a clean header. This release replaces the inline input with a single icon button. Clicking it opens a centred dialog (`<SearchDialog>`) containing the search input, a close (X) button, and a live list of matching products that updates as the user types. Pressing Enter (or clicking "View all N results" when matches exceed eight) navigates to the existing `/search?q=...` results page, preserving the canonical full-results UX. Clicking a result navigates straight to that product's page and dismisses the dialog. Escape, click-on-overlay, and the X button all close the dialog.

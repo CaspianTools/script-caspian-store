@@ -123,7 +123,11 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   }
 
   return (
-    <LayoutShell header={header} footer={footer}>
+    <LayoutShell
+      header={header}
+      footer={footer}
+      contentPaddingY={path === '/' ? 0 : 100}
+    >
       {renderStorefrontPage()}
     </LayoutShell>
   );

@@ -26,6 +26,13 @@ export interface LayoutShellProps {
   header?: SiteHeaderProps | null;
   /** Pass-through to <SiteFooter>. Set to `null` to disable. */
   footer?: SiteFooterProps | null;
+  /**
+   * Vertical padding (px) inserted between the header / footer and the page
+   * content. Defaults to 100. Set to 0 for full-bleed pages whose own first
+   * block should sit flush against the header (e.g. the homepage hero).
+   * Added in v8.11.
+   */
+  contentPaddingY?: number;
   /** Override pathname detection (mostly for tests). Defaults to the navigation adapter. */
   pathname?: string;
   /**
@@ -55,6 +62,7 @@ export function LayoutShell({
   bypassPrefixes = ['/admin'],
   header,
   footer,
+  contentPaddingY = 100,
   pathname: pathnameOverride,
   previewQueryKey = 'caspian-preview',
 }: LayoutShellProps) {
@@ -101,7 +109,9 @@ export function LayoutShell({
   return (
     <LayoutShellMountedContext.Provider value={true}>
       {header !== null && <SiteHeader {...(header ?? {})} />}
-      {children}
+      <div style={{ paddingTop: contentPaddingY, paddingBottom: contentPaddingY }}>
+        {children}
+      </div>
       {footer !== null && <SiteFooter {...(footer ?? {})} />}
     </LayoutShellMountedContext.Provider>
   );
