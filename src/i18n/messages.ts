@@ -874,6 +874,14 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.users.col.joined': 'Joined',
   'admin.users.empty': 'No users yet.',
   'admin.users.searchPlaceholder': 'Search by name or email…',
+  'admin.users.col.actions': 'Actions',
+  'admin.users.action.promote': 'Promote to admin',
+  'admin.users.action.demote': 'Demote to customer',
+  'admin.users.action.busy': 'Working…',
+  'admin.users.action.confirmPromote': 'Promote this user to admin? They will gain full admin access.',
+  'admin.users.action.confirmDemote': 'Demote this admin to customer? They will lose admin access immediately.',
+  'admin.users.action.self': '— (you)',
+  'admin.users.action.errorGeneric': 'Action failed. Try again or use the grant-admin CLI.',
 
   // Admin > Contacts (v2.13 as Users tab; promoted to its own page in v8.5.0)
   'admin.contacts.title': 'Contacts',

@@ -16,6 +16,34 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.14.0 — Admin can promote/demote users from the Admin > Users page
+
+The Admin > Users page was previously read-only — admins could see the list and the role badge, but had no in-app way to change a user's role. The only paths to promote someone were the `claimAdmin` callable (bootstrap-only; refuses once any admin exists), the `grant-admin` CLI (requires service-account credentials on a workstation), or a direct edit in the Firestore console. This release adds first-class **Promote to admin** and **Demote to customer** buttons in the user table, gated by a `confirm()` dialog, with server-enforced guards: only admins can invoke either action, an admin cannot demote themselves (use a different admin account), and the last remaining admin cannot be demoted (avoids locking the site out).
+
+Both actions are server-side callables — the existing `firestore.rules` already block client writes to the `role` field, so the callables are the only path. The demote callable additionally calls `revokeRefreshTokens(targetUid)` so the cleared role takes effect immediately rather than ~1 h later when the existing ID token expires; without revocation the security rules would still trust the stale `role: 'admin'` claim on the target's session.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.14.0
+cd firebase/functions-admin && npm install && cd ../..
+firebase deploy --only functions:caspian-admin
+```
+
+The new `promoteUserToAdmin` and `demoteAdminToCustomer` callables ship in `caspian-admin-functions@0.7.0`; redeploying the codebase is required for the new buttons to work. No firestore rules changes.
+
+### Added
+
+- [firebase/functions-admin/src/promote-user-to-admin.ts](firebase/functions-admin/src/promote-user-to-admin.ts): new admin-only callable. Verifies the caller is admin via both the Auth claim AND a Firestore re-read (defense-in-depth against a freshly-demoted caller whose token claim still says admin). Sets `users/{target}.role = 'admin'` and the Auth custom claim inline (mirroring the `claimAdmin` pattern to avoid eventual-consistency lag with the `syncAdminClaim` trigger).
+- [firebase/functions-admin/src/demote-admin-to-customer.ts](firebase/functions-admin/src/demote-admin-to-customer.ts): new admin-only callable. Same caller check, plus self-demote guard and last-admin guard. Clears `role` from the target's custom claims and calls `revokeRefreshTokens(targetUid)` to force re-auth.
+- [src/i18n/messages.ts](src/i18n/messages.ts): `admin.users.col.actions`, `admin.users.action.promote`, `admin.users.action.demote`, `admin.users.action.busy`, `admin.users.action.confirmPromote`, `admin.users.action.confirmDemote`, `admin.users.action.self`, `admin.users.action.errorGeneric`.
+
+### Changed
+
+- [src/admin/admin-users-page.tsx](src/admin/admin-users-page.tsx): adds an Actions column. Each row renders a Promote (for customers) or Demote (for other admins) button; the current admin's own row shows "— (you)" instead. Buttons confirm via `window.confirm`, invoke the callable, and optimistically update local state on success. Per-row error messages render inline under the button on failure.
+- [firebase/functions-admin/src/index.ts](firebase/functions-admin/src/index.ts): exports `promoteUserToAdmin` and `demoteAdminToCustomer`.
+- [firebase/functions-admin/package.json](firebase/functions-admin/package.json): `0.6.0` → `0.7.0`.
+
 ## v8.13.0 — Product images: 10-image cap, drag-to-reorder, admin-chosen featured image
 
 Each product can now carry up to 10 images, and the admin explicitly chooses which one is the featured image (the large image on the product detail page, and the thumbnail on product cards / search results / category grids). The implicit `images[0] = featured` contract that the storefront already honored is unchanged — the new controls just give the admin a real way to set it.

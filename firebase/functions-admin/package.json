@@ -1,6 +1,6 @@
 {
   "name": "caspian-admin-functions",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Firebase Cloud Functions for Caspian Store admin triggers (auto-promote, claim sync, scheduled retention). No provider dependencies — deployable with no secrets configured.",
   "main": "lib/index.js",
   "engines": {
