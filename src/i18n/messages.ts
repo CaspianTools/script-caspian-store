@@ -959,6 +959,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.plugins.status.installed': 'Installed',
   'admin.plugins.status.available': 'Available',
   'admin.plugins.badge.installed': 'Installed',
+  'admin.plugins.badge.disabled': 'Disabled',
   'admin.plugins.empty.all': 'No plugins match your filters.',
   'admin.plugins.configure': 'Configure',
   'admin.plugins.install': 'Install',

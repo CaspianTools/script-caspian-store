@@ -26,6 +26,7 @@ type PluginEntry =
       installId: string;
       name: string;
       description: string;
+      enabled: boolean;
     }
   | {
       kind: 'catalog';
@@ -55,7 +56,11 @@ export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
   const Link = useCaspianLink();
   const nav = useCaspianNavigation();
   const t = useT();
-  const { installs, loading } = useEnabledPluginInstalls();
+  // Include disabled installs so a freshly-installed plugin (which starts
+  // disabled for additional instances per the category page's handleSave) is
+  // still visible on the unified list — otherwise the merchant has no way to
+  // discover or re-enable it from here.
+  const { installs, loading } = useEnabledPluginInstalls({ onlyEnabled: false });
 
   const [search, setSearch] = useState(() => nav.searchParams?.get('q') ?? '');
   const [status, setStatus] = useState<StatusFilter>(() => {
@@ -95,6 +100,7 @@ export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
         installId: x.installId,
         name: x.name,
         description: descriptionFor(x.category, x.pluginId),
+        enabled: x.enabled,
       });
     }
     for (const [cat, catalog] of [
@@ -284,6 +290,9 @@ function PluginCard({
         <span style={{ fontWeight: 600, fontSize: 14, flex: 1, minWidth: 0 }}>{entry.name}</span>
         {entry.kind === 'install' && (
           <Badge>{t('admin.plugins.badge.installed')}</Badge>
+        )}
+        {entry.kind === 'install' && !entry.enabled && (
+          <Badge variant="outline">{t('admin.plugins.badge.disabled')}</Badge>
         )}
       </div>
       {entry.kind === 'install' && (

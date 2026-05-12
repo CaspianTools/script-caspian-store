@@ -172,10 +172,17 @@ export function AdminEmailPluginsPage({
       return;
     }
     const editingInstall = editingId ? installs?.find((i) => i.id === editingId) : null;
+    // First instance of a given pluginId auto-enables (parallels payment
+    // plugins) — clicking Save IS the verification, and the storefront's
+    // transactional-email path only sees enabled installs. Extra instances
+    // (e.g. a second SendGrid account for testing templates) keep the
+    // disabled-by-default pattern so the merchant can verify before swapping.
+    const isFirstInstanceOfPlugin =
+      !editingId && !(installs ?? []).some((i) => i.pluginId === draft.pluginId);
     const payload: EmailPluginInstallWriteInput = {
       pluginId: draft.pluginId,
       name: draft.name.trim(),
-      enabled: editingInstall?.enabled ?? false,
+      enabled: editingInstall?.enabled ?? isFirstInstanceOfPlugin,
       order: draft.order,
       config: coerced,
     };

@@ -18,6 +18,15 @@ export interface EnabledPluginInstall {
   name: string;
   /** Sort order as stored on the install doc. */
   order: number;
+  /** Whether the install is enabled. Only meaningful when the hook is called
+   *  with `{ onlyEnabled: false }`; otherwise this is always `true`. */
+  enabled: boolean;
+}
+
+export interface UseEnabledPluginInstallsOptions {
+  /** When `false`, the hook returns disabled installs too (each with
+   *  `enabled: false`). Default `true` (back-compat for sidebar nav). */
+  onlyEnabled?: boolean;
 }
 
 /**
@@ -35,11 +44,14 @@ export interface EnabledPluginInstall {
  * are cheap and bounded (3 queries × small install counts) so the trade-off
  * is fine without a snapshot listener.
  */
-export function useEnabledPluginInstalls(): {
+export function useEnabledPluginInstalls(
+  options: UseEnabledPluginInstallsOptions = {},
+): {
   installs: EnabledPluginInstall[];
   loading: boolean;
   refresh: () => void;
 } {
+  const { onlyEnabled = true } = options;
   const { db } = useCaspianFirebase();
   const [installs, setInstalls] = useState<EnabledPluginInstall[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +61,9 @@ export function useEnabledPluginInstalls(): {
     let alive = true;
     setLoading(true);
     Promise.all([
-      listShippingPluginInstalls(db, { onlyEnabled: true }).catch(() => []),
-      listPaymentPluginInstalls(db, { onlyEnabled: true }).catch(() => []),
-      listEmailPluginInstalls(db, { onlyEnabled: true }).catch(() => []),
+      listShippingPluginInstalls(db, { onlyEnabled }).catch(() => []),
+      listPaymentPluginInstalls(db, { onlyEnabled }).catch(() => []),
+      listEmailPluginInstalls(db, { onlyEnabled }).catch(() => []),
     ])
       .then(([shipping, payment, email]) => {
         if (!alive) return;
@@ -62,6 +74,7 @@ export function useEnabledPluginInstalls(): {
             installId: x.id,
             name: x.name,
             order: x.order,
+            enabled: x.enabled,
           })),
           ...payment.map((x) => ({
             category: 'payment' as const,
@@ -69,6 +82,7 @@ export function useEnabledPluginInstalls(): {
             installId: x.id,
             name: x.name,
             order: x.order,
+            enabled: x.enabled,
           })),
           ...email.map((x) => ({
             category: 'email' as const,
@@ -76,6 +90,7 @@ export function useEnabledPluginInstalls(): {
             installId: x.id,
             name: x.name,
             order: x.order,
+            enabled: x.enabled,
           })),
         ];
         merged.sort((a, b) => {
@@ -92,7 +107,7 @@ export function useEnabledPluginInstalls(): {
     return () => {
       alive = false;
     };
-  }, [db, refreshTick]);
+  }, [db, refreshTick, onlyEnabled]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

@@ -188,15 +188,22 @@ export function AdminPaymentPluginsPage({
       });
       return;
     }
-    // New installs start disabled — force the admin to explicitly enable after
-    // configuring. Preserves the existing enabled state on edit.
     const editingInstall = editingId ? installs?.find((i) => i.id === editingId) : null;
+    // First instance of a given pluginId auto-enables: the merchant clicked
+    // Save in this dialog, which IS the verification step, so making them flip
+    // a separate Enable toggle is busywork that breaks storefront checkout
+    // silently (the `/checkout` gate is "at least one enabled install"). Extra
+    // instances of the same plugin (e.g. a second Stripe sandbox account)
+    // keep the disabled-by-default pattern so the merchant can verify the new
+    // config before swapping live traffic over.
+    const isFirstInstanceOfPlugin =
+      !editingId && !(installs ?? []).some((i) => i.pluginId === draft.pluginId);
     const trimmedDescription = draft.description.trim();
     const payload: PaymentPluginInstallWriteInput = {
       pluginId: draft.pluginId,
       name: draft.name.trim(),
       description: trimmedDescription || undefined,
-      enabled: editingInstall?.enabled ?? false,
+      enabled: editingInstall?.enabled ?? isFirstInstanceOfPlugin,
       order: draft.order,
       config: coerced,
     };

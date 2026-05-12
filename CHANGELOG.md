@@ -16,6 +16,29 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.18.0 — Newly-installed payment / email plugins now reach storefront checkout without a manual Enable step
+
+Closes a v8.17.0 regression where a merchant who installed Stripe (or any payment / email plugin) saw it as "installed" in the admin but the storefront `/checkout` still showed "Checkout is not available — The store owner hasn't set up a payment provider yet." Root cause: new payment + email installs were created with `enabled: false` (the deliberate "force admin to verify" pattern), and the storefront checkout gate (`listPaymentPluginInstalls(db, { onlyEnabled: true })` at [src/hooks/use-checkout.ts](src/hooks/use-checkout.ts#L37-L45)) treats disabled installs as nonexistent. The v8.17.0 post-install redirect to `/admin/plugins` removed the prior visibility merchants had on `/admin/plugins/manage/<category>` (where the install table surfaces an Enable toggle), so the new install became invisible everywhere — both in admin and on the storefront.
+
+This release auto-enables the **first** install of each `(category, pluginId)` pair when the merchant saves the configure dialog. The merchant's Save click is itself the verification step, so making them flip a separate toggle was just busywork that broke checkout silently. Additional instances of the same plugin (e.g. a second Stripe sandbox account) still default to `enabled: false` so the merchant can verify the new config before swapping live traffic. Shipping plugins were already enabled-by-default and are unchanged.
+
+As a defense-in-depth measure for any disabled install (including pre-existing ones merchants disabled by hand), the unified `/admin/plugins` page now also renders disabled installs — previously it filtered to enabled-only via `useEnabledPluginInstalls()`, which combined with v8.17.0's catalog-card dedup meant a disabled install rendered nothing at all. Disabled installs now show with the existing "Installed" badge alongside a new outline "Disabled" badge. Clicking Configure still routes to the install detail page where the existing Enable toggle lives. The admin sidebar's dynamic plugin children continue to show only enabled installs (no change there).
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.18.0
+```
+
+Existing installs that are currently disabled stay disabled — auto-enable only applies on new install creation, not retroactively. Merchants who installed a payment or email plugin on v8.17.0 and haven't fixed it manually should visit `/admin/plugins/manage/payments` (or `.../email-providers`) once and click Enable on the install they want live. After that, the storefront checkout will pick it up.
+
+### Changed
+
+- [src/admin/admin-payment-plugins-page.tsx](src/admin/admin-payment-plugins-page.tsx), [src/admin/admin-email-plugins-page.tsx](src/admin/admin-email-plugins-page.tsx): `handleSave` computes `isFirstInstanceOfPlugin = !editingId && !installs.some(i => i.pluginId === draft.pluginId)` and writes `enabled: editingInstall?.enabled ?? isFirstInstanceOfPlugin`. Edits to existing installs preserve their previous enabled state exactly as before.
+- [src/admin/use-enabled-plugin-installs.ts](src/admin/use-enabled-plugin-installs.ts): the hook now accepts an optional `{ onlyEnabled?: boolean }` parameter (default `true` for back-compat with the sidebar consumer) and returns `enabled: boolean` on each row.
+- [src/admin/admin-plugins-page.tsx](src/admin/admin-plugins-page.tsx): passes `{ onlyEnabled: false }` to the hook so disabled installs render too. `PluginEntry` (kind: `'install'`) carries an `enabled` field; `<PluginCard>` shows an outline "Disabled" badge alongside the "Installed" badge when `!enabled`.
+- [src/i18n/messages.ts](src/i18n/messages.ts): added `admin.plugins.badge.disabled` = "Disabled".
+
 ## v8.17.0 — Admin /plugins shows installed plugins as installed; new installs return to the unified list
 
 The unified `/admin/plugins` page was rendering two cards per installed plugin — one "Configure" card from the install (kind: `'install'`) and a duplicate "Install" card from the static catalog (kind: `'catalog'`) for the same `pluginId`. After installing e.g. Stripe, merchants still saw a "Install" card for Stripe and concluded the install had failed. Clicking that "Install" card navigated to `/admin/plugins/manage/payments` — a category install page that isn't linked from the admin sidebar — leaving merchants stranded on a page they couldn't find again.
