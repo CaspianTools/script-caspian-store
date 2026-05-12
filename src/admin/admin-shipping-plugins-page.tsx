@@ -12,7 +12,7 @@ import {
 import { getSiteSettings } from '../services/site-settings-service';
 import { SHIPPING_PLUGIN_CATALOG, getShippingPlugin } from '../shipping/catalog';
 import { SHIPPING_PLUGIN_IDS, type ShippingPluginId } from '../shipping/types';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
@@ -95,6 +95,7 @@ export function AdminShippingPluginsPage({
   autoConfigureInstallId,
 }: AdminShippingPluginsPageProps) {
   const { db } = useCaspianFirebase();
+  const nav = useCaspianNavigation();
   const { toast } = useToast();
   const t = useT();
   const [installs, setInstalls] = useState<ShippingPluginInstall[] | null>(null);
@@ -222,12 +223,17 @@ export function AdminShippingPluginsPage({
       if (editingId) {
         await updateShippingPluginInstall(db, editingId, payload);
         toast({ title: t('admin.shippingPlugins.toasts.updated') });
+        setConfigOpen(false);
+        await load();
       } else {
         await createShippingPluginInstall(db, payload);
         toast({ title: t('admin.shippingPlugins.toasts.installed') });
+        setConfigOpen(false);
+        // Return to the unified plugins list so the merchant sees their new
+        // install in context (the deep-linked category page isn't reachable
+        // from the admin sidebar nav).
+        nav.push('/admin/plugins');
       }
-      setConfigOpen(false);
-      await load();
     } catch (error) {
       console.error('[caspian-store] Shipping plugin save failed:', error);
       toast({ title: t('admin.shippingPlugins.errors.saveFailed'), variant: 'destructive' });

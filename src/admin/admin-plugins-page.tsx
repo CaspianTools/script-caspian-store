@@ -79,7 +79,15 @@ export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
 
   const entries = useMemo<PluginEntry[]>(() => {
     const out: PluginEntry[] = [];
+    // Track which `${category}:${pluginId}` pairs already have an install so
+    // we can suppress the catalog card for the same plugin. Without this the
+    // grid renders two cards per installed plugin — one "Configure" (from
+    // the install) and one "Install" (from the static catalog) — which made
+    // the page look like the install never happened. Re-installing a second
+    // instance still works via /admin/plugins/manage/<category>.
+    const installedKeys = new Set<string>();
     for (const x of installs) {
+      installedKeys.add(`${x.category}:${x.pluginId}`);
       out.push({
         kind: 'install',
         category: x.category,
@@ -95,6 +103,7 @@ export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
       ['email', EMAIL_PLUGIN_CATALOG],
     ] as const) {
       for (const entry of Object.values(catalog)) {
+        if (installedKeys.has(`${cat}:${entry.id}`)) continue;
         out.push({
           kind: 'catalog',
           category: cat,

@@ -16,6 +16,27 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.17.0 — Admin /plugins shows installed plugins as installed; new installs return to the unified list
+
+The unified `/admin/plugins` page was rendering two cards per installed plugin — one "Configure" card from the install (kind: `'install'`) and a duplicate "Install" card from the static catalog (kind: `'catalog'`) for the same `pluginId`. After installing e.g. Stripe, merchants still saw a "Install" card for Stripe and concluded the install had failed. Clicking that "Install" card navigated to `/admin/plugins/manage/payments` — a category install page that isn't linked from the admin sidebar — leaving merchants stranded on a page they couldn't find again.
+
+This release suppresses the catalog card for any plugin that already has at least one install. After installing Stripe the merchant sees a single Stripe card with a "Configure" CTA and the "Installed" badge, matching the mental model of "install = installed." Installing a second instance (e.g. a second Stripe account) is still possible from `/admin/plugins/manage/<category>`; that page just isn't surfaced from the unified list anymore.
+
+A successful new install also now redirects the merchant back to `/admin/plugins` (the unified list reachable from the sidebar) instead of leaving them on `/admin/plugins/manage/payments`. Edits to existing installs still stay on the same page so the merchant can keep tweaking.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.17.0
+```
+
+No code changes on consumer sites.
+
+### Changed
+
+- [src/admin/admin-plugins-page.tsx](src/admin/admin-plugins-page.tsx): the `entries` memo now tracks `${category}:${pluginId}` keys for installs and skips catalog entries that match. Multi-instance install paths (`/admin/plugins/manage/<category>`) are unaffected.
+- [src/admin/admin-payment-plugins-page.tsx](src/admin/admin-payment-plugins-page.tsx), [src/admin/admin-shipping-plugins-page.tsx](src/admin/admin-shipping-plugins-page.tsx), [src/admin/admin-email-plugins-page.tsx](src/admin/admin-email-plugins-page.tsx): `handleSave` now calls `nav.push('/admin/plugins')` after a successful CREATE (new install). The UPDATE branch keeps the prior behavior of reloading in place.
+
 ## v8.16.0 — Product detail page now capped at 1200px to match the rest of the storefront
 
 The product detail page was the only top-level page in the storefront without an outer width constraint. On wide displays (≥1440px) the gallery + info grid stretched to whatever container it was mounted in, and the Details / Reviews / Questions tab strip and its panels did the same — leaving the PDP visually misaligned next to the cart, checkout, account, and search pages, which already centre their content in a 1200px column.

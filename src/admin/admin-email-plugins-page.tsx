@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { EMAIL_PLUGIN_CATALOG, getEmailPlugin } from '../email/catalog';
 import { EMAIL_PLUGIN_IDS, type EmailPluginId } from '../email/types';
 import { useT } from '../i18n/locale-context';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import {
   createEmailPluginInstall,
   deleteEmailPluginInstall,
@@ -93,6 +93,7 @@ export function AdminEmailPluginsPage({
   autoConfigureInstallId,
 }: AdminEmailPluginsPageProps) {
   const { db } = useCaspianFirebase();
+  const nav = useCaspianNavigation();
   const { toast } = useToast();
   const t = useT();
   const [installs, setInstalls] = useState<EmailPluginInstall[] | null>(null);
@@ -183,12 +184,17 @@ export function AdminEmailPluginsPage({
       if (editingId) {
         await updateEmailPluginInstall(db, editingId, payload);
         toast({ title: t('admin.emailPlugins.toasts.updated') });
+        setConfigOpen(false);
+        await load();
       } else {
         await createEmailPluginInstall(db, payload);
         toast({ title: t('admin.emailPlugins.toasts.installed') });
+        setConfigOpen(false);
+        // Return to the unified plugins list so the merchant sees their new
+        // install in context (the deep-linked category page isn't reachable
+        // from the admin sidebar nav).
+        nav.push('/admin/plugins');
       }
-      setConfigOpen(false);
-      await load();
     } catch (error) {
       console.error('[caspian-store] Email plugin save failed:', error);
       toast({ title: t('admin.emailPlugins.errors.saveFailed'), variant: 'destructive' });

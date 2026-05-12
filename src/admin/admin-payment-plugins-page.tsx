@@ -11,7 +11,7 @@ import {
 } from '../services/payment-plugin-service';
 import { PAYMENT_PLUGIN_CATALOG, getPaymentPlugin } from '../payments/catalog';
 import { PAYMENT_PLUGIN_IDS, type PaymentPluginId } from '../payments/types';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
@@ -110,6 +110,7 @@ export function AdminPaymentPluginsPage({
   autoConfigureInstallId,
 }: AdminPaymentPluginsPageProps) {
   const { db } = useCaspianFirebase();
+  const nav = useCaspianNavigation();
   const { toast } = useToast();
   const t = useT();
   const [installs, setInstalls] = useState<PaymentPluginInstall[] | null>(null);
@@ -204,12 +205,17 @@ export function AdminPaymentPluginsPage({
       if (editingId) {
         await updatePaymentPluginInstall(db, editingId, payload);
         toast({ title: t('admin.paymentPlugins.toasts.updated') });
+        setConfigOpen(false);
+        await load();
       } else {
         await createPaymentPluginInstall(db, payload);
         toast({ title: t('admin.paymentPlugins.toasts.installed') });
+        setConfigOpen(false);
+        // Return to the unified plugins list so the merchant sees their new
+        // install in context (and so the deep-linked category page, which
+        // isn't in the admin sidebar nav, doesn't become an orphan tab).
+        nav.push('/admin/plugins');
       }
-      setConfigOpen(false);
-      await load();
     } catch (error) {
       console.error('[caspian-store] Payment plugin save failed:', error);
       toast({ title: t('admin.paymentPlugins.errors.saveFailed'), variant: 'destructive' });
