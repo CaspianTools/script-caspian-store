@@ -16,6 +16,18 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.16.0 — Product detail page now capped at 1200px to match the rest of the storefront
+
+The product detail page was the only top-level page in the storefront without an outer width constraint. On wide displays (≥1440px) the gallery + info grid stretched to whatever container it was mounted in, and the Details / Reviews / Questions tab strip and its panels did the same — leaving the PDP visually misaligned next to the cart, checkout, account, and search pages, which already centre their content in a 1200px column.
+
+This release wraps both the loaded and loading states of `ProductDetailPage` with the same `style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}` container the other pages use. The top half (gallery + info) and the bottom half (tabs + Details / Reviews / Questions) are now centred and capped together, with 24px side gutters that match `cart-page.tsx`, `checkout-page.tsx`, `account-page.tsx`, and `search-results-page.tsx`. The not-found state is unchanged — it was already a centred paragraph and didn't need a container.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.16.0
+```
+
 ## v8.15.0 — No underlines on any link or link-styled control across the storefront
 
 The storefront previously rendered link underlines in two distinct places. Real `<a>` tags inside `<LayoutShell>` were already underline-free via `.caspian-root a { text-decoration: none }`, but any anchor mounted outside the root (custom consumer headers, embedded marketing fragments) still picked up the browser default underline. Separately, four buttons that visually present as text links — "Reset filters" in the shop sidebar, "View all results" in the header search popup, "Edit" in the setup-wizard summary, and "Delete" on an applied cart promo code — carried inline `textDecoration: 'underline'` that bypassed the CSS rule entirely. This release removes both sources of underlines so the rendered storefront is uniformly underline-free regardless of element type or mount location.

@@ -153,13 +153,15 @@ export function ProductDetailPage({
 
   if (loading) {
     return (
-      <div className={className} style={{ ...gridStyle, paddingTop: 40 }}>
-        <Skeleton style={{ aspectRatio: '4 / 5' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Skeleton style={{ height: 14, width: '30%' }} />
-          <Skeleton style={{ height: 24, width: '80%' }} />
-          <Skeleton style={{ height: 18, width: '40%' }} />
-          <Skeleton style={{ height: 40, width: '50%' }} />
+      <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}>
+        <div style={gridStyle}>
+          <Skeleton style={{ aspectRatio: '4 / 5' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Skeleton style={{ height: 14, width: '30%' }} />
+            <Skeleton style={{ height: 24, width: '80%' }} />
+            <Skeleton style={{ height: 18, width: '40%' }} />
+            <Skeleton style={{ height: 40, width: '50%' }} />
+          </div>
         </div>
       </div>
     );
@@ -208,7 +210,7 @@ export function ProductDetailPage({
   };
 
   return (
-    <div className={className} style={{ paddingTop: 40 }}>
+    <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}>
       <div style={gridStyle}>
         <ProductGallery images={product.images} />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
