@@ -16,6 +16,24 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.20.1 — Firestore composite indexes for the three plugin install collections
+
+Storefront checkout was throwing `FirebaseError: The query requires an index` on freshly-deployed projects, because `listPaymentPluginInstalls(db, { onlyEnabled: true })` (and the parallel shipping / email helpers) issues a `where('enabled', '==', true) + orderBy('order', 'asc')` query that requires a composite index Firestore does not autocreate. Existing projects worked because the index had been created out-of-band via the "create here" link in the console error, but a fresh `firebase deploy --only firestore:indexes` would still leave the project broken until that one-off click. This release ships the index definitions in the package so the consumer's `npm run firebase:sync && firebase deploy --only firestore:indexes` flow produces working installs out of the box.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.20.1
+npm run firebase:sync
+firebase deploy --only firestore:indexes
+```
+
+The third command is the one that matters — App Hosting / Vercel deploys do not push Firestore indexes. Index builds take 2–10 minutes depending on collection size; queries will return the `index is currently building` error until they finish, then succeed.
+
+### Added
+
+- [firebase/firestore.indexes.json](firebase/firestore.indexes.json): three composite indexes on `enabled ASC, order ASC` for `paymentPluginInstalls`, `shippingPluginInstalls`, and `emailPluginInstalls`.
+
 ## v8.20.0 — Product cards now expose wishlist + quick-add icons (with admin toggles)
 
 `<ProductCard />` previously rendered only image, badges, brand, name, and price — to save to wishlist or add to cart a customer had to open the PDP. This release adds two icons directly on each card: a **heart** at the top-right of the image (toggles wishlist via the existing `useWishlist().toggle()`) and a **shopping-bag** at the bottom-right of the card (quick-adds one unit via `useCart().addToCart()`). For products with `sizes`, the quick-add auto-picks `sizes[0]`; products without sizes add as-is.
