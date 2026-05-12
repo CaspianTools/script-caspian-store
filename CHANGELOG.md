@@ -16,6 +16,28 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.15.0 — No underlines on any link or link-styled control across the storefront
+
+The storefront previously rendered link underlines in two distinct places. Real `<a>` tags inside `<LayoutShell>` were already underline-free via `.caspian-root a { text-decoration: none }`, but any anchor mounted outside the root (custom consumer headers, embedded marketing fragments) still picked up the browser default underline. Separately, four buttons that visually present as text links — "Reset filters" in the shop sidebar, "View all results" in the header search popup, "Edit" in the setup-wizard summary, and "Delete" on an applied cart promo code — carried inline `textDecoration: 'underline'` that bypassed the CSS rule entirely. This release removes both sources of underlines so the rendered storefront is uniformly underline-free regardless of element type or mount location.
+
+The anchor rules in `globals.css` are now unscoped from `.caspian-root`, so they apply globally. `color: inherit`, the hover opacity, the `:focus-visible` keyboard ring, and the transition are all preserved — only the underline behaviour is gone. The four button styles drop the inline `textDecoration: 'underline'` property; their other styling (color, cursor, padding, fontSize) is unchanged, so they remain visually distinct from regular text.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.15.0
+```
+
+No code changes on consumer sites. Any consumer that was relying on the browser default underline for anchors mounted outside `<LayoutShell>` will see those underlines disappear after the pin is bumped.
+
+### Changed
+
+- [src/styles/globals.css](src/styles/globals.css): `.caspian-root a`, `.caspian-root a:hover`, and `.caspian-root a:focus-visible` are now plain `a`, `a:hover`, and `a:focus-visible` so every anchor on the page is underline-free regardless of mount.
+- [src/components/shop-filter-sidebar.tsx](src/components/shop-filter-sidebar.tsx): "Reset filters" button drops inline `textDecoration: 'underline'` and the now-unused `textUnderlineOffset: 3`.
+- [src/components/search-dialog.tsx](src/components/search-dialog.tsx): "View all results" button in the search popup drops inline `textDecoration: 'underline'`.
+- [src/components/setup/steps/summary-step.tsx](src/components/setup/steps/summary-step.tsx): `editLink` shared style drops `textDecoration: 'underline'`.
+- [src/components/cart-page.tsx](src/components/cart-page.tsx): applied-promo "Delete" button drops inline `textDecoration: 'underline'`.
+
 ## v8.14.0 — Admin can promote/demote users from the Admin > Users page
 
 The Admin > Users page was previously read-only — admins could see the list and the role badge, but had no in-app way to change a user's role. The only paths to promote someone were the `claimAdmin` callable (bootstrap-only; refuses once any admin exists), the `grant-admin` CLI (requires service-account credentials on a workstation), or a direct edit in the Firestore console. This release adds first-class **Promote to admin** and **Demote to customer** buttons in the user table, gated by a `confirm()` dialog, with server-enforced guards: only admins can invoke either action, an admin cannot demote themselves (use a different admin account), and the last remaining admin cannot be demoted (avoids locking the site out).

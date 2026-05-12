@@ -176,7 +176,6 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
                   padding: '8px 4px',
                   fontSize: 13,
                   color: '#111',
-                  textDecoration: 'underline',
                   cursor: 'pointer',
                 }}
               >

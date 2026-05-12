@@ -215,7 +215,6 @@ export function CartPage({
                       color: '#555',
                       fontSize: 12,
                       cursor: 'pointer',
-                      textDecoration: 'underline',
                     }}
                   >
                     {t('common.delete')}

@@ -240,8 +240,6 @@ export function ShopFilterSidebar({
             fontSize: 13,
             fontWeight: 600,
             cursor: 'pointer',
-            textDecoration: 'underline',
-            textUnderlineOffset: 3,
           }}
         >
           {t('shop.filters.reset')}

@@ -128,7 +128,6 @@ const editLink: CSSProperties = {
   background: 'transparent',
   border: 'none',
   color: '#022959',
-  textDecoration: 'underline',
   fontSize: 13,
   cursor: 'pointer',
   padding: 0,
