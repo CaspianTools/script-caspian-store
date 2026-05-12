@@ -72,7 +72,7 @@ export function ProductGallery({
             flexDirection: 'column',
             gap: 8,
             maxHeight: 'calc(80px * 5 + 8px * 4)',
-            overflowY: 'auto',
+            overflow: 'hidden auto',
             paddingRight: 2,
           }}
         >
