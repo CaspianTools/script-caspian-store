@@ -18,7 +18,7 @@ const RESULT_LIMIT = 8;
 export interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Optional override for the product link. Defaults to `/products/{slug ?? id}`. */
+  /** Optional override for the product link. Defaults to `/product/{slug ?? id}`. */
   getProductHref?: (productId: string, slug?: string) => string;
 }
 
@@ -51,7 +51,7 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
 
   const visible = matches.slice(0, RESULT_LIMIT);
   const hrefFor = (id: string, slug?: string) =>
-    getProductHref ? getProductHref(id, slug) : `/products/${slug ?? id}`;
+    getProductHref ? getProductHref(id, slug) : `/product/${slug ?? id}`;
 
   const trimmed = query.trim();
 
