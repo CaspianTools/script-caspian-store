@@ -16,6 +16,31 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.13.0 — Product images: 10-image cap, drag-to-reorder, admin-chosen featured image
+
+Each product can now carry up to 10 images, and the admin explicitly chooses which one is the featured image (the large image on the product detail page, and the thumbnail on product cards / search results / category grids). The implicit `images[0] = featured` contract that the storefront already honored is unchanged — the new controls just give the admin a real way to set it.
+
+In the product editor (`/admin/products/new` and `/admin/products/{id}/edit`):
+
+- The "Images" section heading now shows a live counter: `Images (n / 10)`.
+- Each thumbnail tile is `draggable` and accepts drops from other tiles, so the admin can drag a thumbnail anywhere in the grid to reorder. The dragged tile dims to 40% opacity during the drag.
+- The thumbnail at index 0 carries a `★ Featured` badge (top-left) and a `var(--caspian-primary)` outline. All other thumbnails get a `Make featured` button (bottom-left) that promotes that image to index 0 with a single click.
+- Once the gallery hits 10 images, the `<ImageUploadField>` and "or paste image URL" row are replaced with a single helper line: "Maximum of 10 images reached. Remove one to add another." A belt-and-suspenders guard in `handleAddImageUrl` also rejects (with a destructive toast) any paste-then-Enter race that would otherwise sneak in an 11th.
+
+No schema change. `Product.images: ProductImage[]` is unchanged; only the order written by the editor changes. `<ProductCard>` already pulls `product.images?.[0]` and `<ProductGallery>` already initialises its active slot to `images[0]`, so the admin's chosen featured image flows through automatically with no edits to consumer code or storefront components. Existing products keep their current first image as the featured image (which was already the de-facto behavior).
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.13.0
+```
+
+No code changes on consumer sites. Existing products and gallery rendering are unaffected; the new controls only show up in the admin product editor.
+
+### Changed
+
+- [src/admin/admin-product-editor.tsx](src/admin/admin-product-editor.tsx): new `MAX_PRODUCT_IMAGES = 10` cap enforced in both `handleAddImageUrl` (guard + destructive toast) and the JSX (the upload UI is replaced with a "Maximum of 10 images reached" line at the cap). Each thumbnail tile is now `draggable` with `onDragStart` / `onDragOver` / `onDrop` / `onDragEnd` handlers that splice-move within `form.images`. Index 0 renders a `★ Featured` badge + primary-color outline; every other tile renders a `Make featured` button that promotes via `handleMakeFeatured(id)`. Section heading shows `Images (n / 10)` counter. Hand-rolled HTML5 drag-and-drop (no new dependency).
+
 ## v8.12.0 — Public /wishlist works for anonymous shoppers; anon list merges into the account on sign-in
 
 The `/wishlist` route was previously a placeholder that read "Your wishlist lives inside the account page." This release turns it into a real page that works for everyone. Anonymous shoppers can now add products to their wishlist (the heart button on product cards no longer rejects them with a "Sign in to save" toast); the saved IDs persist in `localStorage` (`caspian-wishlist-v1`) for the session. When an anonymous shopper signs in, their local list is **merged** (union, dedup) into their server-side wishlist on `users/{uid}.wishlist` rather than being thrown away — the deliberate improvement over `<CartProvider>`'s hard-switch behavior.

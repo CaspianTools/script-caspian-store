@@ -90,6 +90,14 @@ function parseSizeList(raw: string): string[] {
 }
 
 /**
+ * Maximum number of images a product can carry. The storefront treats
+ * `images[0]` as the featured image (product card thumbnail + initial slot in
+ * `<ProductGallery>`), so the admin's chosen featured image is whichever one
+ * sits at index 0 after drag-reorder / "Make featured".
+ */
+const MAX_PRODUCT_IMAGES = 10;
+
+/**
  * Fixed palette of named product colors. Keep in sync with the storefront
  * swatch rendering if you add custom renderers. If you need brand-specific
  * colors later, swap this for a Firestore-backed `productColors` collection.
@@ -176,6 +184,7 @@ export function AdminProductEditor({
   const [brands, setBrands] = useState<ProductBrandDoc[] | null>(null);
   const [legacyColor, setLegacyColor] = useState<string>('');
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -283,10 +292,19 @@ export function AdminProductEditor({
     const trimmed = url.trim();
     if (!trimmed) return;
     const id = `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setForm((s) => ({
-      ...s,
-      images: [...s.images, { id, url: trimmed, alt: s.name, hint: s.name }],
-    }));
+    setForm((s) => {
+      if (s.images.length >= MAX_PRODUCT_IMAGES) {
+        toast({
+          title: `Maximum of ${MAX_PRODUCT_IMAGES} images per product`,
+          variant: 'destructive',
+        });
+        return s;
+      }
+      return {
+        ...s,
+        images: [...s.images, { id, url: trimmed, alt: s.name, hint: s.name }],
+      };
+    });
   };
 
   const handleAddUrlClick = () => {
@@ -297,6 +315,50 @@ export function AdminProductEditor({
 
   const handleRemoveImage = (id: string) => {
     setForm((s) => ({ ...s, images: s.images.filter((img) => img.id !== id) }));
+  };
+
+  const handleMakeFeatured = (id: string) => {
+    setForm((s) => {
+      const idx = s.images.findIndex((img) => img.id === id);
+      if (idx <= 0) return s;
+      const next = s.images.slice();
+      const [picked] = next.splice(idx, 1);
+      next.unshift(picked);
+      return { ...s, images: next };
+    });
+  };
+
+  const handleDragStart = (id: string) => (e: React.DragEvent<HTMLDivElement>) => {
+    setDraggingId(id);
+    // Required for Firefox to start a drag; payload itself is unused.
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOverTile = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!draggingId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropOnTile = (targetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const sourceId = draggingId;
+    setDraggingId(null);
+    if (!sourceId || sourceId === targetId) return;
+    setForm((s) => {
+      const from = s.images.findIndex((img) => img.id === sourceId);
+      const to = s.images.findIndex((img) => img.id === targetId);
+      if (from === -1 || to === -1 || from === to) return s;
+      const next = s.images.slice();
+      const [picked] = next.splice(from, 1);
+      next.splice(to, 0, picked);
+      return { ...s, images: next };
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
   };
 
   const handleSave = async () => {
@@ -531,10 +593,13 @@ export function AdminProductEditor({
       </section>
 
       <section style={sectionStyle}>
-        <h2 style={h2Style}>Images</h2>
+        <h2 style={h2Style}>
+          Images ({form.images.length} / {MAX_PRODUCT_IMAGES})
+        </h2>
         <p style={{ margin: '0 0 12px', color: '#666', fontSize: 13 }}>
-          Upload new images or paste a URL. Files land under <code>products/{productId ?? 'new'}/</code>
-          in Firebase Storage.
+          The first image is the featured image shown on the storefront. Drag thumbnails
+          to reorder, or click <strong>Make featured</strong> to promote one to the front.
+          Files land under <code>products/{productId ?? 'new'}/</code> in Firebase Storage.
         </p>
         {form.images.length > 0 && (
           <div
@@ -545,78 +610,146 @@ export function AdminProductEditor({
               marginBottom: 12,
             }}
           >
-            {form.images.map((img) => (
-              <div
-                key={img.id}
-                style={{
-                  position: 'relative',
-                  aspectRatio: '3 / 4',
-                  background: '#f5f5f5',
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={img.alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(img.id)}
-                  aria-label="Remove image"
+            {form.images.map((img, i) => {
+              const isFeatured = i === 0;
+              const isDragging = draggingId === img.id;
+              return (
+                <div
+                  key={img.id}
+                  draggable
+                  onDragStart={handleDragStart(img.id)}
+                  onDragOver={handleDragOverTile}
+                  onDrop={handleDropOnTile(img.id)}
+                  onDragEnd={handleDragEnd}
                   style={{
-                    position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    border: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    lineHeight: 1,
+                    position: 'relative',
+                    aspectRatio: '3 / 4',
+                    background: '#f5f5f5',
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                    cursor: 'grab',
+                    opacity: isDragging ? 0.4 : 1,
+                    outline: isFeatured ? '2px solid var(--caspian-primary, #111)' : 'none',
+                    outlineOffset: isFeatured ? -2 : 0,
                   }}
                 >
-                  ×
-                </button>
-              </div>
-            ))}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt={img.alt}
+                    draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}
+                  />
+                  {isFeatured && (
+                    <span
+                      aria-label="Featured image"
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        left: 4,
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        background: 'var(--caspian-primary, #111)',
+                        color: '#fff',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: '0.04em',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      ★ Featured
+                    </span>
+                  )}
+                  {!isFeatured && (
+                    <button
+                      type="button"
+                      onClick={() => handleMakeFeatured(img.id)}
+                      aria-label="Make this image the featured image"
+                      style={{
+                        position: 'absolute',
+                        bottom: 4,
+                        left: 4,
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        border: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        color: '#fff',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Make featured
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(img.id)}
+                    aria-label="Remove image"
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      border: 0,
+                      background: 'rgba(0,0,0,0.6)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
-        <ImageUploadField
-          value=""
-          onChange={handleAddImageUrl}
-          storagePath={`products/${productId ?? 'new'}`}
-          label={form.images.length === 0 ? 'First image' : 'Add another image'}
-          aspectRatio="3 / 4"
-          previewMaxWidth={180}
-        />
-        <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <Label style={{ fontSize: 12, color: '#666' }}>or paste image URL</Label>
-            <Input
-              type="url"
-              value={newImageUrl}
-              onChange={(e) => setNewImageUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddUrlClick();
-                }
-              }}
-              placeholder="https://…"
+        {form.images.length < MAX_PRODUCT_IMAGES ? (
+          <>
+            <ImageUploadField
+              value=""
+              onChange={handleAddImageUrl}
+              storagePath={`products/${productId ?? 'new'}`}
+              label={form.images.length === 0 ? 'First image' : 'Add another image'}
+              aspectRatio="3 / 4"
+              previewMaxWidth={180}
             />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddUrlClick}
-            disabled={!newImageUrl.trim()}
-          >
-            Add URL
-          </Button>
-        </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <Label style={{ fontSize: 12, color: '#666' }}>or paste image URL</Label>
+                <Input
+                  type="url"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddUrlClick();
+                    }
+                  }}
+                  placeholder="https://…"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddUrlClick}
+                disabled={!newImageUrl.trim()}
+              >
+                Add URL
+              </Button>
+            </div>
+          </>
+        ) : (
+          <p style={{ margin: 0, color: '#666', fontSize: 13 }}>
+            Maximum of {MAX_PRODUCT_IMAGES} images reached. Remove one to add another.
+          </p>
+        )}
       </section>
 
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
