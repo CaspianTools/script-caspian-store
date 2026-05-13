@@ -204,6 +204,11 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'shop.filters.limited': 'Limited',
   'shop.filters.reset': 'Reset filters',
   'shop.filters.resultCount': '{count} products',
+  'shop.filters.openMobile': 'Filters',
+  'shop.filters.openMobileWithCount': 'Filters ({count})',
+  'shop.filters.apply': 'Show results',
+  'shop.filters.applyWithCount': 'Show {count} results',
+  'shop.filters.close': 'Close filters',
 
   // Product detail page
   'product.size': 'Size',

@@ -10,8 +10,12 @@ import { ProductGrid } from './product-grid';
 import {
   ShopFilterSidebar,
   EMPTY_SHOP_FILTERS,
+  countActiveShopFilters,
   type ShopFilterState,
 } from './shop-filter-sidebar';
+import { ShopFilterDrawer } from './shop-filter-drawer';
+import { useT } from '../i18n/locale-context';
+import { Button } from '../ui/button';
 import { cn } from '../utils/cn';
 
 export interface ProductListPageProps {
@@ -72,6 +76,7 @@ export function ProductListPage({
   const [taxConfig, setTaxConfig] = useState<TaxConfig | undefined>(taxConfigOverride);
   const [categories, setCategories] = useState<ProductCategoryDoc[]>([]);
   const [filterState, setFilterState] = useState<ShopFilterState>(EMPTY_SHOP_FILTERS);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -194,8 +199,26 @@ export function ProductListPage({
       {hideFilters ? (
         grid
       ) : (
-        <div className={cn('caspian-shop-grid')}>
-          <ShopFilterSidebar
+        <>
+          <MobileFilterToolbar
+            activeCount={countActiveShopFilters(filterState)}
+            resultCount={loading ? undefined : visibleProducts.length}
+            onOpen={() => setMobileFiltersOpen(true)}
+          />
+          <div className={cn('caspian-shop-grid')}>
+            <ShopFilterSidebar
+              state={filterState}
+              onChange={setFilterState}
+              availableCategories={availableCategories}
+              categoryLabels={categoryLabels}
+              availableSizes={availableSizes}
+              resultCount={loading ? undefined : visibleProducts.length}
+            />
+            <div style={{ minWidth: 0 }}>{grid}</div>
+          </div>
+          <ShopFilterDrawer
+            open={mobileFiltersOpen}
+            onOpenChange={setMobileFiltersOpen}
             state={filterState}
             onChange={setFilterState}
             availableCategories={availableCategories}
@@ -203,8 +226,43 @@ export function ProductListPage({
             availableSizes={availableSizes}
             resultCount={loading ? undefined : visibleProducts.length}
           />
-          <div style={{ minWidth: 0 }}>{grid}</div>
-        </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MobileFilterToolbar({
+  activeCount,
+  resultCount,
+  onOpen,
+}: {
+  activeCount: number;
+  resultCount: number | undefined;
+  onOpen: () => void;
+}) {
+  const t = useT();
+  return (
+    <div
+      className="caspian-shop-mobile-toolbar"
+      style={{
+        display: 'none',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16,
+      }}
+    >
+      <Button type="button" variant="outline" size="sm" onClick={onOpen}>
+        <span aria-hidden="true" style={{ marginRight: 6 }}>☰</span>
+        {activeCount > 0
+          ? t('shop.filters.openMobileWithCount', { count: activeCount })
+          : t('shop.filters.openMobile')}
+      </Button>
+      {typeof resultCount === 'number' && (
+        <span style={{ fontSize: 13, color: '#666' }}>
+          {t('shop.filters.resultCount', { count: resultCount })}
+        </span>
       )}
     </div>
   );

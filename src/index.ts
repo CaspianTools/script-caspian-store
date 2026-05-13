@@ -46,10 +46,17 @@ export { ProductGrid, type ProductGridProps } from './components/product-grid';
 export { ProductListPage, type ProductListPageProps } from './components/product-list-page';
 export {
   ShopFilterSidebar,
+  ShopFilterFields,
   EMPTY_SHOP_FILTERS,
+  countActiveShopFilters,
   type ShopFilterSidebarProps,
+  type ShopFilterFieldsProps,
   type ShopFilterState,
 } from './components/shop-filter-sidebar';
+export {
+  ShopFilterDrawer,
+  type ShopFilterDrawerProps,
+} from './components/shop-filter-drawer';
 export { CollectionsPage, type CollectionsPageProps } from './components/collections-page';
 export {
   CollectionDetailPage,

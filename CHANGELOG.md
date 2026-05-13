@@ -16,6 +16,30 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.21.0 — Mobile-friendly filter bottom drawer on the product listing page
+
+On screens ≤720px wide, the left filter sidebar on `<ProductListPage>` (and any page mounted under `/shop/[category]`) previously stacked above the product grid and pushed the grid down by ~400–600px of filter chrome before the first product was reachable. This release replaces the stacked sidebar on mobile with a compact toolbar — a "Filters (N)" button showing the count of active filter dimensions, plus the live result count — that opens a bottom drawer containing the same filter form. The drawer slides up from the bottom (220ms, respects `prefers-reduced-motion`), takes `max-height: 85vh`, has a grab-handle, and ends in a sticky footer with **Reset** + **Show {n} results** so picking filters then dismissing the drawer is one tap. Desktop layout is unchanged — sticky 240px sidebar exactly as before.
+
+### No consumer action required
+
+Pin the new tag and reinstall — the mobile behaviour activates from the existing CSS in `@caspian-explorer/script-caspian-store/styles.css` (already imported once at the app root), and `<ProductListPage>` automatically mounts the new drawer. No props changed; `hideFilters` still hides both surfaces.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.21.0
+```
+
+### Added
+
+- [src/components/shop-filter-drawer.tsx](src/components/shop-filter-drawer.tsx): new public `<ShopFilterDrawer>` — bottom-anchored modal that wraps the shared filter form, with overlay-click + Escape + sticky footer (Reset / Show results). Reuses the same body-overflow + Escape conventions as `<CartSheet>`.
+- [src/components/shop-filter-sidebar.tsx](src/components/shop-filter-sidebar.tsx): new public `<ShopFilterFields>` (the body-only filter form, no outer container — drop into a sidebar, dialog, or drawer) and `countActiveShopFilters(state)` helper for badge UIs.
+- [src/components/product-list-page.tsx](src/components/product-list-page.tsx): inline mobile toolbar (filter button with active-count badge + result count) rendered above the grid, hidden on desktop via CSS.
+- [src/i18n/messages.ts](src/i18n/messages.ts): `shop.filters.openMobile`, `shop.filters.openMobileWithCount`, `shop.filters.apply`, `shop.filters.applyWithCount`, `shop.filters.close`.
+
+### Changed
+
+- [src/components/shop-filter-sidebar.tsx](src/components/shop-filter-sidebar.tsx): refactored `<ShopFilterSidebar>` to delegate its body to the new `<ShopFilterFields>`. Public props are unchanged — existing consumers calling `<ShopFilterSidebar state={…} onChange={…} … />` get identical output.
+- [src/styles/globals.css](src/styles/globals.css): at `≤720px`, `.caspian-shop-filter-sidebar` is hidden and `.caspian-shop-mobile-toolbar` is revealed. Added `caspian-drawer-slide-up` keyframes and a `prefers-reduced-motion` opt-out.
+
 ## v8.20.1 — Firestore composite indexes for the three plugin install collections
 
 Storefront checkout was throwing `FirebaseError: The query requires an index` on freshly-deployed projects, because `listPaymentPluginInstalls(db, { onlyEnabled: true })` (and the parallel shipping / email helpers) issues a `where('enabled', '==', true) + orderBy('order', 'asc')` query that requires a composite index Firestore does not autocreate. Existing projects worked because the index had been created out-of-band via the "create here" link in the console error, but a fresh `firebase deploy --only firestore:indexes` would still leave the project broken until that one-off click. This release ships the index definitions in the package so the consumer's `npm run firebase:sync && firebase deploy --only firestore:indexes` flow produces working installs out of the box.

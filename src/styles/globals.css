@@ -76,4 +76,27 @@ a:focus-visible {
     grid-template-columns: 1fr;
     gap: 16px;
   }
+  /* On mobile the inline filter sidebar is replaced by a button that opens
+     the bottom drawer (see <ShopFilterDrawer>). */
+  .caspian-shop-filter-sidebar {
+    display: none !important;
+  }
+  .caspian-shop-mobile-toolbar {
+    display: flex !important;
+  }
+}
+
+@keyframes caspian-drawer-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caspian-shop-filter-drawer {
+    animation: none !important;
+  }
 }

@@ -21,20 +21,35 @@ export const EMPTY_SHOP_FILTERS: ShopFilterState = {
   limited: false,
 };
 
-export interface ShopFilterSidebarProps {
+/** Count of distinct filter dimensions currently active. Useful for badge UIs. */
+export function countActiveShopFilters(state: ShopFilterState): number {
+  let n = 0;
+  if (state.category !== null) n += 1;
+  if (state.minPrice !== '' || state.maxPrice !== '') n += 1;
+  if (state.sizes.size > 0) n += 1;
+  if (state.isNew) n += 1;
+  if (state.limited) n += 1;
+  return n;
+}
+
+export interface ShopFilterFieldsProps {
   state: ShopFilterState;
   onChange: (next: ShopFilterState) => void;
-  /** Categories present in the loaded product set; the radio list. */
   availableCategories: readonly string[];
-  /** Map from category value (the string stored on `product.category`, usually
-   *  a Firestore category id) to the human display label. When omitted, or
-   *  when a value isn't in the map, the raw value is shown — matches the
-   *  legacy behaviour for free-text categories. */
   categoryLabels?: ReadonlyMap<string, string>;
-  /** Sizes present in the loaded product set; the chip checkboxes. */
   availableSizes: readonly string[];
   /** Total number of products visible after filters apply. Renders the count line. */
   resultCount?: number;
+  /** When true, the header/title row is omitted — useful when the drawer or
+   *  sidebar already provides its own chrome. */
+  hideHeader?: boolean;
+  /** When true, omit the inline Reset button — drawers typically render it in
+   *  a sticky footer instead. */
+  hideReset?: boolean;
+}
+
+export interface ShopFilterSidebarProps
+  extends Omit<ShopFilterFieldsProps, 'hideHeader' | 'hideReset'> {
   className?: string;
 }
 
@@ -66,15 +81,21 @@ const radioRowStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-export function ShopFilterSidebar({
+/**
+ * Body-only filter form. Renders all sections (category, price, size, quick
+ * filters) without an outer container — drop into a sidebar `<aside>`, a
+ * dialog, or a mobile drawer.
+ */
+export function ShopFilterFields({
   state,
   onChange,
   availableCategories,
   categoryLabels,
   availableSizes,
   resultCount,
-  className,
-}: ShopFilterSidebarProps) {
+  hideHeader,
+  hideReset,
+}: ShopFilterFieldsProps) {
   const t = useT();
 
   const setCategory = (cat: string | null) => onChange({ ...state, category: cat });
@@ -88,42 +109,27 @@ export function ShopFilterSidebar({
   };
   const reset = () => onChange(EMPTY_SHOP_FILTERS);
 
-  const hasActiveFilters =
-    state.category !== null ||
-    state.minPrice !== '' ||
-    state.maxPrice !== '' ||
-    state.sizes.size > 0 ||
-    state.isNew ||
-    state.limited;
+  const hasActiveFilters = countActiveShopFilters(state) > 0;
 
   return (
-    <aside
-      className={cn('caspian-shop-filter-sidebar', className)}
-      style={{
-        padding: 20,
-        border: '1px solid rgba(0,0,0,0.08)',
-        borderRadius: 'var(--caspian-radius, 8px)',
-        background: '#fff',
-        alignSelf: 'start',
-        position: 'sticky',
-        top: 16,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: 18,
-        }}
-      >
-        <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{t('shop.filters.title')}</h2>
-        {typeof resultCount === 'number' && (
-          <span style={{ fontSize: 12, color: '#888' }}>
-            {t('shop.filters.resultCount', { count: resultCount })}
-          </span>
-        )}
-      </div>
+    <>
+      {!hideHeader && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: 18,
+          }}
+        >
+          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{t('shop.filters.title')}</h2>
+          {typeof resultCount === 'number' && (
+            <span style={{ fontSize: 12, color: '#888' }}>
+              {t('shop.filters.resultCount', { count: resultCount })}
+            </span>
+          )}
+        </div>
+      )}
 
       {availableCategories.length > 0 && (
         <div style={sectionStyle}>
@@ -228,7 +234,7 @@ export function ShopFilterSidebar({
         </label>
       </div>
 
-      {hasActiveFilters && (
+      {!hideReset && hasActiveFilters && (
         <button
           type="button"
           onClick={reset}
@@ -245,6 +251,28 @@ export function ShopFilterSidebar({
           {t('shop.filters.reset')}
         </button>
       )}
+    </>
+  );
+}
+
+export function ShopFilterSidebar({
+  className,
+  ...fieldsProps
+}: ShopFilterSidebarProps) {
+  return (
+    <aside
+      className={cn('caspian-shop-filter-sidebar', className)}
+      style={{
+        padding: 20,
+        border: '1px solid rgba(0,0,0,0.08)',
+        borderRadius: 'var(--caspian-radius, 8px)',
+        background: '#fff',
+        alignSelf: 'start',
+        position: 'sticky',
+        top: 16,
+      }}
+    >
+      <ShopFilterFields {...fieldsProps} />
     </aside>
   );
 }
