@@ -29,7 +29,7 @@ npm run typecheck   # tsc --noEmit
 npm run clean       # rimraf dist
 ```
 
-A `prepare` script also runs `tsup` on `npm install` — this is how `npm install github:Caspian-Explorer/script-caspian-store` produces a usable `dist/` without a separate build step. Do not remove it.
+A `prepare` script also runs `tsup` on `npm install` — this is how `npm install github:CaspianTools/script-caspian-store` produces a usable `dist/` without a separate build step. Do not remove it.
 
 **No test runner and no linter are configured.** Do not add Jest/Vitest/Playwright/ESLint/Biome/Prettier without asking the user first.
 
@@ -127,7 +127,7 @@ Rules, indexes, and `collections.ts` move together.
 - **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
-- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, and a ready-to-paste install command pinning the new tag — `npm install github:Caspian-Explorer/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
+- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, and a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
 
 ---
 
@@ -203,7 +203,7 @@ Update **all** documentation affected by the changes. Only skip if the file clea
 - [examples/nextjs/](examples/nextjs/) and [scaffold/](scaffold/) — if the public API or provider props changed
 - [firebase/functions/](firebase/functions/) README/types — if Function signatures changed
 
-**Wiki: N/A — no GitHub Wiki exists for this repo.** If one is created later, clone `https://github.com/Caspian-Explorer/script-caspian-store.wiki.git` and edit affected pages there.
+**Wiki: N/A — no GitHub Wiki exists for this repo.** If one is created later, clone `https://github.com/CaspianTools/script-caspian-store.wiki.git` and edit affected pages there.
 
 ### 7. Build
 
@@ -266,7 +266,7 @@ After every release, create a Discussion in the **Announcements** category. The 
 
 **Format requirements:**
 - **Title** — action-oriented, under 100 characters (e.g. `script-caspian-store 1.9 — Faster admin dashboard`)
-- **Body** — 1–3 sentence intro; 2–4 highlight bullets (sparing emoji OK for visual rhythm); install/upgrade one-liner; repo link `https://github.com/Caspian-Explorer/script-caspian-store`.
+- **Body** — 1–3 sentence intro; 2–4 highlight bullets (sparing emoji OK for visual rhythm); install/upgrade one-liner; repo link `https://github.com/CaspianTools/script-caspian-store`.
 
 **Create via GraphQL API:**
 
@@ -290,7 +290,7 @@ EOF
 ```bash
 gh api graphql -f query='
   query {
-    repository(owner: "Caspian-Explorer", name: "script-caspian-store") {
+    repository(owner: "CaspianTools", name: "script-caspian-store") {
       id
       discussionCategories(first: 20) { nodes { id name } }
     }

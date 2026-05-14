@@ -40,6 +40,22 @@ npm install github:CaspianTools/script-caspian-store#v8.21.0
 - [src/components/shop-filter-sidebar.tsx](src/components/shop-filter-sidebar.tsx): refactored `<ShopFilterSidebar>` to delegate its body to the new `<ShopFilterFields>`. Public props are unchanged — existing consumers calling `<ShopFilterSidebar state={…} onChange={…} … />` get identical output.
 - [src/styles/globals.css](src/styles/globals.css): at `≤720px`, `.caspian-shop-filter-sidebar` is hidden and `.caspian-shop-mobile-toolbar` is revealed. Added `caspian-drawer-slide-up` keyframes and a `prefers-reduced-motion` opt-out.
 
+## v8.20.2 — PDP image gallery no longer renders a horizontal scrollbar under the thumbnail rail
+
+The vertical thumbnail rail on `<ProductGallery>` (the column of small previews shown next to the main image when a product has multiple photos) was painting a thin horizontal scrollbar under the rail on browsers that report a non-zero X scrollWidth for the column, even though there was nothing to scroll horizontally. The rail used `overflowY: 'auto'` to enable vertical scrolling past the fifth thumbnail, but that property only constrains the Y axis — X is left at the default `visible`, so a 1–2px X overflow can still produce a scrollbar slot. Switching to the shorthand `overflow: 'hidden auto'` (X hidden, Y auto) eliminates the artefact while preserving vertical scrolling for galleries with more than five photos.
+
+### No consumer action required
+
+Pin the new tag and reinstall — the fix is a styling-only one-line change inside `<ProductGallery>` and ships in the bundled `dist/`.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.20.2
+```
+
+### Fixed
+
+- [src/components/product-gallery.tsx](src/components/product-gallery.tsx): thumbnail rail uses `overflow: 'hidden auto'` instead of `overflowY: 'auto'` so the column no longer renders a spurious horizontal scrollbar.
+
 ## v8.20.1 — Firestore composite indexes for the three plugin install collections
 
 Storefront checkout was throwing `FirebaseError: The query requires an index` on freshly-deployed projects, because `listPaymentPluginInstalls(db, { onlyEnabled: true })` (and the parallel shipping / email helpers) issues a `where('enabled', '==', true) + orderBy('order', 'asc')` query that requires a composite index Firestore does not autocreate. Existing projects worked because the index had been created out-of-band via the "create here" link in the console error, but a fresh `firebase deploy --only firestore:indexes` would still leave the project broken until that one-off click. This release ships the index definitions in the package so the consumer's `npm run firebase:sync && firebase deploy --only firestore:indexes` flow produces working installs out of the box.
