@@ -86,12 +86,20 @@ export function AdminAboutPage({
       });
       setUpdateResult(result);
       if (result.ok) {
-        toast({
-          title: `Updated to v${latest.version}`,
-          description: result.restarting
-            ? 'Server is restarting — refresh in a few seconds.'
-            : 'Restart your server for changes to take effect.',
-        });
+        if (result.mode === 'github-commit') {
+          toast({
+            title: `Update queued for v${latest.version}`,
+            description:
+              'Pushed a package.json bump to GitHub. Your host should redeploy in 3–5 minutes.',
+          });
+        } else {
+          toast({
+            title: `Updated to v${latest.version}`,
+            description: result.restarting
+              ? 'Server is restarting — refresh in a few seconds.'
+              : 'Restart your server for changes to take effect.',
+          });
+        }
       } else {
         toast({
           title: 'Update failed',
@@ -418,9 +426,11 @@ function UpdateResultPanel({ result }: { result: SelfUpdateResult }) {
   const borderColor = result.ok ? '#16a34a' : '#dc2626';
   const bg = result.ok ? '#f0fdf4' : '#fef2f2';
   const title = result.ok
-    ? result.restarting
-      ? 'Installed — server restarting'
-      : 'Installed — restart your server'
+    ? result.mode === 'github-commit'
+      ? 'Commit pushed — host will redeploy'
+      : result.restarting
+        ? 'Installed — server restarting'
+        : 'Installed — restart your server'
     : 'Update failed';
   const log = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
   const isProjectIdError =
@@ -436,6 +446,14 @@ function UpdateResultPanel({ result }: { result: SelfUpdateResult }) {
       }}
     >
       <div style={{ fontWeight: 600, fontSize: 14 }}>{title}</div>
+      {result.ok && result.mode === 'github-commit' && (
+        <GithubCommitDetails
+          message={result.message}
+          commitSha={result.commitSha}
+          commitUrl={result.commitUrl}
+          lockfileUpdated={result.lockfileUpdated}
+        />
+      )}
       {result.error && (
         <p style={{ margin: '6px 0 0', fontSize: 13, color: '#991b1b' }}>{result.error}</p>
       )}
@@ -458,6 +476,44 @@ function UpdateResultPanel({ result }: { result: SelfUpdateResult }) {
         >
           {log}
         </pre>
+      )}
+    </div>
+  );
+}
+
+function GithubCommitDetails({
+  message,
+  commitSha,
+  commitUrl,
+  lockfileUpdated,
+}: {
+  message?: string;
+  commitSha?: string;
+  commitUrl?: string;
+  lockfileUpdated?: boolean;
+}) {
+  return (
+    <div style={{ marginTop: 6 }}>
+      {message && (
+        <p style={{ margin: 0, fontSize: 13, color: '#166534' }}>{message}</p>
+      )}
+      {commitSha && (
+        <p style={{ margin: '6px 0 0', fontSize: 13 }}>
+          Commit{' '}
+          {commitUrl ? (
+            <a
+              href={commitUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#166534', textDecoration: 'underline' }}
+            >
+              {commitSha.slice(0, 7)}
+            </a>
+          ) : (
+            <code>{commitSha.slice(0, 7)}</code>
+          )}
+          {' '}— {lockfileUpdated ? 'package.json + package-lock.json' : 'package.json only'}
+        </p>
       )}
     </div>
   );

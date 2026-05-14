@@ -16,6 +16,37 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.22.0 — GitHub-commit self-update mode for serverless hosts (App Hosting, Vercel)
+
+The in-app **Update** button on `/admin/about` previously only worked on hosts where the running Node process had access to `git`, a writable `node_modules`, and a process supervisor that would respawn on `process.exit(0)` — VPS, Docker, local `npm run dev`. On serverless hosts the same flow fails three different ways: Firebase App Hosting runtime containers ship without `git` on PATH (npm install → `spawn git ENOENT`), the filesystem layer is read-only (EROFS even past the spawn), and `process.exit(0)` causes the platform to respawn from the unmodified deployed image rather than the freshly-installed one — so even a hypothetically-successful install would evaporate on the next request. This release adds a second update path that works exactly the way these platforms expect: push a `package.json` bump to the repo via the GitHub REST API and let the host's normal git-trigger redeploy handle the rest.
+
+When `CASPIAN_GITHUB_TOKEN` and `CASPIAN_CONSUMER_REPO` are both set on the server, the **Update** button switches to **GitHub-commit mode** — it fetches the storefront's `package.json` from GitHub, bumps the script dependency's tag, best-effort updates `package-lock.json` (rewrites the `resolved` SHA for the script entry against the new tag's commit, leaving transitive deps alone), and pushes a single commit to the configured branch (`main` by default). The admin gets a green panel back with a link to the commit and a "your host should redeploy in 3–5 minutes" note. The original npm-install mode stays available for VPS / Docker / local dev — leave the env vars unset and the route behaves exactly as in v8.21.0.
+
+This is also a good time to fix a stale default: `ALLOWED_OWNER` and `DEFAULT_REPO_OWNER` both said `Caspian-Explorer`, but the actual GitHub org is `CaspianTools` (the `@caspian-explorer/` npm scope is a separate identifier — left alone). Existing consumers passing explicit `owner` props on `<AdminAboutPage>` or `<AdminShell>` are unaffected; only callers relying on the built-in default change behaviour.
+
+### Consumer action required on upgrade
+
+On VPS / Docker / local dev nothing changes — pin the new tag and reinstall:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.22.0
+```
+
+On Firebase App Hosting / Vercel / any serverless host, you also need a fine-grained GitHub Personal Access Token scoped to your storefront repo (Contents: read and write). See [INSTALL.md → Self-update → GitHub-commit mode setup](INSTALL.md#github-commit-mode-setup-firebase-app-hosting--vercel--serverless) for the full walkthrough. After creating the token and exposing it as the `CASPIAN_GITHUB_TOKEN` secret on your host (alongside `CASPIAN_CONSUMER_REPO=<owner>/<storefront-repo>`), the **Update** button on `/admin/about` will work end-to-end. Without these env vars the button still appears but falls back to the v7-era npm-install behaviour, which fails on serverless with `spawn git ENOENT`.
+
+### Added
+
+- [src/server/self-update.ts](src/server/self-update.ts): `tryGithubCommitMode()` — fetches `package.json` (and best-effort `package-lock.json`) via the GitHub REST API, bumps the script dep spec to the new tag, resolves the tag → commit SHA for the lockfile's `resolved` field, and pushes a single commit to `CASPIAN_CONSUMER_BRANCH` (default `main`) via the Git Trees + Refs APIs. Validation: `CONSUMER_REPO_RE` enforces `<owner>/<repo>` format; the existing `VERSION_RE` and `GITHUB_NAME_RE` still gate the version and owner/repo overrides. Token is never logged or echoed back; npm-style env-ref redaction continues to apply to the `stderr` field that npm-install mode populates.
+- [src/services/self-update-service.ts](src/services/self-update-service.ts): `SelfUpdateResult` extended with optional `mode` (`'npm-install' | 'github-commit'`), `commitSha`, `commitUrl`, `lockfileUpdated`, and `message` fields. `mode` is forward-compatible: older servers don't tag the response and are treated as npm-install.
+- [src/admin/admin-about-page.tsx](src/admin/admin-about-page.tsx): new `<GithubCommitDetails>` sub-panel renders the linked commit SHA and the lockfile-updated marker when `result.mode === 'github-commit'`. Toast text switches from "Server is restarting" to "Pushed a package.json bump to GitHub. Your host should redeploy in 3–5 minutes." for the new mode.
+- [INSTALL.md](INSTALL.md): new "GitHub-commit mode setup" subsection under "Self-update from `/admin/about`" — fine-grained PAT walkthrough, env-var table, App Hosting + Vercel + self-hosted Node snippets, token rotation, security model.
+
+### Changed
+
+- [src/server/self-update.ts](src/server/self-update.ts): default `ALLOWED_OWNER` updated from `Caspian-Explorer` to `CaspianTools` to match the actual GitHub org. JSDoc on the threat-model block updated to reflect the two modes. npm-install mode now returns `mode: 'npm-install'` in both success and failure JSON so clients can disambiguate; previously the field was absent and the client had to infer mode from `restarting` / `stdout` presence.
+- [src/services/github-updates-service.ts](src/services/github-updates-service.ts): `DEFAULT_REPO_OWNER` updated from `Caspian-Explorer` to `CaspianTools`. Consumers passing explicit `owner` props are unaffected.
+- [src/admin/admin-shell.tsx](src/admin/admin-shell.tsx), [src/services/error-log-service.ts](src/services/error-log-service.ts): stale `Caspian-Explorer` mentions in JSDoc corrected to `CaspianTools`.
+
 ## v8.21.0 — Mobile-friendly filter bottom drawer on the product listing page
 
 On screens ≤720px wide, the left filter sidebar on `<ProductListPage>` (and any page mounted under `/shop/[category]`) previously stacked above the product grid and pushed the grid down by ~400–600px of filter chrome before the first product was reachable. This release replaces the stacked sidebar on mobile with a compact toolbar — a "Filters (N)" button showing the count of active filter dimensions, plus the live result count — that opens a bottom drawer containing the same filter form. The drawer slides up from the bottom (220ms, respects `prefers-reduced-motion`), takes `max-height: 85vh`, has a grab-handle, and ends in a sticky footer with **Reset** + **Show {n} results** so picking filters then dismissing the drawer is one tap. Desktop layout is unchanged — sticky 240px sidebar exactly as before.

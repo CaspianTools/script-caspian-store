@@ -7,7 +7,7 @@ export interface GithubRelease {
   publishedAt: string;
 }
 
-export const DEFAULT_REPO_OWNER = 'Caspian-Explorer';
+export const DEFAULT_REPO_OWNER = 'CaspianTools';
 export const DEFAULT_REPO_NAME = 'script-caspian-store';
 
 const CACHE_TTL_MS = 10 * 60 * 1000;

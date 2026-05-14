@@ -184,7 +184,7 @@ export interface AdminShellProps {
    * Set false to skip the (unauthenticated) GitHub API call.
    */
   checkForUpdates?: boolean;
-  /** GitHub owner to check for updates. Default: Caspian-Explorer. */
+  /** GitHub owner to check for updates. Default: CaspianTools. */
   updateCheckOwner?: string;
   /** GitHub repo to check for updates. Default: script-caspian-store. */
   updateCheckRepo?: string;

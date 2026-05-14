@@ -189,7 +189,7 @@ export async function dismissError(db: Firestore, id: string): Promise<void> {
 /**
  * Build a `github.com/…/issues/new?title=…&body=…` URL pre-populated with
  * the error details so an admin can one-click-report it to the upstream
- * script repo (`Caspian-Explorer/script-caspian-store`).
+ * script repo (`CaspianTools/script-caspian-store`).
  *
  * Length-bounded: the returned URL is capped at ~6000 chars; if the body
  * would push it over, the stack is trimmed to fit. Title is always included.

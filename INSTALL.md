@@ -556,7 +556,10 @@ After the backfill, each affected admin must sign out + back in (or call `auth.c
 
 ### Self-update from `/admin/about`
 
-The admin About page can `npm install` a newer library version on the host with one click — handy for self-hosted Node deployments and dev. The button POSTs to `src/app/api/caspian-store/update/route.ts` (scaffolded into your project), which verifies your admin Firebase ID token, runs `npm install github:Caspian-Explorer/script-caspian-store#vX.Y.Z` with `--ignore-scripts` (so a compromised tarball can't run a postinstall hook), and exits the Node process so your process manager restarts it.
+The admin About page can upgrade the library on the host with one click. The button POSTs to `src/app/api/caspian-store/update/route.ts` (scaffolded into your project), which verifies your admin Firebase ID token and then takes one of two paths depending on the env vars set on the host:
+
+- **npm-install mode** (default; the original v7 behaviour). Runs `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` with `--ignore-scripts` (so a compromised tarball can't run a postinstall hook), then exits the Node process so your supervisor restarts it. Works on hosts with `git`, a writable `node_modules`, and a process manager: VPS / Docker / `npm run dev`.
+- **GitHub-commit mode** (added in v8.22.0; preferred on serverless hosts). When `CASPIAN_GITHUB_TOKEN` is set, the route doesn't touch the runtime at all — instead it fetches your storefront's `package.json` via the GitHub REST API, bumps the script dependency to the new tag, best-effort updates `package-lock.json`, and pushes a single commit to your configured branch. Your host's normal git-trigger redeploy handles the rest. Works on Firebase App Hosting, Vercel, Cloud Run, and anywhere with a git-trigger build pipeline.
 
 **v8.0.0 — route shape changed.** Pre-v8.0.0 sites had ~150 lines of inline route logic. v7.4.0+ moves the logic into the library; v8.0.0 hardens it. Your `src/app/api/caspian-store/update/route.ts` should now be:
 
@@ -602,7 +605,82 @@ If none are set at runtime, the route returns: *"Server cannot detect a Firebase
   ```
 - **Self-hosted Node** — export both vars in your process manager (PM2 `ecosystem.config.js`, systemd unit, Docker `-e`, …) before starting the Next.js server.
 
-**Serverless caveat:** Vercel and stock Firebase App Hosting use read-only filesystems for function runtimes, so `npm install` will fail with `EROFS` even when project-ID detection succeeds. Self-update is most useful on long-running Node hosts (VPS, Cloud Run with a persistent disk, App Engine flex). For serverless deploys, prefer the "Copy install command" button and run the upgrade in your CI / git workflow.
+**Serverless caveat (npm-install mode):** Vercel and stock Firebase App Hosting use read-only filesystems for function runtimes, and App Hosting's runtime container ships without `git` on `PATH`, so `npm install` fails with `EROFS` or `spawn git ENOENT` even when project-ID detection succeeds. Even if both somehow worked, `process.exit(0)` makes the platform respawn from the original deployed image — so the freshly-installed version would evaporate on the next request. Use GitHub-commit mode below for those hosts.
+
+#### GitHub-commit mode setup (Firebase App Hosting / Vercel / serverless)
+
+GitHub-commit mode pushes a `package.json` bump to your storefront repo via the GitHub REST API and lets your host's normal redeploy pipeline pick it up. The runtime container needs no `git`, no writable filesystem, and no process supervisor — it only needs to make an HTTPS call. Setup is one fine-grained Personal Access Token plus two env vars.
+
+**Step 1 — Create a fine-grained PAT.** Go to <https://github.com/settings/personal-access-tokens/new> while signed in as the GitHub user (or org owner) that owns your storefront repo. Set:
+
+- **Token name:** `caspian-self-update` (any label that helps you recognise it later)
+- **Expiration:** your choice — `90 days` is a good default; `No expiration` if you don't want to rotate. Tokens with expirations send you an email a week before they expire.
+- **Resource owner:** the user or org that owns your storefront repo (e.g. `CaspianTools` if you forked into an org).
+- **Repository access:** **Only select repositories** → pick your storefront repo (e.g. `CaspianTools/luivante`). Do **not** use "All repositories" — the principle of least privilege means a leaked token can only touch the one repo it needs.
+- **Repository permissions:** find **Contents** in the list and set it to **Read and write**. Leave every other permission at "No access". That's the only permission GitHub-commit mode needs (it reads `package.json` + `package-lock.json` and pushes a single commit).
+
+Click **Generate token** at the bottom. The next page shows the token exactly once — it starts with `github_pat_…`. Copy it.
+
+**Step 2 — Expose the token + repo on your host.** The route reads three env vars in GitHub-commit mode:
+
+| Variable | Required | Default | Notes |
+| --- | --- | --- | --- |
+| `CASPIAN_GITHUB_TOKEN` | yes | — | The PAT from Step 1. Activates GitHub-commit mode by its presence. Treat as a secret — use your host's secret store, not a plaintext env file. |
+| `CASPIAN_CONSUMER_REPO` | yes | — | The `<owner>/<repo>` of your storefront (e.g. `CaspianTools/luivante`). Validated against `[A-Za-z0-9._-]/[A-Za-z0-9._-]`. |
+| `CASPIAN_CONSUMER_BRANCH` | no | `main` | Branch to commit to. The host's git-trigger watches this branch. |
+
+**On Firebase App Hosting** — create the token as an App Hosting secret, the repo as plain config:
+
+```bash
+# Provisions the secret in Google Cloud Secret Manager and grants the
+# backend's service account read access. Prompts for the value — paste
+# the github_pat_… token.
+firebase apphosting:secrets:set CASPIAN_GITHUB_TOKEN
+```
+
+Then in `apphosting.yaml`:
+
+```yaml
+env:
+  - variable: CASPIAN_ALLOW_SELF_UPDATE
+    value: "true"
+    availability: [RUNTIME]
+  - variable: CASPIAN_GITHUB_TOKEN
+    secret: CASPIAN_GITHUB_TOKEN
+    availability: [RUNTIME]
+  - variable: CASPIAN_CONSUMER_REPO
+    value: <your-org-or-user>/<your-storefront-repo>
+    availability: [RUNTIME]
+  # Optional — defaults to "main":
+  # - variable: CASPIAN_CONSUMER_BRANCH
+  #   value: main
+  #   availability: [RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: <your-firebase-project-id>
+    availability: [BUILD, RUNTIME]
+```
+
+Commit `apphosting.yaml` and push. The next rollout picks up the new config.
+
+**On Vercel** — Project Settings → Environment Variables → add for **Production** + **Preview** + **Development**:
+
+- `CASPIAN_GITHUB_TOKEN` (mark **Sensitive** so the UI hides the value on subsequent views)
+- `CASPIAN_CONSUMER_REPO` (regular)
+- `CASPIAN_CONSUMER_BRANCH` (regular, optional)
+- `CASPIAN_ALLOW_SELF_UPDATE=true`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+
+Trigger a redeploy so the route sees the new vars.
+
+**On self-hosted Node** — export all three plus the existing `CASPIAN_ALLOW_SELF_UPDATE=true` + `NEXT_PUBLIC_FIREBASE_PROJECT_ID` in your process manager (PM2 `ecosystem.config.js`, systemd unit, Docker `-e`, …). You can still use npm-install mode here by leaving `CASPIAN_GITHUB_TOKEN` unset — the route falls back automatically.
+
+**Step 3 — Click Update.** Open `/admin/about`, sign in as an admin, click **Update to vX.Y.Z**. The response panel shows the pushed commit SHA and a github.com link to it. Your host detects the push (typically within 30 seconds) and starts a normal rebuild. Refresh `/admin/about` after the rollout finishes (3–5 min for App Hosting; 1–2 min for Vercel) — the **Installed** line shows the new version.
+
+**What gets committed.** A single commit titled `Bump <package-name> to vX.Y.Z` containing only `package.json` (and `package-lock.json` if your repo has one). The route's best-effort lockfile updater rewrites the `resolved` SHA for the script package against the new tag's commit; if the new release ships a different transitive dep tree, the build may fail with "lock file out of sync" and you'll need to run `npm install` locally + commit the regenerated lockfile yourself. Most minor-version bumps don't trigger this.
+
+**Token rotation.** If a token expires (or you suspect it leaked), generate a new one with the same scoping and replace it in the secret store. The Firebase CLI command above (`firebase apphosting:secrets:set …`) creates a new secret version automatically and the next rollout picks it up. Vercel: update the env var value and trigger a redeploy.
+
+**Security model.** The PAT is the most sensitive credential the route handles. Two facts limit blast radius: (1) the token is scoped to one repo with one permission (Contents: Read and write), so even if it leaked, an attacker could only push commits to your storefront repo — they cannot read other private repos, access GitHub billing, or do anything outside this one workspace; (2) the token never leaves the server — it goes out as the `Authorization` header on `api.github.com` requests and is not logged, captured in any response field, or echoed back through error messages. Stderr / stdout from npm-install mode are still scrubbed for `$VAR` and `${VAR}` patterns before being returned to the admin.
 
 ### One-off migrations
 
