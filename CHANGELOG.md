@@ -16,6 +16,63 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.23.0 — Storefront templates: three industry presets with curated imagery, applied from /admin/templates or the setup wizard
+
+A fresh install of the script previously produced an empty storefront — the chosen theme applied to zero products, zero categories, blank pages. The owner had to either find sample content elsewhere or stare at an empty grid until they\'d written their own. This release ships **three complete storefront templates** the owner can apply with one click, ending up with a populated site immediately.
+
+Each template bundles a theme + hero copy + 8–9 sample products + 3 categories + four editorial pages (about / privacy / terms / shipping-returns) + 2 journal articles + branding hints + a feature-flag preset. Imagery uses **Unsplash CDN URLs** (free for any commercial use, no attribution required, hand-picked per template for visual coherence). The npm tarball stays lean — no binary images bundled — and admins can replace any sample image after applying.
+
+The v1 lineup is industry-diverse so the picker covers three common verticals:
+
+1. **Fashion Minimal** — apparel & accessories on a clean white palette with editorial photography. Theme: neutral, Inter wordmark, soft radius.
+2. **Electronics Tech** — audio, wearables, and desk gear with a dark studio palette and green accent. Theme: dark mode, Space Grotesk wordmark.
+3. **Home Goods** — kitchen / living / workspace pieces in warm earth tones with lifestyle interior photography. Theme: cream + brown, Cormorant Garamond wordmark.
+
+Two surfaces for applying:
+
+- **`/admin/templates`** — new admin page (Settings → Templates in the nav). Grid of preview cards, click for the full apply dialog with mode selector (Merge / Replace), live diff preview, and a confirmed apply.
+- **Setup wizard** — a new template-picker step lands between Site Info and Branding. Owners pick a template (or "Start blank") before continuing; the choice pre-populates the branding step\'s theme + hero, and `applyTemplate()` runs on wizard completion in merge mode.
+
+Apply semantics: **merge mode** (default, idempotent) writes only docs whose id is unused — safe to re-apply, no destruction. **Replace mode** (UI confirmation required) wipes the four template-managed collections (productCategories, products, pageContents, journal) before writing — used by the "reset to sample data" affordance for owners who want to start fresh.
+
+Also fixes a stale comment in [src/components/setup/steps/summary-step.tsx](src/components/setup/steps/summary-step.tsx) referencing the v8.7.x six-step indices; updated to reflect the v8.23.0 seven-step ordering.
+
+### Consumer action required on upgrade
+
+Pin the new tag and reinstall:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.23.0
+```
+
+If you scaffolded before this release and want the new `/admin/templates` page, add a route file at `src/app/admin/templates/page.tsx`:
+
+```tsx
+import { AdminTemplatesPage } from '@caspian-explorer/script-caspian-store';
+export default function Page() { return <AdminTemplatesPage />; }
+```
+
+Or skip the route file — the setup wizard\'s template-picker step works without it; the standalone admin page is only needed for the post-wizard "browse and apply later" entry point.
+
+No data migration required. Existing installs are unaffected until an admin clicks Apply.
+
+### Added
+
+- [src/templates/types.ts](src/templates/types.ts): `TemplateDefinition` interface and supporting types (`TemplateVertical`, `TemplatePreview`, `TemplateBrandingDefaults`, `ApplyTemplateMode`, `ApplyTemplateOptions`, `ApplyTemplateResult`). `unsplashUrl()` helper for canonical Unsplash CDN URL construction; `IMAGE_URL_HELP` documentation constant.
+- [src/templates/apply-template.ts](src/templates/apply-template.ts): `applyTemplate(db, templateId, options)` writes the template\'s bundled content to Firestore in merge or replace mode; `countWipeImpact()` for the replace-mode confirmation UI; `nowTimestamp()` helper for consumer one-off templates.
+- [src/templates/catalog.ts](src/templates/catalog.ts): `TEMPLATE_CATALOG` (record), `TEMPLATE_LIST` (ordered array), `getTemplate(id)` lookup.
+- [src/templates/templates/fashion-minimal/index.ts](src/templates/templates/fashion-minimal/index.ts), [src/templates/templates/electronics-tech/index.ts](src/templates/templates/electronics-tech/index.ts), [src/templates/templates/home-goods/index.ts](src/templates/templates/home-goods/index.ts): the three bundled templates. Each is one file containing theme + hero + features + branding + categories + products + pages + journal + preview metadata.
+- [src/admin/admin-templates-page.tsx](src/admin/admin-templates-page.tsx): new `<AdminTemplatesPage>` — preview card grid, full-detail apply dialog with mode selector, live dry-run diff, and `countWipeImpact` confirmation for replace mode.
+- [src/components/setup/steps/template-picker-step.tsx](src/components/setup/steps/template-picker-step.tsx): new wizard step. Renders the three template tiles plus a "Start blank" tile; the chosen template\'s theme + hero pre-populate the branding step.
+
+### Changed
+
+- [src/components/setup/setup-types.ts](src/components/setup/setup-types.ts): `WizardDraft` gains a `template: TemplateDraft` field (`{ templateId: string }`, empty string for "Start blank").
+- [src/components/setup/setup-wizard.tsx](src/components/setup/setup-wizard.tsx): step count bumped from 6 to 7; new `STEP_TEMPLATE = 3` inserted between site-info and branding; remaining indices shifted by +1. The `finish()` callback now runs `applyTemplate(db, templateId, { mode: 'merge' })` before redirecting when a template was picked.
+- [src/components/setup/steps/summary-step.tsx](src/components/setup/steps/summary-step.tsx): adds a Template row showing the picked template name (or "Start blank"); `onEdit` indices updated for the new step ordering.
+- [src/admin/admin-shell.tsx](src/admin/admin-shell.tsx): adds a `Templates` child entry to the Settings nav group, pointing at `/admin/templates`. Uses `BookmarkIcon`.
+- [src/admin/index.ts](src/admin/index.ts) + [src/index.ts](src/index.ts): re-export `AdminTemplatesPage`, `TEMPLATE_CATALOG`, `TEMPLATE_LIST`, `getTemplate`, `applyTemplate`, `countWipeImpact`, `unsplashUrl`, and all template types so consumers can mount the page and call the apply helpers directly.
+
 ## v8.22.0 — GitHub-commit self-update mode for serverless hosts (App Hosting, Vercel)
 
 The in-app **Update** button on `/admin/about` previously only worked on hosts where the running Node process had access to `git`, a writable `node_modules`, and a process supervisor that would respawn on `process.exit(0)` — VPS, Docker, local `npm run dev`. On serverless hosts the same flow fails three different ways: Firebase App Hosting runtime containers ship without `git` on PATH (npm install → `spawn git ENOENT`), the filesystem layer is read-only (EROFS even past the spawn), and `process.exit(0)` causes the platform to respawn from the unmodified deployed image rather than the freshly-installed one — so even a hypothetically-successful install would evaporate on the next request. This release adds a second update path that works exactly the way these platforms expect: push a `package.json` bump to the repo via the GitHub REST API and let the host's normal git-trigger redeploy handle the rest.

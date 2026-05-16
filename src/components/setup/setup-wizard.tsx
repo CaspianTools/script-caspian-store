@@ -5,6 +5,8 @@ import { useScriptSettings } from '../../context/script-settings-context';
 import { useT } from '../../i18n';
 import { useCaspianFirebase, useCaspianNavigation } from '../../provider/caspian-store-provider';
 import { getSiteSettings, saveSiteSettings } from '../../services/site-settings-service';
+import { applyTemplate } from '../../templates/apply-template';
+import { getTemplate } from '../../templates/catalog';
 import { DEFAULT_SCRIPT_SETTINGS, type SiteSettings } from '../../types';
 import { SetupShell } from './setup-shell';
 import type { SetupStep } from './setup-stepper';
@@ -12,6 +14,7 @@ import { SetupButton } from './setup-ui';
 import { PrereqsStep, isPrereqsComplete } from './steps/prereqs-step';
 import { SuperAdminStep, isSuperAdminComplete } from './steps/super-admin-step';
 import { SiteInfoStep } from './steps/site-info-step';
+import { TemplatePickerStep } from './steps/template-picker-step';
 import { BrandingStep } from './steps/branding-step';
 import { FeaturesStep } from './steps/features-step';
 import { SummaryStep } from './steps/summary-step';
@@ -45,6 +48,9 @@ const emptyDraft = (): WizardDraft => ({
     contactEmail: '',
     currency: DEFAULT_SCRIPT_SETTINGS.defaultCurrency,
   },
+  template: {
+    templateId: '',
+  },
   branding: {
     themePreset: '',
     theme: { ...DEFAULT_SCRIPT_SETTINGS.theme },
@@ -55,14 +61,16 @@ const emptyDraft = (): WizardDraft => ({
   features: { ...DEFAULT_SCRIPT_SETTINGS.features },
 });
 
-// Step indices — bumped from 0..3 in v8.6.x to 0..5 in v8.7.0 with the
-// addition of the prereqs checklist (step 0) and super-admin step (step 1).
+// Step indices — bumped from 0..5 in v8.7.x to 0..6 in v8.23.0 with the
+// addition of the template-picker step (3). Branding/features/summary
+// shifted by +1.
 const STEP_PREREQS = 0;
 const STEP_SUPER_ADMIN = 1;
 const STEP_SITE_INFO = 2;
-const STEP_BRANDING = 3;
-const STEP_FEATURES = 4;
-const STEP_SUMMARY = 5;
+const STEP_TEMPLATE = 3;
+const STEP_BRANDING = 4;
+const STEP_FEATURES = 5;
+const STEP_SUMMARY = 6;
 
 export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
   const t = useT();
@@ -121,6 +129,7 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       { key: 'prereqs', label: t('setup.steps.prereqs') },
       { key: 'super-admin', label: t('setup.steps.superAdmin') },
       { key: 'site-info', label: t('setup.steps.siteInfo') },
+      { key: 'template', label: 'Template' },
       { key: 'branding', label: t('setup.steps.branding') },
       { key: 'features', label: t('setup.steps.features') },
       { key: 'summary', label: t('setup.steps.summary') },
@@ -175,6 +184,29 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
         socialLinks: existing?.socialLinks ?? [],
       };
       await saveSiteSettings(db, merged);
+      return;
+    }
+    if (currentIndex === STEP_TEMPLATE) {
+      // No Firestore writes here — the actual `applyTemplate()` call runs
+      // in `finish()` on wizard completion (after the owner has had a
+      // chance to tweak branding + features). When a template is picked
+      // we pre-populate the branding draft with its theme + hero so the
+      // owner sees the template's design on the next screen.
+      const tpl = draft.template.templateId
+        ? getTemplate(draft.template.templateId)
+        : undefined;
+      if (tpl) {
+        setDraft((d) => ({
+          ...d,
+          branding: {
+            themePreset: '',
+            theme: tpl.theme,
+            heroTitle: tpl.hero.title,
+            heroSubtitle: tpl.hero.subtitle,
+            heroCta: tpl.hero.cta,
+          },
+        }));
+      }
       return;
     }
     if (currentIndex === STEP_BRANDING) {
@@ -234,9 +266,30 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
     setCurrentIndex((i) => Math.max(0, i - 1));
   }, []);
 
-  const finish = useCallback(() => {
+  const finish = useCallback(async () => {
+    // v8.23.0 — if the owner picked a template at the template step, apply
+    // it now (after branding + features have been tuned to their liking).
+    // Merge mode so we never destroy data they might have entered while
+    // the wizard was open. Failures are surfaced but do not block the
+    // redirect — the admin can re-apply from /admin/templates if needed.
+    setSubmitError(null);
+    if (draft.template.templateId) {
+      setSaving(true);
+      try {
+        await applyTemplate(db, draft.template.templateId, { mode: 'merge' });
+      } catch (err) {
+        setSubmitError(
+          err instanceof Error
+            ? `Template apply failed: ${err.message}`
+            : 'Template apply failed.',
+        );
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
     navigation.push(finishHref);
-  }, [navigation, finishHref]);
+  }, [draft.template.templateId, db, navigation, finishHref]);
 
   const isLast = currentIndex === STEP_SUMMARY;
   const isFirst = currentIndex === STEP_PREREQS;
@@ -245,6 +298,11 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       { heading: t('setup.prereqs.heading'), subhead: t('setup.prereqs.subhead') },
       { heading: t('setup.superAdmin.heading'), subhead: t('setup.superAdmin.subhead') },
       { heading: t('setup.siteInfo.heading'), subhead: t('setup.siteInfo.subhead') },
+      {
+        heading: 'Pick a starter template',
+        subhead:
+          'Seed your storefront with sample content + theme, or start blank.',
+      },
       { heading: t('setup.branding.heading'), subhead: t('setup.branding.subhead') },
       { heading: t('setup.features.heading'), subhead: t('setup.features.subhead') },
       { heading: t('setup.summary.heading'), subhead: t('setup.summary.subhead') },
@@ -280,6 +338,15 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
               setDraft((d) => ({ ...d, siteInfo: { ...d.siteInfo, ...patch } }))
             }
             errors={fieldErrors}
+          />
+        );
+      case STEP_TEMPLATE:
+        return (
+          <TemplatePickerStep
+            draft={draft.template}
+            onChange={(patch) =>
+              setDraft((d) => ({ ...d, template: { ...d.template, ...patch } }))
+            }
           />
         );
       case STEP_BRANDING:

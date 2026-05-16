@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import { useT } from '../../../i18n';
+import { getTemplate } from '../../../templates/catalog';
 import type { WizardDraft } from '../setup-types';
 
 export interface SummaryStepProps {
@@ -15,14 +16,18 @@ export function SummaryStep({ draft, onEdit }: SummaryStepProps) {
     .filter((key) => draft.features[key])
     .map((key) => t(`setup.features.${String(key)}.title`));
 
-  // Step indices match setup-wizard.tsx (v8.7.0): 0 prereqs, 1 superAdmin,
-  // 2 siteInfo, 3 branding, 4 features, 5 summary.
+  // Step indices match setup-wizard.tsx (v8.23.0): 0 prereqs, 1 superAdmin,
+  // 2 siteInfo, 3 template, 4 branding, 5 features, 6 summary.
   const superAdminValue =
     draft.superAdmin.method === 'signin'
       ? draft.superAdmin.signedInUid
         ? t('setup.summary.superAdminSignedIn')
         : '—'
       : draft.superAdmin.email || '—';
+
+  const pickedTemplate = draft.template.templateId
+    ? getTemplate(draft.template.templateId)
+    : null;
 
   return (
     <div style={card}>
@@ -49,20 +54,26 @@ export function SummaryStep({ draft, onEdit }: SummaryStepProps) {
       />
       <Divider />
       <Row
+        label="Template"
+        value={pickedTemplate ? pickedTemplate.name : 'Start blank'}
+        onEdit={() => onEdit(3)}
+      />
+      <Divider />
+      <Row
         label={t('setup.summary.theme')}
         value={draft.branding.themePreset || t('setup.summary.themeCustom')}
-        onEdit={() => onEdit(3)}
+        onEdit={() => onEdit(4)}
       />
       <Row
         label={t('setup.summary.hero')}
         value={draft.branding.heroTitle || '—'}
-        onEdit={() => onEdit(3)}
+        onEdit={() => onEdit(4)}
       />
       <Divider />
       <Row
         label={t('setup.summary.features')}
         value={enabledFeatures.length ? enabledFeatures.join(', ') : t('setup.summary.noFeatures')}
-        onEdit={() => onEdit(4)}
+        onEdit={() => onEdit(5)}
       />
     </div>
   );

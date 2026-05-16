@@ -393,6 +393,54 @@ Admin pages gate on `role === 'admin'`; without it `<AdminGuard>` renders an acc
 
 ---
 
+## 7.5. Templates — apply a starter design (optional, v8.23.0+)
+
+A fresh install lands with the theme of your choice on an **empty** Firestore — no products, no categories, blank pages. The Templates feature seeds your storefront with sample content + curated imagery in one click, so the site looks like a finished shop on day one.
+
+Three bundled templates ship with v8.23.0:
+
+- **Fashion Minimal** — apparel & accessories, clean white palette, editorial photography.
+- **Electronics Tech** — audio, wearables, desk gear; dark studio palette with a green accent.
+- **Home Goods** — kitchen / living / workspace pieces in warm earth tones with lifestyle interior photography.
+
+Each bundles a theme + hero copy + ~9 products + 3 categories + four content pages (about, privacy, terms, shipping-returns) + 2 journal articles + branding hints. Imagery uses Unsplash CDN URLs (free for commercial use, no attribution required); admins can replace any sample image after applying.
+
+### Two ways to apply
+
+**Setup wizard.** The wizard\'s new template-picker step (between Site Info and Branding) shows the three template tiles + a "Start blank" option. Pick one and the chosen template\'s theme + hero pre-populate the branding step; `applyTemplate()` runs in merge mode on wizard completion. Owners installing v8.23.0+ get this flow automatically.
+
+**`/admin/templates`.** Browse and apply templates anytime from the admin panel. Mounted automatically when you use `<CaspianRoot />` (see section 8); for non-scaffolded installs, add a route file:
+
+```tsx
+// src/app/admin/templates/page.tsx
+import { AdminTemplatesPage } from '@caspian-explorer/script-caspian-store';
+export default function Page() { return <AdminTemplatesPage />; }
+```
+
+### Apply modes
+
+- **Merge** (default, recommended) — writes only docs whose id is unused. Idempotent — safe to re-apply, and won\'t overwrite any product / category / page you\'ve already created.
+- **Replace** (destructive, UI-confirmed) — wipes the four template-managed collections (productCategories, products, pageContents, journal) first, then writes. Used by the "reset to sample data" affordance. The admin UI shows a live count of what will be deleted before the confirmation.
+
+The settings docs (`scriptSettings/site`, `settings/site`) are always merged — the template\'s theme and hero replace the current ones (the point of applying a template), but unrelated fields (brand name, currency, social links) are preserved.
+
+### Programmatic apply
+
+```ts
+import { applyTemplate } from '@caspian-explorer/script-caspian-store';
+
+await applyTemplate(db, 'fashion-minimal', { mode: 'merge' });
+// returns { ok, templateId, mode, written: {...}, skipped: {...} }
+```
+
+Useful for headless scripts, custom onboarding flows, or one-off resets. The caller must be authenticated as an admin (Firestore rules enforce this).
+
+### Authoring new templates
+
+Templates live in [src/templates/templates/](src/templates/templates/) — one folder per template, with an `index.ts` that default-exports a `TemplateDefinition`. Register the new template in [src/templates/catalog.ts](src/templates/catalog.ts). The existing three templates are the reference shape.
+
+---
+
 ## 8. Mount routes (v7.0.0 — one file)
 
 As of v7.0.0 the library ships a single dispatcher, `<CaspianRoot />`, that owns every library URL — storefront, admin, account, auth, journal, checkout, setup — via pathname-based routing. You mount it **once** and never touch routes again when the library adds pages.

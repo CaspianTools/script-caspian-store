@@ -630,6 +630,7 @@ export {
   AdminAppearancePreviewPage,
   AdminOnboardingProgress,
   AdminAboutPage,
+  AdminTemplatesPage,
   AdminNotificationsBell,
   AdminProfileMenu,
   DEFAULT_PAGE_KEYS,
@@ -654,6 +655,7 @@ export {
   type AdminPagesPageProps,
   type AdminFaqsPageProps,
   type AdminAboutPageProps,
+  type AdminTemplatesPageProps,
   type AdminNotificationsBellProps,
   type AdminAppearancePageProps,
   type AdminAppearancePreviewPageProps,
@@ -667,6 +669,33 @@ export {
   type AdminContactsPageProps,
   type AdminContactsListProps,
 } from './admin';
+
+// --- Templates (v8.23.0) ---
+export {
+  TEMPLATE_CATALOG,
+  TEMPLATE_LIST,
+  getTemplate,
+} from './templates/catalog';
+export {
+  applyTemplate,
+  countWipeImpact,
+  nowTimestamp,
+} from './templates/apply-template';
+export {
+  unsplashUrl,
+  IMAGE_URL_HELP,
+  type TemplateDefinition,
+  type TemplatePreview,
+  type TemplateVertical,
+  type TemplateBrandingDefaults,
+  type TemplateProduct,
+  type TemplateCategory,
+  type TemplatePage,
+  type TemplateJournal,
+  type ApplyTemplateMode,
+  type ApplyTemplateOptions,
+  type ApplyTemplateResult,
+} from './templates/types';
 
 // --- Types ---
 export type {

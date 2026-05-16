@@ -154,6 +154,7 @@ export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
     href: '/admin/settings',
     children: [
       { href: '/admin/appearance', label: 'Appearance', icon: <PaletteIcon size={ICON_SIZE} /> },
+      { href: '/admin/templates', label: 'Templates', icon: <BookmarkIcon size={ICON_SIZE} /> },
     ],
   },
   { href: '/admin/about', label: 'About', icon: <InfoIcon size={ICON_SIZE} /> },

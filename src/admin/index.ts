@@ -88,6 +88,7 @@ export {
   type AdminOnboardingProgressProps,
 } from './admin-onboarding-progress';
 export { AdminAboutPage, type AdminAboutPageProps } from './admin-about-page';
+export { AdminTemplatesPage, type AdminTemplatesPageProps } from './admin-templates-page';
 export {
   AdminNotificationsBell,
   type AdminNotificationsBellProps,
