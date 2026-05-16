@@ -16,6 +16,22 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.23.1 — Register /admin/templates in the route dispatcher
+
+v8.23.0 shipped `<AdminTemplatesPage>`, exposed it from `src/index.ts`, and added a **Templates** entry to the admin Settings nav — but missed adding the corresponding `case 'templates':` to the `<AdminRoot>` switch in [src/admin/admin-root.tsx](src/admin/admin-root.tsx). Symptom: clicking **Settings → Templates** in the admin nav (or visiting `/admin/templates` directly) fell through to the `default:` branch and rendered the dashboard instead. Local-dev users on v8.23.0 saw this immediately.
+
+### No consumer action required
+
+Pin the new tag and reinstall — the fix is a two-line change inside the dispatcher and ships in the bundled `dist/`. No env vars, no Firestore migration, no UI prop changes.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.23.1
+```
+
+### Fixed
+
+- [src/admin/admin-root.tsx](src/admin/admin-root.tsx): `case 'templates': return <AdminTemplatesPage />;` added between the `appearance` and `about` cases (alphabetical placement). Import of `AdminTemplatesPage` added alongside the other admin-page imports at the top of the file. `/admin/templates` now renders the templates page that v8.23.0 already shipped in `dist/`.
+
 ## v8.23.0 — Storefront templates: three industry presets with curated imagery, applied from /admin/templates or the setup wizard
 
 A fresh install of the script previously produced an empty storefront — the chosen theme applied to zero products, zero categories, blank pages. The owner had to either find sample content elsewhere or stare at an empty grid until they\'d written their own. This release ships **three complete storefront templates** the owner can apply with one click, ending up with a populated site immediately.

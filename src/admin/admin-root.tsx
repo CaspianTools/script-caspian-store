@@ -20,6 +20,7 @@ import { AdminProductCategoriesPage } from './admin-product-categories-page';
 import { AdminProductCollectionsPage } from './admin-product-collections-page';
 import { AdminAboutPage } from './admin-about-page';
 import { AdminAppearancePage } from './admin-appearance-page';
+import { AdminTemplatesPage } from './admin-templates-page';
 import { AdminSettingsShell } from './admin-settings-shell';
 import { AdminPluginsPage } from './admin-plugins-page';
 import { AdminPluginInstallPage } from './admin-plugin-install-page';
@@ -81,6 +82,8 @@ export function AdminRoot(): ReactNode {
       return <AdminJournalPage />;
     case 'appearance':
       return <AdminAppearancePage />;
+    case 'templates':
+      return <AdminTemplatesPage />;
     case 'about':
       return <AdminAboutPage />;
     case 'settings':
