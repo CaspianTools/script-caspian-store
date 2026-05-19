@@ -64,15 +64,39 @@ export async function applyTemplate(
   }
 
   const written = {
+    brands: 0,
     categories: 0,
     products: 0,
     pages: 0,
     journal: 0,
     settings: false,
   };
-  const skipped = { categories: 0, products: 0, pages: 0, journal: 0 };
+  const skipped = {
+    brands: 0,
+    categories: 0,
+    products: 0,
+    pages: 0,
+    journal: 0,
+  };
 
-  // 1. Categories.
+  // 1. Brands. Must land before products so the admin Products page can
+  //    resolve each product's `brand` field to a brand doc id and skip
+  //    the "legacy free-text brand" warning. v8.23.2+.
+  for (const brand of template.brands) {
+    const ref = doc(db, 'productBrands', brand.id);
+    const exists = mode === 'merge' && (await getDoc(ref)).exists();
+    if (exists) {
+      skipped.brands += 1;
+      continue;
+    }
+    await setDoc(ref, {
+      ...brand,
+      createdAt: serverTimestamp(),
+    });
+    written.brands += 1;
+  }
+
+  // 3. Categories.
   for (const cat of template.categories) {
     const ref = doc(db, 'productCategories', cat.id);
     const exists = mode === 'merge' && (await getDoc(ref)).exists();
@@ -87,7 +111,7 @@ export async function applyTemplate(
     written.categories += 1;
   }
 
-  // 2. Products.
+  // 4. Products.
   for (const product of template.products) {
     const ref = doc(db, 'products', product.id);
     const exists = mode === 'merge' && (await getDoc(ref)).exists();
@@ -103,7 +127,7 @@ export async function applyTemplate(
     written.products += 1;
   }
 
-  // 3. Pages.
+  // 5. Pages.
   for (const page of template.pages) {
     const ref = doc(db, 'pageContents', page.id);
     const exists = mode === 'merge' && (await getDoc(ref)).exists();
@@ -118,7 +142,7 @@ export async function applyTemplate(
     written.pages += 1;
   }
 
-  // 4. Journal (optional).
+  // 6. Journal (optional).
   for (const article of template.journal ?? []) {
     const ref = doc(db, 'journal', article.id);
     const exists = mode === 'merge' && (await getDoc(ref)).exists();
@@ -133,7 +157,7 @@ export async function applyTemplate(
     written.journal += 1;
   }
 
-  // 5. Settings docs. Always written (no skip in merge mode for settings —
+  // 7. Settings docs. Always written (no skip in merge mode for settings —
   //    the assumption is the admin picked this template to set the look,
   //    which means overwriting the existing theme/hero is desired). In
   //    merge mode we still preserve fields the template doesn't specify
@@ -152,14 +176,23 @@ export async function applyTemplate(
 }
 
 /**
- * Delete all docs in the four template-managed collections. Used by
- * replace mode. We delete one-by-one (no batch) because the client SDK's
- * batch is capped at 500 operations and we want forward-compatibility
- * with larger consumer datasets — chunking would just complicate the
- * surface for the same effective speed.
+ * Delete all docs in the template-managed collections. Used by replace
+ * mode. We delete one-by-one (no batch) because the client SDK's batch
+ * is capped at 500 operations and we want forward-compatibility with
+ * larger consumer datasets — chunking would just complicate the surface
+ * for the same effective speed.
+ *
+ * v8.23.2 adds `productBrands` to the wiped list so replace mode also
+ * resets brand references the template will recreate.
  */
 async function wipeTemplateCollections(db: Firestore): Promise<void> {
-  const collections = ['productCategories', 'products', 'pageContents', 'journal'];
+  const collections = [
+    'productBrands',
+    'productCategories',
+    'products',
+    'pageContents',
+    'journal',
+  ];
   for (const name of collections) {
     const snap = await getDocs(collection(db, name));
     for (const d of snap.docs) {
@@ -234,16 +267,24 @@ async function computeDryRun(
   mode: ApplyTemplateMode,
 ): Promise<ApplyTemplateResult> {
   const written = {
+    brands: 0,
     categories: 0,
     products: 0,
     pages: 0,
     journal: 0,
     settings: true,
   };
-  const skipped = { categories: 0, products: 0, pages: 0, journal: 0 };
+  const skipped = {
+    brands: 0,
+    categories: 0,
+    products: 0,
+    pages: 0,
+    journal: 0,
+  };
 
   if (mode === 'replace') {
     // Every bundled doc will be written; nothing is skipped.
+    written.brands = template.brands.length;
     written.categories = template.categories.length;
     written.products = template.products.length;
     written.pages = template.pages.length;
@@ -252,6 +293,11 @@ async function computeDryRun(
   }
 
   // Merge mode — check each id against Firestore.
+  for (const brand of template.brands) {
+    const exists = (await getDoc(doc(db, 'productBrands', brand.id))).exists();
+    if (exists) skipped.brands += 1;
+    else written.brands += 1;
+  }
   for (const cat of template.categories) {
     const exists = (await getDoc(doc(db, 'productCategories', cat.id))).exists();
     if (exists) skipped.categories += 1;
@@ -282,18 +328,21 @@ async function computeDryRun(
  * line before the destructive action.
  */
 export async function countWipeImpact(db: Firestore): Promise<{
+  brands: number;
   categories: number;
   products: number;
   pages: number;
   journal: number;
 }> {
-  const [cats, products, pages, journal] = await Promise.all([
+  const [brands, cats, products, pages, journal] = await Promise.all([
+    getDocs(collection(db, 'productBrands')),
     getDocs(collection(db, 'productCategories')),
     getDocs(collection(db, 'products')),
     getDocs(collection(db, 'pageContents')),
     getDocs(collection(db, 'journal')),
   ]);
   return {
+    brands: brands.size,
     categories: cats.size,
     products: products.size,
     pages: pages.size,

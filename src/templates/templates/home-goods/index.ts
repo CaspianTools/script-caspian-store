@@ -4,7 +4,7 @@
  */
 
 import type { TemplateDefinition } from '../../types';
-import { unsplashUrl } from '../../types';
+import { placeholderImage, unsplashUrl } from '../../types';
 
 const PHOTO = {
   hero: '1556909114-f6e7ad7d3136',
@@ -58,6 +58,13 @@ export const homeGoodsTemplate: TemplateDefinition = {
     brandDescription:
       'Handmade pieces from independent workshops for the kitchen, living room, and workspace. Sourced honestly; built to outlast their fashions.',
   },
+  brands: [
+    {
+      id: 'workshop-six',
+      name: 'Workshop Six',
+      isActive: true,
+    },
+  ],
   categories: [
     {
       id: 'kitchen',
@@ -98,7 +105,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'ceramic-mug',
       slug: 'hand-thrown-ceramic-mug',
       name: 'Hand-Thrown Ceramic Mug',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'Wheel-thrown stoneware in a small studio in Portugal. No two are identical.',
       description:
@@ -107,7 +114,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.ceramicMug),
+          url: placeholderImage('ceramic-mug'),
           alt: 'Hand-thrown ceramic mug with coffee',
           hint: 'ceramic mug product',
         },
@@ -120,7 +127,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'dinner-plates',
       slug: 'stoneware-dinner-plates',
       name: 'Stoneware Dinner Plates (Set of 4)',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'A set of four matte-glazed stoneware plates with a 27cm diameter. Stackable.',
       description:
@@ -129,7 +136,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.dinnerPlates),
+          url: placeholderImage('dinner-plates'),
           alt: 'Stack of cream stoneware dinner plates',
           hint: 'dinner plates set product',
         },
@@ -143,7 +150,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'wooden-spoons',
       slug: 'hardwood-spoon-trio',
       name: 'Hardwood Spoon Trio',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'Three hand-shaped oak utensils — slotted spoon, mixing spoon, spatula.',
       description:
@@ -152,7 +159,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.woodenSpoons),
+          url: placeholderImage('wooden-spoons'),
           alt: 'Wooden kitchen utensils in jar',
           hint: 'wooden spoons utensils product',
         },
@@ -165,7 +172,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'kitchen-knives',
       slug: 'chef-knife-pair',
       name: 'Chef + Paring Knife Pair',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'Hand-forged carbon steel from a third-generation knife maker in Sakai.',
       description:
@@ -174,7 +181,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.kitchenKnives),
+          url: placeholderImage('kitchen-knives'),
           alt: 'Chef knives on wooden board',
           hint: 'kitchen knives product',
         },
@@ -187,7 +194,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'linen-runner',
       slug: 'linen-table-runner',
       name: 'Stonewashed Linen Table Runner',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'A 200×40cm runner in stonewashed Belgian linen with a hand-stitched hem.',
       description:
@@ -196,7 +203,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.linenRunner),
+          url: placeholderImage('linen-runner'),
           alt: 'Linen table runner on dining table',
           hint: 'linen table runner product',
         },
@@ -209,7 +216,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'modern-sofa',
       slug: 'two-seater-sofa',
       name: 'Two-Seater Linen Sofa',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'A compact two-seater in pre-washed Belgian linen on a solid oak frame.',
       description:
@@ -218,7 +225,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.modernSofa),
+          url: placeholderImage('modern-sofa'),
           alt: 'Modern minimalist sofa in living room',
           hint: 'modern sofa product',
         },
@@ -232,7 +239,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'terracotta-pot',
       slug: 'terracotta-planter',
       name: 'Hand-Coiled Terracotta Planter',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'A 22cm planter coil-built and bisque-fired in unglazed terracotta.',
       description:
@@ -241,7 +248,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.terracottaPot),
+          url: placeholderImage('terracotta-pot'),
           alt: 'Terracotta planter with indoor plant',
           hint: 'terracotta planter product',
         },
@@ -253,7 +260,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'wooden-chair',
       slug: 'oak-spindle-chair',
       name: 'Oak Spindle Chair',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'A modern take on the Windsor — hand-turned spindles in solid white oak.',
       description:
@@ -262,7 +269,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.woodenChair),
+          url: placeholderImage('wooden-chair'),
           alt: 'Oak spindle chair in living space',
           hint: 'wooden chair product',
         },
@@ -275,7 +282,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       id: 'dining-table',
       slug: 'trestle-dining-table',
       name: 'Trestle Dining Table',
-      brand: 'Workshop Six',
+      brand: 'workshop-six',
       shortDescription:
         'A six-seat trestle table in solid white oak. Knock-down construction.',
       description:
@@ -284,7 +291,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.diningTable),
+          url: placeholderImage('dining-table'),
           alt: 'Wooden trestle dining table set',
           hint: 'dining table product',
         },

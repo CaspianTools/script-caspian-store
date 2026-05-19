@@ -80,7 +80,7 @@ export function AdminTemplatesPage({ className }: AdminTemplatesPageProps) {
             const s = result.skipped;
             toast({
               title: `Applied "${result.templateId}"`,
-              description: `Wrote ${w.products} products, ${w.categories} categories, ${w.pages} pages, ${w.journal} journal posts. Skipped ${s.products + s.categories + s.pages + s.journal} existing docs.`,
+              description: `Wrote ${w.brands} brands, ${w.products} products, ${w.categories} categories, ${w.pages} pages, ${w.journal} journal posts. Skipped ${s.brands + s.products + s.categories + s.pages + s.journal} existing docs.`,
             });
             setSelectedId(null);
           }}
@@ -176,6 +176,7 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
   const [mode, setMode] = useState<ApplyTemplateMode>('merge');
   const [applying, setApplying] = useState(false);
   const [wipeImpact, setWipeImpact] = useState<{
+    brands: number;
     categories: number;
     products: number;
     pages: number;
@@ -270,7 +271,7 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
             What this template includes
           </h3>
           <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#333' }}>
-            <li>{template.products.length} products across {template.categories.length} categories</li>
+            <li>{template.products.length} products across {template.categories.length} categories ({template.brands.length} brand{template.brands.length === 1 ? '' : 's'})</li>
             <li>{template.pages.length} editable content pages (about, terms, privacy, shipping)</li>
             {template.journal && template.journal.length > 0 && (
               <li>{template.journal.length} journal articles</li>
@@ -299,7 +300,7 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
                 label="Merge (recommended)"
                 description={
                   dryRun
-                    ? `Writes ${dryRun.written.products + dryRun.written.categories + dryRun.written.pages + dryRun.written.journal} new docs. Skips ${dryRun.skipped.products + dryRun.skipped.categories + dryRun.skipped.pages + dryRun.skipped.journal} that already exist. Idempotent.`
+                    ? `Writes ${dryRun.written.brands + dryRun.written.products + dryRun.written.categories + dryRun.written.pages + dryRun.written.journal} new docs. Skips ${dryRun.skipped.brands + dryRun.skipped.products + dryRun.skipped.categories + dryRun.skipped.pages + dryRun.skipped.journal} that already exist. Idempotent.`
                     : 'Loading diff…'
                 }
               />
@@ -310,7 +311,7 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
                 label="Replace (destructive)"
                 description={
                   wipeImpact
-                    ? `Deletes ${wipeImpact.products} existing products, ${wipeImpact.categories} categories, ${wipeImpact.pages} pages, ${wipeImpact.journal} journal posts FIRST, then writes the template's content. Can't be undone.`
+                    ? `Deletes ${wipeImpact.products} existing products, ${wipeImpact.brands} brands, ${wipeImpact.categories} categories, ${wipeImpact.pages} pages, ${wipeImpact.journal} journal posts FIRST, then writes the template's content. Can't be undone.`
                     : 'Loading current site contents…'
                 }
                 destructive

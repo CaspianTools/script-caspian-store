@@ -4,7 +4,7 @@
  */
 
 import type { TemplateDefinition } from '../../types';
-import { unsplashUrl } from '../../types';
+import { placeholderImage, unsplashUrl } from '../../types';
 
 const PHOTO = {
   hero: '1483985988355-763728e1935b',
@@ -58,6 +58,13 @@ export const fashionMinimalTemplate: TemplateDefinition = {
     brandDescription:
       'Modern essentials for a slower wardrobe. Built around fewer, better pieces in natural fibres.',
   },
+  brands: [
+    {
+      id: 'common-thread',
+      name: 'Common Thread',
+      isActive: true,
+    },
+  ],
   categories: [
     {
       id: 'outerwear',
@@ -98,7 +105,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'camel-wool-coat',
       slug: 'camel-wool-coat',
       name: 'Camel Wool Overcoat',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'A double-breasted overcoat in undyed Italian wool. Cut for movement, finished with horn buttons.',
       description:
@@ -109,7 +116,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.camelCoat),
+          url: placeholderImage('camel-wool-coat'),
           alt: 'Camel wool overcoat on a hanger',
           hint: 'camel wool overcoat product',
         },
@@ -124,7 +131,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'cashmere-crewneck',
       slug: 'cashmere-crewneck',
       name: 'Cashmere Crewneck',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Pure Mongolian cashmere, knit at gauge 12 for warmth without bulk.',
       description:
@@ -133,7 +140,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.cashmereCrew),
+          url: placeholderImage('cashmere-crewneck'),
           alt: 'Beige cashmere crewneck sweater',
           hint: 'cashmere crewneck sweater',
         },
@@ -147,7 +154,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'merino-rollneck',
       slug: 'merino-rollneck',
       name: 'Merino Roll-Neck',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Fine-gauge merino in a roll-neck that holds its shape. Layers under a jacket without bulk.',
       description:
@@ -156,7 +163,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.merinoRollNeck),
+          url: placeholderImage('merino-rollneck'),
           alt: 'Black merino roll-neck',
           hint: 'merino rollneck sweater',
         },
@@ -170,7 +177,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'linen-overshirt',
       slug: 'linen-overshirt',
       name: 'Linen Overshirt',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'A boxy, mid-weight linen overshirt for the in-between seasons.',
       description:
@@ -179,7 +186,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.linenOvershirt),
+          url: placeholderImage('linen-overshirt'),
           alt: 'Linen overshirt on a wooden hanger',
           hint: 'linen overshirt apparel',
         },
@@ -194,7 +201,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'leather-card-holder',
       slug: 'leather-card-holder',
       name: 'Leather Card Holder',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Vegetable-tanned Italian leather, hand-finished in a single piece.',
       description:
@@ -203,7 +210,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.cardHolder),
+          url: placeholderImage('leather-card-holder'),
           alt: 'Brown leather card holder',
           hint: 'leather card wallet',
         },
@@ -216,7 +223,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'canvas-tote',
       slug: 'canvas-tote',
       name: 'Heavyweight Canvas Tote',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Twelve-ounce cotton canvas with leather-reinforced handles.',
       description:
@@ -225,7 +232,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.canvasTote),
+          url: placeholderImage('canvas-tote'),
           alt: 'Natural canvas tote bag',
           hint: 'canvas tote bag',
         },
@@ -238,7 +245,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'suede-loafers',
       slug: 'suede-loafers',
       name: 'Suede Penny Loafers',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Italian suede on a leather sole. Built on a Goodyear-welted last.',
       description:
@@ -247,7 +254,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.suedeLoafers),
+          url: placeholderImage('suede-loafers'),
           alt: 'Tan suede penny loafers',
           hint: 'suede loafer shoes',
         },
@@ -261,7 +268,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'cotton-crew-tee',
       slug: 'cotton-crew-tee',
       name: 'Heavyweight Cotton Crew Tee',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Seven-ounce Pima cotton in a boxy crew cut that holds its shape.',
       description:
@@ -270,7 +277,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.cottonTee),
+          url: placeholderImage('cotton-crew-tee'),
           alt: 'White cotton crew tee folded',
           hint: 'cotton t-shirt apparel',
         },
@@ -284,7 +291,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       id: 'wool-beanie',
       slug: 'wool-beanie',
       name: 'Ribbed Wool Beanie',
-      brand: 'Common Thread',
+      brand: 'common-thread',
       shortDescription:
         'Lambswool rib knit in a relaxed slouchy shape. Made in Scotland.',
       description:
@@ -293,7 +300,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.woolBeanie),
+          url: placeholderImage('wool-beanie'),
           alt: 'Grey wool beanie',
           hint: 'wool beanie hat',
         },

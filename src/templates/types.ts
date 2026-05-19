@@ -21,6 +21,7 @@ import type {
   JournalArticle,
   PageContent,
   Product,
+  ProductBrandDoc,
   ProductCategoryDoc,
   ThemeTokens,
 } from '../types';
@@ -44,6 +45,20 @@ export type TemplateProduct = Omit<Product, 'id' | 'createdAt' | 'updatedAt'> & 
 export type TemplateCategory = Omit<ProductCategoryDoc, 'createdAt'>;
 export type TemplatePage = Omit<PageContent, 'updatedAt'>;
 export type TemplateJournal = Omit<JournalArticle, 'createdAt'>;
+/**
+ * Brand doc bundled with a template (v8.23.2+).
+ *
+ * The admin Products page warns on any product whose `brand` field is a
+ * free-text string instead of a `productBrands/{id}` doc reference. Pre-v8.23.2
+ * templates seeded products with `brand: "Common Thread"` but never created
+ * the matching brand doc — every applied product tripped the warning. From
+ * v8.23.2 each template lists the brand(s) its products reference; `applyTemplate`
+ * writes a `productBrands/{id}` doc for each before writing any product.
+ *
+ * The product's `brand` field should equal the brand doc's `id` (slug form), so
+ * the admin UI resolves the reference cleanly.
+ */
+export type TemplateBrand = Omit<ProductBrandDoc, 'createdAt'>;
 
 /**
  * Tiny preview metadata shown in the `/admin/templates` grid card and the
@@ -92,6 +107,13 @@ export interface TemplateDefinition {
   features: Partial<FeatureFlags>;
   /** Optional branding hints written to `settings/site` (logoUrl etc.). */
   branding?: TemplateBrandingDefaults;
+  /**
+   * Brand docs the template's products reference (v8.23.2+). Each product's
+   * `brand` field must equal one of these brand doc ids. `applyTemplate`
+   * writes these to `productBrands/{id}` before writing the products, so
+   * the admin Products page doesn't warn about legacy free-text brands.
+   */
+  brands: TemplateBrand[];
   /** Sample categories. Written to `productCategories/{id}`. */
   categories: TemplateCategory[];
   /** Sample products. Written to `products/{id}`. */
@@ -114,6 +136,7 @@ export interface ApplyTemplateResult {
   templateId: string;
   mode: ApplyTemplateMode;
   written: {
+    brands: number;
     categories: number;
     products: number;
     pages: number;
@@ -121,6 +144,7 @@ export interface ApplyTemplateResult {
     settings: boolean;
   };
   skipped: {
+    brands: number;
     categories: number;
     products: number;
     pages: number;
@@ -146,16 +170,46 @@ export interface ApplyTemplateOptions {
 }
 
 /**
- * Helper used inside template `<id>/preview.ts` files to keep the
- * Unsplash URL shape consistent. Pass a photo id (the slug after
- * `/photos/` in a Unsplash URL) and a width; the helper returns the
- * canonical CDN URL with format autoconversion and quality clamp.
+ * Helper used inside template definitions to construct a canonical Unsplash
+ * CDN URL from a known photo id. Use for hand-curated category and hero
+ * shots where the template author has verified the photo matches.
  *
  * License: Unsplash terms grant free use for any purpose including
  * commercial, no attribution required.
+ *
+ * **For product images, prefer `placeholderImage(seed, w, h)` instead** —
+ * see the rationale in its JSDoc.
  */
 export function unsplashUrl(photoId: string, width = 1600): string {
   return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=${width}&q=80`;
+}
+
+/**
+ * Deterministic placeholder image via Lorem Picsum (`picsum.photos`).
+ *
+ * **Why this exists (v8.23.2):** v8.23.0 / v8.23.1 templates used hand-curated
+ * Unsplash photo IDs for product imagery. Several IDs pointed at completely
+ * unrelated photos (a Nike sneaker labelled "Suede Penny Loafers", a Birkin
+ * handbag labelled "Heavyweight Canvas Tote") because the IDs were guessed
+ * from memory rather than verified. The fallback considered first was the
+ * Unsplash Source API (`source.unsplash.com/featured/?keyword`) but Unsplash
+ * deprecated and disabled it — requests now return 503.
+ *
+ * Picsum returns a deterministic JPEG keyed by `seed`. The image is generic
+ * (typically a landscape or texture) so it cannot impersonate a specific
+ * product. This is the honest tradeoff: templates ship "this is obviously a
+ * placeholder" imagery for products. Store owners replace each image via the
+ * `/admin/products` editor before launch — which they were going to do anyway.
+ *
+ * @param seed   Stable identifier — typically the product slug. Two calls with
+ *               the same seed return the same image, so the storefront looks
+ *               consistent across visits and reloads.
+ * @param width  Image width in pixels. Default 1200.
+ * @param height Image height in pixels. Default matches a 4:5 portrait product
+ *               aspect (1500). Pass equal width/height for square cards.
+ */
+export function placeholderImage(seed: string, width = 1200, height = 1500): string {
+  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${width}/${height}`;
 }
 
 /**
@@ -164,4 +218,4 @@ export function unsplashUrl(photoId: string, width = 1600): string {
  * source of truth.
  */
 export const IMAGE_URL_HELP =
-  'Templates reference Unsplash hosted images via `images.unsplash.com/photo-<id>` URLs. License: free for any use including commercial, no attribution required. Admins can replace any sample image after applying.';
+  'Templates reference two image sources. Hand-curated hero and category shots use Unsplash CDN URLs (`unsplashUrl(photoId)`). Product images use Lorem Picsum deterministic placeholders (`placeholderImage(seed)`) — generic but always category-appropriate. Admins replace any image post-apply via the product editor.';

@@ -16,6 +16,41 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v8.23.2 — Templates ship brand docs + switch product imagery to Picsum placeholders
+
+Two real bugs in v8.23.0 / v8.23.1 templates surfaced as soon as the first owner applied one:
+
+1. **Every product tripped the "legacy free-text brand" warning** on the admin Products page. Templates wrote products with `brand: "Common Thread"` as a literal string instead of a doc id referencing the `productBrands` collection. The admin UI warns when `brandNameById.has(p.brand)` returns false ([admin-products-list.tsx:289](src/admin/admin-products-list.tsx#L289)) — and a clean apply was guaranteed to hit it because no brand doc existed.
+
+2. **Product images were wrong.** I picked Unsplash photo IDs from memory and several pointed at unrelated photos — "Suede Penny Loafers" rendered a Nike sneaker, "Heavyweight Canvas Tote" rendered a Birkin, "Heavyweight Cotton Crew Tee" rendered a graphic-print streetwear tee. Considered fallback was the Unsplash Source API (`source.unsplash.com/featured/?keyword`), but it has been deprecated by Unsplash and now returns 503.
+
+Fix shape: each template now ships a `brands: TemplateBrand[]` array, and `applyTemplate()` writes brand docs to `productBrands` before writing products. Product images switched from `unsplashUrl(photoId)` (risk of guessed-wrong IDs) to `placeholderImage(seed)` (Picsum CDN — deterministic, generic, always loads, clearly a placeholder rather than impersonating a specific product). Category and hero shots keep their curated Unsplash IDs.
+
+This is **Phase 0 of the v9.0.0 theme rearchitecture roadmap** — it stops the bleeding so the storefront is usable while the per-template component system is being built. The "templates feel visually the same" feedback is addressed in v9.0.0-alpha.* releases, not here.
+
+### No consumer action required
+
+Pin the new tag and reinstall. Re-applying a template (especially in **replace** mode) cleans up products that already shipped with free-text brands; merge mode is a no-op on those existing docs but writes the missing brand documents.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v8.23.2
+```
+
+### Added
+
+- [src/templates/types.ts](src/templates/types.ts): new `TemplateBrand` type, new required `brands: TemplateBrand[]` field on `TemplateDefinition`, new `placeholderImage(seed, width, height)` helper. `ApplyTemplateResult.written` / `.skipped` gain a `brands: number` field. `IMAGE_URL_HELP` rewritten to document both image sources.
+- [src/templates/apply-template.ts](src/templates/apply-template.ts): writes `productBrands/{id}` docs before products. `wipeTemplateCollections()` now also clears `productBrands` in replace mode. `countWipeImpact()` and the dry-run path both include brand counts.
+- [src/admin/admin-templates-page.tsx](src/admin/admin-templates-page.tsx): apply dialog includes count surfaces brand count in both the merge diff and the replace wipe-impact line. Toast description mentions brands written.
+- [src/index.ts](src/index.ts): re-exports `TemplateBrand` + `placeholderImage`.
+
+### Changed
+
+- [src/templates/templates/fashion-minimal/index.ts](src/templates/templates/fashion-minimal/index.ts), [electronics-tech/index.ts](src/templates/templates/electronics-tech/index.ts), [home-goods/index.ts](src/templates/templates/home-goods/index.ts): each template adds a single `brands` entry (`common-thread`, `northstack`, `workshop-six`). All product `brand` fields switched from the free-text name to the doc id. All product image URLs switched from `unsplashUrl(...)` to `placeholderImage(slug)`. Hero + category imagery unchanged.
+
+### Fixed
+
+- [src/admin/admin-products-list.tsx](src/admin/admin-products-list.tsx) (no code change here) — the "legacy free-text brand" warning will stop firing for template-seeded products once a template is re-applied.
+
 ## v8.23.1 — Register /admin/templates in the route dispatcher
 
 v8.23.0 shipped `<AdminTemplatesPage>`, exposed it from `src/index.ts`, and added a **Templates** entry to the admin Settings nav — but missed adding the corresponding `case 'templates':` to the `<AdminRoot>` switch in [src/admin/admin-root.tsx](src/admin/admin-root.tsx). Symptom: clicking **Settings → Templates** in the admin nav (or visiting `/admin/templates` directly) fell through to the `default:` branch and rendered the dashboard instead. Local-dev users on v8.23.0 saw this immediately.

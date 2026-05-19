@@ -4,7 +4,7 @@
  */
 
 import type { TemplateDefinition } from '../../types';
-import { unsplashUrl } from '../../types';
+import { placeholderImage, unsplashUrl } from '../../types';
 
 const PHOTO = {
   hero: '1505740420928-5e560c06d30e',
@@ -58,6 +58,13 @@ export const electronicsTechTemplate: TemplateDefinition = {
     brandDescription:
       'Hand-tested electronics and desk accessories. Every product on the shelf has been in our daily rotation for at least a month before launch.',
   },
+  brands: [
+    {
+      id: 'northstack',
+      name: 'Northstack',
+      isActive: true,
+    },
+  ],
   categories: [
     {
       id: 'audio',
@@ -98,7 +105,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'over-ear-headphones',
       slug: 'studio-over-ear-headphones',
       name: 'Studio Over-Ear Headphones',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'Closed-back over-ear headphones tuned for long mixing sessions and longer commutes.',
       description:
@@ -107,7 +114,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.overEarHeadphones),
+          url: placeholderImage('over-ear-headphones'),
           alt: 'Black over-ear studio headphones',
           hint: 'studio headphones product',
         },
@@ -121,7 +128,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'wireless-earbuds',
       slug: 'wireless-earbuds',
       name: 'Wireless Earbuds Pro',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'True-wireless earbuds with active noise cancelling and an eight-hour cell.',
       description:
@@ -130,7 +137,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.wirelessEarbuds),
+          url: placeholderImage('wireless-earbuds'),
           alt: 'Black wireless earbuds in case',
           hint: 'wireless earbuds product',
         },
@@ -143,7 +150,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'studio-monitors',
       slug: 'desktop-studio-monitors',
       name: 'Desktop Studio Monitors',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'A pair of near-field monitors flat enough to mix on, warm enough to enjoy.',
       description:
@@ -152,7 +159,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.studioMonitors),
+          url: placeholderImage('studio-monitors'),
           alt: 'Tan over-ear studio headphones on desk',
           hint: 'studio monitors product',
         },
@@ -164,7 +171,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'smart-watch',
       slug: 'minimalist-smart-watch',
       name: 'Minimalist Smart Watch',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'Aluminum case, sapphire crystal, and a battery that lasts the full week.',
       description:
@@ -173,7 +180,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.smartwatch),
+          url: placeholderImage('smart-watch'),
           alt: 'Black smart watch on dark surface',
           hint: 'smart watch product',
         },
@@ -187,7 +194,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'fitness-tracker',
       slug: 'fitness-tracker-band',
       name: 'Fitness Tracker Band',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'A minimalist band with a fourteen-day battery and the metrics that actually matter.',
       description:
@@ -196,7 +203,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.fitnessTracker),
+          url: placeholderImage('fitness-tracker'),
           alt: 'Black fitness tracker band',
           hint: 'fitness tracker product',
         },
@@ -209,7 +216,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'usbc-hub',
       slug: 'usbc-hub-7-in-1',
       name: '7-in-1 USB-C Hub',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'HDMI 4K60, two USB-A 3.2, USB-C PD passthrough, SD + microSD, and Ethernet.',
       description:
@@ -218,7 +225,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.usbcHub),
+          url: placeholderImage('usbc-hub'),
           alt: 'USB-C hub on dark desk',
           hint: 'usb-c hub adapter product',
         },
@@ -231,7 +238,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'wireless-charger',
       slug: 'wireless-charging-pad',
       name: '15W Wireless Charging Pad',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'Single-coil Qi2 pad with a silicone surface that grips the phone.',
       description:
@@ -240,7 +247,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.wirelessCharger),
+          url: placeholderImage('wireless-charger'),
           alt: 'Wireless charging pad with phone',
           hint: 'wireless charger product',
         },
@@ -253,7 +260,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'laptop-stand',
       slug: 'aluminum-laptop-stand',
       name: 'Aluminum Laptop Stand',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'A passive heat-sink stand that lifts the screen to monitor height.',
       description:
@@ -262,7 +269,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.laptopStand),
+          url: placeholderImage('laptop-stand'),
           alt: 'Aluminum laptop stand on desk',
           hint: 'laptop stand product',
         },
@@ -275,7 +282,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       id: 'mech-keyboard',
       slug: 'compact-mechanical-keyboard',
       name: 'Compact Mechanical Keyboard',
-      brand: 'Northstack',
+      brand: 'northstack',
       shortDescription:
         'A 65% mechanical with hot-swap switches and per-key backlight.',
       description:
@@ -284,7 +291,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
       images: [
         {
           id: 'main',
-          url: unsplashUrl(PHOTO.mechKeyboard),
+          url: placeholderImage('mech-keyboard'),
           alt: 'Compact mechanical keyboard with white keycaps',
           hint: 'mechanical keyboard product',
         },

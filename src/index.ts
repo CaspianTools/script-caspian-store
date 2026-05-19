@@ -683,11 +683,13 @@ export {
 } from './templates/apply-template';
 export {
   unsplashUrl,
+  placeholderImage,
   IMAGE_URL_HELP,
   type TemplateDefinition,
   type TemplatePreview,
   type TemplateVertical,
   type TemplateBrandingDefaults,
+  type TemplateBrand,
   type TemplateProduct,
   type TemplateCategory,
   type TemplatePage,
