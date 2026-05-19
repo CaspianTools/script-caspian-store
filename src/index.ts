@@ -698,6 +698,21 @@ export {
   type ApplyTemplateOptions,
   type ApplyTemplateResult,
 } from './templates/types';
+// v9.0.0-alpha.1 — per-template component registry foundation. The
+// hook and types are exposed so templates (and consumer-side overrides)
+// can register or read component overrides at runtime.
+export {
+  EMPTY_TEMPLATE_REGISTRY,
+  type TemplateComponentSlotId,
+  type TemplateComponents,
+  type TemplateRegistryValue,
+} from './templates/components';
+export {
+  TemplateProvider,
+  useTemplateRegistry,
+  useTemplateComponent,
+  type TemplateProviderProps,
+} from './provider/template-provider';
 
 // --- Types ---
 export type {

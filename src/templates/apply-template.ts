@@ -215,10 +215,16 @@ async function applySettings(
   const scriptRef = doc(db, 'scriptSettings', 'site');
   const scriptSnap = await getDoc(scriptRef);
   const existingScript = scriptSnap.exists() ? scriptSnap.data() : {};
+  // v9.0.0-alpha.1: also write `activeTemplateId` so `<TemplateProvider>`
+  // can resolve the per-template component overrides + custom CSS. The
+  // field is intentionally written in both modes (merge and replace) —
+  // applying a template is an explicit "use this look" act, so the
+  // active id always reflects the most recent apply.
   await setDoc(
     scriptRef,
     {
       ...existingScript,
+      activeTemplateId: template.id,
       theme: template.theme,
       hero: template.hero,
       features: { ...existingScript.features, ...template.features },

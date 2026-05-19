@@ -16,6 +16,45 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.0.0-alpha.1 — Per-template component override foundation (pre-release)
+
+**Pre-release.** First alpha of the v9.0.0 theme rearchitecture. Ships the infrastructure that makes per-template React components possible; **no storefront primitive is wrapped yet**, no template registers any override, and runtime behaviour is identical to v8.23.2. Phase 2 (alpha.2) wraps `<Hero>` and adds three hero variants — the first phase with visible storefront differences.
+
+This release is tagged `9.0.0-alpha.1` so consumers pinning `^8.x` are not auto-upgraded. luivante stays on v8.23.2 until Phase 2 ships something visible.
+
+### Why v9 instead of v8.24
+
+The v9 work changes the public API surface: existing components (Hero, HomePage, ProductCard, ProductDetailPage, LayoutShell) become **resolved through a registry** rather than rendered directly. This is backward-compatible at the consumer-facing level (the exported component identifiers are unchanged, default behaviour is preserved when no template is active), but the internal contract — "any storefront primitive may be overridden by the active template" — is genuinely new. Semver-major communicates that.
+
+### No consumer action required (yet)
+
+Pre-release; not picked up by `^8.x` pins. Stable consumers should stay on v8.23.2. Early adopters who want to try the foundation:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.0.0-alpha.1
+```
+
+Migration guide ships with v9.0.0 stable.
+
+### Added
+
+- [src/templates/components.ts](src/templates/components.ts): new file. `TemplateComponentSlotId` union (`'Hero' | 'HomePage' | 'ProductCard' | 'ProductDetailPage' | 'LayoutShell'`), `TemplateComponents` registry type, `TemplateRegistryValue` shape carried by the context, `EMPTY_TEMPLATE_REGISTRY` default. Slot-id strings are stable across versions; renaming one is a breaking change for templates referencing the old name.
+- [src/provider/template-provider.tsx](src/provider/template-provider.tsx): new `<TemplateProvider>` reads `settings.activeTemplateId`, looks up the template in `TEMPLATE_CATALOG`, exposes its `components` map + `css` string via React context. Companion hooks `useTemplateRegistry()` (low-level, returns the full registry value) and `useTemplateComponent<TProps>(slotId, fallback)` (typed override resolver — returns the registered component or the fallback). Unknown `activeTemplateId` falls through to the default storefront rather than throwing.
+- [src/templates/types.ts](src/templates/types.ts): `TemplateDefinition` gains optional `components?: TemplateComponents` and `css?: string` fields. Templates that omit them keep current data-only-seeding behaviour.
+- [src/types.ts](src/types.ts): `ScriptSettings.activeTemplateId?: string` — written by `applyTemplate()`, read by `<TemplateProvider>`. Optional + back-compat — pre-v9 settings docs without the field resolve to the default storefront.
+
+### Changed
+
+- [src/templates/apply-template.ts](src/templates/apply-template.ts): `applySettings()` now writes `activeTemplateId: template.id` to `scriptSettings/site` on every apply (both merge and replace modes). Applying a template is an explicit "use this look" act, so the active id always reflects the most recent apply.
+- [src/context/theme-context.tsx](src/context/theme-context.tsx): `<ThemeInjector>` now also mounts the active template's `css` string as a `<style id="caspian-template-css">` tag in `<head>`, and writes the active id to `<html data-caspian-template="<id>">` so templates can scope selectors. Tag is created/updated/removed idempotently on template change; unmount cleanup removes both the tag and the data attribute. Existing CSS-custom-property emission is unchanged.
+- [src/provider/caspian-store-provider.tsx](src/provider/caspian-store-provider.tsx): `<TemplateProvider>` inserted between `<ScriptSettingsProvider>` and `<ThemeInjector>` in the provider tree, so the injector can read `activeTemplateId` and `css` from the template registry.
+- [src/index.ts](src/index.ts): re-exports `TemplateProvider`, `useTemplateRegistry`, `useTemplateComponent`, and the new types from `templates/components`.
+
+### Not yet (Phase 2+)
+
+- Hero / HomePage / ProductCard / ProductDetailPage / LayoutShell are **not yet wrapped** with the resolver. They render their default implementations regardless of `activeTemplateId`. Wrapping happens phase by phase so each release ships a focused, visible improvement.
+- No template registers any `components` or `css` in alpha.1. fashion-minimal / electronics-tech / home-goods are unchanged from v8.23.2.
+
 ## v8.23.2 — Templates ship brand docs + switch product imagery to Picsum placeholders
 
 Two real bugs in v8.23.0 / v8.23.1 templates surfaced as soon as the first owner applied one:

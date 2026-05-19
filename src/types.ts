@@ -971,6 +971,14 @@ export interface ScriptSettings {
   features: FeatureFlags;
   /** Optional — added in v8.18.0. Drives icon visibility on `<ProductCard />`. */
   productCard?: ProductCardSettings;
+  /**
+   * Id of the storefront template currently active (v9.0.0-alpha.1+).
+   * Empty string (or absent) means the default storefront components
+   * render — backward compatible with all pre-v9 installs. Set by
+   * `applyTemplate()` and read by `<TemplateProvider>` to resolve
+   * `useTemplateComponent()` lookups.
+   */
+  activeTemplateId?: string;
   updatedAt: Timestamp;
 }
 

@@ -25,6 +25,7 @@ import type {
   ProductCategoryDoc,
   ThemeTokens,
 } from '../types';
+import type { TemplateComponents } from './components';
 
 /**
  * Vertical / industry the template targets. Drives the badge shown in the
@@ -124,6 +125,34 @@ export interface TemplateDefinition {
   journal?: TemplateJournal[];
   /** Metadata for the catalog grid card. */
   preview: TemplatePreview;
+  /**
+   * Per-template React component overrides (v9.0.0-alpha.1+). The
+   * registered components replace the default storefront implementations
+   * for the listed slots while this template is active. Missing slots
+   * fall through to the default at runtime — templates only override
+   * what they want to change.
+   *
+   * Phase 1 ships the infrastructure but no template registers any slot
+   * yet; default behaviour is preserved. Phases 2-4 add Hero / HomePage /
+   * ProductCard / ProductDetailPage variants per template.
+   *
+   * Note: keep the registered component's prop signature compatible with
+   * the slot's contract — the hook narrows the resolved component to the
+   * fallback's prop type via an unchecked cast.
+   */
+  components?: TemplateComponents;
+  /**
+   * Optional extra CSS rules the template needs beyond what's expressible
+   * as CSS custom properties — keyframes, hover micro-interactions, etc.
+   * Mounted by `<ThemeInjector>` as a `<style>` tag while this template
+   * is active, removed when another template (or no template) is set.
+   *
+   * Keep the CSS scoped to template-specific selectors so it doesn't leak
+   * to other consumers of the library who may not have this template
+   * applied. Convention: prefix selectors with `.caspian-tpl-<id>` and
+   * apply that class via the LayoutShell override.
+   */
+  css?: string;
 }
 
 /**

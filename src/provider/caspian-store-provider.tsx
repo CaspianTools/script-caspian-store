@@ -17,6 +17,7 @@ import { WishlistProvider } from '../context/wishlist-context';
 import { ScriptSettingsProvider } from '../context/script-settings-context';
 import { ThemeInjector } from '../context/theme-context';
 import { FontLoader } from '../context/font-loader';
+import { TemplateProvider } from './template-provider';
 import { ToastProvider } from '../ui/toast';
 import { LocaleProvider } from '../i18n/locale-context';
 import type { MessageDict } from '../i18n/messages';
@@ -143,9 +144,11 @@ export function CaspianStoreProvider({
               <CartProvider db={value.firebase.db}>
                 <WishlistProvider db={value.firebase.db}>
                   <ScriptSettingsProvider collections={value.collections}>
-                    <ThemeInjector />
-                    <FontLoader />
-                    {children}
+                    <TemplateProvider>
+                      <ThemeInjector />
+                      <FontLoader />
+                      {children}
+                    </TemplateProvider>
                   </ScriptSettingsProvider>
                 </WishlistProvider>
               </CartProvider>
