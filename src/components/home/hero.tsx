@@ -1,10 +1,8 @@
 'use client';
 
-import { useScriptSettings } from '../../context/script-settings-context';
-import { useCaspianImage, useCaspianLink } from '../../provider/caspian-store-provider';
-import { Button } from '../../ui/button';
-import { cn } from '../../utils/cn';
+import { useTemplateComponent } from '../../provider/template-provider';
 import type { HeroTokens } from '../../types';
+import { HeroCentered } from './variants/hero-centered';
 
 export interface HeroProps {
   /** Overrides script settings if provided. Otherwise pulls from `scriptSettings.hero`. */
@@ -15,84 +13,26 @@ export interface HeroProps {
 }
 
 /**
- * Full-bleed homepage hero. Title / subtitle / CTA / background image all
- * read from `scriptSettings.hero` by default — admins edit the content
- * inside `<ScriptSettingsPage />`. Consumers who want a different layout
- * can either override individual fields via the `hero` prop or compose
- * their own hero using `useScriptSettings()`.
+ * Homepage hero — dispatched through `useTemplateComponent('Hero', …)`
+ * so the active storefront template can register its own variant.
+ *
+ *   - **Default** / `fashion-minimal` → [`HeroCentered`](./variants/hero-centered.tsx)
+ *   - `electronics-tech` → [`HeroFullBleed`](./variants/hero-full-bleed.tsx)
+ *   - `home-goods` → [`HeroSplit`](./variants/hero-split.tsx)
+ *
+ * v9.0.0-alpha.2 — Phase 2 of the theme rearchitecture. The wrapper is
+ * intentionally tiny: it picks the variant and forwards props. Consumers
+ * who want a different layout still have three escape hatches:
+ *   1. Apply a template that registers their preferred variant.
+ *   2. Register a custom variant on a fork-of-template via `components.Hero`.
+ *   3. Build their own hero component using `useScriptSettings()` and
+ *      mount it directly in their app instead of `<Hero>`.
+ *
+ * Pre-v9 consumers calling `<Hero>` see no behaviour change when no
+ * template is active — the dispatcher falls back to `HeroCentered`,
+ * which is the v8.x implementation moved one file over.
  */
-export function Hero({ hero: override, minHeightClass, className }: HeroProps) {
-  const { settings } = useScriptSettings();
-  const Image = useCaspianImage();
-  const Link = useCaspianLink();
-  const hero: HeroTokens = {
-    title: override?.title ?? settings.hero?.title ?? 'Shop our latest collection',
-    subtitle:
-      override?.subtitle ?? settings.hero?.subtitle ?? 'Curated essentials delivered to your door.',
-    cta: override?.cta ?? settings.hero?.cta ?? 'Shop now',
-    ctaHref: override?.ctaHref ?? settings.hero?.ctaHref ?? '/products',
-    imageUrl: override?.imageUrl ?? settings.hero?.imageUrl,
-  };
-
-  return (
-    <section
-      className={cn('caspian-hero', className)}
-      style={{
-        position: 'relative',
-        width: '100%',
-        minHeight: '60vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        textAlign: 'center',
-        overflow: 'hidden',
-      }}
-      data-min-height-class={minHeightClass}
-    >
-      {hero.imageUrl ? (
-        <Image src={hero.imageUrl} alt="" fill priority />
-      ) : (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(135deg, var(--caspian-primary, #111) 0%, var(--caspian-accent, #f5a8b8) 100%)',
-          }}
-        />
-      )}
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{ position: 'relative', maxWidth: 720, padding: '0 24px' }}>
-        <h1
-          style={{
-            fontFamily: 'var(--caspian-font-headline, inherit)',
-            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.02em',
-            margin: 0,
-          }}
-        >
-          {hero.title}
-        </h1>
-        <p
-          style={{
-            fontSize: 'clamp(1rem, 2vw, 1.125rem)',
-            marginTop: 16,
-            color: 'rgba(255,255,255,0.85)',
-          }}
-        >
-          {hero.subtitle}
-        </p>
-        {hero.cta && hero.ctaHref && (
-          <div style={{ marginTop: 32 }}>
-            <Link href={hero.ctaHref}>
-              <Button size="lg">{hero.cta}</Button>
-            </Link>
-          </div>
-        )}
-      </div>
-    </section>
-  );
+export function Hero(props: HeroProps) {
+  const Component = useTemplateComponent('Hero', HeroCentered);
+  return <Component {...props} />;
 }

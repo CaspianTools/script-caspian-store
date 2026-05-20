@@ -3,6 +3,7 @@
  * editorial photography. Targets boutique fashion installers.
  */
 
+import { HeroCentered } from '../../../components/home/variants/hero-centered';
 import type { TemplateDefinition } from '../../types';
 import { placeholderImage, unsplashUrl } from '../../types';
 
@@ -369,4 +370,21 @@ export const fashionMinimalTemplate: TemplateDefinition = {
     swatch: ['#ffffff', '#111111', '#c8a06a', '#e8e2d6'],
     heroImageUrl: unsplashUrl(PHOTO.hero, 800),
   },
+  components: {
+    Hero: HeroCentered,
+  },
+  css: `
+[data-caspian-template="fashion-minimal"] .caspian-hero-centered-inner {
+  animation: caspian-hero-fashion-in 0.9s ease-out both;
+}
+@keyframes caspian-hero-fashion-in {
+  from { opacity: 0; transform: translateY(24px); letter-spacing: 0.08em; }
+  to   { opacity: 1; transform: translateY(0);     letter-spacing: 0.02em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-caspian-template="fashion-minimal"] .caspian-hero-centered-inner {
+    animation: none;
+  }
+}
+`,
 };

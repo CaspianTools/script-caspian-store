@@ -115,7 +115,10 @@ export {
 export { DynamicFavicon } from './components/dynamic-favicon';
 export { SocialIcon } from './components/social-icon';
 
-// Homepage surface (v1.2)
+// Homepage surface (v1.2). `<Hero>` is the dispatcher; the per-variant
+// implementations live under `./components/home/variants/` and are
+// re-exported below so consumers can compose them directly or register
+// their own template-component override.
 export {
   Hero,
   FeaturedCategoriesSection,
@@ -128,6 +131,12 @@ export {
   type NewsletterSignupProps,
   type HomePageProps,
 } from './components/home';
+// Hero variants (v9.0.0-alpha.2). Each is the implementation a template
+// registers under `components.Hero`. Consumers who want a different
+// look without a custom template can mount one directly.
+export { HeroCentered } from './components/home/variants/hero-centered';
+export { HeroFullBleed } from './components/home/variants/hero-full-bleed';
+export { HeroSplit } from './components/home/variants/hero-split';
 
 // Journal surface (v1.3)
 export {

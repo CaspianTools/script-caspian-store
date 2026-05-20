@@ -16,6 +16,46 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.0.0-alpha.2 — Hero variants: three visibly different heroes per template (pre-release)
+
+**Pre-release.** Phase 2 of the v9.0.0 theme rearchitecture. First phase where applying a template visibly changes the storefront — each of the three bundled templates now ships its own hero implementation, registered via `components.Hero` (the registry slot added in alpha.1) and paired with a `css` field carrying the keyframes for the variant's entrance / motion choreography.
+
+The hero dispatcher introduced in alpha.1's foundation now resolves to one of three variants at render time. No more "same site with different content" — fashion-minimal looks like an editorial boutique, electronics-tech looks like a product launch page, home-goods looks like a magazine spread. Same `<Hero>` import on the consumer side — the active template determines what renders.
+
+### Motion strategy
+
+No motion library added. Animations are pure CSS, shipped via each template's `css` field (mounted by `<ThemeInjector>` from alpha.1 as `<style id="caspian-template-css">`). Selectors are scoped to `[data-caspian-template="<id>"]` so rules never leak across templates or to default-template installs. Every animation declares a `@media (prefers-reduced-motion: reduce)` opt-out.
+
+Skipping a motion library (framer-motion / motion) was a conscious choice: alpha.2 needs entrance fades, slide-ins, and a ken-burns zoom — pure CSS handles all of them at zero bundle cost. Phase 3+ may need orchestrated viewport-triggered reveals (cards animating in as they scroll into view); we revisit the motion library question if it does.
+
+### Variants
+
+- **`<HeroCentered>`** ([variants/hero-centered.tsx](src/components/home/variants/hero-centered.tsx)) — extracted from v8.x's `<Hero>` implementation. Full-bleed background, centered headline + subtitle + CTA, dark overlay. Default fallback; used by **fashion-minimal**. Entrance: 0.9s rise-with-letter-spacing fade on the inner content column.
+- **`<HeroFullBleed>`** ([variants/hero-full-bleed.tsx](src/components/home/variants/hero-full-bleed.tsx)) — used by **electronics-tech**. 80vh slab, bottom-left typography, monospace eyebrow ("// Now shipping"), bottom-fading gradient overlay. Entrance: 22s ken-burns zoom on the background image (loops alternate) + staggered 0.8s rise on eyebrow/title/subtitle (0.10s / 0.18s / 0.28s delays).
+- **`<HeroSplit>`** ([variants/hero-split.tsx](src/components/home/variants/hero-split.tsx)) — used by **home-goods**. 50/50 desktop split (copy left, image right) that stacks vertically below 840px. Editorial serif typography (Cormorant Garamond from the template's font tokens). Entrance: 0.85s slide-from-left on each copy element with 0.10s stagger + 1.1s scale-in on the image.
+
+### No consumer action required (yet)
+
+Pre-release; consumers pinning `^8.x` are not auto-upgraded. luivante bumped to v9.0.0-alpha.2 alongside this ship — that's where the "applying a template visibly changes the site" behaviour will be verifiable end-to-end on a deployed site.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.0.0-alpha.2
+```
+
+### Added
+
+- [src/components/home/variants/hero-centered.tsx](src/components/home/variants/hero-centered.tsx): default hero, extracted from `hero.tsx`.
+- [src/components/home/variants/hero-full-bleed.tsx](src/components/home/variants/hero-full-bleed.tsx): electronics-tech hero.
+- [src/components/home/variants/hero-split.tsx](src/components/home/variants/hero-split.tsx): home-goods hero.
+- [src/index.ts](src/index.ts): re-exports `HeroCentered`, `HeroFullBleed`, `HeroSplit` so consumers can compose them directly.
+
+### Changed
+
+- [src/components/home/hero.tsx](src/components/home/hero.tsx): `<Hero>` is now a thin dispatcher that resolves via `useTemplateComponent('Hero', HeroCentered)`. Back-compat: when no template is active or a template registers no `components.Hero`, the dispatcher falls back to `HeroCentered` which is byte-equivalent to v8.x's implementation. Consumers get the same `<Hero>` import; the API surface is unchanged.
+- [src/templates/templates/fashion-minimal/index.ts](src/templates/templates/fashion-minimal/index.ts): registers `components.Hero = HeroCentered` and ships a `css` block with the centered-content entrance keyframes.
+- [src/templates/templates/electronics-tech/index.ts](src/templates/templates/electronics-tech/index.ts): registers `components.Hero = HeroFullBleed` and ships ken-burns + staggered-rise keyframes.
+- [src/templates/templates/home-goods/index.ts](src/templates/templates/home-goods/index.ts): registers `components.Hero = HeroSplit` and ships slide-in + scale-in keyframes.
+
 ## v9.0.0-alpha.1 — Per-template component override foundation (pre-release)
 
 **Pre-release.** First alpha of the v9.0.0 theme rearchitecture. Ships the infrastructure that makes per-template React components possible; **no storefront primitive is wrapped yet**, no template registers any override, and runtime behaviour is identical to v8.23.2. Phase 2 (alpha.2) wraps `<Hero>` and adds three hero variants — the first phase with visible storefront differences.

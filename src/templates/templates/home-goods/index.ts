@@ -3,6 +3,7 @@
  * and lifestyle interior photography. Targets home & lifestyle installers.
  */
 
+import { HeroSplit } from '../../../components/home/variants/hero-split';
 import type { TemplateDefinition } from '../../types';
 import { placeholderImage, unsplashUrl } from '../../types';
 
@@ -363,4 +364,33 @@ export const homeGoodsTemplate: TemplateDefinition = {
     swatch: ['#fdfaf4', '#7c5d3f', '#a07a4c', '#d6c3a1'],
     heroImageUrl: unsplashUrl(PHOTO.hero, 800),
   },
+  components: {
+    Hero: HeroSplit,
+  },
+  css: `
+[data-caspian-template="home-goods"] .caspian-hero-split-copy > * {
+  animation: caspian-hero-home-copy-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+[data-caspian-template="home-goods"] .caspian-hero-split-copy > *:nth-child(1) { animation-delay: 0.05s; }
+[data-caspian-template="home-goods"] .caspian-hero-split-copy > *:nth-child(2) { animation-delay: 0.15s; }
+[data-caspian-template="home-goods"] .caspian-hero-split-copy > *:nth-child(3) { animation-delay: 0.25s; }
+[data-caspian-template="home-goods"] .caspian-hero-split-copy > *:nth-child(4) { animation-delay: 0.35s; }
+[data-caspian-template="home-goods"] .caspian-hero-split-image {
+  animation: caspian-hero-home-image-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes caspian-hero-home-copy-in {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes caspian-hero-home-image-in {
+  from { opacity: 0; transform: scale(1.06); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-caspian-template="home-goods"] .caspian-hero-split-copy > *,
+  [data-caspian-template="home-goods"] .caspian-hero-split-image {
+    animation: none;
+  }
+}
+`,
 };

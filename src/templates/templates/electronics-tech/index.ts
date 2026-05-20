@@ -3,6 +3,7 @@
  * studio-photography aesthetic. Targets consumer electronics installers.
  */
 
+import { HeroFullBleed } from '../../../components/home/variants/hero-full-bleed';
 import type { TemplateDefinition } from '../../types';
 import { placeholderImage, unsplashUrl } from '../../types';
 
@@ -362,4 +363,37 @@ export const electronicsTechTemplate: TemplateDefinition = {
     swatch: ['#0a0a0a', '#22c55e', '#262626', '#737373'],
     heroImageUrl: unsplashUrl(PHOTO.hero, 800),
   },
+  components: {
+    Hero: HeroFullBleed,
+  },
+  css: `
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-bg img {
+  animation: caspian-hero-tech-zoom 22s ease-out infinite alternate;
+  transform-origin: center;
+}
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-eyebrow,
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-title,
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-subtitle {
+  animation: caspian-hero-tech-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-eyebrow  { animation-delay: 0.10s; }
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-title    { animation-delay: 0.18s; }
+[data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-subtitle { animation-delay: 0.28s; }
+@keyframes caspian-hero-tech-zoom {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.08); }
+}
+@keyframes caspian-hero-tech-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-bg img,
+  [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-eyebrow,
+  [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-title,
+  [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-subtitle {
+    animation: none;
+  }
+}
+`,
 };
