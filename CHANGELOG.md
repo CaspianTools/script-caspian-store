@@ -16,6 +16,45 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.0.0-alpha.4 — ProductDetailPage variants: PDP completes the per-template surface set (pre-release)
+
+**Pre-release.** Phase 4 of the v9.0.0 theme rearchitecture — the last visible-content phase. Every primary storefront surface is now template-dispatched: hero (alpha.2), product card + homepage (alpha.3), and now product detail page. Phase 5 will stabilise and ship v9.0.0 stable with migration docs.
+
+Three PDP layouts share their state — fetching, selected size, quantity, add-to-cart, review summary — via a new `useProductDetailState()` hook, so variants are pure JSX wrappers. New fields automatically flow to every variant without per-variant edits.
+
+### Variants
+
+- **`<ProductDetailDefault>`** — fashion-minimal + default. The v8.x layout extracted into its own file: gallery on the left, info column on the right, tabs (Details / Reviews / Questions) below. Byte-equivalent to v8.x behaviour when no template is active.
+- **`<ProductDetailTech>`** — electronics-tech. **Inverted layout:** info column LEFT (sticky), gallery RIGHT. Monospace `// brand · SKU` eyebrow, dark-mode spec-sheet typography, price block bordered top/bottom with "// In stock · 12mo warranty" stamp, prominent `Add to cart →` CTA. Details and Reviews scroll inline (no tab collapse) so spec-scanning buyers see everything in one pass.
+- **`<ProductDetailEditorial>`** — home-goods. Magazine-style flow: gallery centred above the fold, info column below in a narrow centred column with italic serif name + soft brown palette, then a `Story & Details` section in 600px-wide editorial column, then a quiet `From buyers` reviews block. Treats the product page like a feature spread, not a transactional form.
+
+### State hook
+
+[`useProductDetailState(props)`](src/components/variants/use-product-detail-state.ts) — extracted from the 382-line monolithic PDP. Returns `{ product, loading, brandName, blurb, selectedSize, setSelectedSize, quantity, setQuantity, avg, totalReviews, setAvg, setTotalReviews, activeTab, setActiveTab, handleAddToCart, inventory, cartBehavior, derived, t }`. Variants accept the same `ProductDetailPageProps` and call the hook — no per-variant business logic.
+
+`derived` collapses the computed booleans (`hasSizes`, `hasDetails`, `hasLongDescription`, `detailsTabHasContent`, `inventoryActive`, `outOfStockSizes`, `allOut`) so variants don't re-derive them.
+
+### No consumer action required (yet)
+
+Pre-release. luivante is bumped alongside this ship.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.0.0-alpha.4
+```
+
+### Added
+
+- [src/components/variants/use-product-detail-state.ts](src/components/variants/use-product-detail-state.ts): shared state hook for every PDP variant.
+- [src/components/variants/product-detail-default.tsx](src/components/variants/product-detail-default.tsx): default PDP variant (v8.x layout extracted).
+- [src/components/variants/product-detail-tech.tsx](src/components/variants/product-detail-tech.tsx): electronics-tech variant.
+- [src/components/variants/product-detail-editorial.tsx](src/components/variants/product-detail-editorial.tsx): home-goods variant.
+- [src/index.ts](src/index.ts): re-exports the three variants + `useProductDetailState` + `ProductDetailTabKey`.
+
+### Changed
+
+- [src/components/product-detail-page.tsx](src/components/product-detail-page.tsx): collapses from 382 LoC to a ~60-LoC dispatcher that resolves via `useTemplateComponent('ProductDetailPage', ProductDetailDefault)`. Same `<ProductDetailPage>` export, same props, same back-compat — no consumer API change.
+- All three template files register their `ProductDetailPage` override.
+
 ## v9.0.0-alpha.3 — ProductCard + HomePage variants: full homepage feels template-specific (pre-release)
 
 **Pre-release.** Phase 3 of the v9.0.0 theme rearchitecture. The hero became template-specific in alpha.2; this release does the same for product cards and the homepage section composition. The whole homepage — not just the hero — now feels different per template.

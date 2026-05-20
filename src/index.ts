@@ -145,6 +145,14 @@ export { HomePageEditorial } from './components/home/variants/home-page-editoria
 export { ProductCardStandard } from './components/variants/product-card-standard';
 export { ProductCardEditorial } from './components/variants/product-card-editorial';
 export { ProductCardCompact } from './components/variants/product-card-compact';
+// ProductDetailPage variants (v9.0.0-alpha.4).
+export { ProductDetailDefault } from './components/variants/product-detail-default';
+export { ProductDetailTech } from './components/variants/product-detail-tech';
+export { ProductDetailEditorial } from './components/variants/product-detail-editorial';
+export {
+  useProductDetailState,
+  type ProductDetailTabKey,
+} from './components/variants/use-product-detail-state';
 
 // Journal surface (v1.3)
 export {
