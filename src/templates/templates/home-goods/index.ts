@@ -4,6 +4,8 @@
  */
 
 import { HeroSplit } from '../../../components/home/variants/hero-split';
+import { HomePageEditorial } from '../../../components/home/variants/home-page-editorial';
+import { ProductCardEditorial } from '../../../components/variants/product-card-editorial';
 import type { TemplateDefinition } from '../../types';
 import { placeholderImage, unsplashUrl } from '../../types';
 
@@ -366,6 +368,8 @@ export const homeGoodsTemplate: TemplateDefinition = {
   },
   components: {
     Hero: HeroSplit,
+    HomePage: HomePageEditorial,
+    ProductCard: ProductCardEditorial,
   },
   css: `
 [data-caspian-template="home-goods"] .caspian-hero-split-copy > * {
@@ -386,10 +390,32 @@ export const homeGoodsTemplate: TemplateDefinition = {
   from { opacity: 0; transform: scale(1.06); }
   to   { opacity: 1; transform: scale(1); }
 }
+/* Editorial product card — image scale + bottom CTA fade-in on hover. */
+[data-caspian-template="home-goods"] .caspian-product-card-editorial-image img {
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-caspian-template="home-goods"] .caspian-product-card-editorial:hover .caspian-product-card-editorial-image img {
+  transform: scale(1.05);
+}
+[data-caspian-template="home-goods"] .caspian-product-card-editorial:hover .caspian-product-card-editorial-cta {
+  opacity: 1;
+}
+/* Editorial pull-quote — slow fade-in on first paint. */
+[data-caspian-template="home-goods"] .caspian-home-editorial-quote {
+  animation: caspian-home-editorial-fade 1.2s ease-out both;
+}
+@keyframes caspian-home-editorial-fade {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   [data-caspian-template="home-goods"] .caspian-hero-split-copy > *,
-  [data-caspian-template="home-goods"] .caspian-hero-split-image {
+  [data-caspian-template="home-goods"] .caspian-hero-split-image,
+  [data-caspian-template="home-goods"] .caspian-product-card-editorial-image img,
+  [data-caspian-template="home-goods"] .caspian-product-card-editorial:hover .caspian-product-card-editorial-cta,
+  [data-caspian-template="home-goods"] .caspian-home-editorial-quote {
     animation: none;
+    transition: none;
   }
 }
 `,

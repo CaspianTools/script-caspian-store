@@ -4,6 +4,8 @@
  */
 
 import { HeroFullBleed } from '../../../components/home/variants/hero-full-bleed';
+import { HomePageSpotlight } from '../../../components/home/variants/home-page-spotlight';
+import { ProductCardCompact } from '../../../components/variants/product-card-compact';
 import type { TemplateDefinition } from '../../types';
 import { placeholderImage, unsplashUrl } from '../../types';
 
@@ -365,6 +367,8 @@ export const electronicsTechTemplate: TemplateDefinition = {
   },
   components: {
     Hero: HeroFullBleed,
+    HomePage: HomePageSpotlight,
+    ProductCard: ProductCardCompact,
   },
   css: `
 [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-bg img {
@@ -387,12 +391,48 @@ export const electronicsTechTemplate: TemplateDefinition = {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+/* Compact product card hover — accent underline slides in under the name. */
+[data-caspian-template="electronics-tech"] .caspian-product-card-compact:hover > div {
+  transform: translateY(-2px);
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  background: rgba(34, 197, 94, 0.04) !important;
+}
+[data-caspian-template="electronics-tech"] .caspian-product-card-compact-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: var(--caspian-accent, #22c55e);
+  transition: width 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-caspian-template="electronics-tech"] .caspian-product-card-compact:hover .caspian-product-card-compact-name::after {
+  width: 40px;
+}
+[data-caspian-template="electronics-tech"] .caspian-product-card-compact-image img {
+  transition: transform 500ms ease;
+}
+[data-caspian-template="electronics-tech"] .caspian-product-card-compact:hover .caspian-product-card-compact-image img {
+  transform: scale(1.05);
+}
+/* Spec strip on the spotlight homepage — subtle hover lift on each item. */
+[data-caspian-template="electronics-tech"] .caspian-home-spotlight-spec-strip span {
+  transition: color 200ms ease;
+}
+[data-caspian-template="electronics-tech"] .caspian-home-spotlight-spec-strip span:hover {
+  color: var(--caspian-accent, #22c55e);
+}
 @media (prefers-reduced-motion: reduce) {
   [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-bg img,
   [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-eyebrow,
   [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-title,
-  [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-subtitle {
+  [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-subtitle,
+  [data-caspian-template="electronics-tech"] .caspian-product-card-compact:hover > div,
+  [data-caspian-template="electronics-tech"] .caspian-product-card-compact-name::after,
+  [data-caspian-template="electronics-tech"] .caspian-product-card-compact-image img {
     animation: none;
+    transition: none;
   }
 }
 `,

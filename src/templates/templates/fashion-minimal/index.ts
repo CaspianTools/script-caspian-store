@@ -4,6 +4,8 @@
  */
 
 import { HeroCentered } from '../../../components/home/variants/hero-centered';
+import { HomePageDefault } from '../../../components/home/variants/home-page-default';
+import { ProductCardStandard } from '../../../components/variants/product-card-standard';
 import type { TemplateDefinition } from '../../types';
 import { placeholderImage, unsplashUrl } from '../../types';
 
@@ -372,18 +374,35 @@ export const fashionMinimalTemplate: TemplateDefinition = {
   },
   components: {
     Hero: HeroCentered,
+    HomePage: HomePageDefault,
+    ProductCard: ProductCardStandard,
   },
   css: `
 [data-caspian-template="fashion-minimal"] .caspian-hero-centered-inner {
   animation: caspian-hero-fashion-in 0.9s ease-out both;
+}
+[data-caspian-template="fashion-minimal"] .caspian-product-card-standard {
+  transition: transform 250ms ease;
+}
+[data-caspian-template="fashion-minimal"] .caspian-product-card-standard:hover {
+  transform: translateY(-2px);
+}
+[data-caspian-template="fashion-minimal"] .caspian-product-card-standard-image img {
+  transition: transform 600ms ease;
+}
+[data-caspian-template="fashion-minimal"] .caspian-product-card-standard:hover .caspian-product-card-standard-image img {
+  transform: scale(1.04);
 }
 @keyframes caspian-hero-fashion-in {
   from { opacity: 0; transform: translateY(24px); letter-spacing: 0.08em; }
   to   { opacity: 1; transform: translateY(0);     letter-spacing: 0.02em; }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-caspian-template="fashion-minimal"] .caspian-hero-centered-inner {
+  [data-caspian-template="fashion-minimal"] .caspian-hero-centered-inner,
+  [data-caspian-template="fashion-minimal"] .caspian-product-card-standard,
+  [data-caspian-template="fashion-minimal"] .caspian-product-card-standard-image img {
     animation: none;
+    transition: none;
   }
 }
 `,

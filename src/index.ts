@@ -137,6 +137,14 @@ export {
 export { HeroCentered } from './components/home/variants/hero-centered';
 export { HeroFullBleed } from './components/home/variants/hero-full-bleed';
 export { HeroSplit } from './components/home/variants/hero-split';
+// HomePage variants (v9.0.0-alpha.3).
+export { HomePageDefault } from './components/home/variants/home-page-default';
+export { HomePageSpotlight } from './components/home/variants/home-page-spotlight';
+export { HomePageEditorial } from './components/home/variants/home-page-editorial';
+// ProductCard variants (v9.0.0-alpha.3).
+export { ProductCardStandard } from './components/variants/product-card-standard';
+export { ProductCardEditorial } from './components/variants/product-card-editorial';
+export { ProductCardCompact } from './components/variants/product-card-compact';
 
 // Journal surface (v1.3)
 export {

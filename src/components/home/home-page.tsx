@@ -1,10 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Hero, type HeroProps } from './hero';
-import { FeaturedCategoriesSection } from './featured-categories-section';
-import { TrendingProductsSection } from './trending-products-section';
-import { NewsletterSignup } from './newsletter-signup';
+import { useTemplateComponent } from '../../provider/template-provider';
+import type { HeroProps } from './hero';
+import { HomePageDefault } from './variants/home-page-default';
 
 export interface HomePageProps {
   /** Override hero content (otherwise read from script settings). */
@@ -25,36 +24,26 @@ export interface HomePageProps {
 }
 
 /**
- * Drop-in homepage. Composes the four built-in sections (Hero,
- * FeaturedCategoriesSection, TrendingProductsSection, NewsletterSignup)
- * and respects hide-flags for consumers who want to swap sections for
- * their own.
+ * Drop-in homepage — dispatched through
+ * `useTemplateComponent('HomePage', …)` so the active storefront template
+ * can register its own section composition.
+ *
+ *   - **Default** / `fashion-minimal` → [`HomePageDefault`](./variants/home-page-default.tsx)
+ *     (Hero → FeaturedCategories → TrendingProducts → Newsletter)
+ *   - `electronics-tech` → [`HomePageSpotlight`](./variants/home-page-spotlight.tsx)
+ *     (Hero → spec-strip → TrendingProducts → FeaturedCategories → Newsletter)
+ *   - `home-goods` → [`HomePageEditorial`](./variants/home-page-editorial.tsx)
+ *     (Hero → FeaturedCategories → editorial pull-quote → TrendingProducts → Newsletter)
+ *
+ * v9.0.0-alpha.3 — Phase 3 of the theme rearchitecture. The wrapper
+ * forwards every prop; consumers see no API change. The slot-injection
+ * props (`afterHero`, `afterFeaturedCategories`, ...) are honored by all
+ * three variants — but note that the *semantic position* of each slot
+ * follows that variant's section order, not the default order. If you
+ * depend on a slot landing at a specific visual position, render your
+ * own composition using the individual section exports.
  */
-export function HomePage({
-  hero,
-  hideFeaturedCategories,
-  hideTrendingProducts,
-  hideNewsletter,
-  afterHero,
-  afterFeaturedCategories,
-  afterTrendingProducts,
-  afterNewsletter,
-  getProductHref,
-  formatPrice,
-  className,
-}: HomePageProps) {
-  return (
-    <main className={className}>
-      <Hero hero={hero} />
-      {afterHero}
-      {!hideFeaturedCategories && <FeaturedCategoriesSection />}
-      {afterFeaturedCategories}
-      {!hideTrendingProducts && (
-        <TrendingProductsSection getProductHref={getProductHref} formatPrice={formatPrice} />
-      )}
-      {afterTrendingProducts}
-      {!hideNewsletter && <NewsletterSignup />}
-      {afterNewsletter}
-    </main>
-  );
+export function HomePage(props: HomePageProps) {
+  const Component = useTemplateComponent('HomePage', HomePageDefault);
+  return <Component {...props} />;
 }

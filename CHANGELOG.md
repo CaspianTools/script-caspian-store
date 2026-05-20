@@ -16,6 +16,50 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.0.0-alpha.3 — ProductCard + HomePage variants: full homepage feels template-specific (pre-release)
+
+**Pre-release.** Phase 3 of the v9.0.0 theme rearchitecture. The hero became template-specific in alpha.2; this release does the same for product cards and the homepage section composition. The whole homepage — not just the hero — now feels different per template.
+
+Three product-card designs and three homepage layouts wired through the registry. The `<ProductCard>` and `<HomePage>` import paths are unchanged on the consumer side; the active template's `components.ProductCard` and `components.HomePage` decide what renders.
+
+### ProductCard variants
+
+- **`<ProductCardStandard>`** — fashion-minimal + default. The v8.x card extracted into its own file: 3:4 portrait image, brand eyebrow, name, price, optional wishlist + quick-add icons. Hover lifts the card 2px and gently scales the image (1.04× over 600ms).
+- **`<ProductCardCompact>`** — electronics-tech. Dark plinth card with a 1:1 image and a monospace accent eyebrow. Hover slides a 40px accent line in under the name (280ms ease-out), tints the border green, lifts 2px. Reads like a product spec sheet.
+- **`<ProductCardEditorial>`** — home-goods. 4:5 image with no rounded corners, serif name in larger type, price as a quiet eyebrow. Hover scales the image (700ms cubic-bezier) and fades in a "View product →" CTA bar at the bottom. No quick-add icon — the editorial look favors a single primary action.
+
+### HomePage variants
+
+- **`<HomePageDefault>`** — fashion-minimal + default. Hero → Featured Categories → Trending Products → Newsletter. Identical composition to v8.x's `<HomePage>`.
+- **`<HomePageSpotlight>`** — electronics-tech. Hero → **spec strip** ("// Hand-tested  // Daily-use  // No fluff  // 12mo warranty") → Trending Products → Featured Categories → Newsletter. Tech buyers see the catalog immediately instead of categories first.
+- **`<HomePageEditorial>`** — home-goods. Hero → Featured Categories → **editorial pull-quote** (large italic blockquote in serif) → Trending Products → Newsletter. Adds a magazine-style typography break between catalog sections.
+
+Each variant respects the slot-injection props (`afterHero`, `afterFeaturedCategories`, ...) — but the *semantic position* of each slot follows its variant's section order, not the v8.x order. Documented in the `<HomePage>` JSDoc.
+
+### Motion still pure CSS
+
+No motion library added. All hover micro-interactions and entrance animations are CSS, shipped through each template's `css` field, scoped to `[data-caspian-template="<id>"]`, with `prefers-reduced-motion: reduce` opt-outs in every template.
+
+### No consumer action required (yet)
+
+Pre-release. luivante is bumped alongside this ship so the variants are verifiable end-to-end on a deployed site.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.0.0-alpha.3
+```
+
+### Added
+
+- [src/components/variants/product-card-standard.tsx](src/components/variants/product-card-standard.tsx), [product-card-editorial.tsx](src/components/variants/product-card-editorial.tsx), [product-card-compact.tsx](src/components/variants/product-card-compact.tsx): the three card variants.
+- [src/components/home/variants/home-page-default.tsx](src/components/home/variants/home-page-default.tsx), [home-page-spotlight.tsx](src/components/home/variants/home-page-spotlight.tsx), [home-page-editorial.tsx](src/components/home/variants/home-page-editorial.tsx): the three homepage layouts.
+- [src/index.ts](src/index.ts) re-exports all six new variants.
+
+### Changed
+
+- [src/components/product-card.tsx](src/components/product-card.tsx): `<ProductCard>` is now a thin dispatcher (`useTemplateComponent('ProductCard', ProductCardStandard)`). Back-compat: when no template is active or none registers `components.ProductCard`, the fallback is byte-equivalent to v8.x.
+- [src/components/home/home-page.tsx](src/components/home/home-page.tsx): `<HomePage>` is now a thin dispatcher (`useTemplateComponent('HomePage', HomePageDefault)`). Same back-compat shape.
+- All three template files register their `ProductCard` + `HomePage` overrides and extend their `css` blocks with hover micro-interactions (card lift, image scale, accent underline slide-in, CTA fade-in, editorial pull-quote fade-in).
+
 ## v9.0.0-alpha.2 — Hero variants: three visibly different heroes per template (pre-release)
 
 **Pre-release.** Phase 2 of the v9.0.0 theme rearchitecture. First phase where applying a template visibly changes the storefront — each of the three bundled templates now ships its own hero implementation, registered via `components.Hero` (the registry slot added in alpha.1) and paired with a `css` field carrying the keyframes for the variant's entrance / motion choreography.
