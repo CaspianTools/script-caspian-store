@@ -441,6 +441,68 @@ Templates live in [src/templates/templates/](src/templates/templates/) — one f
 
 ---
 
+## 7.6. v9.0.0 — Per-template component overrides
+
+v9.0.0 generalises the v8.23 templates feature from *content-and-theme-tokens* into *content + theme + complete component overrides*. Each template can now register its own React components for the primary storefront surfaces (hero, homepage layout, product card, product detail page) and ship a `css` string for keyframes and hover micro-interactions. Applying a template visibly changes the storefront — not just the colors and copy.
+
+### What's new in v9
+
+- **Component override registry.** Templates declare `components?: { Hero?, HomePage?, ProductCard?, ProductDetailPage?, LayoutShell? }`. At render time the active template's overrides replace the defaults; missing slots fall through to the built-ins.
+- **Per-template CSS bundle.** Templates declare `css?: string`. The bundled v9 helper `<ThemeInjector>` mounts it as `<style id="caspian-template-css">` and writes `<html data-caspian-template="<id>">` so the template's CSS rules can scope cleanly.
+- **`ScriptSettings.activeTemplateId`.** Firestore now stores which template is active; `applyTemplate()` sets it. The `<TemplateProvider>` (mounted automatically inside `<CaspianStoreProvider>`) reads it and exposes the active template's components + CSS via context.
+- **Three bundled templates ship complete looks.** `fashion-minimal` keeps the v8.x storefront identity; `electronics-tech` ships dark-mode spec-sheet layouts with monospace eyebrows; `home-goods` ships magazine-style editorial layouts. Apply from `/admin/templates` or the setup wizard.
+
+### Back-compat — what you do NOT need to change
+
+- **All component imports stay the same.** `<Hero>`, `<HomePage>`, `<ProductCard>`, `<ProductDetailPage>` are the same exports — they're now thin dispatchers that pick a variant via the active template, falling back to byte-equivalent defaults when no template is active.
+- **All props stay the same.** Variant components accept the same prop shape as the v8.x originals.
+- **Existing Firestore docs work unchanged.** `ScriptSettings.activeTemplateId` is optional; a pre-v9 settings doc resolves to the default storefront.
+- **Templates from v8.23.x still apply.** They simply don't register `components` / `css` (the v9 fields are optional). v8 templates running on v9 behave exactly as they did on v8.23.
+
+### Subtle behaviour change to be aware of
+
+The `<HomePage>` component supports slot-injection props (`afterHero`, `afterFeaturedCategories`, `afterTrendingProducts`, `afterNewsletter`). On v8.x these always landed at fixed visual positions because the section order was hardcoded. On v9, each `HomePage` variant chooses its own section order — so the *semantic position* of each slot follows the variant's flow, not the v8.x flow. Consumers relying on a slot landing at a specific visual position should either:
+
+- Set `<CaspianStoreProvider>`'s store to a template that uses `HomePageDefault` (currently `fashion-minimal` or no template) so the v8.x section order is preserved, **OR**
+- Render their own composition using the individual section exports (`<Hero>`, `<FeaturedCategoriesSection>`, `<TrendingProductsSection>`, `<NewsletterSignup>`) and place their custom blocks exactly where they want.
+
+### Migrating from v8.23.x
+
+Most consumers need no migration. Pin the new tag, reinstall, redeploy:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.0.0
+```
+
+The storefront renders identically to v8.23.x until an admin applies a template that registers component overrides (which the three bundled v9 templates now do).
+
+### Authoring component overrides on your own template
+
+```ts
+// src/templates/templates/my-template/index.ts
+import type { TemplateDefinition } from '@caspian-explorer/script-caspian-store';
+import { MyCustomHero, MyCustomProductCard } from './components';
+
+export const myTemplate: TemplateDefinition = {
+  id: 'my-template',
+  // ...standard template fields (theme, hero, brands, categories, products, ...)
+  components: {
+    Hero: MyCustomHero,
+    ProductCard: MyCustomProductCard,
+    // Omit slots you don't override — the default renders.
+  },
+  css: `
+    [data-caspian-template="my-template"] .caspian-hero {
+      /* template-scoped rules */
+    }
+  `,
+};
+```
+
+The override's prop signature must match the slot's contract. The bundled variants in [src/components/variants/](src/components/variants/) and [src/components/home/variants/](src/components/home/variants/) are reference implementations.
+
+---
+
 ## 8. Mount routes (v7.0.0 — one file)
 
 As of v7.0.0 the library ships a single dispatcher, `<CaspianRoot />`, that owns every library URL — storefront, admin, account, auth, journal, checkout, setup — via pathname-based routing. You mount it **once** and never touch routes again when the library adds pages.

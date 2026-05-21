@@ -16,6 +16,63 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.0.0 — Per-template component overrides: templates ship complete looks
+
+**Stable.** Promotes the v9.0.0-alpha.1 through v9.0.0-alpha.4 pre-release series to a stable release. The v8.23 templates feature shipped **content + theme tokens**; v9.0.0 generalises that to **content + theme + complete component overrides**. Applying a template now visibly changes the storefront's React components — not just the colors and copy.
+
+This is a major version because the public API surface gains a registry contract: any storefront primitive may be replaced by the active template's `components.<SlotId>` registration. Default behaviour is preserved (back-compat at the consumer call site), but the internal contract is genuinely new.
+
+### What v9 ships, end-to-end
+
+- **Component override registry** ([src/templates/components.ts](src/templates/components.ts)). `TemplateComponents` slot map for the five primary storefront surfaces: `Hero`, `HomePage`, `ProductCard`, `ProductDetailPage`, `LayoutShell`. Slot ids are stable; templates declare the subset they override; missing slots fall through to defaults.
+- **`<TemplateProvider>` + `useTemplateComponent()` hook** ([src/provider/template-provider.tsx](src/provider/template-provider.tsx)). Provider mounted automatically inside `<CaspianStoreProvider>`. Hook returns the registered override (typed against the fallback's props) or the fallback.
+- **Per-template CSS bundle.** `TemplateDefinition.css?: string` mounted by `<ThemeInjector>` as `<style id="caspian-template-css">`. `<html data-caspian-template="<id>">` data attribute lets template CSS scope rules cleanly. `prefers-reduced-motion` opt-outs respected throughout.
+- **`scriptSettings.activeTemplateId`** ([src/types.ts](src/types.ts)). Optional field. Written by `applyTemplate()` on every apply; read by `<TemplateProvider>`. Pre-v9 docs without the field resolve to the default storefront.
+- **Storefront primitives wrapped through dispatchers.** `<Hero>`, `<HomePage>`, `<ProductCard>`, `<ProductDetailPage>` are now thin wrappers that resolve via `useTemplateComponent()` and fall back to byte-equivalent v8.x implementations.
+- **Three bundled templates with full component overrides.** fashion-minimal keeps the v8.x identity. electronics-tech ships dark-mode spec-sheet layouts (full-bleed ken-burns hero, monospace `// SKU` eyebrows, inverted PDP, hover accent lines). home-goods ships magazine-style editorial layouts (50/50 split hero with slide-in animation, serif italic typography, editorial pull-quote on homepage, centred PDP with story column).
+- **`useProductDetailState()` hook** ([src/components/variants/use-product-detail-state.ts](src/components/variants/use-product-detail-state.ts)). Extracted from the 382-line monolithic PDP — variants are pure JSX wrappers. Adding a state field flows to all three with no per-variant edits.
+
+### Consumer action required on upgrade
+
+Minimal. Most consumers reinstall and redeploy:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.0.0
+```
+
+The storefront renders identically to v8.23.x until an admin applies a v9 template that registers component overrides. The three bundled templates do register them — re-applying any of them in Replace mode produces the new look.
+
+### Subtle behaviour change
+
+`<HomePage>`'s slot-injection props (`afterHero`, `afterFeaturedCategories`, `afterTrendingProducts`, `afterNewsletter`) now land at the semantic position dictated by the active variant's section order, not the v8.x order. Consumers relying on a slot landing at a specific visual position should switch to rendering their own composition from the individual section exports. See [INSTALL.md → v9.0.0 migration](INSTALL.md#760-v900--per-template-component-overrides).
+
+### What's stable from each alpha
+
+- **alpha.1** — registry foundation: types, provider, hook, `activeTemplateId`, CSS injection. Zero visible change.
+- **alpha.2** — `<Hero>` dispatcher + three variants (`HeroCentered`, `HeroFullBleed`, `HeroSplit`). First visibly different storefront on apply.
+- **alpha.3** — `<ProductCard>` + `<HomePage>` dispatchers + variants (Standard / Editorial / Compact cards; Default / Spotlight / Editorial homepage flows). Whole homepage feels template-specific.
+- **alpha.4** — `<ProductDetailPage>` dispatcher + three variants (Default / Tech / Editorial). PDP completes the per-template surface set.
+
+Each alpha was a focused pre-release Discussion: [#131](https://github.com/CaspianTools/script-caspian-store/discussions/131) (alpha.1), [#132](https://github.com/CaspianTools/script-caspian-store/discussions/132) (alpha.2), [#133](https://github.com/CaspianTools/script-caspian-store/discussions/133) (alpha.3), [#134](https://github.com/CaspianTools/script-caspian-store/discussions/134) (alpha.4).
+
+### Migration guide
+
+See [INSTALL.md → v9.0.0 — Per-template component overrides](INSTALL.md#760-v900--per-template-component-overrides) for the full migration walkthrough including back-compat guarantees, the slot-id list, the subtle homepage-slot behaviour change, and an example of authoring component overrides on a custom template.
+
+### Added
+
+Cumulative across alphas:
+- [src/templates/components.ts](src/templates/components.ts), [src/provider/template-provider.tsx](src/provider/template-provider.tsx), [src/components/home/variants/](src/components/home/variants/) (hero + homepage variants), [src/components/variants/](src/components/variants/) (product-card + product-detail variants), [src/components/variants/use-product-detail-state.ts](src/components/variants/use-product-detail-state.ts).
+- [INSTALL.md](INSTALL.md) gains a new §7.6 migration guide.
+
+### Changed
+
+- [src/components/home/hero.tsx](src/components/home/hero.tsx), [src/components/home/home-page.tsx](src/components/home/home-page.tsx), [src/components/product-card.tsx](src/components/product-card.tsx), [src/components/product-detail-page.tsx](src/components/product-detail-page.tsx): now thin dispatchers.
+- [src/templates/types.ts](src/templates/types.ts): `TemplateDefinition` gains `components?` and `css?`.
+- [src/types.ts](src/types.ts): `ScriptSettings.activeTemplateId?` optional field.
+- [src/context/theme-context.tsx](src/context/theme-context.tsx), [src/provider/caspian-store-provider.tsx](src/provider/caspian-store-provider.tsx): `<ThemeInjector>` mounts template CSS + data attribute; `<TemplateProvider>` inserted in the provider tree.
+- [src/templates/templates/{fashion-minimal,electronics-tech,home-goods}/index.ts](src/templates/templates/): each template registers its `components` + `css`.
+
 ## v9.0.0-alpha.4 — ProductDetailPage variants: PDP completes the per-template surface set (pre-release)
 
 **Pre-release.** Phase 4 of the v9.0.0 theme rearchitecture — the last visible-content phase. Every primary storefront surface is now template-dispatched: hero (alpha.2), product card + homepage (alpha.3), and now product detail page. Phase 5 will stabilise and ship v9.0.0 stable with migration docs.
