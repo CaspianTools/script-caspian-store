@@ -79,6 +79,10 @@ export {
   type OrderConfirmationPageProps,
 } from './components/order-confirmation-page';
 export {
+  GuestOrderLookupPage,
+  type GuestOrderLookupPageProps,
+} from './components/guest-order-lookup-page';
+export {
   OrderHistoryList,
   type OrderHistoryListProps,
 } from './components/order-history-list';

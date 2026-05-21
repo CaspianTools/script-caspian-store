@@ -93,9 +93,9 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | **Reviews & Q&A:** `<ProductReviews />` with summary, list, sort, write/ask dialogs, Verified Purchase badge | ✅ |
 | **Cart:** `<CartProvider />`, `useCart()`, `<CartSheet />` drawer — Firestore-persisted for signed-in users, localStorage otherwise | ✅ |
 | UI primitives: Button, Dialog, Input, Textarea, Label, Tabs, Select, Skeleton, Badge, Avatar, Separator, Toast | ✅ |
-| **Checkout:** `useCheckout()` + `<CheckoutPage />` — delegates to the active payment plugin (Stripe ships today) | ✅ |
+| **Checkout:** `useCheckout()` + `<CheckoutPage />` — delegates to the active payment plugin (Stripe ships today). WooCommerce-style **guest checkout** with optional inline sign-in and "create account at checkout" (v9.1+) | ✅ |
 | **Order confirmation:** `<OrderConfirmationPage />` — polls Firestore for the webhook-created order | ✅ |
-| **Order history:** `<OrderHistoryList />` | ✅ |
+| **Order history:** `<OrderHistoryList />` for signed-in customers; `<GuestOrderLookupPage />` at `/order-status` for guests (order # + email) | ✅ |
 | **Wishlist:** `useWishlist()` + `<WishlistButton />` + `<WishlistPanel />` (account page section) | ✅ |
 | **Admin:** `<AdminGuard />`, `<AdminShell />`, `<AdminDashboard />`, product CRUD, orders + status, reviews moderation, `<AdminAboutPage />` (installed version + GitHub release feed + one-click self-update) | ✅ |
 | **Auth:** `<LoginPage />`, `<RegisterPage />`, `<ForgotPasswordPage />`, `<AccountPage />` — sidebar-driven: profile (name/email/phone/photo), orders, addresses, wishlist, security | ✅ |
@@ -119,7 +119,7 @@ ProductListPage, ProductGrid, ProductCard,
 ProductDetailPage, ProductGallery, SizeSelector, QuantitySelector,
 ProductReviews, ReviewSummary, ReviewList, ReviewItem,
 QuestionList, QuestionItem, WriteReviewDialog, AskQuestionDialog,
-CartSheet, CheckoutPage, OrderConfirmationPage, OrderHistoryList,
+CartSheet, CheckoutPage, OrderConfirmationPage, GuestOrderLookupPage, OrderHistoryList,
 WishlistButton, ScriptSettingsPage, ContactPage,
 StarIcon, StarRatingInput
 

@@ -34,6 +34,14 @@ export interface CreateCheckoutRequest {
   shippingInfo?: CheckoutShippingInfo;
   /** Optional — pass-through for analytics / emails. */
   locale?: string | null;
+  /**
+   * Form-collected contact email. Used as Stripe `customer_email` (so the
+   * buyer doesn't re-enter it on Stripe Checkout) and stamped on the order
+   * doc as `userEmail` by the webhook. Required in practice for anonymous
+   * (guest) buyers, since `request.auth.token.email` is empty for those.
+   * Added in v9.1 alongside guest checkout.
+   */
+  email?: string | null;
 }
 
 function computeDiscount(subtotal: number, promo: FirebaseFirestore.DocumentData): number {
@@ -200,6 +208,14 @@ export const createStripeCheckoutSession = onCall(
       }
     }
 
+    // Anonymous-auth users (WooCommerce-style guest checkout) have an empty
+    // token email, so the form-collected email is the only contact channel.
+    // Form email wins when present, even for signed-in buyers — they may want
+    // the order receipt to go to a different address.
+    const formEmail = typeof data.email === 'string' ? data.email.trim() : '';
+    const resolvedEmail = formEmail || request.auth.token.email || '';
+    const isGuest = request.auth.token.firebase?.sign_in_provider === 'anonymous';
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
@@ -209,10 +225,11 @@ export const createStripeCheckoutSession = onCall(
         : `${data.successUrl}${data.successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: data.cancelUrl,
       client_reference_id: request.auth.uid,
-      customer_email: request.auth.token.email ?? undefined,
+      customer_email: resolvedEmail || undefined,
       metadata: {
         userId: request.auth.uid,
-        userEmail: request.auth.token.email ?? '',
+        userEmail: resolvedEmail,
+        isGuest: isGuest ? '1' : '',
         promoCode: appliedPromoCode ?? '',
         discount: discount.toFixed(2),
         shippingCost: shippingCost.toFixed(2),

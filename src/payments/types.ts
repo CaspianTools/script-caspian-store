@@ -66,6 +66,25 @@ export interface StartCheckoutOptions {
   /** Optional locale pass-through (e.g. for email templating). */
   locale?: string;
   /**
+   * Email collected on the checkout form. For anonymous (guest) buyers this
+   * is the only contact channel — `ctx.user.email` is empty for Firebase
+   * anonymous-auth users, so plugins stamp this onto `Order.userEmail` and
+   * pass it to the payment provider (Stripe `customer_email`, etc.). For
+   * signed-in buyers this typically matches `ctx.user.email`; the form value
+   * still wins when set, so a buyer can ship to a different contact email.
+   * Added in v9.1 alongside guest checkout.
+   */
+  email?: string;
+  /**
+   * Set by the checkout page when an anonymous buyer ticks the "Create an
+   * account for faster checkout next time" checkbox. The page itself promotes
+   * the anonymous session to a real account via `signUpWithSetupLink()` before
+   * starting checkout; this flag is forwarded to payment plugins so server
+   * code (Stripe webhook, etc.) can stamp `Order.isGuest = false` and surface
+   * the post-purchase setup-link email. Added in v9.1.
+   */
+  createAccount?: boolean;
+  /**
    * Optional override of the server endpoint. When set, the plugin will POST
    * JSON to this URL instead of invoking its Cloud Function callable. Useful
    * for consumers (like Next.js apps) that already host the checkout endpoint.

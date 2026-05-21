@@ -81,7 +81,12 @@ export function useCheckout() {
 
   const startCheckout = useCallback(
     async (options: StartCheckoutOptions) => {
-      if (!user) {
+      // Read the user from Firebase directly (not the React-state `user` from
+      // useAuth) so guest-checkout flows that promote anonymous → real account
+      // mid-handler see the post-promotion user immediately — React state lags
+      // by a tick because it's driven by the onAuthStateChanged listener.
+      const currentUser = auth.currentUser ?? user;
+      if (!currentUser) {
         const msg = 'You must be signed in to check out.';
         setError(msg);
         throw new Error(msg);
@@ -106,7 +111,7 @@ export function useCheckout() {
           {
             functions,
             auth,
-            user,
+            user: currentUser,
             items,
             config: active.config,
           },

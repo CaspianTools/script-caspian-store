@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCart } from '../context/cart-context';
 import { useAuth } from '../context/auth-context';
 import { useCaspianFirebase, useCaspianImage, useCaspianLink } from '../provider/caspian-store-provider';
@@ -43,6 +43,14 @@ interface ShippingForm {
   postalCode: string;
   phone: string;
   saveAddressToProfile: boolean;
+  /**
+   * "Create an account for faster checkout next time" — WooCommerce-style
+   * opt-in shown only to anonymous (guest) buyers when
+   * `SiteSettings.accounts.allowAccountCreationAtCheckout` is enabled. No
+   * password is collected here; the library calls `signUpWithSetupLink()`
+   * which mails a password-setup link to the buyer post-purchase.
+   */
+  createAccount: boolean;
 }
 
 const emptyForm: ShippingForm = {
@@ -57,6 +65,7 @@ const emptyForm: ShippingForm = {
   postalCode: '',
   phone: '',
   saveAddressToProfile: true,
+  createAccount: false,
 };
 
 /**
@@ -89,15 +98,28 @@ export function CheckoutPage({
   cartHref = '/cart',
   className,
 }: CheckoutPageProps) {
-  const { db } = useCaspianFirebase();
+  const { db, auth: firebaseAuth } = useCaspianFirebase();
   const Image = useCaspianImage();
   const Link = useCaspianLink();
   const { items, subtotal, count } = useCart();
-  const { user, userProfile, loading: authLoading, signInAsGuest } = useAuth();
+  const {
+    user,
+    userProfile,
+    loading: authLoading,
+    signIn,
+    signInAsGuest,
+    signInWithGoogle,
+    signUpWithSetupLink,
+  } = useAuth();
   const { toast } = useToast();
-  const [guestSignInLoading, setGuestSignInLoading] = useState(false);
   const { startCheckout, loading, error, activePlugin } = useCheckout();
   const t = useT();
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInPassword, setSignInPassword] = useState('');
+  const [signInBusy, setSignInBusy] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  const guestSignInAttempted = useRef(false);
 
   const [site, setSite] = useState<SiteSettings | null>(null);
   const [form, setForm] = useState<ShippingForm>(() => ({ ...emptyForm }));
@@ -273,31 +295,62 @@ export function CheckoutPage({
     [subtotal, selectedRate, taxAmount],
   );
 
+  // ---- Auto-anon-signin for guest checkout ----
+  //
+  // WooCommerce-style: don't gate the checkout form behind a "sign in / guest"
+  // interstitial. The form renders for everyone, and if the buyer has no auth
+  // session we silently kick off Firebase anonymous auth so cart writes,
+  // shipping-rate queries, and the eventual order create-doc all pass the
+  // `isAuth()` rule. The buyer can still sign in inline or check the "create
+  // account" box mid-checkout. The guard `guestSignInAttempted` is the only
+  // thing keeping React StrictMode's double-mount from triggering two anon
+  // sessions on the first render.
+  useEffect(() => {
+    if (authLoading || user) return;
+    const allowGuest = site?.accounts?.allowGuestCheckout ?? true;
+    if (!allowGuest) return;
+    if (guestSignInAttempted.current) return;
+    guestSignInAttempted.current = true;
+    void signInAsGuest().catch((err) => {
+      console.error('[caspian-store] Guest sign-in failed:', err);
+      toast({
+        title: 'Could not start guest checkout',
+        description: err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
+      guestSignInAttempted.current = false;
+    });
+  }, [authLoading, user, site?.accounts?.allowGuestCheckout, signInAsGuest, toast]);
+
+  const handleInlineSignIn = async (provider: 'password' | 'google') => {
+    setSignInBusy(true);
+    setSignInError(null);
+    try {
+      if (provider === 'google') {
+        await signInWithGoogle();
+      } else {
+        await signIn(signInEmail.trim(), signInPassword);
+      }
+      setSignInOpen(false);
+      setSignInPassword('');
+    } catch (err) {
+      setSignInError(err instanceof Error ? err.message : 'Sign-in failed.');
+    } finally {
+      setSignInBusy(false);
+    }
+  };
+
   // ---- Render gates ----
 
   if (authLoading) {
     return <p style={{ padding: 40, color: '#888' }}>{t('common.loading')}</p>;
   }
 
+  // When guest checkout is disabled and the buyer is signed out, fall back to
+  // the original interstitial so admins who explicitly turned the toggle off
+  // still get the auth-required UX.
   if (!user) {
-    const allowGuest = site?.accounts?.allowGuestCheckout ?? false;
     const allowRegister = site?.accounts?.allowAccountCreationAtCheckout ?? true;
-
-    const handleGuestCheckout = async () => {
-      setGuestSignInLoading(true);
-      try {
-        await signInAsGuest();
-      } catch (error) {
-        console.error('[caspian-store] Guest sign-in failed:', error);
-        toast({
-          title: 'Could not start guest checkout',
-          description: error instanceof Error ? error.message : undefined,
-          variant: 'destructive',
-        });
-        setGuestSignInLoading(false);
-      }
-    };
-
     return (
       <div
         className={className}
@@ -316,16 +369,6 @@ export function CheckoutPage({
           <Link href="/login">{t('signInGate.signInLink')}</Link>
           {allowRegister && <Link href="/register">Create an account</Link>}
         </div>
-        {allowGuest && (
-          <Button
-            variant="outline"
-            onClick={handleGuestCheckout}
-            loading={guestSignInLoading}
-            style={{ marginTop: 8 }}
-          >
-            Continue as guest
-          </Button>
-        )}
       </div>
     );
   }
@@ -358,6 +401,36 @@ export function CheckoutPage({
   }
 
   const handlePay = async () => {
+    // Promote an anonymous (guest) session to a real account before starting
+    // checkout when the buyer ticked "Create an account". This swaps the
+    // Firebase auth session synchronously — `firebaseAuth.currentUser` is the
+    // new user immediately on resolve, so the subsequent `addAddress` and
+    // `startCheckout` calls stamp the real uid. The React `user` state lags
+    // by a tick (it's driven by `onAuthStateChanged`), so we deliberately
+    // read from `firebaseAuth.currentUser` in those follow-up calls.
+    let accountPromoted = false;
+    if (form.createAccount && user?.isAnonymous && form.email.trim()) {
+      try {
+        await signUpWithSetupLink(
+          form.email.trim(),
+          `${form.firstName} ${form.lastName}`.trim() || form.email.trim(),
+        );
+        accountPromoted = true;
+      } catch (err) {
+        // Most common failure is `auth/email-already-in-use` — surface a
+        // toast and continue as a guest order. The auth-trigger Cloud
+        // Function will still link the order to the existing account if
+        // the buyer signs in or registers later with the same email.
+        const msg =
+          err instanceof Error && err.message.includes('email-already-in-use')
+            ? 'An account with that email already exists. Sign in to attach this order to it, or continue as guest.'
+            : err instanceof Error
+              ? err.message
+              : 'Could not create your account — continuing as guest.';
+        toast({ title: 'Account not created', description: msg, variant: 'destructive' });
+      }
+    }
+
     // Subscribe to newsletter if opted in.
     if (form.newsletterOptIn && form.email.trim()) {
       try {
@@ -367,10 +440,18 @@ export function CheckoutPage({
       }
     }
 
-    // Persist new address to user profile if opted in.
-    if (selectedAddressId === 'new' && form.saveAddressToProfile && user) {
+    // Persist new address to user profile if opted in. We deliberately skip
+    // this for anonymous buyers — their profile is throwaway. `currentUser`
+    // is fresh post-account-promotion above.
+    const effectiveUser = firebaseAuth.currentUser ?? user;
+    if (
+      selectedAddressId === 'new' &&
+      form.saveAddressToProfile &&
+      effectiveUser &&
+      !effectiveUser.isAnonymous
+    ) {
       try {
-        await addAddress(db, user.uid, {
+        await addAddress(db, effectiveUser.uid, {
           name: `${form.firstName} ${form.lastName}`.trim(),
           address: [form.address, form.apartment].filter(Boolean).join(' '),
           city: form.city,
@@ -388,6 +469,8 @@ export function CheckoutPage({
         successUrl,
         cancelUrl,
         shippingCost: selectedRate?.price ?? 0,
+        email: form.email.trim(),
+        createAccount: form.createAccount && !accountPromoted,
         shippingInfo: selectedRate
           ? {
               name: `${form.firstName} ${form.lastName}`.trim(),
@@ -454,10 +537,76 @@ export function CheckoutPage({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: 16,
+                gap: 12,
+                flexWrap: 'wrap',
               }}
             >
               <h2 style={h2Style}>{t('checkout.contact')}</h2>
+              {user?.isAnonymous && (
+                <button
+                  type="button"
+                  onClick={() => setSignInOpen((v) => !v)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: 13,
+                    color: 'var(--caspian-primary, #111)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  {signInOpen ? 'Hide sign-in' : 'Already have an account? Sign in'}
+                </button>
+              )}
             </header>
+            {signInOpen && user?.isAnonymous && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  padding: 14,
+                  marginBottom: 16,
+                  background: 'rgba(0,0,0,0.03)',
+                  borderRadius: 8,
+                }}
+              >
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={signInEmail}
+                  onChange={(e) => setSignInEmail(e.target.value)}
+                />
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={signInPassword}
+                  onChange={(e) => setSignInPassword(e.target.value)}
+                />
+                {signInError && (
+                  <p style={{ color: '#b91c1c', fontSize: 12, margin: 0 }}>{signInError}</p>
+                )}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button
+                    size="sm"
+                    onClick={() => handleInlineSignIn('password')}
+                    loading={signInBusy}
+                    disabled={!signInEmail.trim() || !signInPassword}
+                  >
+                    Sign in
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleInlineSignIn('google')}
+                    loading={signInBusy}
+                  >
+                    Continue with Google
+                  </Button>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Input
                 type="email"
@@ -473,6 +622,20 @@ export function CheckoutPage({
                 />
                 {t('checkout.newsletterOptIn')}
               </label>
+              {user?.isAnonymous && (site?.accounts?.allowAccountCreationAtCheckout ?? true) && (
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#555' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.createAccount}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, createAccount: e.target.checked }))
+                    }
+                  />
+                  Create an account for faster checkout next time (we'll email you a password setup link)
+                </label>
+              )}
             </div>
           </section>
 
@@ -540,7 +703,7 @@ export function CheckoutPage({
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                   />
                 </div>
-                {user && (
+                {user && !user.isAnonymous && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666' }}>
                     <input
                       type="checkbox"

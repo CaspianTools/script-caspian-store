@@ -83,9 +83,15 @@ export async function startManualCheckout(
   // Note: createdAt would normally be a Timestamp; we use serverTimestamp at
   // write time and fall back to a client-side Timestamp typing for our
   // Order interface. Firestore replaces it with the server-assigned value.
+  // Form email wins over `ctx.user.email`: for anonymous (guest) buyers the
+  // Firebase user has no email, and even for signed-in buyers the form value
+  // is the contact email they explicitly chose for this order.
+  const userEmail = options.email?.trim() || ctx.user.email || '';
+  const isGuest = ctx.user.isAnonymous;
+
   const payload: Omit<Order, 'id'> = {
     userId: ctx.user.uid,
-    userEmail: ctx.user.email ?? '',
+    userEmail,
     status: 'on-hold' satisfies OrderStatus,
     items,
     shippingInfo: options.shippingInfo,
@@ -101,6 +107,7 @@ export async function startManualCheckout(
     discount,
     promoCode: options.promoCode ?? null,
     total,
+    ...(isGuest ? { isGuest: true } : {}),
     createdAt: serverTimestamp() as unknown as Timestamp,
   };
 

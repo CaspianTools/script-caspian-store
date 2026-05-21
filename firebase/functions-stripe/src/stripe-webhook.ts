@@ -116,6 +116,7 @@ export const stripeWebhook = onRequest(
       }
 
       const userEmail = metadata.userEmail || session.customer_details?.email || '';
+      const isGuest = metadata.isGuest === '1';
       const promoCode = metadata.promoCode || null;
       const discount = parseFloat(metadata.discount ?? '0') || 0;
       const shippingCost = parseFloat(metadata.shippingCost ?? '0') || 0;
@@ -159,6 +160,7 @@ export const stripeWebhook = onRequest(
         discount,
         promoCode,
         total,
+        ...(isGuest ? { isGuest: true } : {}),
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });

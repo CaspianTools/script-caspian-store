@@ -272,7 +272,7 @@ If you already have a `firestore.rules`, merge the `match /<collection>/{id} { .
 
 v1.16.0+ ships **three codebases** so you can deploy admin triggers without having any provider configured:
 
-- `caspian-admin` — `onUserCreate` (auto-promote first user to admin), `claimAdmin`, scheduled retention cleanup. **No secrets**, no provider deps. Always deployable.
+- `caspian-admin` — `onUserCreate` (auto-promote first user to admin), `claimAdmin`, scheduled retention cleanup, `linkGuestOrdersOnUserCreate` (re-stamps prior guest orders to a newly-registered account that matches the same email — v9.1+), `getGuestOrder` (unauthenticated HTTPS callable that powers `<GuestOrderLookupPage />` at `/order-status` — v9.1+). **No secrets**, no provider deps. Always deployable.
 - `caspian-email` (v3.0.0+) — transactional email triggers (`runEmailOnOrderCreate`, `runEmailOnOrderUpdate`, `runEmailOnContactCreate`) + `sendTestEmail` callable. **v8.0.0+ requires Cloud Secret Manager:** before deploy, run `firebase functions:secrets:set CASPIAN_EMAIL_SENDGRID_API_KEY` and/or `CASPIAN_EMAIL_BREVO_API_KEY` (you only need the secrets for providers you actually use). Functions read the keys via `defineSecret(...)` at runtime.
 - `caspian-stripe` — `createStripeCheckoutSession`, `stripeWebhook`, `getStripeSession`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as Functions secrets.
 

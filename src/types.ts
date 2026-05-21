@@ -135,6 +135,15 @@ export interface Order {
    */
   tax?: number;
   total: number;
+  /**
+   * True when the order was placed by an anonymous (Firebase anonymous-auth)
+   * user — i.e. a WooCommerce-style guest checkout. `userId` still references
+   * the anonymous account so Firestore rules continue to allow the buyer to
+   * read their own order. The auth-trigger account-linking Cloud Function
+   * re-stamps `userId` (and clears this flag) when a real account is later
+   * created with the matching `userEmail`. Added in v9.1.
+   */
+  isGuest?: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }

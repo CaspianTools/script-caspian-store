@@ -16,6 +16,57 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.1.0 — Guest checkout (WooCommerce-style): inline, optional sign-in, account-linking
+
+Shoppers can now complete checkout without creating an account. The flow is modeled on WooCommerce: the checkout form is the landing view, with sign-in and "create an account" offered inline as optional affordances — neither is required, and prior guest orders auto-attach to the customer's account if they register later with the same email.
+
+### What changed
+
+- **Inline guest checkout.** The `if (!user)` interstitial in `<CheckoutPage>` is gone. The form renders for everyone, and when the buyer has no auth session the page silently calls `signInAnonymously()` so cart writes, shipping queries, and order creation all pass Firestore rules. The interstitial is preserved only for stores that explicitly turn `accounts.allowGuestCheckout` off in admin Site Settings.
+- **Inline sign-in panel.** Anonymous buyers see `Already have an account? Sign in` at the top of the contact card. Expanding it shows email/password + "Continue with Google" — both delegate to the existing `useAuth().signIn` / `signInWithGoogle`. Successful sign-in re-populates the form from the now-real user's profile.
+- **"Create an account for faster checkout" checkbox** below the email field, only shown for anonymous buyers when `accounts.allowAccountCreationAtCheckout` is on (default `true`). No password is collected at checkout — the library calls `signUpWithSetupLink()` which mails a password-setup link to the buyer post-purchase. Email-already-in-use is non-fatal: the order still completes as a guest order and the account-linking trigger picks it up when the buyer eventually signs in.
+- **Form email is the source of truth.** Previously the order doc's `userEmail` was stamped from `ctx.user.email` — which is empty for anonymous buyers. Now it's the form email (`StartCheckoutOptions.email`), threaded through both manual-payment plugins and the Stripe Cloud Function (so Stripe Checkout no longer asks the buyer to re-enter their email).
+- **`Order.isGuest`.** New optional field. `true` when the order was placed by an anonymous user. Cleared by the auth-trigger when the buyer registers later.
+- **`linkGuestOrdersOnUserCreate` Cloud Function** (`functions-admin`). Fires on `users/{uid}` create. For every new (non-anonymous) account, finds prior guest orders matching the same email and re-stamps `userId` + clears `isGuest`. Batched, capped at 450 docs per fire.
+- **`getGuestOrder` HTTPS callable** (`functions-admin`). Unauthenticated. Takes `{ orderId, email }`, returns a sanitized order projection when the supplied email matches the order's `userEmail` (case-insensitive). Returns 404 for both not-found and email-mismatch so it can't be used to enumerate order ids.
+- **`<GuestOrderLookupPage />`** — new exported component (WooCommerce's `[woocommerce_order_tracking]` equivalent). Mounted at `/order-status` in `<CaspianRoot>`. Two-field form (order #, email), pre-fills from `?id=...&email=...` query params for direct deep-linking from order confirmation emails.
+
+### Default change
+
+`accounts.allowGuestCheckout` now defaults to **`true`** for new stores (`DEFAULT_ACCOUNTS` in `admin-site-settings-page.tsx`). Existing stores with the field already written to Firestore keep their value.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.1.0
+firebase deploy --only functions:caspian-admin,functions:caspian-stripe
+```
+
+The `functions-admin` redeploy is required for the two new functions (`linkGuestOrdersOnUserCreate`, `getGuestOrder`). The `functions-stripe` redeploy is required for the Stripe Checkout email pass-through. To get the "Track your order" link into your order confirmation email, add a line like the following to the **Customer: processing order** template body in **Admin → Email → Templates**:
+
+```
+Track your order: https://your-storefront.example.com/order-status?id={order_number}&email={customer_email}
+```
+
+(Both placeholders already exist; only the URL prefix needs to match your live domain.)
+
+### Added
+
+- [src/components/guest-order-lookup-page.tsx](src/components/guest-order-lookup-page.tsx) and its `/order-status` route in [src/components/caspian-root.tsx](src/components/caspian-root.tsx).
+- [firebase/functions-admin/src/link-guest-orders.ts](firebase/functions-admin/src/link-guest-orders.ts) and [firebase/functions-admin/src/get-guest-order.ts](firebase/functions-admin/src/get-guest-order.ts), exported from [firebase/functions-admin/src/index.ts](firebase/functions-admin/src/index.ts).
+- `Order.isGuest?: boolean` field in [src/types.ts](src/types.ts).
+- `StartCheckoutOptions.email` and `StartCheckoutOptions.createAccount` in [src/payments/types.ts](src/payments/types.ts).
+
+### Changed
+
+- [src/components/checkout-page.tsx](src/components/checkout-page.tsx): interstitial gate removed; auto-anon-signin effect added; inline sign-in panel + create-account checkbox; `handlePay` promotes anonymous → real account via `signUpWithSetupLink` when the checkbox is set; `saveAddressToProfile` is now hidden for anonymous buyers.
+- [src/hooks/use-checkout.ts](src/hooks/use-checkout.ts): reads `auth.currentUser` rather than the React `user` state so the post-promotion user is seen immediately by `startCheckout`.
+- [src/payments/plugins/manual-base.ts](src/payments/plugins/manual-base.ts): writes `userEmail` from `options.email` and stamps `isGuest` for anonymous buyers.
+- [src/payments/plugins/stripe.ts](src/payments/plugins/stripe.ts): forwards `email` in the callable payload.
+- [firebase/functions-stripe/src/stripe-checkout.ts](firebase/functions-stripe/src/stripe-checkout.ts): accepts `email`, uses it as `customer_email`, stamps `metadata.isGuest` from the anonymous sign-in provider.
+- [firebase/functions-stripe/src/stripe-webhook.ts](firebase/functions-stripe/src/stripe-webhook.ts): persists `isGuest` on the order doc when `metadata.isGuest === '1'`.
+- [src/admin/admin-site-settings-page.tsx](src/admin/admin-site-settings-page.tsx): `DEFAULT_ACCOUNTS.allowGuestCheckout` flipped from `false` to `true`.
+
 ## v9.0.0 — Per-template component overrides: templates ship complete looks
 
 **Stable.** Promotes the v9.0.0-alpha.1 through v9.0.0-alpha.4 pre-release series to a stable release. The v8.23 templates feature shipped **content + theme tokens**; v9.0.0 generalises that to **content + theme + complete component overrides**. Applying a template now visibly changes the storefront's React components — not just the colors and copy.

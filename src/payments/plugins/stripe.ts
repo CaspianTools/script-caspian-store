@@ -21,6 +21,8 @@ interface StripeCallablePayload {
   shippingCost: number;
   shippingInfo: StartCheckoutOptions['shippingInfo'] | null;
   locale: string | null;
+  /** Form-collected contact email; server stamps it on the order. */
+  email: string | null;
 }
 
 interface StripeCallableResponse {
@@ -51,6 +53,7 @@ function buildPayload(
     shippingCost: options.shippingCost ?? 0,
     shippingInfo: options.shippingInfo ?? null,
     locale: options.locale ?? null,
+    email: options.email?.trim() || null,
   };
 }
 

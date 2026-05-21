@@ -18,7 +18,7 @@ import { DEFAULT_INVENTORY_SETTINGS } from '../utils/inventory';
 import { DEFAULT_TAX_CONFIG } from '../utils/tax';
 
 const DEFAULT_ACCOUNTS: AccountSettings = {
-  allowGuestCheckout: false,
+  allowGuestCheckout: true,
   allowAccountCreationAtCheckout: true,
   allowAccountCreationOnMyAccount: true,
   sendPasswordSetupLink: false,

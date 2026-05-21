@@ -12,6 +12,7 @@ import { SearchResultsPage } from './search-results-page';
 import { CartPage } from './cart-page';
 import { CheckoutPage } from './checkout-page';
 import { OrderConfirmationPage } from './order-confirmation-page';
+import { GuestOrderLookupPage } from './guest-order-lookup-page';
 
 import {
   AccountPage,
@@ -164,6 +165,8 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
     const sessionId = nav.searchParams?.get('session_id');
     return sessionId ? <OrderConfirmationPage orderId={sessionId} /> : null;
   }
+
+  if (path === '/order-status') return <GuestOrderLookupPage />;
 
   if (path === '/account') return <AccountPage />;
   if (path === '/login' || path === '/auth/login') return <LoginPage />;

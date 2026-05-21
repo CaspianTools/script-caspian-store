@@ -9,3 +9,5 @@ export { syncAdminClaim } from './sync-admin-claim';
 export { promoteUserToAdmin } from './promote-user-to-admin';
 export { demoteAdminToCustomer } from './demote-admin-to-customer';
 export { runRetentionCleanup } from './retention-cleanup';
+export { linkGuestOrdersOnUserCreate } from './link-guest-orders';
+export { getGuestOrder } from './get-guest-order';
