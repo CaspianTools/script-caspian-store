@@ -3,11 +3,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { SiteSettings } from '../types';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useTemplateComponent } from '../provider/template-provider';
 import { useAuth } from '../context/auth-context';
 import { getSiteSettings } from '../services/site-settings-service';
-import { SiteHeader, type SiteHeaderProps } from './site-header';
-import { SiteFooter, type SiteFooterProps } from './site-footer';
+import type { SiteHeaderProps } from './site-header';
+import type { SiteFooterProps } from './site-footer';
 import { ComingSoonSplash } from './coming-soon-splash';
+import { LayoutShellChromeDefault } from './variants/layout-shell-chrome-default';
 
 // v7.2.0 self-heal sentinel. CaspianRoot owns the shell for every storefront
 // path, but some consumer root layouts — notably `src/app/layout.tsx`
@@ -92,6 +94,14 @@ export function LayoutShell({
     };
   }, [db, bypass, alreadyMounted]);
 
+  // The active template's chrome variant. v9.0.0 reserved the `LayoutShell`
+  // slot; v9.1.0 actually wires it. Variants only get to choose how the
+  // chrome is composed — bypass routing, the coming-soon splash, and the
+  // double-mount sentinel above are framework-level concerns held in this
+  // dispatcher so each template doesn't have to re-implement them.
+  // Hooks must always run, so resolve before the bypass branches return.
+  const ChromeComponent = useTemplateComponent('LayoutShell', LayoutShellChromeDefault);
+
   if (alreadyMounted) return <>{children}</>;
   if (bypass) return <>{children}</>;
 
@@ -108,11 +118,9 @@ export function LayoutShell({
 
   return (
     <LayoutShellMountedContext.Provider value={true}>
-      {header !== null && <SiteHeader {...(header ?? {})} />}
-      <div style={{ paddingTop: contentPaddingY, paddingBottom: contentPaddingY }}>
+      <ChromeComponent header={header ?? null} footer={footer ?? null} contentPaddingY={contentPaddingY}>
         {children}
-      </div>
-      {footer !== null && <SiteFooter {...(footer ?? {})} />}
+      </ChromeComponent>
     </LayoutShellMountedContext.Provider>
   );
 }

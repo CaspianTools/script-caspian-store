@@ -16,6 +16,40 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.2.0 — LayoutShell chrome variants: header + footer decorations per template
+
+The v9 per-template component dispatcher gains its **fifth and final** wired slot. `<LayoutShell>`'s chrome (the header + content + footer composition) is now template-dispatched, completing the surface set introduced across v9.0.0-alpha.1 through v9.0.0 and joining `<Hero>`, `<HomePage>`, `<ProductCard>`, and `<ProductDetailPage>`.
+
+Chrome variants only choose how the standard `<SiteHeader>` and `<SiteFooter>` are *composed* — they don't replace them. Bypass-prefix routing (`/admin/*`), the coming-soon splash, the double-mount sentinel, and locale-prefix stripping all stay in the outer `<LayoutShell>` dispatcher so individual templates don't re-implement framework-level concerns.
+
+### Variants
+
+- **`<LayoutShellChromeDefault>`** — `fashion-minimal` + default storefront. Byte-equivalent to the v8.x / v9.1.x composition: header, content, footer.
+- **`<LayoutShellChromeTech>`** — `electronics-tech`. Adds two monospace decorative bands. **Top announcement bar** (`// FREE SHIPPING $50+  //  12mo warranty  //  Hand-tested`) above the header reinforces the spec-sheet identity in the first 8px of the viewport. **Pre-footer spec strip** with `// Built for daily use.` and a `Every product tested for ≥30 days before launch.` sub-line just above the footer.
+- **`<LayoutShellChromeEditorial>`** — `home-goods`. Adds an editorial **sign-off section** between the content and the footer: a serif italic pull-quote ("Pieces sourced from independent makers — fewer, better, made to outlast their fashions.") with `— Workshop Six` attribution. No announcement bar at the top — the editorial identity reads better when the page opens straight into navigation + brand rather than a transactional strip.
+
+### No consumer action required
+
+Pin the new tag and reinstall:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.2.0
+```
+
+Existing storefronts render identically until an admin (re-)applies a v9.2.0 template that registers `components.LayoutShell`. The three bundled templates now do.
+
+### Added
+
+- [src/components/variants/layout-shell-chrome-default.tsx](src/components/variants/layout-shell-chrome-default.tsx) — extracted v8.x chrome.
+- [src/components/variants/layout-shell-chrome-tech.tsx](src/components/variants/layout-shell-chrome-tech.tsx) — electronics-tech announce bar + spec prefooter.
+- [src/components/variants/layout-shell-chrome-editorial.tsx](src/components/variants/layout-shell-chrome-editorial.tsx) — home-goods editorial signoff.
+- [src/index.ts](src/index.ts): re-exports the three chrome variants + `LayoutShellChromeProps`.
+
+### Changed
+
+- [src/components/layout-shell.tsx](src/components/layout-shell.tsx): the outer `<LayoutShell>` now resolves a chrome variant via `useTemplateComponent('LayoutShell', LayoutShellChromeDefault)` and delegates the header + content + footer composition to it. Bypass routing, coming-soon gating, the double-mount sentinel, locale-prefix stripping all stay in the dispatcher. Direct uses of `<SiteHeader>` and `<SiteFooter>` moved into the default chrome variant; the dispatcher no longer imports the value forms (only their prop types).
+- [src/templates/templates/{fashion-minimal,electronics-tech,home-goods}/index.ts](src/templates/templates/): each template registers its `components.LayoutShell` override.
+
 ## v9.1.0 — Guest checkout (WooCommerce-style): inline, optional sign-in, account-linking
 
 Shoppers can now complete checkout without creating an account. The flow is modeled on WooCommerce: the checkout form is the landing view, with sign-in and "create an account" offered inline as optional affordances — neither is required, and prior guest orders auto-attach to the customer's account if they register later with the same email.

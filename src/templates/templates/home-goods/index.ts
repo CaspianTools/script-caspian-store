@@ -5,6 +5,7 @@
 
 import { HeroSplit } from '../../../components/home/variants/hero-split';
 import { HomePageEditorial } from '../../../components/home/variants/home-page-editorial';
+import { LayoutShellChromeEditorial } from '../../../components/variants/layout-shell-chrome-editorial';
 import { ProductCardEditorial } from '../../../components/variants/product-card-editorial';
 import { ProductDetailEditorial } from '../../../components/variants/product-detail-editorial';
 import type { TemplateDefinition } from '../../types';
@@ -372,6 +373,7 @@ export const homeGoodsTemplate: TemplateDefinition = {
     HomePage: HomePageEditorial,
     ProductCard: ProductCardEditorial,
     ProductDetailPage: ProductDetailEditorial,
+    LayoutShell: LayoutShellChromeEditorial,
   },
   css: `
 [data-caspian-template="home-goods"] .caspian-hero-split-copy > * {

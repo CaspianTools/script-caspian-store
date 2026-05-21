@@ -5,6 +5,7 @@
 
 import { HeroFullBleed } from '../../../components/home/variants/hero-full-bleed';
 import { HomePageSpotlight } from '../../../components/home/variants/home-page-spotlight';
+import { LayoutShellChromeTech } from '../../../components/variants/layout-shell-chrome-tech';
 import { ProductCardCompact } from '../../../components/variants/product-card-compact';
 import { ProductDetailTech } from '../../../components/variants/product-detail-tech';
 import type { TemplateDefinition } from '../../types';
@@ -371,6 +372,7 @@ export const electronicsTechTemplate: TemplateDefinition = {
     HomePage: HomePageSpotlight,
     ProductCard: ProductCardCompact,
     ProductDetailPage: ProductDetailTech,
+    LayoutShell: LayoutShellChromeTech,
   },
   css: `
 [data-caspian-template="electronics-tech"] .caspian-hero-fullbleed-bg img {

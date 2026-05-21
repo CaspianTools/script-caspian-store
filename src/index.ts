@@ -157,6 +157,14 @@ export {
   useProductDetailState,
   type ProductDetailTabKey,
 } from './components/variants/use-product-detail-state';
+// LayoutShell chrome variants (v9.2.0). Closes the per-template surface set 5/5
+// — `<LayoutShell>` now dispatches the header + content + footer composition,
+// with bypass-route handling, coming-soon gating, and the double-mount sentinel
+// staying in the outer LayoutShell dispatcher.
+export { LayoutShellChromeDefault } from './components/variants/layout-shell-chrome-default';
+export type { LayoutShellChromeProps } from './components/variants/layout-shell-chrome-default';
+export { LayoutShellChromeTech } from './components/variants/layout-shell-chrome-tech';
+export { LayoutShellChromeEditorial } from './components/variants/layout-shell-chrome-editorial';
 
 // Journal surface (v1.3)
 export {

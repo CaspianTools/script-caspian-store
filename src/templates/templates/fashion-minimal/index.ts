@@ -5,6 +5,7 @@
 
 import { HeroCentered } from '../../../components/home/variants/hero-centered';
 import { HomePageDefault } from '../../../components/home/variants/home-page-default';
+import { LayoutShellChromeDefault } from '../../../components/variants/layout-shell-chrome-default';
 import { ProductCardStandard } from '../../../components/variants/product-card-standard';
 import { ProductDetailDefault } from '../../../components/variants/product-detail-default';
 import type { TemplateDefinition } from '../../types';
@@ -378,6 +379,7 @@ export const fashionMinimalTemplate: TemplateDefinition = {
     HomePage: HomePageDefault,
     ProductCard: ProductCardStandard,
     ProductDetailPage: ProductDetailDefault,
+    LayoutShell: LayoutShellChromeDefault,
   },
   css: `
 [data-caspian-template="fashion-minimal"] .caspian-hero-centered-inner {
