@@ -71,8 +71,7 @@ export function WishlistProvider({ db, children }: { db: Firestore; children: Re
   const [loading, setLoading] = useState(true);
 
   // Hydrate on auth change. Sign-in merges the local (anon) list into the
-  // server list — this is the deliberate improvement over cart, which does a
-  // hard switch and loses anon data.
+  // server list. Mirrors the cart-context pattern (see mergeCartOnSignIn).
   useEffect(() => {
     let alive = true;
     (async () => {

@@ -16,6 +16,34 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.2.1 — Preserve anonymous cart on sign-in
+
+Shoppers no longer lose their cart when they sign in. Previously the cart provider did a hard switch on every auth-state change — when a buyer transitioned from anonymous (localStorage cart) or guest-checkout-anonymous (Firestore cart under the anon UID) to a real account, the new account's empty `carts/{uid}` doc immediately clobbered whatever they had added.
+
+The cart provider now mirrors the existing wishlist merge pattern: on sign-in it reads the local (anon) cart, optionally pulls the in-memory cart snapshot from the prior anonymous Firebase session, sums quantities for matching `(productId, size, color)` lines, writes the merged result into the real account's `carts/{uid}` doc, and clears the localStorage seed so it can't bleed back in on a subsequent sign-out → sign-in cycle.
+
+### Fixed
+
+- **Anonymous-to-authenticated cart loss.** [src/context/cart-context.tsx](src/context/cart-context.tsx): hydrate-on-auth-change effect tracks the previous user and an in-memory cart snapshot via `useRef`, calls `mergeCartOnSignIn` instead of replacing state with `loadUserCart`, and folds the in-memory anon snapshot in when v9.1.0's `signInAsGuest()` had been called earlier in the session. The in-memory snapshot is used — not a Firestore read of the orphan anon UID — because the `/carts/{uid}` rule requires `request.auth.uid == uid`, so a real-user session can't read the orphan doc. The orphan doc is left in place; pruning old anon carts is left to an out-of-band Cloud Function (out of scope for this patch).
+
+### Added
+
+- [src/services/cart-service.ts](src/services/cart-service.ts): exports `combineCartItems` and `mergeCartOnSignIn`. The combine helper sums quantities for matching cart lines (same productId + size + color) and appends non-matching ones; the merge helper reads the server cart, folds in any locally-supplied items, writes back only when the merge actually changes the cart, and returns the merged array so the caller doesn't need a second read. The merge function is the cart analogue of `mergeWishlistOnSignIn`.
+
+### Changed
+
+- [src/context/wishlist-context.tsx](src/context/wishlist-context.tsx): the comment that called out cart as "the deliberate improvement over cart, which does a hard switch" is now stale — updated to read as a shared pattern.
+
+### No consumer action required
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.2.1
+```
+
+No Firestore rules, indexes, or Cloud Functions changed. Existing storefronts get the fix on the next deploy with no further wiring. Stores upgrading directly from v9.0.x still need the v9.1.0 Functions redeploy (`firebase deploy --only functions:caspian-admin,functions:caspian-stripe`) per that release's notes.
+
+---
+
 ## v9.2.0 — LayoutShell chrome variants: header + footer decorations per template
 
 The v9 per-template component dispatcher gains its **fifth and final** wired slot. `<LayoutShell>`'s chrome (the header + content + footer composition) is now template-dispatched, completing the surface set introduced across v9.0.0-alpha.1 through v9.0.0 and joining `<Hero>`, `<HomePage>`, `<ProductCard>`, and `<ProductDetailPage>`.

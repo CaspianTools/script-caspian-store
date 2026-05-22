@@ -6,13 +6,18 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import type { Firestore } from 'firebase/firestore';
 import type { CartItem, CartItemRef, Product } from '../types';
 import { getProductsByIds } from '../services/product-service';
-import { loadUserCart, saveUserCart } from '../services/cart-service';
+import {
+  combineCartItems,
+  mergeCartOnSignIn,
+  saveUserCart,
+} from '../services/cart-service';
 import { reportServiceError } from '../services/error-log-service';
 import { useAuth } from './auth-context';
 
@@ -49,6 +54,15 @@ function writeLocal(items: CartItemRef[]) {
   }
 }
 
+function clearLocal() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(LOCAL_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
 function sameLine(a: CartItemRef, b: CartItemRef) {
   return (
     a.productId === b.productId &&
@@ -62,17 +76,50 @@ export function CartProvider({ db, children }: { db: Firestore; children: ReactN
   const [refs, setRefs] = useState<CartItemRef[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [loading, setLoading] = useState(true);
+  // Track the prior auth identity + in-memory cart snapshot so we can carry an
+  // anon shopper's lines across the anon → real sign-in transition. We can't
+  // read the orphan anon UID's cart doc from a real-user session — the
+  // `/carts/{uid}` rule requires `request.auth.uid == uid` — so the in-memory
+  // refs are the only source of truth for that previous cart state.
+  const previousUserRef = useRef<typeof user>(null);
+  const refsSnapshotRef = useRef<CartItemRef[]>([]);
 
-  // Hydrate refs on auth change
+  // Keep an up-to-date snapshot of refs available to the auth-change effect
+  // without making refs a dependency (which would re-fire the effect on every
+  // cart mutation and trigger a redundant merge).
+  useEffect(() => {
+    refsSnapshotRef.current = refs;
+  }, [refs]);
+
+  // Hydrate refs on auth change. Sign-in merges the anon cart into the
+  // now-authenticated cart, summing quantities for matching (productId, size,
+  // color) lines. Mirrors the wishlist merge. The anon cart comes from
+  // localStorage on the first transition (null → user) and from in-memory
+  // refs on the anon → real transition (since the orphan anon-UID Firestore
+  // doc is unreadable from the real-user session under our `/carts/{uid}`
+  // rule).
   useEffect(() => {
     let alive = true;
+    const previousUser = previousUserRef.current;
+    previousUserRef.current = user;
+    const carriedFromMemory =
+      previousUser &&
+      previousUser.isAnonymous &&
+      previousUser.uid !== user?.uid &&
+      user &&
+      !user.isAnonymous
+        ? refsSnapshotRef.current
+        : [];
     (async () => {
       setLoading(true);
       try {
         if (user) {
-          const remote = await loadUserCart(db, user.uid);
+          const local = readLocal();
+          const incoming = combineCartItems(local, carriedFromMemory);
+          const merged = await mergeCartOnSignIn(db, user.uid, incoming);
           if (!alive) return;
-          setRefs(remote);
+          setRefs(merged);
+          if (local.length > 0) clearLocal();
         } else {
           setRefs(readLocal());
         }
