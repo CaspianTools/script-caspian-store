@@ -42,7 +42,7 @@ export interface SiteInfoDraft {
 
 export interface BrandingDraft {
   /**
-   * Name of the selected preset in `THEME_PRESETS` (currently `'cleanWhite'`),
+   * Name of the selected preset in `THEME_PRESETS` (currently `'luivante'`),
    * or empty string for custom/unset.
    */
   themePreset: string;

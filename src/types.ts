@@ -999,17 +999,17 @@ export const DEFAULT_SCRIPT_SETTINGS: Omit<ScriptSettings, 'updatedAt'> = {
   defaultLocale: 'en',
   supportedLocales: ['en'],
   theme: {
-    primary: '#111111',
+    primary: '#1a73e8',
     primaryForeground: '#ffffff',
-    accent: '#171717',
-    radius: '0.5rem',
+    accent: '#1a73e8',
+    radius: '1rem',
     background: '#ffffff',
     fontFamily: "'Poppins', system-ui, -apple-system, sans-serif",
   },
   fonts: {
     body: "'Poppins', system-ui, -apple-system, sans-serif",
     headline: "'Poppins', system-ui, -apple-system, sans-serif",
-    googleFamilies: ['Poppins:wght@400;500;600;700'],
+    googleFamilies: ['Poppins:wght@300;400;500;600;700'],
   },
   hero: {
     title: 'Shop our latest collection',

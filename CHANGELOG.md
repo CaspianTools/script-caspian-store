@@ -16,6 +16,33 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.3.0 — Luivante: new default theme
+
+A new theme preset — **Luivante** — ships at the top of the theme catalog and becomes the project default. White canvas, Google blue (`#1a73e8`) accent, generous 1rem rounded corners, Poppins everywhere. Comes from the design handoff in the bundle of the same name: an everything-shop storefront with rounded pills, white pages, and a single confident action color across buttons, active states, focus rings, and selected swatches.
+
+This is purely an additive theme + default-token change. Existing stores keep their saved `theme` settings — only fresh installs and stores that haven't customized the tokens pick up the new defaults. Admins can preview / activate Luivante from the Appearance page like any other catalog preset; it carries `isNew: true` so its card shows the New pill until first interaction.
+
+### Added
+
+- **[src/theme/themes/luivante/index.ts](src/theme/themes/luivante/index.ts)** — `CatalogTheme` preset. Primary + accent `#1a73e8`, foreground `#ffffff`, radius `1rem`, background `#ffffff`, `fontFamily: 'Poppins'`, `googleFamilies: ['Poppins:wght@300;400;500;600;700']`. Categories: `shop`, `minimal`, `corporate`, `marketing`. Thumbnail: white background with the wordmark "Luivante" in `#1f1f1f` and the Google-blue accent dot.
+
+### Changed
+
+- **[src/theme/catalog.ts](src/theme/catalog.ts)** — Luivante is now the first entry in `THEME_CATALOG`, putting its card first in the Appearance admin grid.
+- **[src/types.ts](src/types.ts)** — `DEFAULT_SCRIPT_SETTINGS.theme` updated to Luivante's tokens; `fonts.googleFamilies` widened to include `Poppins:wght@300` for the lighter editorial weights the design uses. New installs and `Restore defaults` from the Appearance page now seed Luivante.
+- **[src/styles/globals.css](src/styles/globals.css)** — `:root` first-paint fallbacks updated to Luivante tokens. Affects only the brief window between mount and the first `<ThemeInjector>` write — stores with saved tokens get those instead, unchanged.
+- **[src/components/setup/setup-types.ts](src/components/setup/setup-types.ts)** — doc comment on `BrandingDraft.themePreset` now references `'luivante'` instead of `'cleanWhite'`.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v9.3.0
+```
+
+No Firestore rules, indexes, or Cloud Functions changed. **Existing stores keep their current theme** — their `siteSettings.theme` document was saved at first run and overrides the new defaults. To adopt Luivante on an existing store, open **Admin → Appearance**, find the **Luivante** card at the top of the grid, and click Activate (or click **Restore defaults** to reset every branding token at once). Fresh installs pick up Luivante automatically on first boot.
+
+---
+
 ## v9.2.1 — Preserve anonymous cart on sign-in
 
 Shoppers no longer lose their cart when they sign in. Previously the cart provider did a hard switch on every auth-state change — when a buyer transitioned from anonymous (localStorage cart) or guest-checkout-anonymous (Firestore cart under the anon UID) to a real account, the new account's empty `carts/{uid}` doc immediately clobbered whatever they had added.
