@@ -584,7 +584,7 @@ RTL locales (ar, he, fa, ur) automatically set `--caspian-direction: rtl` on the
 Visit `/admin/settings` for site-level fields and `/admin/appearance` for theming:
 
 - **`/admin/settings`** — brand name, logo, favicon, contact info, currency, timezone, country, social links.
-- **`/admin/appearance`** — pick the `cleanWhite` preset or tune `primary` / `primaryForeground` / `accent` / `radius` directly. Tokens are pushed to `:root` CSS custom properties live.
+- **`/admin/appearance`** — pick the default `luivante` preset (Google blue accent, rounded pills, Poppins) or tune `primary` / `primaryForeground` / `accent` / `radius` directly. Tokens are pushed to `:root` CSS custom properties live.
 - **Hero / fonts / feature flags** — still editable via the `/setup` wizard or by mounting `<ScriptSettingsPage>` at a custom route. Feature flags: reviews, questions, wishlist, newsletter, promo codes.
 
 ---

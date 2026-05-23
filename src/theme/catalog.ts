@@ -13,6 +13,7 @@
  */
 import type { CatalogTheme, ThemeCategory } from './types';
 
+import luivante from './themes/luivante';
 import cleanWhite from './themes/clean-white';
 import minimalDark from './themes/minimal-dark';
 import boutique from './themes/boutique';
@@ -28,6 +29,7 @@ export type { CatalogTheme, ThemeCategory, ThemeThumbnail } from './types';
 export { THEME_CATEGORY_LABELS } from './types';
 
 export const THEME_CATALOG: readonly CatalogTheme[] = [
+  luivante,
   cleanWhite,
   minimalDark,
   boutique,

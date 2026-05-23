@@ -9,10 +9,10 @@
  */
 
 :root {
-  --caspian-primary: #111111;
+  --caspian-primary: #1a73e8;
   --caspian-primary-foreground: #ffffff;
-  --caspian-accent: #171717;
-  --caspian-radius: 0.5rem;
+  --caspian-accent: #1a73e8;
+  --caspian-radius: 1rem;
   --caspian-background: #ffffff;
   --caspian-font-family: 'Poppins', system-ui, -apple-system, sans-serif;
 }
