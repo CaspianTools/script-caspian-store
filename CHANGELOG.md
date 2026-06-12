@@ -16,6 +16,28 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.6.0 — Masonry view for the admin products list
+
+The admin Products page (`<AdminProductsList>`) could only display products as a table. This release adds a
+**Table | Masonry** toggle to the page header (mirroring the existing Table | Board toggle on the orders list).
+**Table stays the default.** Masonry renders the same filtered set as a Pinterest-style staggered card grid via
+CSS multi-column — each card is `break-inside: avoid` and product images keep their natural aspect ratio, so
+card heights vary; the grid is 4 columns wide, collapsing to 3/2/1 as the viewport narrows.
+
+Each card shows the product image (or a placeholder), an Active/Hidden status badge, the name, a
+"N colors · N sizes" line, brand, category, price, and the same `DropdownMenu` actions as the table
+(Edit / View on storefront / Delete); the image and title navigate to the product editor. All existing filters
+(search, status, category, brand) stay visible and functional in both views, since Masonry is purely a
+different display of the same set.
+
+No new public exports — `<AdminProductsList>` gains the view internally. New `.caspian-pmasonry` /
+`.caspian-pcard*` rules ship in `styles.css`.
+
+### No consumer action required
+
+Admin-only UI addition rendered from existing styles + components; existing installs are unaffected and pick up
+the new view on upgrade. The new masonry CSS ships in the already-imported `styles.css`.
+
 ## v9.5.0 — Admin per-user detail view (`<AdminUserDetail>`) with tabbed sections + Messages
 
 The admin Users page (`<AdminUsersPage>`) previously rendered only a flat list with no way to drill into a

@@ -50,6 +50,7 @@ export function AdminProductsList({
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const [view, setView] = useState<'table' | 'masonry'>('table');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -169,6 +170,104 @@ export function AdminProductsList({
     categoryFilter !== '' ||
     brandFilter !== '';
 
+  const renderMasonry = () => (
+    <div className="caspian-pmasonry">
+      {filtered.map((p) => {
+        const viewHref = getViewHref(p.slug ?? p.id);
+        const editHref = getEditHref(p.id);
+        const categoryLabel = resolveCategoryLabel(p.category);
+        const brandLabel = brandNameById.get(p.brand) ?? p.brand;
+        const thumb = p.images?.[0]?.url;
+        const colorCount = p.colorVariants?.length ?? (p.color ? 1 : 0);
+        return (
+          <article key={p.id} className="caspian-pcard">
+            <span className="caspian-pcard__status">
+              <Badge variant={p.isActive === false ? 'secondary' : 'default'}>
+                {p.isActive === false ? 'Hidden' : 'Active'}
+              </Badge>
+            </span>
+            <button
+              type="button"
+              className="caspian-pcard__media"
+              onClick={() => nav.push(editHref)}
+              aria-label={`Edit ${p.name}`}
+            >
+              {thumb ? (
+                <img src={thumb} alt="" loading="lazy" />
+              ) : (
+                <span className="caspian-pcard__noimg" aria-hidden="true" />
+              )}
+            </button>
+            <div className="caspian-pcard__body">
+              <button
+                type="button"
+                className="caspian-pcard__title"
+                onClick={() => nav.push(editHref)}
+                title={p.name}
+              >
+                {p.name}
+              </button>
+              <span className="caspian-pcard__sub">
+                {colorCount} colors · {p.sizes?.length ?? 0} sizes
+              </span>
+              <div className="caspian-pcard__meta">
+                <span>{brandLabel || '—'}</span>
+                <span>{categoryLabel}</span>
+              </div>
+            </div>
+            <div className="caspian-pcard__foot">
+              <strong className="caspian-pcard__price">{formatPrice(p.price)}</strong>
+              <DropdownMenu
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={`Actions for ${p.name}`}
+                    disabled={busy === p.id}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 6,
+                      border: '1px solid rgba(0,0,0,0.12)',
+                      background: '#fff',
+                      cursor: busy === p.id ? 'not-allowed' : 'pointer',
+                      color: 'inherit',
+                    }}
+                  >
+                    <MoreHorizontalIcon />
+                  </button>
+                }
+              >
+                <DropdownMenuItem
+                  icon={<EditIcon size={14} />}
+                  onSelect={() => nav.push(editHref)}
+                >
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  icon={<ExternalLinkIcon size={14} />}
+                  onSelect={() => window.open(viewHref, '_blank', 'noreferrer')}
+                >
+                  View on storefront
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  icon={<TrashIcon size={14} />}
+                  destructive
+                  onSelect={() => handleDelete(p)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenu>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className={className}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -178,9 +277,12 @@ export function AdminProductsList({
             {filtered.length} of {products.length} shown
           </p>
         </div>
-        <Link href={newProductHref}>
-          <Button>+ New product</Button>
-        </Link>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+          <ViewToggle view={view} onChange={setView} />
+          <Link href={newProductHref}>
+            <Button>+ New product</Button>
+          </Link>
+        </div>
       </header>
 
       <div
@@ -239,6 +341,8 @@ export function AdminProductsList({
         <p style={{ color: '#888', padding: 32, textAlign: 'center' }}>
           {products.length === 0 ? 'No products in catalog yet.' : 'No products match your filters.'}
         </p>
+      ) : view === 'masonry' ? (
+        renderMasonry()
       ) : (
         <Table>
           <THead>
@@ -362,6 +466,53 @@ export function AdminProductsList({
           </TBody>
         </Table>
       )}
+    </div>
+  );
+}
+
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: 'table' | 'masonry';
+  onChange: (v: 'table' | 'masonry') => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Products view"
+      style={{
+        display: 'inline-flex',
+        border: '1px solid rgba(0,0,0,0.15)',
+        borderRadius: 'var(--caspian-radius, 6px)',
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}
+    >
+      {(['table', 'masonry'] as const).map((v) => {
+        const active = view === v;
+        return (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(v)}
+            style={{
+              padding: '6px 14px',
+              fontSize: 13,
+              fontWeight: active ? 600 : 400,
+              border: 0,
+              cursor: 'pointer',
+              background: active ? 'var(--caspian-primary, #111)' : '#fff',
+              color: active ? 'var(--caspian-primary-foreground, #fff)' : 'inherit',
+              textTransform: 'capitalize',
+            }}
+          >
+            {v}
+          </button>
+        );
+      })}
     </div>
   );
 }
