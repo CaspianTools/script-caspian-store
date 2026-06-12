@@ -41,6 +41,8 @@ interface FormState {
    * `/admin/brands`.
    */
   brand: string;
+  /** Optional stock-keeping unit. Free text; not enforced unique. */
+  sku: string;
   description: string;
   shortDescription: string;
   /** Rich-text HTML produced by `<RichTextEditor>`. Sanitized on render. */
@@ -67,6 +69,7 @@ const empty: FormState = {
   name: '',
   slug: '',
   brand: '',
+  sku: '',
   description: '',
   shortDescription: '',
   details: '',
@@ -230,6 +233,7 @@ export function AdminProductEditor({
           name: p.name,
           slug: p.slug ?? '',
           brand: p.brand,
+          sku: p.sku ?? '',
           description: p.description,
           shortDescription: p.shortDescription ?? '',
           details: p.details ?? '',
@@ -405,6 +409,7 @@ export function AdminProductEditor({
         name: form.name.trim(),
         slug: form.slug.trim() || undefined,
         brand: form.brand.trim(),
+        sku: form.sku.trim() || undefined,
         description: form.description.trim(),
         shortDescription: shortDescTrimmed || undefined,
         details: detailsTrimmed || undefined,
@@ -492,6 +497,13 @@ export function AdminProductEditor({
             Leave blank to auto-generate from the name. Changing an existing slug
             will break old links — only edit if you really mean to.
           </p>
+        </Field>
+        <Field label="SKU">
+          <Input
+            value={form.sku}
+            onChange={(e) => setForm((s) => ({ ...s, sku: e.target.value }))}
+            placeholder="Stock-keeping unit (optional)"
+          />
         </Field>
         <Field label="Description">
           <Textarea

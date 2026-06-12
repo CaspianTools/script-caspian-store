@@ -28,6 +28,8 @@ export interface Product {
   slug?: string;
   name: string;
   brand: string;
+  /** Optional stock-keeping unit. Admin-entered free text; not enforced unique. */
+  sku?: string;
   description: string;
   /**
    * Short marketing blurb shown in the PDP hero column above the Add-to-Cart

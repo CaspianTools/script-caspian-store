@@ -44,6 +44,7 @@ function docToProduct(docSnap: QueryDocumentSnapshot | DocumentSnapshot): Produc
     slug: data.slug,
     name: data.name,
     brand: data.brand,
+    sku: data.sku,
     description: data.description,
     shortDescription: data.shortDescription,
     details: data.details,

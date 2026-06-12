@@ -16,6 +16,28 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.9.0 — Products: optional SKU field
+
+Products can now carry an optional **SKU** (stock-keeping unit). Added `sku?: string` to the
+`Product` type, read it in `docToProduct`, and gave the admin product editor an **SKU** input
+(under the URL-slug field). Free text, admin-entered, not enforced unique — `createProduct` /
+`updateProduct` already persist it via the `ProductWriteInput` (`Omit<Product, …>`) and
+`stripUndefined`. Ported from the luivante standalone fork, where the field was needed for the
+Quick-Add create flow.
+
+### No consumer action required
+
+Purely additive: `sku` is a new optional field on existing `products` documents, never queried, so
+there is no Firestore rules or index change and no migration. Existing products simply have no SKU
+until one is entered.
+
+### Added
+- [src/types.ts](src/types.ts) — `Product.sku?: string`.
+- [src/admin/admin-product-editor.tsx](src/admin/admin-product-editor.tsx) — SKU `<Input>` in the editor; `FormState`/hydration/payload thread `sku`.
+
+### Changed
+- [src/services/product-service.ts](src/services/product-service.ts) — `docToProduct` reads `sku`.
+
 ## v9.8.0 — Dedicated category editor page, with image upload + toggles
 
 Categories were the last catalog surface still edited in an in-list modal `<Dialog>` with a
