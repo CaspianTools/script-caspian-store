@@ -105,19 +105,13 @@ a:focus-visible {
  * Admin Products — Masonry view (Table | Masonry toggle on /admin/products).
  * CSS multi-column gives a Pinterest-style staggered grid: each card is
  * break-inside:avoid and images keep their natural aspect ratio, so heights vary.
+ * column-width (not column-count) keeps it fluid: columns are container-relative
+ * and stretch to fill the full width, so the count tracks the actual content
+ * area at any size — no empty right-hand band, no viewport breakpoints needed.
  */
 .caspian-pmasonry {
-  column-count: 4;
+  column-width: 260px;
   column-gap: 16px;
-}
-@media (max-width: 1280px) {
-  .caspian-pmasonry { column-count: 3; }
-}
-@media (max-width: 900px) {
-  .caspian-pmasonry { column-count: 2; }
-}
-@media (max-width: 560px) {
-  .caspian-pmasonry { column-count: 1; }
 }
 
 .caspian-pcard {

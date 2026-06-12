@@ -16,6 +16,24 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.7.1 — Fluid Masonry grid on the admin products list
+
+The Masonry view added in v9.6.0 (`<AdminProductsList>`) left an empty band of space on the
+right — cards filled only the left portion of the page instead of the full content width. It used
+a fixed `column-count: 4` with **viewport-based** `@media` breakpoints, so the column count keyed
+off the viewport rather than the actual content area, and the multi-column balancer stranded a
+trailing column when several product images are tall portraits.
+
+`.caspian-pmasonry` now uses **`column-width: 260px`** (the viewport breakpoints are removed).
+`column-width` is container-relative — the browser fits as many ~260px columns as the content
+area allows and stretches them to fill the full width, so the grid is fluid at every size with no
+empty right-hand band. The staggered look is unchanged.
+
+### No consumer action required
+
+CSS-only fix; the rule ships in the already-imported `styles.css`. Existing installs pick it up on
+upgrade.
+
 ## v9.7.0 — `<MultiSelect>` admin primitive (portaled, overflow-proof multi-select dropdown)
 
 Adds a new public admin primitive, **`<MultiSelect>`** — a pill-trigger, searchable, multi-check dropdown with
