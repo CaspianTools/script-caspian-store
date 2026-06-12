@@ -212,3 +212,38 @@ a:focus-visible {
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+
+/**
+ * Admin MultiSelect — pill-trigger, searchable, multi-check dropdown (<MultiSelect>).
+ * The menu is portaled to <body> and positioned inline by the component
+ * (position:fixed), so only the visual rules live here. Colors are concrete (the
+ * admin surface has no design-token scope); the accent follows themeable
+ * --caspian-accent. The checkbox is reset (width/flex/padding/margin) so an
+ * ambient full-width form-input rule can never stretch it and shove the label.
+ */
+.caspian-msel { position: relative; }
+.caspian-msel__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.caspian-msel__pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; background: #fff; border: 1px solid #dadce0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 500; color: #1f1f1f; cursor: pointer; transition: background .15s ease, border-color .15s ease, box-shadow .15s ease; white-space: nowrap; flex-shrink: 0; }
+.caspian-msel__pill:hover { background: #fafbfc; border-color: #5f6368; }
+.caspian-msel__pill.is-open { background: #e8f0fe; border-color: var(--caspian-accent, #1a73e8); color: var(--caspian-accent, #1a73e8); box-shadow: 0 0 0 3px #e8f0fe; }
+.caspian-msel__pill.has-pick { background: #e8f0fe; color: var(--caspian-accent, #1a73e8); border-color: rgba(26, 115, 232, 0.3); }
+.caspian-msel__pill em { font-style: normal; font-size: 10px; padding: 1px 7px; background: var(--caspian-accent, #1a73e8); color: #fff; border-radius: 999px; font-weight: 600; min-width: 18px; text-align: center; }
+.caspian-msel__pill svg { opacity: 0.6; transition: transform .15s ease; }
+.caspian-msel__pill.is-open svg { transform: rotate(180deg); opacity: 1; }
+.caspian-msel__chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.caspian-msel__chip { background: #e8f0fe; color: var(--caspian-accent, #1a73e8); padding: 4px 8px 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.caspian-msel__chip button { background: transparent; border: 0; color: var(--caspian-accent, #1a73e8); cursor: pointer; padding: 0; display: inline-flex; }
+.caspian-msel__menu { background: #fff; border: 1px solid #e8eaed; border-radius: 10px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04); padding: 8px; display: flex; flex-direction: column; gap: 6px; max-height: 320px; animation: caspian-menuIn .15s cubic-bezier(.3, .7, .3, 1); }
+.caspian-msel__menu, .caspian-msel__menu * { box-sizing: border-box; }
+.caspian-catpick__search { display: flex; align-items: center; gap: 8px; padding: 0 8px; background: #fafbfc; border-radius: 8px; height: 32px; }
+.caspian-catpick__search input { flex: 1; background: transparent; border: 0; outline: none; font: inherit; font-size: 12.5px; padding: 6px 0; color: #1f1f1f; }
+.caspian-catpick__search svg { color: #5f6368; }
+.caspian-catpick__list { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.caspian-catpick__list li label { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #3c4043; transition: background .12s ease; }
+.caspian-catpick__list li label:hover { background: #fafbfc; }
+.caspian-catpick__list li label.is-on { background: #e8f0fe; color: var(--caspian-accent, #1a73e8); }
+.caspian-catpick__list li input { accent-color: var(--caspian-accent, #1a73e8); width: auto; flex: 0 0 auto; padding: 0; margin: 0; }
+.caspian-catpick__empty { padding: 18px 8px; text-align: center; color: #5f6368; font-size: 12px; }
+.caspian-catpick__create { background: transparent; border: 0; padding: 8px 0 4px; font: inherit; font-size: 12px; color: var(--caspian-accent, #1a73e8); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-weight: 500; }
+.caspian-catpick__create:hover { text-decoration: underline; }
+@keyframes caspian-menuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

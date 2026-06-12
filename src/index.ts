@@ -671,6 +671,7 @@ export {
   AdminTemplatesPage,
   AdminNotificationsBell,
   AdminProfileMenu,
+  MultiSelect,
   DEFAULT_PAGE_KEYS,
   type AdminGuardProps,
   type AdminShellProps,
@@ -707,6 +708,8 @@ export {
   type AdminUserDetailProps,
   type AdminContactsPageProps,
   type AdminContactsListProps,
+  type MultiSelectItem,
+  type MultiSelectProps,
 } from './admin';
 
 // --- Templates (v8.23.0) ---

@@ -16,6 +16,31 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.7.0 — `<MultiSelect>` admin primitive (portaled, overflow-proof multi-select dropdown)
+
+Adds a new public admin primitive, **`<MultiSelect>`** — a pill-trigger, searchable, multi-check dropdown with
+removable chips and an optional "Create new" footer. Items support optional parent/child indentation and a
+right-aligned `meta` slot (e.g. a count).
+
+The defining property is its **portaled menu**: the dropdown renders into `document.body` with `position: fixed`,
+positioned from the trigger's bounding rect (reposition on scroll/resize, flips upward near the viewport bottom,
+width derived from the trigger), mirroring the existing `<DropdownMenu>` pattern. That means it can be dropped
+inside a scroll container or a modal with `overflow: hidden` and the menu still renders above everything,
+un-clipped — instead of being cut off or overlapping nearby controls. The row checkbox is reset
+(`width/flex/padding/margin`) so an ambient full-width form-input rule can never stretch it and shove the label.
+
+This lands as **groundwork** for a future admin overhaul (a multi-category product editor and Quick-Add flows);
+nothing in the shipped admin consumes it yet, so it is purely additive.
+
+New exports: `MultiSelect`, `MultiSelectItem`, `MultiSelectProps` (from the package root and `./admin`), plus a
+`PlusIcon` added to the icon set. New `.caspian-msel*` / `.caspian-catpick*` rules ship in `styles.css` (accent
+follows the themeable `--caspian-accent`; other colors are concrete neutrals).
+
+### No consumer action required
+
+Additive: a new optional component + icon + CSS in the already-imported `styles.css`. No existing export, type, or
+behaviour changed; existing installs are unaffected and gain the component on upgrade.
+
 ## v9.6.0 — Masonry view for the admin products list
 
 The admin Products page (`<AdminProductsList>`) could only display products as a table. This release adds a

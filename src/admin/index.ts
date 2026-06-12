@@ -95,3 +95,8 @@ export {
   type AdminNotificationsBellProps,
 } from './admin-notifications-bell';
 export { AdminProfileMenu, type AdminProfileMenuProps } from './admin-profile-menu';
+export {
+  MultiSelect,
+  type MultiSelectItem,
+  type MultiSelectProps,
+} from './admin-multi-select';

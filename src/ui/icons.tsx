@@ -166,6 +166,15 @@ export function ChevronRightIcon(props: IconProps) {
   );
 }
 
+export function PlusIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
 // Admin sidebar icons — added for the grouped sidebar (v3.0.0). Stroke-based,
 // `currentColor`, sized via `size` prop (default 16). Hand-rolled to avoid
 // pulling in an icon dependency.
