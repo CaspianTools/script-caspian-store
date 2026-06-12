@@ -16,6 +16,30 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.4.0 — Orders admin gains a drag-and-drop Kanban board view
+
+The admin Orders page (`<AdminOrdersList>`) previously rendered only a flat, newest-first table — fine for scanning but poor for fulfillment, where you want to see the whole pipeline at a glance and move orders between stages. This release adds a **Board** view alongside the existing table, toggled from a segmented control in the page header (Table stays the default). The board lays out one column per order status — `pending → on-hold → paid → processing → shipped → delivered → cancelled` — each with a colored header, a live count, and one draggable card per order (order number, customer email, date, item count, total).
+
+**Dragging a card to another column changes that order's status.** The move is applied optimistically (the card jumps immediately), persisted via the existing `updateOrderStatus` service, and rolled back with a destructive toast if the Firestore write fails. Drag-and-drop uses the browser's native HTML5 DnD API — no new runtime dependency is added; peer deps remain `firebase`, `react`, `react-dom`. Clicking a card's order number still navigates to the order detail page exactly as the table rows do.
+
+This release also fixes a long-standing gap: the Orders **status filter** dropdown was missing the `on-hold` status (added in v2.8 for manual-payment orders awaiting confirmation), so on-hold orders could not be filtered to. The filter and the board now both cover all seven statuses.
+
+`<AdminOrdersList>` gains an optional, non-breaking `defaultView?: 'table' | 'board'` prop (defaults to `'table'`). Existing usage is unchanged — `<AdminRoot>` mounts the component with no props and gets the table-first behavior it always had.
+
+### No consumer action required
+
+`npm install github:CaspianTools/script-caspian-store#v9.4.0` and redeploy — the Board toggle appears automatically on `/admin/orders`. No schema, rules, or index changes; the board reuses the existing `listAllOrders` query and `updateOrderStatus` write.
+
+### Added
+
+- [src/admin/admin-orders-list.tsx](src/admin/admin-orders-list.tsx): Board (Kanban) view with native drag-and-drop status changes; `OrderView` type and optional `defaultView` prop on `AdminOrdersListProps`. Order rendering split into internal `OrdersTable` / `OrdersBoard` / `OrderCard` / `ViewToggle` helpers within the same file.
+
+### Fixed
+
+- [src/admin/admin-orders-list.tsx](src/admin/admin-orders-list.tsx): the status filter dropdown now includes `on-hold` (was omitted), so manual-payment orders awaiting confirmation are filterable.
+
+---
+
 ## v9.3.0 — Luivante: new default theme
 
 A new theme preset — **Luivante** — ships at the top of the theme catalog and becomes the project default. White canvas, Google blue (`#1a73e8`) accent, generous 1rem rounded corners, Poppins everywhere. Comes from the design handoff in the bundle of the same name: an everything-shop storefront with rounded pills, white pages, and a single confident action color across buttons, active states, focus rings, and selected swatches.
