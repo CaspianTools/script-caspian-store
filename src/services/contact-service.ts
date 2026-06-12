@@ -80,6 +80,33 @@ export async function listAllContacts(
   return snap.docs.map(docToContact);
 }
 
+/**
+ * Messages tied to one account, for the admin user-detail view. Matched both
+ * by the stored `userId` and — as a fallback — by the profile email, so
+ * submissions sent while signed out (which carry no `userId`) still surface.
+ * Both are single-equality reads (no composite index), merged by id and
+ * sorted newest-first client-side.
+ */
+export async function getContactsByUser(
+  db: Firestore,
+  opts: { userId?: string; email?: string },
+): Promise<ContactSubmission[]> {
+  const email = opts.email?.trim().toLowerCase();
+  const col = caspianCollections(db).contacts;
+  const reads = [
+    ...(opts.userId ? [getDocs(query(col, where('userId', '==', opts.userId)))] : []),
+    ...(email ? [getDocs(query(col, where('email', '==', email)))] : []),
+  ];
+  const snaps = await Promise.all(reads);
+  const byId = new Map<string, ContactSubmission>();
+  for (const snap of snaps) {
+    for (const d of snap.docs) byId.set(d.id, docToContact(d));
+  }
+  return Array.from(byId.values()).sort(
+    (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0),
+  );
+}
+
 export async function listRecentContacts(
   db: Firestore,
   n = 5,

@@ -16,6 +16,52 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.5.0 — Admin per-user detail view (`<AdminUserDetail>`) with tabbed sections + Messages
+
+The admin Users page (`<AdminUsersPage>`) previously rendered only a flat list with no way to drill into a
+single account. This release adds a per-user **detail view**, mounted by `<AdminRoot>` at `/admin/users/:uid`
+(clicking a user's name in the list opens it). The view loads the account's profile, order history, live cart,
+wishlist, saved addresses, and contact messages, and lays them out as **tabbed white cards**:
+**Details → Orders → Cart → Wishlist → Addresses → Messages** (identity → buying activity → logistics →
+communication). A persistent header carries the avatar, role badge, and account actions (Email / Copy email /
+Copy UID / Promote-Demote via the existing `promoteUserToAdmin` / `demoteAdminToCustomer` callables).
+
+The new **Messages** tab surfaces that account's contact-form submissions, matched both by the stored `userId`
+*and* by the profile email (so messages sent while signed out still appear) — two single-equality reads merged
+client-side, so **no new Firestore composite index is required**.
+
+The Users list also gains a **Staff / Customers / All** role filter alongside the existing search box, and each
+row's name now links to the detail view.
+
+New public exports: `AdminUserDetail` + `AdminUserDetailProps`. New service helpers: `getUserById`
+(user-service) and `getContactsByUser` (contact-service). New `admin.users.detail.*`, `admin.users.role.*`,
+and `admin.users.filter.*` message keys.
+
+### Consumer action required on upgrade
+
+The Cart tab reads other users' carts as an admin, which requires a **`firestore.rules` redeploy** — this
+release relaxes the `carts` read rule to also allow admins (`request.auth.uid == uid || isAdmin()`); writes
+remain owner-only. Without the redeploy the rest of the view works, but the Cart tab shows empty for every user.
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+No index changes; no code changes required on the consumer site beyond pulling the new version.
+
+### Added
+- `src/admin/admin-user-detail.tsx` — the `<AdminUserDetail>` page (tabbed profile / orders / cart / wishlist / addresses / messages).
+- `getUserById` in `src/services/user-service.ts`; `getContactsByUser` in `src/services/contact-service.ts`.
+- `admin.users.detail.*`, `admin.users.role.staff` / `customer`, and `admin.users.filter.*` keys in `src/i18n/messages.ts`.
+
+### Changed
+- `src/admin/admin-root.tsx` — the `users` route now renders `<AdminUserDetail userId={a} />` when a uid segment is present.
+- `src/admin/admin-users-page.tsx` — added a Staff/Customers role filter and linked each row's name to `/admin/users/:uid`.
+- `src/admin/index.ts`, `src/index.ts` — export `AdminUserDetail` / `AdminUserDetailProps`.
+- `firebase/firestore.rules` — `carts` read now also allows `isAdmin()`.
+
+---
+
 ## v9.4.0 — Orders admin gains a drag-and-drop Kanban board view
 
 The admin Orders page (`<AdminOrdersList>`) previously rendered only a flat, newest-first table — fine for scanning but poor for fulfillment, where you want to see the whole pipeline at a glance and move orders between stages. This release adds a **Board** view alongside the existing table, toggled from a segmented control in the page header (Table stays the default). The board lays out one column per order status — `pending → on-hold → paid → processing → shipped → delivered → cancelled` — each with a colored header, a live count, and one draggable card per order (order number, customer email, date, item count, total).

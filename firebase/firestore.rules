@@ -63,7 +63,11 @@ service cloud.firestore {
     }
 
     match /carts/{uid} {
-      allow read, write: if isAuth() && request.auth.uid == uid;
+      // Owner reads/writes their own cart. Admins may READ any cart so the
+      // admin user-detail view can show what a shopper currently has in their
+      // bag; admins never write someone else's cart.
+      allow read: if isAuth() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAuth() && request.auth.uid == uid;
     }
 
     match /reviews/{id} {

@@ -5,11 +5,12 @@ import { httpsCallable } from 'firebase/functions';
 import type { UserProfile } from '../types';
 import { listUsers } from '../services/user-service';
 import { reportServiceError } from '../services/error-log-service';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
 import { Badge, Skeleton } from '../ui/misc';
 import { Input } from '../ui/input';
+import { Select } from '../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 
 export interface AdminUsersPageProps {
@@ -20,10 +21,12 @@ type RowState = { kind: 'busy' } | { kind: 'error'; message: string };
 
 export function AdminUsersPage({ className }: AdminUsersPageProps) {
   const { db, functions } = useCaspianFirebase();
+  const Link = useCaspianLink();
   const { user } = useAuth();
   const t = useT();
   const [users, setUsers] = useState<UserProfile[] | null>(null);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'customer'>('all');
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
 
   useEffect(() => {
@@ -45,13 +48,16 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
   const filtered = useMemo(() => {
     if (!users) return [];
     const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        u.email?.toLowerCase().includes(q) ||
-        u.displayName?.toLowerCase().includes(q),
-    );
-  }, [users, search]);
+    return users.filter((u) => {
+      if (roleFilter === 'admin' && u.role !== 'admin') return false;
+      if (roleFilter === 'customer' && u.role === 'admin') return false;
+      if (!q) return true;
+      return (
+        Boolean(u.email?.toLowerCase().includes(q)) ||
+        Boolean(u.displayName?.toLowerCase().includes(q))
+      );
+    });
+  }, [users, search, roleFilter]);
 
   const runRoleChange = async (
     target: UserProfile,
@@ -114,11 +120,23 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
         </p>
       </header>
 
-      <div style={{ marginBottom: 12, maxWidth: 320 }}>
-        <Input
-          placeholder={t('admin.users.searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 200, maxWidth: 320 }}>
+          <Input
+            placeholder={t('admin.users.searchPlaceholder')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <Select
+          aria-label={t('admin.users.col.role')}
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'customer')}
+          options={[
+            { value: 'all', label: t('admin.users.filter.all') },
+            { value: 'admin', label: t('admin.users.filter.staff') },
+            { value: 'customer', label: t('admin.users.filter.customers') },
+          ]}
         />
       </div>
 
@@ -146,7 +164,9 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
               return (
                 <TR key={u.uid}>
                   <TD style={{ fontWeight: 500 }}>
-                    {u.displayName || <span style={{ color: '#bbb' }}>—</span>}
+                    <Link href={`/admin/users/${u.uid}`}>
+                      {u.displayName || u.email || u.uid}
+                    </Link>
                   </TD>
                   <TD style={{ fontSize: 13, color: '#333' }}>{u.email}</TD>
                   <TD>

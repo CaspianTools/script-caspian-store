@@ -14,6 +14,7 @@ import { AdminFaqsPage } from './admin-faqs-page';
 import { AdminPromoCodesPage } from './admin-promo-codes-page';
 import { AdminSubscribersPage } from './admin-subscribers-page';
 import { AdminUsersPage } from './admin-users-page';
+import { AdminUserDetail } from './admin-user-detail';
 import { AdminContactsPage } from './admin-contacts-page';
 import { AdminProductBrandsPage } from './admin-product-brands-page';
 import { AdminProductCategoriesPage } from './admin-product-categories-page';
@@ -59,7 +60,7 @@ export function AdminRoot(): ReactNode {
     case 'orders':
       return a ? <AdminOrderDetail orderId={a} /> : <AdminOrdersList />;
     case 'users':
-      return <AdminUsersPage />;
+      return a ? <AdminUserDetail userId={a} /> : <AdminUsersPage />;
     case 'contacts':
       return <AdminContactsPage />;
     case 'subscribers':

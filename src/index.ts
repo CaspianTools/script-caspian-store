@@ -654,6 +654,7 @@ export {
   AdminPromoCodesPage,
   AdminSubscribersPage,
   AdminUsersPage,
+  AdminUserDetail,
   AdminContactsPage,
   AdminContactsList,
   AdminProductBrandsPage,
@@ -703,6 +704,7 @@ export {
   type AdminEmailsPageProps,
   type AdminEmailPluginsPageProps,
   type AdminUsersPageProps,
+  type AdminUserDetailProps,
   type AdminContactsPageProps,
   type AdminContactsListProps,
 } from './admin';

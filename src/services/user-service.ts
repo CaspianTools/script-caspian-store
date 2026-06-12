@@ -17,6 +17,12 @@ export async function listUsers(db: Firestore): Promise<UserProfile[]> {
   return snap.docs.map((d) => ({ uid: d.id, ...(d.data() as Omit<UserProfile, 'uid'>) }));
 }
 
+export async function getUserById(db: Firestore, uid: string): Promise<UserProfile | null> {
+  const snap = await getDoc(doc(caspianCollections(db).users, uid));
+  if (!snap.exists()) return null;
+  return { uid: snap.id, ...(snap.data() as Omit<UserProfile, 'uid'>) };
+}
+
 export async function updateDisplayName(
   db: Firestore,
   uid: string,
