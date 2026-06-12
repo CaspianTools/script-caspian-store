@@ -16,6 +16,44 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.8.0 — Dedicated category editor page, with image upload + toggles
+
+Categories were the last catalog surface still edited in an in-list modal `<Dialog>` with a
+paste-only image-URL field and checkboxes. `<AdminProductCategoriesPage>` now navigates to a
+**dedicated full-page editor** (`<AdminCategoryEditor>`) at `/admin/categories/new` and
+`/admin/categories/{id}/edit` — mirroring how products edit. The new editor adds a featured-image
+**upload** (`ImageUploadField`, Firebase Storage, with URL fallback), **toggle switches** for
+Active/Featured (via a new `Switch` UI primitive), and the parent picker now excludes the category
+itself **and its descendants** to prevent cycles. In the list, the category **name** and the Edit
+action navigate to the editor, and **+ New category** opens the create page. The Parent column was
+already present.
+
+### Consumer action required on upgrade
+
+Category image uploads write to a new `categories/` Storage path. Redeploy Storage rules:
+
+```bash
+npm run firebase:sync   # copies the updated storage.rules into your project (if you use it)
+firebase deploy --only storage
+```
+
+If you don't deploy the new rule, uploading a category image fails with `storage/unauthorized`
+(everything else works unchanged). No data migration is needed.
+
+### Added
+- `src/ui/switch.tsx` — self-styled on/off `Switch` primitive (used by the category editor; the
+  storefront primary token drives the "on" colour).
+- `src/admin/admin-category-editor.tsx` — full-page category create/edit component.
+- A `categories/{path=**}` block in `firebase/storage.rules` (public read, admin write, 10 MB,
+  raster only).
+
+### Changed
+- `src/admin/admin-root.tsx` — `categories` route dispatches `new` / `{id}/edit` to
+  `AdminCategoryEditor`, list otherwise (mirrors `products`).
+- `src/admin/admin-product-categories-page.tsx` — the name + Edit navigate to the editor page,
+  **+ New category** opens `/admin/categories/new`, and the in-list edit `<Dialog>` (with its
+  draft state) is removed.
+
 ## v9.7.1 — Fluid Masonry grid on the admin products list
 
 The Masonry view added in v9.6.0 (`<AdminProductsList>`) left an empty band of space on the

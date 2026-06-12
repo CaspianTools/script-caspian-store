@@ -1,43 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ProductCategoryDoc } from '../types';
-import {
-  createCategory,
-  deleteCategory,
-  listAllCategories,
-  updateCategory,
-  type CategoryWriteInput,
-} from '../services/category-service';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { deleteCategory, listAllCategories } from '../services/category-service';
+import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { Button } from '../ui/button';
-import { Dialog } from '../ui/dialog';
-import { Input, Label, Textarea } from '../ui/input';
-import { Select } from '../ui/select';
 import { Badge, Skeleton } from '../ui/misc';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { useToast } from '../ui/toast';
-import { slugify } from '../utils/slugify';
-
-const emptyDraft: CategoryWriteInput = {
-  name: '',
-  slug: '',
-  description: '',
-  order: 0,
-  isActive: true,
-  isFeatured: false,
-  imageUrl: '',
-  parentId: null,
-};
 
 export function AdminProductCategoriesPage({ className }: { className?: string }) {
   const { db } = useCaspianFirebase();
+  const nav = useCaspianNavigation();
   const { toast } = useToast();
   const [cats, setCats] = useState<ProductCategoryDoc[] | null>(null);
-  const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<CategoryWriteInput>(emptyDraft);
-  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     try {
@@ -51,60 +27,6 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const parentOptions = useMemo(
-    () => [
-      { value: '', label: '— None (top-level) —' },
-      ...(cats ?? []).map((c) => ({ value: c.id, label: c.name })),
-    ],
-    [cats],
-  );
-
-  const openCreate = () => {
-    setEditingId(null);
-    setDraft({ ...emptyDraft, order: (cats?.length ?? 0) + 1 });
-    setOpen(true);
-  };
-
-  const openEdit = (c: ProductCategoryDoc) => {
-    setEditingId(c.id);
-    setDraft({
-      name: c.name,
-      slug: c.slug,
-      description: c.description ?? '',
-      order: c.order,
-      isActive: c.isActive,
-      isFeatured: c.isFeatured ?? false,
-      imageUrl: c.imageUrl ?? '',
-      parentId: c.parentId ?? null,
-    });
-    setOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!draft.name.trim()) {
-      toast({ title: 'Name is required', variant: 'destructive' });
-      return;
-    }
-    const slug = draft.slug || slugify(draft.name);
-    setSaving(true);
-    try {
-      if (editingId) {
-        await updateCategory(db, editingId, { ...draft, slug });
-        toast({ title: 'Category updated' });
-      } else {
-        await createCategory(db, { ...draft, slug });
-        toast({ title: 'Category created' });
-      }
-      setOpen(false);
-      await load();
-    } catch (error) {
-      console.error('[caspian-store] Save failed:', error);
-      toast({ title: 'Save failed', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleDelete = async (c: ProductCategoryDoc) => {
     if (!confirm(`Delete category "${c.name}"?`)) return;
@@ -132,7 +54,7 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
             Supports parent/child hierarchy via the `parentId` field.
           </p>
         </div>
-        <Button onClick={openCreate}>+ New category</Button>
+        <Button onClick={() => nav.push('/admin/categories/new')}>+ New category</Button>
       </header>
 
       {cats === null ? (
@@ -155,7 +77,27 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
             {cats.map((c) => (
               <TR key={c.id}>
                 <TD style={{ fontFamily: 'monospace', fontSize: 13 }}>{c.order}</TD>
-                <TD style={{ fontWeight: 500 }}>{c.name}</TD>
+                <TD style={{ fontWeight: 500 }}>
+                  <button
+                    type="button"
+                    onClick={() => nav.push(`/admin/categories/${c.id}/edit`)}
+                    title={`Edit ${c.name}`}
+                    style={{
+                      background: 'transparent',
+                      border: 0,
+                      padding: 0,
+                      font: 'inherit',
+                      fontWeight: 500,
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: 2,
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                </TD>
                 <TD style={{ fontSize: 12, color: '#888', fontFamily: 'monospace' }}>{c.slug}</TD>
                 <TD style={{ color: '#666' }}>
                   {c.parentId ? nameById.get(c.parentId) ?? '—' : '—'}
@@ -168,7 +110,11 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
                 </TD>
                 <TD style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
-                    <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => nav.push(`/admin/categories/${c.id}/edit`)}
+                    >
                       Edit
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(c)}>
@@ -181,85 +127,6 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
           </TBody>
         </Table>
       )}
-
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-        title={editingId ? 'Edit category' : 'New category'}
-        maxWidth={560}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} loading={saving}>
-              Save
-            </Button>
-          </>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <Label>Name</Label>
-            <Input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Slug (leave blank to auto-generate)</Label>
-            <Input value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea
-              rows={2}
-              value={draft.description ?? ''}
-              onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-            />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div>
-              <Label>Parent category</Label>
-              <Select
-                value={draft.parentId ?? ''}
-                onChange={(e) => setDraft((d) => ({ ...d, parentId: e.target.value || null }))}
-                options={parentOptions.filter((o) => o.value !== editingId)}
-              />
-            </div>
-            <div>
-              <Label>Order</Label>
-              <Input
-                type="number"
-                value={draft.order}
-                onChange={(e) => setDraft((d) => ({ ...d, order: Number(e.target.value) || 0 }))}
-              />
-            </div>
-          </div>
-          <div>
-            <Label>Image URL (optional)</Label>
-            <Input
-              value={draft.imageUrl ?? ''}
-              onChange={(e) => setDraft((d) => ({ ...d, imageUrl: e.target.value }))}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
-              <input
-                type="checkbox"
-                checked={draft.isActive}
-                onChange={(e) => setDraft((d) => ({ ...d, isActive: e.target.checked }))}
-              />
-              Active
-            </label>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
-              <input
-                type="checkbox"
-                checked={draft.isFeatured ?? false}
-                onChange={(e) => setDraft((d) => ({ ...d, isFeatured: e.target.checked }))}
-              />
-              Featured (homepage)
-            </label>
-          </div>
-        </div>
-      </Dialog>
     </div>
   );
 }

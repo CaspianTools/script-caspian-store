@@ -228,6 +228,17 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
       allow delete: if isAdmin();
     }
+
+    // Category featured images uploaded from <AdminCategoryEditor>. Public read
+    // (the homepage featured-categories section + header mega-menu render them),
+    // admin write up to 10 MB. No SVG — these are photos.
+    match /categories/{path=**} {
+      allow read: if true;
+      allow write: if isAdmin()
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+      allow delete: if isAdmin();
+    }
   }
 }
 `;

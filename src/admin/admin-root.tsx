@@ -18,6 +18,7 @@ import { AdminUserDetail } from './admin-user-detail';
 import { AdminContactsPage } from './admin-contacts-page';
 import { AdminProductBrandsPage } from './admin-product-brands-page';
 import { AdminProductCategoriesPage } from './admin-product-categories-page';
+import { AdminCategoryEditor } from './admin-category-editor';
 import { AdminProductCollectionsPage } from './admin-product-collections-page';
 import { AdminAboutPage } from './admin-about-page';
 import { AdminAppearancePage } from './admin-appearance-page';
@@ -70,6 +71,8 @@ export function AdminRoot(): ReactNode {
     case 'brands':
       return <AdminProductBrandsPage />;
     case 'categories':
+      if (a === 'new') return <AdminCategoryEditor />;
+      if (b === 'edit') return <AdminCategoryEditor categoryId={a} />;
       return <AdminProductCategoriesPage />;
     case 'collections':
       return <AdminProductCollectionsPage />;
