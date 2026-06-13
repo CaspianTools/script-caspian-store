@@ -102,8 +102,8 @@ export function Switch({
       <span style={{ display: 'inline-flex' }} onClick={(e) => e.stopPropagation()}>
         {knob}
       </span>
-      <span>
-        {label}
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={description ? { fontWeight: 500 } : undefined}>{label}</span>
         {description}
       </span>
     </div>

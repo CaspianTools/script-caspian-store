@@ -16,6 +16,20 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.10.1 — Fix Switch label/description layout
+
+The `Switch` component rendered its `label` and `description` in a single inline span, so a toggle
+with helper text showed both on one line at the same size (e.g. `ActiveWhen off…`). The text area
+is now a column: the label sits on its own line (medium weight when a description is present) and
+the helper text renders beneath it. Label-only switches are unchanged.
+
+### No consumer action required
+Presentational fix to a shipped UI primitive; no API, rules, or data changes.
+
+### Fixed
+- `src/ui/switch.tsx` — stack the label above the description (was inline) and give the label medium
+  weight only when a description is supplied.
+
 ## v9.10.0 — Mobile bottom-drawer nav + installable PWA
 
 Ported from the luivante standalone fork. Makes the storefront chrome mobile-friendly and gives
