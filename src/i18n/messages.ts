@@ -697,10 +697,21 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'search.viewAllResults': 'View all {count} results',
 
   'navigation.signIn': 'Sign in',
+  'navigation.signOut': 'Sign out',
   'navigation.openCart': 'Open cart',
   'navigation.wishlist': 'Wishlist',
   'navigation.myAccount': 'My account',
   'navigation.admin': 'Admin',
+  'navigation.menu': 'Menu',
+  'navigation.closeMenu': 'Close menu',
+
+  // PWA / install-to-home-screen
+  'pwa.install': 'Install app',
+  'pwa.installBanner': 'Add this store to your home screen for quick access.',
+  'pwa.dismiss': 'Dismiss',
+  'pwa.iosHintTitle': 'Install this app',
+  'pwa.iosHintBody': 'Tap the Share button, then “Add to Home Screen”.',
+  'pwa.installed': 'App installed',
 
   // Site shell — footer
   'footer.about.title': 'About',

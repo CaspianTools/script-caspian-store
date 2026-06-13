@@ -579,6 +579,50 @@ RTL locales (ar, he, fa, ur) automatically set `--caspian-direction: rtl` on the
 
 ---
 
+## 9.5. Make it installable (PWA, optional, v9.10.0+)
+
+The storefront chrome is mobile-friendly out of the box — `<SiteHeader>` collapses to a hamburger +
+`<MobileNavSheet>` below 820px once you import the library CSS. To make the site **installable** (Add
+to Home Screen), wire these consumer-side pieces. A complete working reference is `examples/nextjs`.
+
+**1. Register a service worker + install prompt** in your root layout:
+
+```tsx
+import { ServiceWorkerRegister, InstallAppPrompt } from '@caspian-explorer/script-caspian-store';
+// …inside <body>, after your providers:
+<ServiceWorkerRegister />
+<InstallAppPrompt />
+```
+
+**2. Add `public/sw.js` and `public/offline.html`** — copy them from `examples/nextjs/public/`. The
+worker does network-first navigations with an offline fallback and never caches Firestore/auth.
+
+**3. Serve a dynamic manifest** with a route handler that calls the pure `buildWebManifest()` helper:
+
+```ts
+// app/manifest.webmanifest/route.ts
+import { buildWebManifest } from '@caspian-explorer/script-caspian-store';
+export const dynamic = 'force-dynamic';
+export async function GET() {
+  // read settings/site (see examples/nextjs/app/_pwa-brand.ts), then:
+  const manifest = buildWebManifest({ name: brand.name, themeColor: brand.themeColor });
+  return new Response(JSON.stringify(manifest), {
+    headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'public, max-age=300' },
+  });
+}
+```
+
+Reference it from your layout `metadata`: `manifest: '/manifest.webmanifest'`, add a `viewport` export
+with `viewportFit: 'cover'` + a `themeColor`, and serve `/sw.js` with a `no-cache` header.
+
+**4. (Optional) Derive icons from your logo** — add an `app/icon/[size]/route.tsx` that paints the
+brand logo onto a square canvas via `next/og` `ImageResponse` (see `examples/nextjs`). Or point the
+manifest `icons` at your own static square PNGs.
+
+Verify in Chrome DevTools → Application → Manifest + Service Workers, and the installability audit.
+
+---
+
 ## 10. Theming + fonts + hero
 
 Visit `/admin/settings` for site-level fields and `/admin/appearance` for theming:

@@ -119,6 +119,30 @@ export {
 export { DynamicFavicon } from './components/dynamic-favicon';
 export { SocialIcon } from './components/social-icon';
 
+// Mobile / PWA (v9.10). Bottom-sheet primitive, the header's mobile nav drawer,
+// service-worker registration, an install banner + shared hook, and a pure
+// manifest builder consumers call from their own route handler.
+export { BottomSheet, type BottomSheetProps } from './ui/bottom-sheet';
+export {
+  MobileNavSheet,
+  type MobileNavSheetProps,
+  type MobileNavSheetItem,
+} from './components/mobile-nav-sheet';
+export {
+  ServiceWorkerRegister,
+  type ServiceWorkerRegisterProps,
+} from './components/service-worker-register';
+export {
+  InstallAppPrompt,
+  useInstallPrompt,
+  type InstallPromptState,
+} from './components/install-app-prompt';
+export {
+  buildWebManifest,
+  type WebManifestInput,
+  type WebManifestIcon,
+} from './pwa/build-manifest';
+
 // Homepage surface (v1.2). `<Hero>` is the dispatcher; the per-variant
 // implementations live under `./components/home/variants/` and are
 // re-exported below so consumers can compose them directly or register

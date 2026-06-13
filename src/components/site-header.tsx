@@ -12,10 +12,11 @@ import {
 import { getSiteSettings } from '../services/site-settings-service';
 import type { SiteSettings } from '../types';
 import { Button } from '../ui/button';
-import { SearchIcon } from '../ui/icons';
+import { MenuIcon, SearchIcon } from '../ui/icons';
 import { Badge } from '../ui/misc';
 import { CartSheet } from './cart-sheet';
 import { SearchDialog } from './search-dialog';
+import { MobileNavSheet } from './mobile-nav-sheet';
 import { StorefrontProfileMenu } from './storefront-profile-menu';
 
 export interface SiteHeaderNavItem {
@@ -73,6 +74,7 @@ export function SiteHeader({
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,6 +115,29 @@ export function SiteHeader({
             gap: 24,
           }}
         >
+          <button
+            type="button"
+            className="caspian-hdr-burger"
+            onClick={() => setMenuOpen(true)}
+            aria-label={t('navigation.menu')}
+            aria-haspopup="dialog"
+            aria-expanded={menuOpen}
+            style={{
+              // Shown/hidden by the .caspian-hdr-burger rule in globals.css
+              // (a CSS media query can't override an inline `display`).
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              border: 0,
+              background: 'transparent',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            <MenuIcon size={22} />
+          </button>
+
           <Link
             href="/"
             style={{
@@ -213,6 +238,13 @@ export function SiteHeader({
 
       <CartSheet open={cartOpen} onOpenChange={setCartOpen} />
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      <MobileNavSheet
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        nav={nav}
+        accountHref={accountHref}
+        wishlistHref={wishlistHref}
+      />
     </>
   );
 }

@@ -16,6 +16,59 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.10.0 — Mobile bottom-drawer nav + installable PWA
+
+Ported from the luivante standalone fork. Makes the storefront chrome mobile-friendly and gives
+consumers the pieces to ship an installable PWA, adapted to this library's framework-agnostic,
+inline-styled model (no `app/` dir, no BEM CSS — so the luivante diff couldn't be copied).
+
+**Mobile nav.** A new reusable `<BottomSheet>` primitive (dimmed veil, slide-up via the shared
+`caspian-drawer-slide-up` keyframe, drag handle, Escape + body-scroll lock, focus-on-open/restore).
+`<SiteHeader>` now renders a **hamburger** below 820px that opens a `<MobileNavSheet>` (the primary
+nav links + account + wishlist + an "Install app" entry); the inline `.caspian-site-nav` is hidden
+there via CSS. `<ShopFilterDrawer>` was refactored to sit on top of `<BottomSheet>` (no behavior
+change).
+
+**PWA.** New framework-agnostic exports consumers wire into their own app: `<ServiceWorkerRegister>`
+(registers a worker in production), `<InstallAppPrompt>` + the shared `useInstallPrompt()` hook
+(Android `beforeinstallprompt` + an iOS Add-to-Home-Screen hint), and `buildWebManifest(input)` — a
+pure helper that returns a manifest object from a brand input, so a consumer route handler can read
+`settings/site` and serve a dynamic manifest. `examples/nextjs` is wired end-to-end: a dynamic
+`/manifest.webmanifest` route, a logo-derived square `/icon/[size]` route (`next/og`), `public/sw.js`
++ `offline.html`, and the layout metadata/viewport.
+
+### Consumer action required on upgrade
+
+To make an existing site installable (all optional — nothing breaks if you skip it):
+
+```
+1. Mount <ServiceWorkerRegister /> and <InstallAppPrompt /> in your root layout.
+2. Add a public/sw.js + public/offline.html (copy examples/nextjs/public/).
+3. Add an app/manifest.webmanifest route that returns buildWebManifest({ name, themeColor, ... })
+   and reference it from your layout metadata (manifest: '/manifest.webmanifest').
+4. (Optional) Add an app/icon/[size] route to derive icons from your logo — see examples/nextjs.
+```
+
+The mobile hamburger + `<MobileNavSheet>` are automatic once you import the library's CSS — no API
+change to `<SiteHeader>`. Cart and search were already mobile-usable (full-width sheet / centered
+dialog) and are unchanged.
+
+### Added
+- `src/ui/bottom-sheet.tsx` — reusable `BottomSheet` primitive.
+- `src/components/mobile-nav-sheet.tsx` — header mobile nav drawer.
+- `src/components/service-worker-register.tsx` — `ServiceWorkerRegister`.
+- `src/components/install-app-prompt.tsx` — `InstallAppPrompt` + `useInstallPrompt()`.
+- `src/pwa/build-manifest.ts` — pure `buildWebManifest()` helper.
+- `examples/nextjs`: `app/manifest.webmanifest/route.ts`, `app/icon/[size]/route.tsx`, `app/_pwa-brand.ts`, `public/sw.js`, `public/offline.html`.
+
+### Changed
+- `src/components/site-header.tsx` — hamburger + `menuOpen` + mounts `<MobileNavSheet>`.
+- `src/components/shop-filter-drawer.tsx` — now wraps `<BottomSheet>`.
+- `src/styles/globals.css` — `.caspian-hdr-burger` + 820px header collapse; reduced-motion now targets `.caspian-bottom-sheet`.
+- `src/i18n/messages.ts` — `navigation.menu`/`closeMenu`/`signOut` + `pwa.*` keys.
+- `src/index.ts` — exports the new components/hook/helper.
+- `examples/nextjs/app/layout.tsx` — manifest/viewport metadata + mounts SW + install prompt.
+
 ## v9.9.0 — Products: optional SKU field
 
 Products can now carry an optional **SKU** (stock-keeping unit). Added `sku?: string` to the

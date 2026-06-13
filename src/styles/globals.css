@@ -96,8 +96,23 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .caspian-shop-filter-drawer {
+  .caspian-bottom-sheet {
     animation: none !important;
+  }
+}
+
+/* Site header: swap the inline nav for a hamburger that opens <MobileNavSheet>
+   on small screens. Display is controlled here (not inline) so the media query
+   can flip it. `.caspian-site-nav` is the class on the header's <nav>. */
+.caspian-hdr-burger {
+  display: none;
+}
+@media (max-width: 820px) {
+  .caspian-site-nav {
+    display: none !important;
+  }
+  .caspian-hdr-burger {
+    display: inline-flex !important;
   }
 }
 

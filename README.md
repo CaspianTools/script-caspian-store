@@ -92,6 +92,8 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | **Storefront — PDP:** `<ProductDetailPage />`, `<ProductGallery />`, size/qty pickers, Add to cart | ✅ |
 | **Reviews & Q&A:** `<ProductReviews />` with summary, list, sort, write/ask dialogs, Verified Purchase badge | ✅ |
 | **Cart:** `<CartProvider />`, `useCart()`, `<CartSheet />` drawer — Firestore-persisted for signed-in users, localStorage otherwise | ✅ |
+| **Mobile nav:** `<SiteHeader>` collapses to a hamburger + `<MobileNavSheet>` below 820px; reusable `<BottomSheet>` primitive | ✅ (v9.10.0+) |
+| **PWA / installable:** `<ServiceWorkerRegister>`, `<InstallAppPrompt>` + `useInstallPrompt()`, `buildWebManifest()` helper (consumer wires routes — see `examples/nextjs`) | ✅ (v9.10.0+) |
 | UI primitives: Button, Dialog, Input, Textarea, Label, Tabs, Select, Skeleton, Badge, Avatar, Separator, Toast | ✅ |
 | **Checkout:** `useCheckout()` + `<CheckoutPage />` — delegates to the active payment plugin (Stripe ships today). WooCommerce-style **guest checkout** with optional inline sign-in and "create account at checkout" (v9.1+) | ✅ |
 | **Order confirmation:** `<OrderConfirmationPage />` — polls Firestore for the webhook-created order | ✅ |
@@ -124,7 +126,12 @@ WishlistButton, ScriptSettingsPage, ContactPage,
 StarIcon, StarRatingInput
 
 // Client hooks
-useCheckout, useWishlist
+useCheckout, useWishlist, useInstallPrompt
+
+// Mobile + PWA (v9.10.0+)
+BottomSheet, MobileNavSheet,
+ServiceWorkerRegister, InstallAppPrompt,
+buildWebManifest
 
 // Admin surface
 AdminGuard, AdminShell, DEFAULT_ADMIN_NAV, AdminDashboard,
