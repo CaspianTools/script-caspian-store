@@ -27,15 +27,19 @@ function docToBrand(snap: QueryDocumentSnapshot): ProductBrandDoc {
   };
 }
 
-/** Active brands ordered by name — used by the editor select and storefront display lookup. */
+/**
+ * Active brands ordered by name — used by the editor select and storefront
+ * display lookup. Sorted client-side on purpose: a `where(isActive==true)` +
+ * `orderBy('name')` query needs a `productBrands` composite index, which a
+ * fresh project won't have until it's created — the query then throws
+ * `failed-precondition` and blanks the product editor. Equality-only uses the
+ * auto-created single-field index, so this works everywhere with no index
+ * deploy. Brand lists are small, so the in-memory sort is free.
+ */
 export async function listActiveBrands(db: Firestore): Promise<ProductBrandDoc[]> {
-  const q = query(
-    caspianCollections(db).productBrands,
-    where('isActive', '==', true),
-    orderBy('name', 'asc'),
-  );
+  const q = query(caspianCollections(db).productBrands, where('isActive', '==', true));
   const snap = await getDocs(q);
-  return snap.docs.map(docToBrand);
+  return snap.docs.map(docToBrand).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** All brands ordered by name — used by the admin Brands page. */

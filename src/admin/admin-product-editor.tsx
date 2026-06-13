@@ -192,18 +192,20 @@ export function AdminProductEditor({
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const [categoryList, brandList] = await Promise.all([
-          listAllCategories(db),
-          listActiveBrands(db),
-        ]);
-        if (!alive) return;
-        setCategories(categoryList);
-        setBrands(brandList);
-      } catch (error) {
-        console.error('[caspian-store] Failed to load editor reference data:', error);
-        if (alive) setBrands([]);
-      }
+      // Load each source independently — one failing query (e.g. a missing
+      // composite index on a fresh project) must not blank the other dropdown.
+      const [cats, brs] = await Promise.allSettled([
+        listAllCategories(db),
+        listActiveBrands(db),
+      ]);
+      if (!alive) return;
+      const pick = <T,>(r: PromiseSettledResult<T[]>, label: string): T[] => {
+        if (r.status === 'fulfilled') return r.value;
+        console.error(`[caspian-store] editor reference data: ${label} failed to load`, r.reason);
+        return [];
+      };
+      setCategories(pick(cats, 'categories'));
+      setBrands(pick(brs, 'brands'));
     })();
     return () => {
       alive = false;

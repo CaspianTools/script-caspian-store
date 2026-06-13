@@ -16,6 +16,29 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.10.2 — Fix product editor dropdowns blanking on projects without the brands index
+
+The admin **product editor** could load with its Category (and Brand) dropdowns empty — a selected
+category rendered as a raw doc id and the lists showed no options. The editor loaded its reference
+data in one atomic `Promise.all`, and `listActiveBrands` ran `where('isActive','==',true) +
+orderBy('name')`, which requires a `productBrands` composite index. On a project where that index was
+never created the query throws `failed-precondition`, the whole `Promise.all` rejects, and *categories
+were never set either* (the `catch` only reset brands).
+
+- `listActiveBrands` is now **index-free** — equality-only query plus a client-side sort, so it works
+  on any project with no composite index to deploy.
+- The editor loads each reference source independently (`Promise.allSettled` + per-source logging), so
+  one failing query can no longer blank the others.
+
+### No consumer action required
+
+Fixes a runtime query; no schema, rules, or index change. Existing installs improve on upgrade — and
+the editor no longer depends on a hand-created `productBrands` composite index.
+
+### Fixed
+- [src/services/brand-service.ts](src/services/brand-service.ts) — `listActiveBrands` queries by `isActive` only and sorts by name in memory (no composite index).
+- [src/admin/admin-product-editor.tsx](src/admin/admin-product-editor.tsx) — reference-data effect uses `Promise.allSettled`; categories and brands are each set from their own result.
+
 ## v9.10.1 — Fix Switch label/description layout
 
 The `Switch` component rendered its `label` and `description` in a single inline span, so a toggle
