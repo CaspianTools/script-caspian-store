@@ -16,6 +16,23 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.10.3 — Make the admin row-action kebab (⋯) visible
+
+The per-row **⋯ action menu** on admin list pages (products, orders, users, categories, …) — which
+carries **Edit**, **View on storefront**, and **Delete** — was hard to see: `MoreHorizontalIcon`
+inherited the shared stroke-icon defaults (`fill: none`, `stroke: currentColor`), so its three dots
+drew as thin hollow rings rather than solid dots. At small sizes they read as nearly invisible, so the
+row actions looked missing even though hovering and clicking the trigger opened the menu. The dots now
+fill with `currentColor` (and bump `r` 1.5 → 2), so the kebab is crisp at any size.
+
+### No consumer action required
+
+Visual-only fix to a shared icon; no public API, schema, rules, or index change. Existing installs get
+a clearer kebab on upgrade.
+
+### Fixed
+- [src/ui/icons.tsx](src/ui/icons.tsx) — `MoreHorizontalIcon` renders solid dots (`fill="currentColor" stroke="none"`, `r="2"`) instead of faint stroked rings.
+
 ## v9.10.2 — Fix product editor dropdowns blanking on projects without the brands index
 
 The admin **product editor** could load with its Category (and Brand) dropdowns empty — a selected
