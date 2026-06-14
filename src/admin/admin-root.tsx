@@ -16,7 +16,7 @@ import { AdminSubscribersPage } from './admin-subscribers-page';
 import { AdminUsersPage } from './admin-users-page';
 import { AdminUserDetail } from './admin-user-detail';
 import { AdminContactsPage } from './admin-contacts-page';
-import { AdminProductBrandsPage } from './admin-product-brands-page';
+import { AdminTaxonomiesShell } from './admin-taxonomies-shell';
 import { AdminProductCategoriesPage } from './admin-product-categories-page';
 import { AdminCategoryEditor } from './admin-category-editor';
 import { AdminProductCollectionsPage } from './admin-product-collections-page';
@@ -69,7 +69,11 @@ export function AdminRoot(): ReactNode {
     case 'reviews':
       return <AdminReviewsModeration />;
     case 'brands':
-      return <AdminProductBrandsPage />;
+      // Brands moved under the Taxonomies page. Redirect the old top-level URL
+      // for one release so existing bookmarks don't 404.
+      return <LegacyRedirect to="/admin/taxonomies/brands" />;
+    case 'taxonomies':
+      return <AdminTaxonomiesShell />;
     case 'categories':
       if (a === 'new') return <AdminCategoryEditor />;
       if (b === 'edit') return <AdminCategoryEditor categoryId={a} />;

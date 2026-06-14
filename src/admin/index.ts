@@ -9,6 +9,11 @@ export {
   type AdminNavGroup,
 } from './admin-shell';
 export { AdminSettingsShell, type AdminSettingsShellProps } from './admin-settings-shell';
+export {
+  AdminTaxonomiesShell,
+  TAXONOMY_CATALOG,
+  type AdminTaxonomiesShellProps,
+} from './admin-taxonomies-shell';
 export { AdminSettingsImportExportPage } from './admin-settings-import-export-page';
 export { AdminRoot } from './admin-root';
 export { AdminPluginsPage, type AdminPluginsPageProps } from './admin-plugins-page';

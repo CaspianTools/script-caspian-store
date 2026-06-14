@@ -1007,6 +1007,11 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.settings.nav.languages': 'Languages',
   'admin.settings.categories': 'Categories',
 
+  // Admin taxonomies — internal sub-sidebar (brands and future taxonomies)
+  'admin.taxonomies.title': 'Taxonomies',
+  'admin.taxonomies.subtitle': 'Manage product taxonomies — brands and more.',
+  'admin.taxonomies.types': 'Types',
+
   // Admin settings → Import / Export
   'admin.importExport.title': 'Import / Export',
   'admin.importExport.subtitle':

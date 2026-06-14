@@ -94,7 +94,7 @@ export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
     icon: <PackageIcon size={ICON_SIZE} />,
     children: [
       { href: '/admin/products', label: 'Products', icon: <TagIcon size={ICON_SIZE} /> },
-      { href: '/admin/brands', label: 'Brands', icon: <BookmarkIcon size={ICON_SIZE} /> },
+      { href: '/admin/taxonomies', label: 'Taxonomies', icon: <BookmarkIcon size={ICON_SIZE} /> },
       { href: '/admin/categories', label: 'Categories', icon: <FolderIcon size={ICON_SIZE} /> },
       { href: '/admin/collections', label: 'Collections', icon: <LayersIcon size={ICON_SIZE} /> },
       { href: '/admin/promo-codes', label: 'Promo codes', icon: <TicketIcon size={ICON_SIZE} /> },
