@@ -16,6 +16,44 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.11.0 — Admin Import / Export page (CSV)
+
+A new **Settings → Import / Export** sub-page centralizes moving store data in and out as CSV,
+backported from a standalone fork. Admins pick a dataset to **export** (products, categories,
+collections, brands, promo codes, subscribers, plus export-only orders, customers, and reviews) or to
+**import** (products, categories, collections, brands, promo codes, subscribers). The import flow is
+**analyze → resolve-conflicts → apply**: after upload, each row that matches an existing record is
+listed and the admin chooses **Skip / Overwrite / Create new** per row (with a "set all" bulk control).
+Brand/category references resolve by name and are auto-created when missing; product images are a
+`;`-separated list of public URLs stored as-is. A new dependency-free RFC-4180 CSV helper
+(`src/utils/csv.ts`) backs it, and `subscribersToCsv` was refactored onto it. The subscribers page's
+ad-hoc **Export CSV** button was removed in favor of the centralized page.
+
+### Added
+- `src/utils/csv.ts` — `toCsv` / `parseCsv` / `csvToRecords` (RFC-4180, no deps).
+- `src/services/import-export/` — a dataset catalog (`catalog.ts`, `types.ts`, `helpers.ts`,
+  `resolvers.ts`, `datasets/`) with per-dataset export + analyze/apply logic reusing the existing
+  entity services.
+- `src/admin/admin-settings-import-export-page.tsx` — the Export + Import (per-row conflict) UI,
+  registered as the `import-export` settings slug.
+- `DownloadIcon`, `UploadIcon`, `TableIcon` in `src/ui/icons.tsx`.
+- New public exports: `AdminSettingsImportExportPage`, `toCsv`/`parseCsv`/`csvToRecords`,
+  `DATASET_CATALOG`/`listDatasets`/`getDataset`/`exportableDatasets`/`importableDatasets`, and the
+  Import/Export types.
+- `admin.importExport.*` i18n keys.
+
+### Changed
+- `src/services/subscriber-service.ts` — `subscribersToCsv` now builds via the shared `toCsv`.
+
+### Removed
+- The ad-hoc **Export CSV** button + handler on the admin Subscribers page (centralized in the new
+  Import / Export page).
+
+### No consumer action required
+
+Purely additive to the public export surface plus one internal admin-UI change; existing installs are
+unaffected and no schema, rules, or index change is involved.
+
 ## v9.10.3 — Make the admin row-action kebab (⋯) visible
 
 The per-row **⋯ action menu** on admin list pages (products, orders, users, categories, …) — which

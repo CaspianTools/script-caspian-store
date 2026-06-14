@@ -33,6 +33,7 @@ import {
   ShoppingCartIcon,
   SlidersIcon,
   StarIcon,
+  TableIcon,
   TagIcon,
   TicketIcon,
   TruckIcon,
@@ -172,6 +173,11 @@ export const SETTINGS_SUB_NAV: AdminNavLeaf[] = [
   },
   { href: '/admin/settings/emails', label: 'Emails', icon: <InboxIcon size={ICON_SIZE} /> },
   { href: '/admin/settings/languages', label: 'Languages', icon: <GlobeIcon size={ICON_SIZE} /> },
+  {
+    href: '/admin/settings/import-export',
+    label: 'Import / Export',
+    icon: <TableIcon size={ICON_SIZE} />,
+  },
 ];
 
 export interface AdminShellProps {

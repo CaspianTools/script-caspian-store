@@ -9,6 +9,7 @@ import { AdminSiteSettingsPage } from './admin-site-settings-page';
 import { AdminEmailsPage } from './admin-emails-page';
 import { AdminLanguagesPage } from './admin-languages-page';
 import { AdminShippingOptionsPage } from './admin-shipping-options-page';
+import { AdminSettingsImportExportPage } from './admin-settings-import-export-page';
 
 export interface AdminSettingsShellProps {
   className?: string;
@@ -131,10 +132,12 @@ function SettingsPanel({ slug }: { slug: SettingsSlug }): ReactNode {
       return <AdminEmailsPage />;
     case 'languages':
       return <AdminLanguagesPage />;
+    case 'import-export':
+      return <AdminSettingsImportExportPage />;
   }
 }
 
-type SettingsSlug = 'general' | 'shipping-options' | 'emails' | 'languages';
+type SettingsSlug = 'general' | 'shipping-options' | 'emails' | 'languages' | 'import-export';
 type LegacyPluginSlug = 'shipping' | 'payments' | 'email-providers';
 
 const KNOWN_SLUGS: readonly SettingsSlug[] = [
@@ -142,6 +145,7 @@ const KNOWN_SLUGS: readonly SettingsSlug[] = [
   'shipping-options',
   'emails',
   'languages',
+  'import-export',
 ];
 const LEGACY_PLUGIN_SLUGS: readonly LegacyPluginSlug[] = [
   'shipping',

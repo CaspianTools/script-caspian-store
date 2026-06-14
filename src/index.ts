@@ -544,6 +544,24 @@ export {
   subscribersToCsv,
   type SubscribeResult,
 } from './services/subscriber-service';
+export { toCsv, parseCsv, csvToRecords, type CsvCell } from './utils/csv';
+export {
+  DATASET_CATALOG,
+  listDatasets,
+  getDataset,
+  exportableDatasets,
+  importableDatasets,
+} from './services/import-export/catalog';
+export type {
+  DatasetDescriptor,
+  DatasetId,
+  ColumnMeta,
+  RowAction,
+  RowPlan,
+  DecidedRow,
+  RowResult,
+  ImportSummary,
+} from './services/import-export/types';
 export {
   createContact,
   listAllContacts,
@@ -686,6 +704,7 @@ export {
   AdminProductCollectionsPage,
   AdminLanguagesPage,
   AdminSiteSettingsPage,
+  AdminSettingsImportExportPage,
   CountryPickerDialog,
   ISO_COUNTRIES,
   AdminAppearancePage,

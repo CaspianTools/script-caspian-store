@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Subscriber } from '../types';
-import {
-  deleteSubscriber,
-  listSubscribers,
-  subscribersToCsv,
-} from '../services/subscriber-service';
+import { deleteSubscriber, listSubscribers } from '../services/subscriber-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -49,34 +45,13 @@ export function AdminSubscribersPage({ className }: { className?: string }) {
     }
   };
 
-  const handleExportCsv = () => {
-    if (!subscribers || subscribers.length === 0) return;
-    const csv = subscribersToCsv(subscribers);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className={className}>
-      <header
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
-      >
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Subscribers</h1>
-          <p style={{ color: '#666', marginTop: 4 }}>
-            {subscribers === null ? '…' : `${subscribers.length} total`}
-          </p>
-        </div>
-        <Button variant="outline" onClick={handleExportCsv} disabled={!subscribers?.length}>
-          Export CSV
-        </Button>
+      <header style={{ marginBottom: 16 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Subscribers</h1>
+        <p style={{ color: '#666', marginTop: 4 }}>
+          {subscribers === null ? '…' : `${subscribers.length} total`}
+        </p>
       </header>
 
       <div style={{ marginBottom: 12, maxWidth: 320 }}>

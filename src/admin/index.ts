@@ -9,6 +9,7 @@ export {
   type AdminNavGroup,
 } from './admin-shell';
 export { AdminSettingsShell, type AdminSettingsShellProps } from './admin-settings-shell';
+export { AdminSettingsImportExportPage } from './admin-settings-import-export-page';
 export { AdminRoot } from './admin-root';
 export { AdminPluginsPage, type AdminPluginsPageProps } from './admin-plugins-page';
 export {

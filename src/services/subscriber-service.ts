@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { caspianCollections } from '../firebase/collections';
 import type { Subscriber } from '../types';
+import { toCsv } from '../utils/csv';
 
 export type SubscribeResult = 'subscribed' | 'already-subscribed';
 
@@ -58,12 +59,11 @@ export async function deleteSubscriber(db: Firestore, id: string): Promise<void>
 
 /** Build a CSV string from subscribers. Does not trigger download — consumer does that. */
 export function subscribersToCsv(subscribers: Subscriber[]): string {
-  const rows: string[] = ['email,subscribedAt'];
-  for (const s of subscribers) {
-    const when = s.subscribedAt?.toDate
-      ? s.subscribedAt.toDate().toISOString()
-      : '';
-    rows.push(`${s.email.replace(/"/g, '""')},${when}`);
-  }
-  return rows.join('\n');
+  return toCsv([
+    ['email', 'subscribedAt'],
+    ...subscribers.map((s) => [
+      s.email,
+      s.subscribedAt?.toDate ? s.subscribedAt.toDate().toISOString() : '',
+    ]),
+  ]);
 }

@@ -336,6 +336,36 @@ export function SettingsIcon(props: IconProps) {
   );
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <path d="M12 4v12" />
+      <polyline points="7 11 12 16 17 11" />
+      <line x1="4" y1="20" x2="20" y2="20" />
+    </svg>
+  );
+}
+
+export function UploadIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <path d="M12 17V5" />
+      <polyline points="7 10 12 5 17 10" />
+      <line x1="4" y1="20" x2="20" y2="20" />
+    </svg>
+  );
+}
+
+export function TableIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M3 15h18" />
+    </svg>
+  );
+}
+
 export function TruckIcon(props: IconProps) {
   return (
     <svg {...svgDefaults(props)}>
