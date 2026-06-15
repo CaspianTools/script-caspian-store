@@ -16,6 +16,93 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.14.0 — Full world-currency combo in Localization + Settings sidebar icons
+
+The Settings → Localization currency picker was a plain native `<select>` limited to 29 hand-picked
+ISO 4217 codes, so stores transacting in any other currency couldn't pick theirs. It now draws from the
+**complete world-currency list** and is a **searchable combo dropdown** — the same `SearchableSelect`
+already used by the Country field beside it (name as the label, ISO code as a muted hint). Separately,
+the Settings **secondary sidebar** ("CATEGORIES" list) was rendering text-only items even though an icon
+was already defined for every `SETTINGS_SUB_NAV` entry; the render loop simply dropped it. Icons now
+render to the left of each label, matching the main admin sidebar.
+
+Because any currency is now selectable, the **default currency-display** values (the starting point when
+a merchant enables "Override automatic formatting") were corrected for non-2-decimal currencies:
+zero-decimal currencies (e.g. JPY, ISK, XOF) start at 0 decimals and three-decimal currencies (e.g.
+KWD, BHD) at 3. The primary `Intl.NumberFormat` path was already correct; this only affects the
+manual-override defaults and the catch-fallback.
+
+### No consumer action required
+
+Additive and self-contained. `ALL_CURRENCIES` is a new internal data module; the removed
+`CURRENCY_OPTIONS` was a file-local const, never part of the public export surface. No new collection,
+index, or rule.
+
+### Added
+- `src/utils/currencies.ts` — `IsoCurrency` + `ALL_CURRENCIES` (full ISO 4217 active-currency list,
+  spendable codes only, alpha-sorted by name) + `currencyName(code)`. Mirrors `src/utils/countries.ts`.
+
+### Changed
+- `src/admin/admin-site-settings-page.tsx` — Currency field is now a `<SearchableSelect>` combo
+  (type-to-filter) fed by `localizationCurrencyOptions` off the full list, replacing the native
+  `<Select>` + the file-local 29-entry `CURRENCY_OPTIONS` array.
+- `src/admin/admin-settings-shell.tsx` — the Settings sub-sidebar now renders each item's already-defined
+  `icon` (muted, left of the label, `gap: 10`); icon color inherits the active/inactive label color.
+- `src/utils/format-currency.ts` — `ZERO_DECIMAL_CURRENCIES` expanded to the full ISO 4217 zero-decimal
+  set (added BIF, DJF, GNF, ISK, KMF, VUV); added `THREE_DECIMAL_CURRENCIES` (BHD, IQD, JOD, KWD, LYD,
+  OMR, TND) and a `decimalsForCurrency()` helper now used by `defaultCurrencyDisplay()` and the
+  `formatCurrency` catch-fallback.
+
+### Removed
+- `src/admin/admin-site-settings-page.tsx` — the file-local 29-entry `CURRENCY_OPTIONS` array (replaced
+  by `localizationCurrencyOptions` off the full list).
+
+## v9.13.0 — Common taxonomies catalog: enable/disable toggles + onboarding step
+
+v9.12.0 added the Taxonomies admin page with a single entry (Brands). This expands it into a **broad,
+categorized catalog of common product taxonomies** a store can turn on — Brands, Seasons, Occasions,
+Trends, Materials, Colors, Sizes, Patterns, Fit, Gender, Age group, Care instructions, Country of
+origin, Certifications — grouped into Merchandising / Attributes / Audience / Care & origin.
+
+Admins enable/disable them on a new **Settings → Taxonomies** sub-page (toggle a whole category or a
+single taxonomy), and during the **/setup onboarding wizard** via a new dedicated **Taxonomies** step.
+Only enabled taxonomies appear in the Catalog → Taxonomies sidebar — no empty pages. A taxonomy that
+already has terms **can't be disabled** (the toggle locks on; the guard reads a live
+`getCountFromServer` count and re-checks at toggle-off time).
+
+All generic taxonomies share one `taxonomyTerms` Firestore collection keyed by a `type` field, with a
+single generic CRUD page (`AdminTaxonomyTermsPage`) the shell mounts per enabled type — so adding a
+future taxonomy is just a catalog entry. **Brands stays bespoke** (`productBrands` + product references
++ legacy migration). The enabled set is stored as `SiteSettings.enabledTaxonomies`; when unset,
+existing stores fall back to catalog defaults (Brands), so there's no migration.
+
+### No consumer action required
+
+Additive. `SiteSettings.enabledTaxonomies` is optional and defaults to Brands; the new `taxonomyTerms`
+collection is public-read/admin-write like the other product taxonomies (deploy `firestore.rules` to
+use it — generic taxonomies simply won't persist until you do, but nothing else breaks). No composite
+index needed (equality-only queries). The setup wizard gains a Taxonomies step automatically.
+
+### Added
+- `src/taxonomies/{types.ts,catalog.tsx}` — grouped `COMMON_TAXONOMIES` catalog + `TAXONOMY_GROUPS` +
+  `resolveEnabledTaxonomies`/`enabledTaxonomyDefs`/`TAXONOMY_BY_ID`/`GENERIC_TAXONOMY_IDS`.
+- `src/services/taxonomy-term-service.ts` — CRUD + `countTerms` for `taxonomyTerms`.
+- `src/admin/admin-taxonomy-terms-page.tsx` — generic per-type term CRUD page.
+- `src/admin/admin-settings-taxonomies-page.tsx` — Settings sub-page (grouped toggles + disable guard).
+- `src/components/setup/steps/taxonomies-step.tsx` — onboarding step.
+- `TaxonomyTermDoc` + `SiteSettings.enabledTaxonomies` (types); `taxonomyTerms` ref + rules.
+- `TAXONOMY_TERMS_DATASET` import/export descriptor + registration; `'taxonomy-terms'` DatasetId.
+- New i18n keys (`admin.taxonomies.*`, `admin.settings.taxonomies.*`, `setup.*.taxonomies`,
+  `admin.importExport.dataset.taxonomy-terms`).
+- New public exports: `AdminTaxonomyTermsPage`, `AdminSettingsTaxonomiesPage`, the `src/taxonomies`
+  catalog + types, the taxonomy-term-service functions, `TaxonomyTermDoc`.
+
+### Changed
+- `src/admin/admin-taxonomies-shell.tsx` — enabled-aware (loads `enabledTaxonomies`, filters the
+  sidebar, maps `kind → Component`, empty state). `TAXONOMY_CATALOG` now aliases `COMMON_TAXONOMIES`.
+- `src/admin/admin-shell.tsx` / `admin-settings-shell.tsx` — registered the `taxonomies` settings slug.
+- `src/components/setup/{setup-wizard,setup-types,steps/summary-step}.tsx` — new step + summary row.
+
 ## v9.12.0 — Taxonomies admin page (2-column, secondary sidebar)
 
 A new **Taxonomies** entry under the admin Catalog group opens a page for managing product

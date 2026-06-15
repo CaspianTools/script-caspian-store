@@ -38,6 +38,7 @@ import { SearchableSelect, type SearchableSelectOption } from '../ui/searchable-
 import { defaultCurrencyDisplay, formatCurrency } from '../utils/format-currency';
 import { getSubdivisions } from '../data/subdivisions';
 import { ALL_COUNTRIES } from '../utils/countries';
+import { ALL_CURRENCIES } from '../utils/currencies';
 import { CountryPickerDialog, ISO_COUNTRIES } from './country-picker-dialog';
 
 const emptySettings: SiteSettings = {
@@ -55,38 +56,6 @@ const emptySettings: SiteSettings = {
   socialLinks: [],
 };
 
-/** Most-used ISO 4217 codes. Free-text fallback available via "Other". */
-const CURRENCY_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: '— Select currency —' },
-  { value: 'USD', label: 'USD — US Dollar' },
-  { value: 'EUR', label: 'EUR — Euro' },
-  { value: 'GBP', label: 'GBP — British Pound' },
-  { value: 'JPY', label: 'JPY — Japanese Yen' },
-  { value: 'CAD', label: 'CAD — Canadian Dollar' },
-  { value: 'AUD', label: 'AUD — Australian Dollar' },
-  { value: 'CHF', label: 'CHF — Swiss Franc' },
-  { value: 'CNY', label: 'CNY — Chinese Yuan' },
-  { value: 'HKD', label: 'HKD — Hong Kong Dollar' },
-  { value: 'SGD', label: 'SGD — Singapore Dollar' },
-  { value: 'INR', label: 'INR — Indian Rupee' },
-  { value: 'BRL', label: 'BRL — Brazilian Real' },
-  { value: 'MXN', label: 'MXN — Mexican Peso' },
-  { value: 'SEK', label: 'SEK — Swedish Krona' },
-  { value: 'NOK', label: 'NOK — Norwegian Krone' },
-  { value: 'DKK', label: 'DKK — Danish Krone' },
-  { value: 'PLN', label: 'PLN — Polish Złoty' },
-  { value: 'CZK', label: 'CZK — Czech Koruna' },
-  { value: 'TRY', label: 'TRY — Turkish Lira' },
-  { value: 'ZAR', label: 'ZAR — South African Rand' },
-  { value: 'AED', label: 'AED — UAE Dirham' },
-  { value: 'SAR', label: 'SAR — Saudi Riyal' },
-  { value: 'NZD', label: 'NZD — New Zealand Dollar' },
-  { value: 'KRW', label: 'KRW — South Korean Won' },
-  { value: 'THB', label: 'THB — Thai Baht' },
-  { value: 'MYR', label: 'MYR — Malaysian Ringgit' },
-  { value: 'IDR', label: 'IDR — Indonesian Rupiah' },
-  { value: 'PHP', label: 'PHP — Philippine Peso' },
-];
 
 const PLATFORM_LABELS: Record<SocialPlatform, string> = {
   instagram: 'Instagram',
@@ -161,6 +130,11 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
 
   const localizationCountryOptions: SearchableSelectOption[] = useMemo(
     () => ALL_COUNTRIES.map((c) => ({ value: c.code, label: c.name, hint: c.code })),
+    [],
+  );
+
+  const localizationCurrencyOptions: SearchableSelectOption[] = useMemo(
+    () => ALL_CURRENCIES.map((c) => ({ value: c.code, label: c.name, hint: c.code })),
     [],
   );
 
@@ -375,11 +349,11 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <div>
               <Label>Currency</Label>
-              <Select
+              <SearchableSelect
                 value={draft.currency ?? ''}
-                onChange={(e) => patch({ currency: e.target.value })}
-                options={CURRENCY_OPTIONS}
-                style={{ width: '100%' }}
+                onChange={(v) => patch({ currency: v })}
+                options={localizationCurrencyOptions}
+                placeholder="— Select currency —"
               />
             </div>
             <div>

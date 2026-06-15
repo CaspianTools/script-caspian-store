@@ -33,18 +33,42 @@ const FALLBACK_SYMBOLS: Record<string, string> = {
 };
 
 const ZERO_DECIMAL_CURRENCIES = new Set([
-  'JPY',
-  'KRW',
-  'VND',
-  'IDR',
+  'BIF',
   'CLP',
+  'DJF',
+  'GNF',
+  'IDR',
+  'ISK',
+  'JPY',
+  'KMF',
+  'KRW',
   'PYG',
   'RWF',
   'UGX',
+  'VND',
+  'VUV',
   'XAF',
   'XOF',
   'XPF',
 ]);
+
+const THREE_DECIMAL_CURRENCIES = new Set([
+  'BHD',
+  'IQD',
+  'JOD',
+  'KWD',
+  'LYD',
+  'OMR',
+  'TND',
+]);
+
+/** Minor-unit count to use when no merchant override is set. ISO 4217 default for the code, falling back to 2. */
+function decimalsForCurrency(code: string): number {
+  const c = code.toUpperCase();
+  if (ZERO_DECIMAL_CURRENCIES.has(c)) return 0;
+  if (THREE_DECIMAL_CURRENCIES.has(c)) return 3;
+  return 2;
+}
 
 export interface FormatCurrencyOptions {
   /** Explicit override for the active currency display. Skips `siteSettings` lookup when provided. */
@@ -124,7 +148,7 @@ export function formatCurrency(
     }).format(amount);
   } catch {
     return `${currencySymbol(safeCurrency, locale)}${amount.toFixed(
-      ZERO_DECIMAL_CURRENCIES.has(safeCurrency) ? 0 : 2,
+      decimalsForCurrency(safeCurrency),
     )}`;
   }
 }
@@ -136,6 +160,6 @@ export function defaultCurrencyDisplay(currency: string): CurrencyDisplay {
     position: 'left',
     thousandSep: ',',
     decimalSep: '.',
-    decimals: ZERO_DECIMAL_CURRENCIES.has(c) ? 0 : 2,
+    decimals: decimalsForCurrency(c),
   };
 }

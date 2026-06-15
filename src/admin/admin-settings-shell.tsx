@@ -95,6 +95,7 @@ export function AdminSettingsShell({ className }: AdminSettingsShellProps) {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      gap: 10,
                       padding: '10px 12px',
                       background: active ? 'rgba(0,0,0,0.06)' : 'transparent',
                       borderRadius: 8,
@@ -106,6 +107,9 @@ export function AdminSettingsShell({ className }: AdminSettingsShellProps) {
                       boxSizing: 'border-box',
                     }}
                   >
+                    <span style={{ display: 'flex', flexShrink: 0, color: active ? '#111' : '#888' }}>
+                      {item.icon}
+                    </span>
                     {item.label}
                   </span>
                 </Link>
