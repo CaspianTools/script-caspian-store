@@ -155,52 +155,54 @@ export function RichTextEditor({
           <BulletIcon />
         </ToolbarButton>
       </div>
-      <div
-        ref={ref}
-        role="textbox"
-        aria-label={ariaLabel}
-        aria-multiline
-        contentEditable={!disabled}
-        suppressContentEditableWarning
-        onInput={emit}
-        onBlur={emit}
-        onKeyDown={onKeyDown}
-        onPaste={onPaste}
-        style={{
-          minHeight,
-          padding: 12,
-          border: '1px solid rgba(0,0,0,0.15)',
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          borderBottomLeftRadius: 6,
-          borderBottomRightRadius: 6,
-          background: '#fff',
-          outline: 'none',
-          fontSize: 14,
-          lineHeight: 1.55,
-          fontFamily: 'inherit',
-          cursor: disabled ? 'not-allowed' : 'text',
-          opacity: disabled ? 0.6 : 1,
-          position: 'relative',
-        }}
-        data-placeholder={placeholder ?? ''}
-      />
-      {isEmpty && placeholder && (
+      <div style={{ position: 'relative' }}>
         <div
-          aria-hidden
+          ref={ref}
+          role="textbox"
+          aria-label={ariaLabel}
+          aria-multiline
+          contentEditable={!disabled}
+          suppressContentEditableWarning
+          onInput={emit}
+          onBlur={emit}
+          onKeyDown={onKeyDown}
+          onPaste={onPaste}
           style={{
-            pointerEvents: 'none',
-            marginTop: -minHeight - 12,
+            minHeight,
             padding: 12,
-            color: '#999',
+            border: '1px solid rgba(0,0,0,0.15)',
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
+            borderBottomLeftRadius: 6,
+            borderBottomRightRadius: 6,
+            background: '#fff',
+            outline: 'none',
             fontSize: 14,
             lineHeight: 1.55,
-            height: 0,
+            fontFamily: 'inherit',
+            cursor: disabled ? 'not-allowed' : 'text',
+            opacity: disabled ? 0.6 : 1,
           }}
-        >
-          {placeholder}
-        </div>
-      )}
+          data-placeholder={placeholder ?? ''}
+        />
+        {isEmpty && placeholder && (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              right: 12,
+              pointerEvents: 'none',
+              color: '#999',
+              fontSize: 14,
+              lineHeight: 1.55,
+            }}
+          >
+            {placeholder}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

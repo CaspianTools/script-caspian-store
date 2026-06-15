@@ -16,6 +16,32 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.15.1 — Fix rich-text placeholder overlapping the fields below the editor
+
+`RichTextEditor` drew its grey placeholder as a JS overlay `<div>` using a layout-affecting negative
+margin (`marginTop: -minHeight - 12`) + `height: 0` as the *last child* of `.caspian-rich-editor`,
+while the contenteditable above it was `position: relative`. When the editor was empty and another
+field followed it in the same flow (e.g. a product editor where Details sits directly above Brand/SKU
+in one card), the negative-margin last child made the wrapper resolve shorter than the contenteditable's
+visual height, pulling the following fields up into the editor's area — and because the contenteditable
+was positioned, it painted on top of them, so the fields below "disappeared under" the editor.
+
+Replaced the negative-margin overlay with a true zero-layout overlay: the contenteditable is wrapped in
+a `position: relative` container and the placeholder is `position: absolute` (`top`/`left: 12` to match
+the contenteditable padding) with no negative margin and no `height: 0`. The wrapper's height is now
+driven by the contenteditable (`minHeight` ≥ 140), so any fields below always sit under the editor.
+
+### Fixed
+
+- `RichTextEditor` (`src/ui/rich-text-editor.tsx`) — placeholder is now an absolutely-positioned overlay
+  inside a `position: relative` wrapper around the contenteditable; dropped the
+  `marginTop: -minHeight - 12` / `height: 0` technique and the contenteditable's own `position: relative`.
+  No prop or behavior change; affects every call site.
+
+### No consumer action required
+
+Pure layout fix inside the component; no API, props, rules, or indexes changed.
+
 ## v9.15.0 — Ship the common-taxonomies catalog code (toggles + onboarding)
 
 Ships the **code** for the common-taxonomies feature whose notes landed earlier under the v9.13.0
