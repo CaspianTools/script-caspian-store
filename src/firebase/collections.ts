@@ -22,6 +22,9 @@ export function caspianCollections(db: Firestore) {
     productCategories: collection(db, 'productCategories'),
     productBrands: collection(db, 'productBrands'),
     productCollections: collection(db, 'productCollections'),
+    // Generic product-taxonomy terms (materials, seasons, colors, …) keyed by a
+    // `type` field. Brands keep their own `productBrands` collection. Added in v9.13.0.
+    taxonomyTerms: collection(db, 'taxonomyTerms'),
     pageContents: collection(db, 'pageContents'),
     languages: collection(db, 'languages'),
     searchTerms: collection(db, 'searchTerms'),

@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 import { useT } from '../../../i18n';
 import { getTemplate } from '../../../templates/catalog';
+import { TAXONOMY_BY_ID } from '../../../taxonomies/catalog';
 import type { WizardDraft } from '../setup-types';
 
 export interface SummaryStepProps {
@@ -28,6 +29,10 @@ export function SummaryStep({ draft, onEdit }: SummaryStepProps) {
   const pickedTemplate = draft.template.templateId
     ? getTemplate(draft.template.templateId)
     : null;
+
+  const enabledTaxonomies = draft.taxonomies.enabled.map((id) =>
+    t(TAXONOMY_BY_ID[id]?.labelKey ?? id),
+  );
 
   return (
     <div style={card}>
@@ -74,6 +79,16 @@ export function SummaryStep({ draft, onEdit }: SummaryStepProps) {
         label={t('setup.summary.features')}
         value={enabledFeatures.length ? enabledFeatures.join(', ') : t('setup.summary.noFeatures')}
         onEdit={() => onEdit(5)}
+      />
+      <Divider />
+      <Row
+        label={t('setup.summary.taxonomies')}
+        value={
+          enabledTaxonomies.length
+            ? enabledTaxonomies.join(', ')
+            : t('setup.summary.noTaxonomies')
+        }
+        onEdit={() => onEdit(6)}
       />
     </div>
   );

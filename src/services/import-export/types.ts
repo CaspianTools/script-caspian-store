@@ -16,6 +16,7 @@ export type DatasetId =
   | 'categories'
   | 'collections'
   | 'brands'
+  | 'taxonomy-terms'
   | 'promo-codes'
   | 'subscribers'
   | 'orders'

@@ -34,6 +34,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Generic product-taxonomy terms (materials, seasons, colors, …). Public
+    // read so the storefront can filter/display; admin-only write. Same posture
+    // as productCategories / productBrands.
+    match /taxonomyTerms/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /productCollections/{id} {
       allow read: if true;
       allow write: if isAdmin();

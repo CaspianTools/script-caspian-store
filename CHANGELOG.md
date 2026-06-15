@@ -16,6 +16,46 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.15.0 — Ship the common-taxonomies catalog code (toggles + onboarding)
+
+Ships the **code** for the common-taxonomies feature whose notes landed earlier under the v9.13.0
+heading below — the v9.13.0 entry was committed without its implementation, and no v9.13.0 tag was
+cut, so this is the first release that actually contains it (installable via `#v9.15.0`).
+
+A broad, categorized catalog of common product taxonomies (Brands, Seasons, Occasions, Trends,
+Materials, Colors, Sizes, Patterns, Fit, Gender, Age group, Care, Country of origin, Certifications),
+grouped into Merchandising / Attributes / Audience / Care & origin. Admins enable/disable them on a new
+**Settings → Taxonomies** sub-page (whole group or a single one) and during the **/setup onboarding
+wizard** (new dedicated step). Only enabled taxonomies show in the Catalog → Taxonomies sidebar; a
+taxonomy with terms can't be disabled (the toggle locks on, guarded by a live `getCountFromServer`
+count). Generic taxonomies share one `taxonomyTerms` collection keyed by `type`, with a single generic
+CRUD page (`AdminTaxonomyTermsPage`); Brands stays bespoke. The enabled set persists as
+`SiteSettings.enabledTaxonomies` (defaults to Brands when unset). Includes a `taxonomy-terms`
+import/export descriptor.
+
+### No consumer action required
+
+Additive. `SiteSettings.enabledTaxonomies` is optional and defaults to Brands; the new `taxonomyTerms`
+collection is public-read/admin-write like the other product taxonomies (deploy `firestore.rules` to
+use generic taxonomies — nothing else breaks without it). No composite index needed (equality-only
+queries). The setup wizard gains a Taxonomies step automatically.
+
+### Added
+- `src/taxonomies/{types.ts,catalog.tsx}`, `src/services/taxonomy-term-service.ts`,
+  `src/admin/admin-taxonomy-terms-page.tsx`, `src/admin/admin-settings-taxonomies-page.tsx`,
+  `src/components/setup/steps/taxonomies-step.tsx`.
+- `TaxonomyTermDoc` + `SiteSettings.enabledTaxonomies`; `taxonomyTerms` ref + rules.
+- `TAXONOMY_TERMS_DATASET` import/export descriptor + registration; `'taxonomy-terms'` DatasetId.
+- `admin.taxonomies.*` / `admin.settings.taxonomies.*` / `setup.*.taxonomies` i18n keys.
+- New public exports: `AdminTaxonomyTermsPage`, `AdminSettingsTaxonomiesPage`, the `src/taxonomies`
+  catalog + types, the taxonomy-term-service functions, `TaxonomyTermDoc`.
+
+### Changed
+- `src/admin/admin-taxonomies-shell.tsx` — enabled-aware (filters the sidebar, maps `kind → Component`,
+  empty state); `TAXONOMY_CATALOG` now aliases `COMMON_TAXONOMIES`.
+- `src/admin/admin-shell.tsx` / `admin-settings-shell.tsx` — registered the `taxonomies` settings slug.
+- `src/components/setup/{setup-wizard,setup-types,steps/summary-step}.tsx` — new step + summary row.
+
 ## v9.14.0 — Full world-currency combo in Localization + Settings sidebar icons
 
 The Settings → Localization currency picker was a plain native `<select>` limited to 29 hand-picked

@@ -17,6 +17,15 @@ import {
   updateBrand,
   type BrandWriteInput,
 } from '../../brand-service';
+import {
+  createTerm,
+  listTerms,
+  taxonomyTermId,
+  updateTerm,
+  type TaxonomyTermWriteInput,
+} from '../../taxonomy-term-service';
+import { GENERIC_TAXONOMY_IDS, TAXONOMY_BY_ID } from '../../../taxonomies/catalog';
+import type { TaxonomyTermDoc } from '../../../types';
 import { slugify } from '../../../utils/slugify';
 import {
   applyWrites,
@@ -254,6 +263,85 @@ export const BRANDS_DATASET: DatasetDescriptor = {
         return { status: 'updated', key: existingId };
       }
       const id = await createBrand(db, payload.input, payload.explicitId);
+      return { status: 'created', key: id };
+    }),
+};
+
+// --- Generic taxonomy terms -------------------------------------------------
+
+interface TaxonomyTermPayload {
+  type: string;
+  input: TaxonomyTermWriteInput;
+  computedId: string;
+}
+
+const taxonomyTermColumns: ColumnMeta[] = [
+  {
+    header: 'type',
+    required: true,
+    sample: 'materials',
+    help: `Taxonomy id. One of: ${GENERIC_TAXONOMY_IDS.join(', ')}.`,
+  },
+  { header: 'name', required: true, sample: 'Cotton' },
+  { header: 'slug', sample: 'cotton', help: 'Auto-generated from name when blank.' },
+  { header: 'isActive', sample: 'true' },
+  { header: 'order', sample: '0' },
+];
+
+export const TAXONOMY_TERMS_DATASET: DatasetDescriptor = {
+  id: 'taxonomy-terms',
+  labelKey: 'admin.importExport.dataset.taxonomy-terms',
+  descriptionKey: 'admin.importExport.dataset.taxonomy-terms.desc',
+  canExport: true,
+  canImport: true,
+  columns: taxonomyTermColumns,
+
+  async exportMatrix(db) {
+    const perType = await Promise.all(GENERIC_TAXONOMY_IDS.map((type) => listTerms(db, type)));
+    return perType
+      .flat()
+      .map((term) => [term.type, term.name, term.slug, term.isActive ?? true, term.order ?? 0]);
+  },
+
+  async analyzeRows(db, records) {
+    const perType = await Promise.all(GENERIC_TAXONOMY_IDS.map((type) => listTerms(db, type)));
+    const byId = new Map<string, TaxonomyTermDoc>();
+    for (const term of perType.flat()) byId.set(term.id, term);
+
+    return records.map((rec, idx): RowPlan => {
+      const row = idx + 1;
+      const type = (rec.type ?? '').trim();
+      if (!type) return invalidPlan(row, 'Missing required value: type');
+      if (!(type in TAXONOMY_BY_ID) || !GENERIC_TAXONOMY_IDS.includes(type)) {
+        return invalidPlan(row, `Unknown taxonomy type: ${type}`);
+      }
+      const name = (rec.name ?? '').trim();
+      if (!name) return invalidPlan(row, 'Missing required value: name');
+      const slug = (rec.slug ?? '').trim() || slugify(name);
+      const computedId = taxonomyTermId(type, slug);
+      const order = parseNumber(rec.order);
+      const input: TaxonomyTermWriteInput = {
+        name,
+        slug,
+        isActive: parseBool(rec.isActive, true),
+        ...(typeof order === 'number' ? { order } : {}),
+      };
+      const payload: TaxonomyTermPayload = { type, input, computedId };
+      const match = byId.get(computedId);
+      // Ids are derived from type+slug, so "create new" would collide — only skip/overwrite.
+      return match
+        ? duplicatePlan(row, computedId, `${type}: ${name}`, match.id, payload, ['skip', 'overwrite'])
+        : newPlan(row, computedId, `${type}: ${name}`, payload);
+    });
+  },
+
+  applyRows: (db, decided) =>
+    applyWrites(decided, async (payload: TaxonomyTermPayload, action, existingId) => {
+      if (action === 'overwrite' && existingId) {
+        await updateTerm(db, existingId, payload.input);
+        return { status: 'updated', key: existingId };
+      }
+      const id = await createTerm(db, payload.type, payload.input, payload.computedId);
       return { status: 'created', key: id };
     }),
 };

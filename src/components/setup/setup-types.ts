@@ -66,6 +66,15 @@ export interface TemplateDraft {
   templateId: string;
 }
 
+/**
+ * Taxonomies step (v9.13.0). The owner picks which common product taxonomies
+ * (brands, materials, colors, …) to enable. `enabled` holds the chosen taxonomy
+ * ids from `COMMON_TAXONOMIES`; it's persisted to `SiteSettings.enabledTaxonomies`.
+ */
+export interface TaxonomiesDraft {
+  enabled: string[];
+}
+
 export interface WizardDraft {
   prereqs: PrereqsDraft;
   superAdmin: SuperAdminDraft;
@@ -73,4 +82,5 @@ export interface WizardDraft {
   template: TemplateDraft;
   branding: BrandingDraft;
   features: FeatureFlags;
+  taxonomies: TaxonomiesDraft;
 }

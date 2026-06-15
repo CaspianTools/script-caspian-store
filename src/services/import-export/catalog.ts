@@ -1,5 +1,10 @@
 import { PRODUCTS_DATASET } from './datasets/products';
-import { BRANDS_DATASET, CATEGORIES_DATASET, COLLECTIONS_DATASET } from './datasets/taxonomy';
+import {
+  BRANDS_DATASET,
+  CATEGORIES_DATASET,
+  COLLECTIONS_DATASET,
+  TAXONOMY_TERMS_DATASET,
+} from './datasets/taxonomy';
 import { PROMO_CODES_DATASET, SUBSCRIBERS_DATASET } from './datasets/marketing';
 import { ORDERS_DATASET, REVIEWS_DATASET, USERS_DATASET } from './datasets/read-only';
 import type { DatasetDescriptor, DatasetId } from './types';
@@ -14,6 +19,7 @@ export const DATASET_CATALOG: Record<DatasetId, DatasetDescriptor> = {
   categories: CATEGORIES_DATASET,
   collections: COLLECTIONS_DATASET,
   brands: BRANDS_DATASET,
+  'taxonomy-terms': TAXONOMY_TERMS_DATASET,
   'promo-codes': PROMO_CODES_DATASET,
   subscribers: SUBSCRIBERS_DATASET,
   orders: ORDERS_DATASET,
@@ -27,6 +33,7 @@ const ORDER: DatasetId[] = [
   'categories',
   'collections',
   'brands',
+  'taxonomy-terms',
   'promo-codes',
   'subscribers',
   'orders',

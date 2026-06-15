@@ -17,7 +17,9 @@ import { SiteInfoStep } from './steps/site-info-step';
 import { TemplatePickerStep } from './steps/template-picker-step';
 import { BrandingStep } from './steps/branding-step';
 import { FeaturesStep } from './steps/features-step';
+import { TaxonomiesStep } from './steps/taxonomies-step';
 import { SummaryStep } from './steps/summary-step';
+import { resolveEnabledTaxonomies } from '../../taxonomies/catalog';
 import type { BrandingDraft, WizardDraft } from './setup-types';
 
 export interface SetupWizardProps {
@@ -59,18 +61,19 @@ const emptyDraft = (): WizardDraft => ({
     heroCta: DEFAULT_SCRIPT_SETTINGS.hero?.cta ?? '',
   },
   features: { ...DEFAULT_SCRIPT_SETTINGS.features },
+  taxonomies: { enabled: resolveEnabledTaxonomies(undefined) },
 });
 
 // Step indices — bumped from 0..5 in v8.7.x to 0..6 in v8.23.0 with the
-// addition of the template-picker step (3). Branding/features/summary
-// shifted by +1.
+// template-picker step (3), then to 0..7 in v9.13.0 with the taxonomies step (6).
 const STEP_PREREQS = 0;
 const STEP_SUPER_ADMIN = 1;
 const STEP_SITE_INFO = 2;
 const STEP_TEMPLATE = 3;
 const STEP_BRANDING = 4;
 const STEP_FEATURES = 5;
-const STEP_SUMMARY = 6;
+const STEP_TAXONOMIES = 6;
+const STEP_SUMMARY = 7;
 
 export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
   const t = useT();
@@ -97,6 +100,9 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
             brandDescription: existing.brandDescription || d.siteInfo.brandDescription,
             contactEmail: existing.contactEmail || d.siteInfo.contactEmail,
             currency: existing.currency || d.siteInfo.currency,
+          },
+          taxonomies: {
+            enabled: resolveEnabledTaxonomies(existing.enabledTaxonomies),
           },
         }));
       })
@@ -132,6 +138,7 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       { key: 'template', label: 'Template' },
       { key: 'branding', label: t('setup.steps.branding') },
       { key: 'features', label: t('setup.steps.features') },
+      { key: 'taxonomies', label: t('setup.steps.taxonomies') },
       { key: 'summary', label: t('setup.steps.summary') },
     ],
     [t],
@@ -229,6 +236,16 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       await scriptSettings.save({ features: draft.features });
       return;
     }
+    if (currentIndex === STEP_TAXONOMIES) {
+      // Persist the enabled taxonomies into settings/site. The site-info step
+      // already wrote the doc, so merge into the existing one (whole-doc save,
+      // matching the library's settings service which has no merge-patch helper).
+      const existing = await getSiteSettings(db);
+      if (existing) {
+        await saveSiteSettings(db, { ...existing, enabledTaxonomies: draft.taxonomies.enabled });
+      }
+      return;
+    }
   }, [currentIndex, draft, db, scriptSettings, validateSiteInfo]);
 
   const next = useCallback(async () => {
@@ -305,6 +322,7 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       },
       { heading: t('setup.branding.heading'), subhead: t('setup.branding.subhead') },
       { heading: t('setup.features.heading'), subhead: t('setup.features.subhead') },
+      { heading: t('setup.taxonomies.heading'), subhead: t('setup.taxonomies.subhead') },
       { heading: t('setup.summary.heading'), subhead: t('setup.summary.subhead') },
     ],
     [t],
@@ -365,6 +383,13 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
             onChange={(patch) =>
               setDraft((d) => ({ ...d, features: { ...d.features, ...patch } }))
             }
+          />
+        );
+      case STEP_TAXONOMIES:
+        return (
+          <TaxonomiesStep
+            draft={draft.taxonomies}
+            onChange={(next) => setDraft((d) => ({ ...d, taxonomies: next }))}
           />
         );
       case STEP_SUMMARY:

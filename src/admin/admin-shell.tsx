@@ -166,6 +166,7 @@ export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
 // top-level Settings sidebar child in v8.2.0 (was a sub-tab here in v7.1.0–v8.1.x).
 export const SETTINGS_SUB_NAV: AdminNavLeaf[] = [
   { href: '/admin/settings/general', label: 'General', icon: <SlidersIcon size={ICON_SIZE} /> },
+  { href: '/admin/settings/taxonomies', label: 'Taxonomies', icon: <LayersIcon size={ICON_SIZE} /> },
   {
     href: '/admin/settings/shipping-options',
     label: 'Shipping options',

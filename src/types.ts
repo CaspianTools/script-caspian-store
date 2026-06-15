@@ -686,6 +686,14 @@ export interface SiteSettings {
   accounts?: AccountSettings;
   /** Personal-data retention policy read by the scheduled cleanup Cloud Function. Added in v2.10. */
   privacy?: PrivacyRetentionSettings;
+  /**
+   * Ids of enabled product taxonomies (from `COMMON_TAXONOMIES` in
+   * `src/taxonomies`). Only enabled taxonomies show in the /admin/taxonomies
+   * sidebar. When `undefined`, the store falls back to the catalog defaults
+   * (Brands only). Edited on Settings → Taxonomies and in the setup wizard.
+   * Added in v9.13.0.
+   */
+  enabledTaxonomies?: string[];
   socialLinks: SocialLink[];
 }
 
@@ -834,6 +842,25 @@ export interface ProductBrandDoc {
   id: string;
   name: string;
   isActive: boolean;
+  createdAt: Timestamp;
+}
+
+/**
+ * A term under a generic product taxonomy (materials, seasons, colors, …).
+ * One `taxonomyTerms` collection holds every generic taxonomy's terms, keyed
+ * by `type` (a taxonomy id from `COMMON_TAXONOMIES` in `src/taxonomies`).
+ * Brands stay in their own `productBrands` collection. Doc id is
+ * `${type}__${slug}` so the same term name can exist under different
+ * taxonomies. Added in v9.13.0.
+ */
+export interface TaxonomyTermDoc {
+  id: string;
+  /** Taxonomy id this term belongs to (e.g. `materials`). Immutable after create. */
+  type: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  order?: number;
   createdAt: Timestamp;
 }
 

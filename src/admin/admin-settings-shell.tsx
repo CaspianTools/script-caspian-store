@@ -6,6 +6,7 @@ import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
 import { SETTINGS_SUB_NAV } from './admin-shell';
 import { AdminSiteSettingsPage } from './admin-site-settings-page';
+import { AdminSettingsTaxonomiesPage } from './admin-settings-taxonomies-page';
 import { AdminEmailsPage } from './admin-emails-page';
 import { AdminLanguagesPage } from './admin-languages-page';
 import { AdminShippingOptionsPage } from './admin-shipping-options-page';
@@ -130,6 +131,8 @@ function SettingsPanel({ slug }: { slug: SettingsSlug }): ReactNode {
   switch (slug) {
     case 'general':
       return <AdminSiteSettingsPage />;
+    case 'taxonomies':
+      return <AdminSettingsTaxonomiesPage />;
     case 'shipping-options':
       return <AdminShippingOptionsPage />;
     case 'emails':
@@ -141,11 +144,18 @@ function SettingsPanel({ slug }: { slug: SettingsSlug }): ReactNode {
   }
 }
 
-type SettingsSlug = 'general' | 'shipping-options' | 'emails' | 'languages' | 'import-export';
+type SettingsSlug =
+  | 'general'
+  | 'taxonomies'
+  | 'shipping-options'
+  | 'emails'
+  | 'languages'
+  | 'import-export';
 type LegacyPluginSlug = 'shipping' | 'payments' | 'email-providers';
 
 const KNOWN_SLUGS: readonly SettingsSlug[] = [
   'general',
+  'taxonomies',
   'shipping-options',
   'emails',
   'languages',

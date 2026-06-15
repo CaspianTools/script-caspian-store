@@ -1,68 +1,134 @@
 'use client';
 
-import { useEffect, type ComponentType, type ReactNode } from 'react';
-import { useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useCaspianFirebase,
+  useCaspianLink,
+  useCaspianNavigation,
+} from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
-import { BookmarkIcon } from '../ui/icons';
+import { getSiteSettings } from '../services/site-settings-service';
+import { COMMON_TAXONOMIES, enabledTaxonomyDefs } from '../taxonomies/catalog';
+import { Skeleton } from '../ui/misc';
 import { AdminProductBrandsPage } from './admin-product-brands-page';
-
-const ICON_SIZE = 16;
-
-interface TaxonomyEntry {
-  slug: string;
-  label: string;
-  icon: ReactNode;
-  Component: ComponentType<{ className?: string }>;
-}
+import { AdminTaxonomyTermsPage } from './admin-taxonomy-terms-page';
 
 /**
- * Catalog of taxonomy types managed under /admin/taxonomies. Mirrors the
- * SETTINGS_SUB_NAV pattern but is catalog-driven — each entry renders its own
- * Component, so adding a future taxonomy is a one-line addition here plus
- * building its CRUD page. Brands is the first taxonomy to live here; it
- * previously sat as a direct Catalog sidebar child.
+ * The full taxonomy catalog. Re-exported through the barrels for back-compat
+ * (was a one-entry `{ slug, label, icon, Component }[]` in v9.12.0; now the
+ * grouped catalog of all common taxonomies). The Settings page and onboarding
+ * step also consume `COMMON_TAXONOMIES` directly from `src/taxonomies`.
  */
-export const TAXONOMY_CATALOG: TaxonomyEntry[] = [
-  { slug: 'brands', label: 'Brands', icon: <BookmarkIcon size={ICON_SIZE} />, Component: AdminProductBrandsPage },
-];
-
-const DEFAULT_SLUG = TAXONOMY_CATALOG[0].slug;
+export const TAXONOMY_CATALOG = COMMON_TAXONOMIES;
 
 export interface AdminTaxonomiesShellProps {
   className?: string;
 }
 
+interface VisibleEntry {
+  slug: string;
+  label: string;
+  icon: ReactNode;
+  render: () => ReactNode;
+}
+
 /**
  * Taxonomies page with an internal sub-sidebar, modeled on AdminSettingsShell.
- * Reads the active taxonomy slug from the framework-agnostic navigation adapter;
- * landing on `/admin/taxonomies` (or an unknown slug) redirects to the first
- * taxonomy so the URL always names the active panel.
+ * Only the taxonomies the store has ENABLED (Settings → Taxonomies / onboarding)
+ * appear in the sidebar — no empty pages for disabled types. The active slug is
+ * read from the framework-agnostic navigation adapter; a bare or unknown URL
+ * canonicalizes to the first enabled taxonomy. Brands renders its bespoke page;
+ * generic taxonomies render the shared term CRUD page.
  */
 export function AdminTaxonomiesShell({ className }: AdminTaxonomiesShellProps) {
   const nav = useCaspianNavigation();
   const Link = useCaspianLink();
+  const { db } = useCaspianFirebase();
   const t = useT();
 
-  const slug = deriveSlug(nav.pathname);
+  const [state, setState] = useState<{ loaded: boolean; enabled: string[] | undefined }>({
+    loaded: false,
+    enabled: undefined,
+  });
 
   useEffect(() => {
-    if (slug === null) {
-      nav.replace(`/admin/taxonomies/${DEFAULT_SLUG}`);
+    let alive = true;
+    getSiteSettings(db)
+      .then((s) => alive && setState({ loaded: true, enabled: s?.enabledTaxonomies }))
+      .catch(() => alive && setState({ loaded: true, enabled: undefined }));
+    return () => {
+      alive = false;
+    };
+  }, [db]);
+
+  const visible: VisibleEntry[] = state.loaded
+    ? enabledTaxonomyDefs(state.enabled).map((def) => ({
+        slug: def.id,
+        label: t(def.labelKey),
+        icon: def.icon,
+        render:
+          def.kind === 'brands'
+            ? () => <AdminProductBrandsPage />
+            : () => <AdminTaxonomyTermsPage type={def.id} />,
+      }))
+    : [];
+  const validSlugs = visible.map((v) => v.slug);
+  const rest = parseRest(nav.pathname);
+  const activeSlug = rest && validSlugs.includes(rest) ? rest : (validSlugs[0] ?? null);
+
+  useEffect(() => {
+    if (!state.loaded || validSlugs.length === 0) return;
+    if (activeSlug && rest !== activeSlug) {
+      nav.replace(`/admin/taxonomies/${activeSlug}`);
     }
-  }, [slug, nav]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.loaded, rest, activeSlug, validSlugs.length]);
 
-  if (slug === null) return null;
+  if (!state.loaded) {
+    return (
+      <div className={className}>
+        <Skeleton style={{ height: 200 }} />
+      </div>
+    );
+  }
 
-  const active = TAXONOMY_CATALOG.find((tax) => tax.slug === slug) ?? TAXONOMY_CATALOG[0];
-  const Panel = active.Component;
+  const header = (
+    <header style={{ marginBottom: 24 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.taxonomies.title')}</h1>
+      <p style={{ color: '#666', marginTop: 4 }}>{t('admin.taxonomies.subtitle')}</p>
+    </header>
+  );
+
+  if (visible.length === 0) {
+    return (
+      <div className={className}>
+        {header}
+        <div
+          style={{
+            border: '1px solid #e8eaed',
+            borderRadius: 10,
+            padding: 32,
+            textAlign: 'center',
+            color: '#666',
+          }}
+        >
+          <p style={{ margin: '0 0 12px' }}>{t('admin.taxonomies.noneEnabled')}</p>
+          <Link href="/admin/settings/taxonomies">
+            <span style={{ color: 'var(--caspian-primary, #111)', fontWeight: 600 }}>
+              {t('admin.taxonomies.manageLink')}
+            </span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const active = visible.find((v) => v.slug === activeSlug) ?? visible[0];
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.taxonomies.title')}</h1>
-        <p style={{ color: '#666', marginTop: 4 }}>{t('admin.taxonomies.subtitle')}</p>
-      </header>
+      {header}
 
       <div
         style={{
@@ -86,8 +152,8 @@ export function AdminTaxonomiesShell({ className }: AdminTaxonomiesShellProps) {
             {t('admin.taxonomies.types')}
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column' }}>
-            {TAXONOMY_CATALOG.map((item) => {
-              const isActive = item.slug === slug;
+            {visible.map((item) => {
+              const isActive = item.slug === active.slug;
               return (
                 <Link
                   key={item.slug}
@@ -119,24 +185,15 @@ export function AdminTaxonomiesShell({ className }: AdminTaxonomiesShellProps) {
           </nav>
         </aside>
 
-        <div>
-          <Panel />
-        </div>
+        <div>{active.render()}</div>
       </div>
     </div>
   );
 }
 
-/**
- * Returns the active taxonomy slug, or null when the URL is bare
- * `/admin/taxonomies` (the caller then redirects to the default). Unknown
- * slugs fall back to the default rather than rendering nothing.
- */
-function deriveSlug(pathname: string): string | null {
+/** Extract the `<slug>` from `/admin/taxonomies/<slug>` (empty string when bare). */
+function parseRest(pathname: string): string {
   const match = pathname.match(/^\/admin\/taxonomies\/?(.*)$/);
-  if (!match) return DEFAULT_SLUG;
-  const rest = match[1].split('/')[0];
-  if (!rest) return null;
-  if (TAXONOMY_CATALOG.some((tax) => tax.slug === rest)) return rest;
-  return DEFAULT_SLUG;
+  if (!match) return '';
+  return match[1].split('/')[0];
 }

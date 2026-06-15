@@ -14,6 +14,8 @@ export {
   TAXONOMY_CATALOG,
   type AdminTaxonomiesShellProps,
 } from './admin-taxonomies-shell';
+export { AdminTaxonomyTermsPage } from './admin-taxonomy-terms-page';
+export { AdminSettingsTaxonomiesPage } from './admin-settings-taxonomies-page';
 export { AdminSettingsImportExportPage } from './admin-settings-import-export-page';
 export { AdminRoot } from './admin-root';
 export { AdminPluginsPage, type AdminPluginsPageProps } from './admin-plugins-page';

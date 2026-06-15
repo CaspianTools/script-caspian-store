@@ -563,6 +563,30 @@ export type {
   ImportSummary,
 } from './services/import-export/types';
 export {
+  COMMON_TAXONOMIES,
+  TAXONOMY_GROUPS,
+  TAXONOMY_BY_ID,
+  GENERIC_TAXONOMY_IDS,
+  resolveEnabledTaxonomies,
+  enabledTaxonomyDefs,
+} from './taxonomies/catalog';
+export type {
+  TaxonomyDef,
+  TaxonomyGroupDef,
+  TaxonomyKind,
+  TaxonomyGroupId,
+} from './taxonomies/types';
+export {
+  listTerms,
+  listActiveTerms,
+  createTerm,
+  updateTerm,
+  deleteTerm,
+  countTerms,
+  taxonomyTermId,
+  type TaxonomyTermWriteInput,
+} from './services/taxonomy-term-service';
+export {
   createContact,
   listAllContacts,
   listRecentContacts,
@@ -674,6 +698,8 @@ export {
   AdminShell,
   AdminSettingsShell,
   AdminTaxonomiesShell,
+  AdminTaxonomyTermsPage,
+  AdminSettingsTaxonomiesPage,
   AdminRoot,
   AdminPluginsPage,
   AdminPluginInstallPage,
@@ -844,6 +870,7 @@ export type {
   ShippingPluginInstall,
   ProductCategoryDoc,
   ProductBrandDoc,
+  TaxonomyTermDoc,
   ProductCollectionDoc,
   PageContent,
   LanguageDoc,
