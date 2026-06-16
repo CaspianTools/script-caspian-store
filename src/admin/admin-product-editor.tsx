@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { ProductBrandDoc, ProductCategoryDoc, ProductImage } from '../types';
+import type { ProductBrandDoc, ProductCategoryDoc, ProductImage, TaxonomyTermDoc } from '../types';
 import {
   createProduct,
   getProductById,
@@ -10,7 +10,17 @@ import {
 } from '../services/product-service';
 import { listActiveBrands } from '../services/brand-service';
 import { listAllCategories } from '../services/category-service';
+import { getSiteSettings } from '../services/site-settings-service';
+import { createTerm, listActiveTerms } from '../services/taxonomy-term-service';
+import { refreshTaxonomyTermsCache } from '../hooks/use-taxonomy-terms';
+import {
+  enabledTaxonomyDefs,
+  resolveEnabledTaxonomies,
+  TAXONOMY_BY_ID,
+} from '../taxonomies/catalog';
+import type { TaxonomyDef } from '../taxonomies/types';
 import { slugify } from '../utils/slugify';
+import { useT } from '../i18n/locale-context';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { Button } from '../ui/button';
 import { ImageUploadField } from '../ui/image-upload-field';
@@ -19,6 +29,7 @@ import { Skeleton } from '../ui/misc';
 import { RichTextEditor } from '../ui/rich-text-editor';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
+import { MultiSelect, type MultiSelectItem } from './admin-multi-select';
 
 export interface AdminProductEditorProps {
   /** Pass a product id to edit an existing product. Omit to create. */
@@ -56,7 +67,10 @@ interface FormState {
    * Coerced to integers on save and persisted to `Product.stock`. Added in v2.9.
    */
   sizeStock: Record<string, string>;
+  /** Legacy single-color value (pre-taxonomy). Preserved on save; no longer edited — superseded by `taxonomies.colors`. */
   color: string;
+  /** Generic-taxonomy assignments: taxonomy id → term ids. Edited in the Attributes section. */
+  taxonomies: Record<string, string[]>;
   /** Weight in kg as a string so the input can render an empty field; coerced on save. */
   weightKg: string;
   isNew: boolean;
@@ -78,6 +92,7 @@ const empty: FormState = {
   sizes: '',
   sizeStock: {},
   color: '',
+  taxonomies: {},
   weightKg: '',
   isNew: false,
   limited: false,
@@ -100,43 +115,11 @@ function parseSizeList(raw: string): string[] {
  */
 const MAX_PRODUCT_IMAGES = 10;
 
-/**
- * Fixed palette of named product colors. Keep in sync with the storefront
- * swatch rendering if you add custom renderers. If you need brand-specific
- * colors later, swap this for a Firestore-backed `productColors` collection.
- */
-const COLOR_PALETTE = [
-  'Black',
-  'White',
-  'Red',
-  'Blue',
-  'Green',
-  'Yellow',
-  'Pink',
-  'Purple',
-  'Orange',
-  'Brown',
-  'Grey',
-  'Beige',
-  'Multi',
-] as const;
-
-const COLOR_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: '— No color —' },
-  ...COLOR_PALETTE.map((c) => ({ value: c, label: c })),
-];
-
-/**
- * Accepts a legacy stored color string (any case) and returns the matching
- * palette entry, or `''` if it doesn't match. Callers should still render the
- * legacy value in a small hint if non-empty but unmatched.
- */
-function normalizeLegacyColor(raw: string): string {
-  if (!raw) return '';
-  const match = COLOR_PALETTE.find(
-    (c) => c.toLowerCase() === raw.toLowerCase(),
-  );
-  return match ?? '';
+/** Generic taxonomies the Attributes section renders as term pickers — every
+ *  enabled taxonomy except Brand (its own single-select + collection) and Sizes
+ *  (owned by the comma-separated Sizes field + per-size stock grid). */
+function isAttributeTaxonomy(def: TaxonomyDef): boolean {
+  return def.kind === 'generic' && def.id !== 'sizes';
 }
 
 /**
@@ -180,12 +163,16 @@ export function AdminProductEditor({
   const { db } = useCaspianFirebase();
   const nav = useCaspianNavigation();
   const { toast } = useToast();
+  const t = useT();
   const [form, setForm] = useState<FormState>(empty);
   const [loading, setLoading] = useState(Boolean(productId));
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<ProductCategoryDoc[]>([]);
   const [brands, setBrands] = useState<ProductBrandDoc[] | null>(null);
-  const [legacyColor, setLegacyColor] = useState<string>('');
+  /** Enabled taxonomy ids (catalog-resolved). `null` until site settings load. */
+  const [enabledTaxonomyIds, setEnabledTaxonomyIds] = useState<string[] | null>(null);
+  /** Active terms per attribute taxonomy id, loaded for the enabled taxonomies. */
+  const [taxonomyTermsByType, setTaxonomyTermsByType] = useState<Record<string, TaxonomyTermDoc[]>>({});
   const [newImageUrl, setNewImageUrl] = useState('');
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
@@ -194,9 +181,10 @@ export function AdminProductEditor({
     (async () => {
       // Load each source independently — one failing query (e.g. a missing
       // composite index on a fresh project) must not blank the other dropdown.
-      const [cats, brs] = await Promise.allSettled([
+      const [cats, brs, settings] = await Promise.allSettled([
         listAllCategories(db),
         listActiveBrands(db),
+        getSiteSettings(db),
       ]);
       if (!alive) return;
       const pick = <T,>(r: PromiseSettledResult<T[]>, label: string): T[] => {
@@ -206,6 +194,28 @@ export function AdminProductEditor({
       };
       setCategories(pick(cats, 'categories'));
       setBrands(pick(brs, 'brands'));
+
+      // Enabled taxonomies + their active terms drive the Attributes section.
+      const enabledIds = resolveEnabledTaxonomies(
+        settings.status === 'fulfilled' ? settings.value?.enabledTaxonomies : undefined,
+      );
+      setEnabledTaxonomyIds(enabledIds);
+      const attrIds = enabledIds.filter((id) => {
+        const def = TAXONOMY_BY_ID[id];
+        return def ? isAttributeTaxonomy(def) : false;
+      });
+      const termResults = await Promise.allSettled(attrIds.map((id) => listActiveTerms(db, id)));
+      if (!alive) return;
+      const termsByType: Record<string, TaxonomyTermDoc[]> = {};
+      attrIds.forEach((id, i) => {
+        const r = termResults[i];
+        if (r.status === 'fulfilled') termsByType[id] = r.value;
+        else {
+          console.error(`[caspian-store] editor: terms for "${id}" failed to load`, r.reason);
+          termsByType[id] = [];
+        }
+      });
+      setTaxonomyTermsByType(termsByType);
     })();
     return () => {
       alive = false;
@@ -223,8 +233,6 @@ export function AdminProductEditor({
           toast({ title: 'Product not found', variant: 'destructive' });
           return;
         }
-        const normalizedColor = normalizeLegacyColor(p.color ?? '');
-        if (!normalizedColor && p.color) setLegacyColor(p.color);
         const sizeList = p.sizes ?? [];
         const sizeStock: Record<string, string> = {};
         for (const size of sizeList) {
@@ -243,7 +251,8 @@ export function AdminProductEditor({
           category: p.category,
           sizes: sizeList.join(', '),
           sizeStock,
-          color: normalizedColor,
+          color: p.color ?? '',
+          taxonomies: p.taxonomies ?? {},
           weightKg: p.weightKg !== undefined ? String(p.weightKg) : '',
           isNew: Boolean(p.isNew),
           limited: Boolean(p.limited),
@@ -287,6 +296,61 @@ export function AdminProductEditor({
     }
     return out;
   }, [brands, brandIsLegacyUnknown, form.brand]);
+
+  // Enabled taxonomy defs in catalog order — drives the Attributes section.
+  const enabledDefs = useMemo(
+    () => (enabledTaxonomyIds ? enabledTaxonomyDefs(enabledTaxonomyIds) : []),
+    [enabledTaxonomyIds],
+  );
+  const taxonomyItemsByType = useMemo(() => {
+    const out: Record<string, MultiSelectItem[]> = {};
+    for (const [type, terms] of Object.entries(taxonomyTermsByType)) {
+      out[type] = terms.map((term) => ({ id: term.id, name: term.name }));
+    }
+    return out;
+  }, [taxonomyTermsByType]);
+
+  const setTaxonomyPicked = (type: string, ids: string[]) =>
+    setForm((s) => ({ ...s, taxonomies: { ...s.taxonomies, [type]: ids } }));
+
+  const handleCreateTaxonomyTerm = async (type: string, raw: string) => {
+    const name = raw.trim();
+    if (!name) return;
+    // Reuse an existing term (case-insensitive) rather than creating a duplicate.
+    const existing = (taxonomyTermsByType[type] ?? []).find(
+      (term) => term.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (existing) {
+      setForm((s) => {
+        const cur = s.taxonomies[type] ?? [];
+        if (cur.includes(existing.id)) return s;
+        return { ...s, taxonomies: { ...s.taxonomies, [type]: [...cur, existing.id] } };
+      });
+      return;
+    }
+    try {
+      const id = await createTerm(db, type, { name, isActive: true });
+      refreshTaxonomyTermsCache(type);
+      setTaxonomyTermsByType((prev) => {
+        const list = prev[type] ?? [];
+        if (list.some((term) => term.id === id)) return prev;
+        const next = [
+          ...list,
+          { id, type, name, slug: '', isActive: true, createdAt: null as never },
+        ];
+        next.sort((a, b) => a.name.localeCompare(b.name));
+        return { ...prev, [type]: next };
+      });
+      setForm((s) => {
+        const cur = s.taxonomies[type] ?? [];
+        if (cur.includes(id)) return s;
+        return { ...s, taxonomies: { ...s.taxonomies, [type]: [...cur, id] } };
+      });
+    } catch (error) {
+      console.error('[caspian-store] Create taxonomy term failed:', error);
+      toast({ title: 'Could not create term', variant: 'destructive' });
+    }
+  };
 
   const legacyCategoryUnknown =
     productId &&
@@ -407,6 +471,10 @@ export function AdminProductEditor({
           hasAnyStock = true;
         }
       }
+      const cleanedTaxonomies: Record<string, string[]> = {};
+      for (const [type, ids] of Object.entries(form.taxonomies)) {
+        if (ids && ids.length > 0) cleanedTaxonomies[type] = ids;
+      }
       const payload: ProductWriteInput = {
         name: form.name.trim(),
         slug: form.slug.trim() || undefined,
@@ -419,7 +487,8 @@ export function AdminProductEditor({
         category: form.category,
         sizes: cleanSizes,
         stock: hasAnyStock ? stockMap : undefined,
-        color: form.color,
+        color: form.color || undefined,
+        taxonomies: Object.keys(cleanedTaxonomies).length ? cleanedTaxonomies : undefined,
         weightKg,
         isNew: form.isNew,
         limited: form.limited,
@@ -569,29 +638,13 @@ export function AdminProductEditor({
             )}
           </Field>
         </div>
-        <div style={gridStyle}>
-          <Field label="Sizes (comma-separated)">
-            <Input
-              value={form.sizes}
-              onChange={(e) => setForm((s) => ({ ...s, sizes: e.target.value }))}
-              placeholder="S, M, L, XL"
-            />
-          </Field>
-          <Field label="Color">
-            <Select
-              value={form.color}
-              onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
-              options={COLOR_OPTIONS}
-              style={{ width: '100%' }}
-            />
-            {legacyColor && (
-              <p style={{ fontSize: 12, color: '#b45309', marginTop: 4 }}>
-                Stored color <code>{legacyColor}</code> isn&apos;t in the palette. Pick
-                the closest match from the list and save to normalise.
-              </p>
-            )}
-          </Field>
-        </div>
+        <Field label="Sizes (comma-separated)">
+          <Input
+            value={form.sizes}
+            onChange={(e) => setForm((s) => ({ ...s, sizes: e.target.value }))}
+            placeholder="S, M, L, XL"
+          />
+        </Field>
         <ProductStockGrid
           sizes={parseSizeList(form.sizes)}
           values={form.sizeStock}
@@ -599,6 +652,39 @@ export function AdminProductEditor({
             setForm((s) => ({ ...s, sizeStock: { ...s.sizeStock, [size]: value } }))
           }
         />
+        {enabledTaxonomyIds !== null && enabledDefs.some(isAttributeTaxonomy) && (
+          <div style={{ marginTop: 12 }}>
+            <h2 style={h2Style}>Attributes</h2>
+            {enabledDefs.filter(isAttributeTaxonomy).map((def) => {
+              const label = t(def.labelKey);
+              const picked = form.taxonomies[def.id] ?? [];
+              return (
+                <Field key={def.id} label={label}>
+                  <MultiSelect
+                    items={taxonomyItemsByType[def.id] ?? []}
+                    picked={new Set(picked)}
+                    onChange={(next) => setTaxonomyPicked(def.id, [...next])}
+                    label={
+                      picked.length === 0
+                        ? `Select ${label.toLowerCase()}`
+                        : `Edit ${label.toLowerCase()}`
+                    }
+                    placeholder="Search or create…"
+                    allowCreate
+                    onCreate={(name) => void handleCreateTaxonomyTerm(def.id, name)}
+                    indent={false}
+                  />
+                </Field>
+              );
+            })}
+            {form.color && enabledTaxonomyIds.includes('colors') && (
+              <p style={{ fontSize: 12, color: '#b45309', marginTop: 4 }}>
+                Legacy color <code>{form.color}</code> — re-pick it under{' '}
+                <strong>Colors</strong> above to migrate. The old value is kept until you do.
+              </p>
+            )}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <Check label="New arrival" checked={form.isNew} onChange={(v) => setForm((s) => ({ ...s, isNew: v }))} />
           <Check label="Limited edition" checked={form.limited} onChange={(v) => setForm((s) => ({ ...s, limited: v }))} />

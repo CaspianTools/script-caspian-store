@@ -32,6 +32,7 @@ export function ShopFilterDrawer({
   availableCategories,
   categoryLabels,
   availableSizes,
+  availableTaxonomies,
   resultCount,
   className,
 }: ShopFilterDrawerProps) {
@@ -70,6 +71,7 @@ export function ShopFilterDrawer({
         availableCategories={availableCategories}
         categoryLabels={categoryLabels}
         availableSizes={availableSizes}
+        availableTaxonomies={availableTaxonomies}
         resultCount={resultCount}
         hideHeader
         hideReset

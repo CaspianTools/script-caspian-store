@@ -16,6 +16,46 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.16.0 — Taxonomy-driven product attributes (admin + storefront)
+
+The common-taxonomies catalog (v9.15.0) only controlled which CRUD pages showed under
+**/admin/taxonomies** — it did nothing to products. This wires it in end-to-end: enabling a generic
+taxonomy (Materials, Colors, Seasons, …) now lets you assign its terms to products and shop by them.
+
+- **Editor:** the product editor's hardcoded **Color** palette select is replaced by a dynamic
+  **Attributes** section — one `MultiSelect` per enabled generic taxonomy (except Sizes, which keeps the
+  comma-separated field + per-size stock grid), each with inline "create term". Brand/Category stay as
+  their own single-selects. The legacy single `color` value is preserved on save and surfaced as a
+  one-line migration hint.
+- **Data:** `Product.taxonomies?: Record<string, string[]>` (taxonomy id → `taxonomyTerms` doc ids).
+- **Storefront:** the shop filter sidebar + mobile drawer render a facet per enabled taxonomy (only
+  terms present in the current results), filtered client-side; the PDP lists a product's attributes as
+  chips. A new module-level `useTaxonomyTermsByType` cache keeps a product grid to one read per taxonomy.
+- **Import/Export:** the products dataset gains one column per generic taxonomy (term names, `;`-joined),
+  round-tripping via a new auto-creating `makeTaxonomyTermResolver`.
+
+### No consumer action required
+
+Additive. `Product.taxonomies` is optional; the editor Attributes section and storefront facets only
+appear once you enable a generic taxonomy and add terms. Reuses the existing public-read `taxonomyTerms`
+collection (storefront filtering is client-side) — no new Firestore collection, rules, or indexes.
+
+### Added
+
+- `src/hooks/use-taxonomy-terms.ts` — `useTaxonomyTermsByType` + `refreshTaxonomyTermsCache` (module-level cache).
+- `makeTaxonomyTermResolver(db, type)` in `src/services/import-export/resolvers.ts`.
+- `TaxonomyFacet` type + `availableTaxonomies` prop on the shop filter components.
+
+### Changed
+
+- `src/types.ts` — `Product.taxonomies`.
+- `src/services/product-service.ts` — `docToProduct` reads `taxonomies`.
+- `src/admin/admin-product-editor.tsx` — dynamic taxonomy-term pickers replace the hardcoded color palette.
+- `src/components/{shop-filter-sidebar,shop-filter-drawer,product-list-page}.tsx` — taxonomy facets.
+- `src/components/variants/product-detail-default.tsx` — attribute chips.
+- `src/services/import-export/datasets/products.ts` — per-taxonomy CSV columns + resolver wiring.
+- `src/index.ts` — export `TaxonomyFacet`, `useTaxonomyTermsByType`, `refreshTaxonomyTermsCache`.
+
 ## v9.15.1 — Fix rich-text placeholder overlapping the fields below the editor
 
 `RichTextEditor` drew its grey placeholder as a JS overlay `<div>` using a layout-affecting negative

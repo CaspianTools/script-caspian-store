@@ -57,6 +57,7 @@ function docToProduct(docSnap: QueryDocumentSnapshot | DocumentSnapshot): Produc
     color: data.color || '',
     colorVariants: data.colorVariants,
     stock: data.stock || {},
+    taxonomies: data.taxonomies || {},
     isActive: data.isActive ?? true,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,

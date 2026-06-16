@@ -9,6 +9,8 @@ import { QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
+import { useTaxonomyTermsByType } from '../../hooks/use-taxonomy-terms';
+import { TAXONOMY_BY_ID } from '../../taxonomies/catalog';
 
 /**
  * Default PDP variant — the v8.x layout extracted into its own file.
@@ -42,6 +44,22 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
     derived,
     t,
   } = state;
+
+  // Taxonomy attribute chips — resolve the product's term ids to display names.
+  const taxonomyTypes = product?.taxonomies ? Object.keys(product.taxonomies) : [];
+  const { termName } = useTaxonomyTermsByType(taxonomyTypes);
+  const taxonomyRows = product
+    ? taxonomyTypes
+        .map((type) => {
+          const def = TAXONOMY_BY_ID[type];
+          return {
+            id: type,
+            label: def ? t(def.labelKey) : type,
+            terms: (product.taxonomies?.[type] ?? []).map((id) => termName(type, id)),
+          };
+        })
+        .filter((row) => row.terms.length > 0)
+    : [];
 
   if (loading) {
     return (
@@ -118,6 +136,44 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
                 onChange={setSelectedSize}
                 outOfStock={derived.outOfStockSizes}
               />
+            </div>
+          )}
+
+          {taxonomyRows.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {taxonomyRows.map((row) => (
+                <div
+                  key={row.id}
+                  style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: '#888',
+                    }}
+                  >
+                    {row.label}
+                  </span>
+                  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {row.terms.map((name, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: 13,
+                          padding: '3px 10px',
+                          borderRadius: 999,
+                          border: '1px solid rgba(0,0,0,0.15)',
+                        }}
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
 

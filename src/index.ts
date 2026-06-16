@@ -52,6 +52,7 @@ export {
   type ShopFilterSidebarProps,
   type ShopFilterFieldsProps,
   type ShopFilterState,
+  type TaxonomyFacet,
 } from './components/shop-filter-sidebar';
 export {
   ShopFilterDrawer,
@@ -537,6 +538,10 @@ export {
   type BrandWriteInput,
 } from './services/brand-service';
 export { useBrands, useBrandName, refreshBrandsCache } from './hooks/use-brands';
+export {
+  useTaxonomyTermsByType,
+  refreshTaxonomyTermsCache,
+} from './hooks/use-taxonomy-terms';
 export {
   subscribeEmail,
   listSubscribers,

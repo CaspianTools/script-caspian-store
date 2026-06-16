@@ -10,6 +10,15 @@ export interface ShopFilterState {
   sizes: ReadonlySet<string>;
   isNew: boolean;
   limited: boolean;
+  /** Taxonomy facet selections: taxonomy id → selected term ids. */
+  taxonomies: Record<string, ReadonlySet<string>>;
+}
+
+/** A taxonomy facet to render: the taxonomy and the terms present in the result set. */
+export interface TaxonomyFacet {
+  id: string;
+  label: string;
+  terms: { id: string; name: string }[];
 }
 
 export const EMPTY_SHOP_FILTERS: ShopFilterState = {
@@ -19,6 +28,7 @@ export const EMPTY_SHOP_FILTERS: ShopFilterState = {
   sizes: new Set<string>(),
   isNew: false,
   limited: false,
+  taxonomies: {},
 };
 
 /** Count of distinct filter dimensions currently active. Useful for badge UIs. */
@@ -29,6 +39,9 @@ export function countActiveShopFilters(state: ShopFilterState): number {
   if (state.sizes.size > 0) n += 1;
   if (state.isNew) n += 1;
   if (state.limited) n += 1;
+  for (const set of Object.values(state.taxonomies)) {
+    if (set.size > 0) n += 1;
+  }
   return n;
 }
 
@@ -38,6 +51,8 @@ export interface ShopFilterFieldsProps {
   availableCategories: readonly string[];
   categoryLabels?: ReadonlyMap<string, string>;
   availableSizes: readonly string[];
+  /** Enabled-taxonomy facets present in the result set. Rendered after Size. */
+  availableTaxonomies?: readonly TaxonomyFacet[];
   /** Total number of products visible after filters apply. Renders the count line. */
   resultCount?: number;
   /** When true, the header/title row is omitted — useful when the drawer or
@@ -92,6 +107,7 @@ export function ShopFilterFields({
   availableCategories,
   categoryLabels,
   availableSizes,
+  availableTaxonomies,
   resultCount,
   hideHeader,
   hideReset,
@@ -106,6 +122,15 @@ export function ShopFilterFields({
     if (next.has(size)) next.delete(size);
     else next.add(size);
     onChange({ ...state, sizes: next });
+  };
+  const toggleTaxonomyTerm = (taxId: string, termId: string) => {
+    const current = new Set(state.taxonomies[taxId] ?? []);
+    if (current.has(termId)) current.delete(termId);
+    else current.add(termId);
+    const nextTax: Record<string, ReadonlySet<string>> = { ...state.taxonomies };
+    if (current.size) nextTax[taxId] = current;
+    else delete nextTax[taxId];
+    onChange({ ...state, taxonomies: nextTax });
   };
   const reset = () => onChange(EMPTY_SHOP_FILTERS);
 
@@ -185,33 +210,38 @@ export function ShopFilterFields({
         <div style={sectionStyle}>
           <p style={sectionTitleStyle}>{t('shop.filters.size')}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {availableSizes.map((size) => {
-              const active = state.sizes.has(size);
-              return (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => toggleSize(size)}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    border: active
-                      ? '1px solid var(--caspian-primary, #111)'
-                      : '1px solid rgba(0,0,0,0.15)',
-                    borderRadius: 999,
-                    background: active ? 'var(--caspian-primary, #111)' : '#fff',
-                    color: active ? 'var(--caspian-primary-foreground, #fff)' : '#222',
-                    cursor: 'pointer',
-                    transition: 'background 0.1s, color 0.1s, border-color 0.1s',
-                  }}
-                >
-                  {size}
-                </button>
-              );
-            })}
+            {availableSizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => toggleSize(size)}
+                style={pillStyle(state.sizes.has(size))}
+              >
+                {size}
+              </button>
+            ))}
           </div>
         </div>
+      )}
+
+      {(availableTaxonomies ?? []).map((facet) =>
+        facet.terms.length === 0 ? null : (
+          <div key={facet.id} style={sectionStyle}>
+            <p style={sectionTitleStyle}>{facet.label}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {facet.terms.map((term) => (
+                <button
+                  key={term.id}
+                  type="button"
+                  onClick={() => toggleTaxonomyTerm(facet.id, term.id)}
+                  style={pillStyle(state.taxonomies[facet.id]?.has(term.id) ?? false)}
+                >
+                  {term.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ),
       )}
 
       <div style={{ ...sectionStyle, borderBottom: 'none', marginBottom: 8, paddingBottom: 8 }}>
@@ -287,3 +317,20 @@ const priceInputStyle: React.CSSProperties = {
   outline: 'none',
   background: '#fff',
 };
+
+/** Shared rounded toggle-pill style for the Size and taxonomy facet sections. */
+function pillStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '6px 12px',
+    fontSize: 13,
+    fontWeight: 500,
+    border: active
+      ? '1px solid var(--caspian-primary, #111)'
+      : '1px solid rgba(0,0,0,0.15)',
+    borderRadius: 999,
+    background: active ? 'var(--caspian-primary, #111)' : '#fff',
+    color: active ? 'var(--caspian-primary-foreground, #fff)' : '#222',
+    cursor: 'pointer',
+    transition: 'background 0.1s, color 0.1s, border-color 0.1s',
+  };
+}

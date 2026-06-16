@@ -55,6 +55,14 @@ export interface Product {
   color?: string;
   colorVariants?: ColorVariant[];
   stock?: Record<string, number>;
+  /**
+   * Enabled-taxonomy assignments: taxonomy id (`colors`, `materials`, `seasons`,
+   * …) → array of `taxonomyTerms` doc ids. Populated by the product editor's
+   * Attributes section from the common-taxonomies catalog; only generic
+   * taxonomies land here (Brand keeps its own `brand` field, Sizes its own
+   * `sizes`). Term ids are stable; display names resolve via `useTaxonomyTerms`.
+   */
+  taxonomies?: Record<string, string[]>;
   isActive?: boolean;
   /** Net weight in kilograms. Consumed by the Weight-Based shipping plugin; leave undefined if you don't use weight-based shipping. */
   weightKg?: number;

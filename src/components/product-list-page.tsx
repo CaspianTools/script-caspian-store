@@ -12,8 +12,11 @@ import {
   EMPTY_SHOP_FILTERS,
   countActiveShopFilters,
   type ShopFilterState,
+  type TaxonomyFacet,
 } from './shop-filter-sidebar';
 import { ShopFilterDrawer } from './shop-filter-drawer';
+import { resolveEnabledTaxonomies, TAXONOMY_BY_ID } from '../taxonomies/catalog';
+import { useTaxonomyTermsByType } from '../hooks/use-taxonomy-terms';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { cn } from '../utils/cn';
@@ -70,11 +73,13 @@ export function ProductListPage({
   hideFilters,
 }: ProductListPageProps) {
   const { db } = useCaspianFirebase();
+  const t = useT();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [inventory, setInventory] = useState<InventorySettings | undefined>(inventoryOverride);
   const [taxConfig, setTaxConfig] = useState<TaxConfig | undefined>(taxConfigOverride);
   const [categories, setCategories] = useState<ProductCategoryDoc[]>([]);
+  const [enabledAttrIds, setEnabledAttrIds] = useState<string[]>([]);
   const [filterState, setFilterState] = useState<ShopFilterState>(EMPTY_SHOP_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -91,6 +96,31 @@ export function ProductListPage({
       alive = false;
     };
   }, [db]);
+
+  // Enabled attribute taxonomies (every enabled generic taxonomy except sizes)
+  // drive the storefront filter facets.
+  useEffect(() => {
+    let alive = true;
+    getSiteSettings(db)
+      .then((s) => {
+        if (!alive) return;
+        const enabled = resolveEnabledTaxonomies(s?.enabledTaxonomies);
+        setEnabledAttrIds(
+          enabled.filter((id) => {
+            const def = TAXONOMY_BY_ID[id];
+            return def ? def.kind === 'generic' && id !== 'sizes' : false;
+          }),
+        );
+      })
+      .catch(() => {
+        /* no taxonomy facets */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [db]);
+
+  const { byType: attrTermsByType } = useTaxonomyTermsByType(enabledAttrIds);
 
   useEffect(() => {
     if (inventoryOverride !== undefined && taxConfigOverride !== undefined) {
@@ -160,6 +190,22 @@ export function ProductListPage({
     return [...set].sort();
   }, [products]);
 
+  const availableTaxonomies = useMemo<TaxonomyFacet[]>(() => {
+    return enabledAttrIds
+      .map((id): TaxonomyFacet => {
+        const def = TAXONOMY_BY_ID[id];
+        const nameById = new Map((attrTermsByType[id] ?? []).map((tm) => [tm.id, tm.name]));
+        // Only surface term ids that actually appear on the loaded products.
+        const present = new Set<string>();
+        for (const p of products) for (const tid of p.taxonomies?.[id] ?? []) present.add(tid);
+        const terms = [...present]
+          .map((tid) => ({ id: tid, name: nameById.get(tid) ?? tid }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        return { id, label: def ? t(def.labelKey) : id, terms };
+      })
+      .filter((facet) => facet.terms.length > 0);
+  }, [enabledAttrIds, attrTermsByType, products, t]);
+
   const visibleProducts = useMemo(() => {
     return products.filter((p) => {
       if (filterState.category && p.category !== filterState.category) return false;
@@ -172,6 +218,11 @@ export function ProductListPage({
       }
       if (filterState.isNew && !p.isNew) return false;
       if (filterState.limited && !p.limited) return false;
+      for (const [taxId, set] of Object.entries(filterState.taxonomies)) {
+        if (set.size === 0) continue;
+        const assigned = p.taxonomies?.[taxId];
+        if (!assigned || !assigned.some((tid) => set.has(tid))) return false;
+      }
       return true;
     });
   }, [products, filterState]);
@@ -212,6 +263,7 @@ export function ProductListPage({
               availableCategories={availableCategories}
               categoryLabels={categoryLabels}
               availableSizes={availableSizes}
+              availableTaxonomies={availableTaxonomies}
               resultCount={loading ? undefined : visibleProducts.length}
             />
             <div style={{ minWidth: 0 }}>{grid}</div>
@@ -224,6 +276,7 @@ export function ProductListPage({
             availableCategories={availableCategories}
             categoryLabels={categoryLabels}
             availableSizes={availableSizes}
+            availableTaxonomies={availableTaxonomies}
             resultCount={loading ? undefined : visibleProducts.length}
           />
         </>
