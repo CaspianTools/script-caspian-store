@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import type { BusinessHoursSchedule } from '../../types';
 import { Button } from '../../ui/button';
 import { Input, Label, Textarea } from '../../ui/input';
 import { useToast } from '../../ui/toast';
@@ -8,7 +9,9 @@ import { useAuth } from '../../context/auth-context';
 import { useCaspianFirebase } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n/locale-context';
 import { createContact } from '../../services/contact-service';
+import { getSiteSettings } from '../../services/site-settings-service';
 import { cn } from '../../utils/cn';
+import { BusinessHoursCard } from './business-hours';
 
 export interface ContactPageProps {
   /** Override the page heading. Defaults to the `contact.page.title` i18n string. */
@@ -43,6 +46,22 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
   const [trap, setTrap] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [hours, setHours] = useState<BusinessHoursSchedule | null>(null);
+
+  // Load the published business-hours schedule (if any) to render beside the form.
+  useEffect(() => {
+    let alive = true;
+    getSiteSettings(db)
+      .then((s) => {
+        if (alive) setHours(s?.businessHoursSchedule ?? null);
+      })
+      .catch(() => {
+        /* hours are optional — a load failure just hides the panel */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [db]);
 
   // Pre-fill name/email when a signed-in user opens the page.
   useEffect(() => {
@@ -91,13 +110,28 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
 
   const heading = title ?? t('contact.page.title');
   const sub = subtitle ?? t('contact.page.description');
+  const showHours = !!hours?.enabled;
 
   return (
     <div className={cn('caspian-contact-page', className)} style={{ padding: '48px 16px' }}>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ maxWidth: showHours ? 960 : 640, margin: '0 auto' }}>
         <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>{heading}</h1>
         <p style={{ color: '#555', marginTop: 8, lineHeight: 1.5 }}>{sub}</p>
 
+        <div
+          className={showHours ? cn('caspian-contact-layout') : undefined}
+          style={
+            showHours
+              ? {
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 300px)',
+                  gap: 32,
+                  alignItems: 'start',
+                }
+              : undefined
+          }
+        >
+          <div>
         {sent ? (
           <div style={successStyle}>
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{t('contact.form.sent')}</h2>
@@ -170,6 +204,13 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
             </div>
           </form>
         )}
+          </div>
+          {showHours && hours ? (
+            <div style={{ marginTop: 24 }}>
+              <BusinessHoursCard schedule={hours} />
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

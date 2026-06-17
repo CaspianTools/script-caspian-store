@@ -36,7 +36,11 @@ export function TabsList({ children, className }: { children: ReactNode; classNa
     <div
       role="tablist"
       className={cn('caspian-tabs-list', className)}
-      style={{ display: 'inline-flex', gap: 2, borderBottom: '1px solid rgba(0,0,0,0.1)' }}
+      style={{
+        display: 'inline-flex',
+        gap: 24,
+        borderBottom: '1px solid var(--a-line, var(--line, #e8eaed))',
+      }}
     >
       {children}
     </div>
@@ -54,6 +58,10 @@ export function TabsTrigger({
 }) {
   const ctx = useContext(TabsCtx)!;
   const active = ctx.value === value;
+  // Accent + muted resolve in both contexts: admin (`--a-*`) and storefront
+  // (`--caspian`/`--accent`), falling back to the same hex either way.
+  const accent = 'var(--a-accent, var(--accent, #1a73e8))';
+  const muted = 'var(--a-muted, var(--muted, #5f6368))';
   return (
     <button
       role="tab"
@@ -61,13 +69,16 @@ export function TabsTrigger({
       onClick={() => ctx.setValue(value)}
       className={cn('caspian-tabs-trigger', className)}
       style={{
-        padding: '8px 16px',
-        background: active ? 'var(--caspian-primary, #111)' : 'transparent',
-        color: active ? 'var(--caspian-primary-foreground, #fff)' : 'inherit',
+        padding: '8px 2px',
+        // Overlap the list's 1px rule so the active 2px bar reads as flush.
+        marginBottom: -1,
+        background: 'transparent',
+        color: active ? accent : muted,
         border: 0,
-        borderRadius: 'var(--caspian-radius, 6px) var(--caspian-radius, 6px) 0 0',
+        borderBottom: `2px solid ${active ? accent : 'transparent'}`,
+        borderRadius: 0,
         cursor: 'pointer',
-        fontWeight: active ? 600 : 400,
+        fontWeight: active ? 600 : 500,
         fontSize: 14,
       }}
     >

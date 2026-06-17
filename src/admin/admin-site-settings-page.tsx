@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type {
   AccountSettings,
+  BusinessDayHours,
+  BusinessHoursSchedule,
   CurrencyDisplay,
   InventorySettings,
   PrivacyRetentionSettings,
@@ -12,10 +14,12 @@ import type {
   StoreAddress,
   SupportedCountry,
   TaxConfig,
+  Weekday,
 } from '../types';
 import { SOCIAL_PLATFORMS } from '../types';
 import { DEFAULT_INVENTORY_SETTINGS } from '../utils/inventory';
 import { DEFAULT_TAX_CONFIG } from '../utils/tax';
+import { DEFAULT_BUSINESS_HOURS, WEEKDAYS } from '../utils/business-hours';
 
 const DEFAULT_ACCOUNTS: AccountSettings = {
   allowGuestCheckout: true,
@@ -506,14 +510,6 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                 onChange={(e) => patch({ contactAddress: e.target.value })}
               />
             </div>
-            <div>
-              <Label>Business hours</Label>
-              <Textarea
-                rows={2}
-                value={draft.businessHours}
-                onChange={(e) => patch({ businessHours: e.target.value })}
-              />
-            </div>
           </div>
         </div>
 
@@ -521,6 +517,12 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
           value={draft.storeAddress}
           legacy={draft.contactAddress}
           onChange={(next) => patch({ storeAddress: next })}
+        />
+
+        <BusinessHoursSection
+          value={draft.businessHoursSchedule}
+          fallbackTimezone={draft.timezone ?? ''}
+          onChange={(next) => patch({ businessHoursSchedule: next })}
         />
 
         <div>
@@ -929,6 +931,127 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
           patch({ supportedCountries: next });
         }}
       />
+    </div>
+  );
+}
+
+const WEEKDAY_LABELS: Record<Weekday, string> = {
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday',
+  sun: 'Sunday',
+};
+
+function BusinessHoursSection({
+  value,
+  fallbackTimezone,
+  onChange,
+}: {
+  value: BusinessHoursSchedule | undefined;
+  fallbackTimezone: string;
+  onChange: (next: BusinessHoursSchedule | undefined) => void;
+}) {
+  const schedule: BusinessHoursSchedule = value ?? {
+    ...DEFAULT_BUSINESS_HOURS,
+    timezone: fallbackTimezone || '',
+  };
+  const enabled = schedule.enabled;
+
+  const timezoneOptions = useMemo(
+    () => [
+      {
+        value: '',
+        label: fallbackTimezone ? `Store default (${fallbackTimezone})` : '— Select timezone —',
+      },
+      ...supportedTimezones().map((tz) => ({ value: tz, label: tz })),
+    ],
+    [fallbackTimezone],
+  );
+
+  const setDay = (day: Weekday, patchFields: Partial<BusinessDayHours>) =>
+    onChange({
+      ...schedule,
+      days: { ...schedule.days, [day]: { ...schedule.days[day], ...patchFields } },
+    });
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+        Business hours
+        <FieldHelp>
+          Structured weekly opening hours. When enabled, they render on the storefront
+          contact page. Times are entered in 24-hour format and shown to shoppers in 12-hour
+          format.
+        </FieldHelp>
+      </h2>
+      <FieldDescription style={{ margin: '0 0 12px' }}>
+        Turn this on to publish a weekly schedule. While off, the storefront shows no hours.
+      </FieldDescription>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginBottom: 10 }}>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onChange(e.target.checked ? { ...schedule, enabled: true } : undefined)}
+        />
+        <span>Enable business hours</span>
+      </label>
+      {enabled && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ maxWidth: 340 }}>
+            <Label>Timezone</Label>
+            <Select
+              value={schedule.timezone}
+              onChange={(e) => onChange({ ...schedule, timezone: e.target.value })}
+              options={timezoneOptions}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {WEEKDAYS.map((day) => {
+              const d = schedule.days[day];
+              return (
+                <div
+                  key={day}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '150px 1fr 1fr',
+                    gap: 10,
+                    alignItems: 'center',
+                  }}
+                >
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={d.open}
+                      onChange={(e) => setDay(day, { open: e.target.checked })}
+                    />
+                    <span>{WEEKDAY_LABELS[day]}</span>
+                  </label>
+                  {d.open ? (
+                    <>
+                      <Input
+                        type="time"
+                        value={d.from}
+                        onChange={(e) => setDay(day, { from: e.target.value || '' })}
+                      />
+                      <Input
+                        type="time"
+                        value={d.to}
+                        onChange={(e) => setDay(day, { to: e.target.value || '' })}
+                      />
+                    </>
+                  ) : (
+                    <span style={{ gridColumn: '2 / 4', color: '#888', fontSize: 14 }}>Closed</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

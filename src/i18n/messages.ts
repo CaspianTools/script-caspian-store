@@ -901,6 +901,18 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'contact.form.errorGeneric': 'Could not send your message. Please try again.',
   'contact.form.errorRequired': 'Name, email, and message are required.',
 
+  // Business hours (storefront /contact panel)
+  'businessHours.title': 'Business hours',
+  'businessHours.closed': 'Closed',
+  'businessHours.timezoneNote': 'All times {tz}',
+  'businessHours.day.mon': 'Monday',
+  'businessHours.day.tue': 'Tuesday',
+  'businessHours.day.wed': 'Wednesday',
+  'businessHours.day.thu': 'Thursday',
+  'businessHours.day.fri': 'Friday',
+  'businessHours.day.sat': 'Saturday',
+  'businessHours.day.sun': 'Sunday',
+
   // Admin > Users (v2.13; rescoped v8.5.0 to signed-up customers)
   'admin.users.title': 'Users',
   'admin.users.subtitle': 'Customers who have signed up to the site.',

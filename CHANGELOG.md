@@ -16,6 +16,41 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.17.0 — Underline tabs + structured business hours
+
+The shared `Tabs` component's active tab was a filled dark pill; it now uses an **underline** style
+(active = accent-colored text + a 2px accent underline, inactive = muted gray), resolving the accent in
+both admin (`--a-accent`) and storefront (`--accent`) contexts. Separately, the free-text **Business
+hours** setting is replaced by a **structured weekly schedule** — a master enable, a timezone, and
+per-day open/closed toggles with From/To times — edited in the admin Settings → Contact section and
+**rendered on the storefront `/contact` page** beside the form when enabled.
+
+The legacy `SiteSettings.businessHours` string is retained for backward compatibility; the storefront
+shows the structured schedule only when `businessHoursSchedule.enabled`.
+
+### No consumer action required
+
+Additive. `businessHoursSchedule` is optional and persists through the existing `settings/site` doc — no
+new Firestore collection, rules, or indexes, and existing free-text `businessHours` values are untouched.
+The tab restyle is purely visual and inherits your theme's accent token.
+
+### Added
+
+- `Weekday`, `BusinessDayHours`, `BusinessHoursSchedule` types; `SiteSettings.businessHoursSchedule?`.
+- `src/utils/business-hours.ts` — `WEEKDAYS`, `DEFAULT_BUSINESS_HOURS`, and a pure 12-hour `formatHourLabel`.
+- `src/components/contact/business-hours.tsx` — `BusinessHoursCard`, the storefront hours panel.
+- i18n keys `businessHours.title` / `.closed` / `.timezoneNote` / `.day.mon…sun`.
+
+### Changed
+
+- `src/ui/tabs.tsx` — underline active style (accent text + 2px bar, muted inactive). Applies to every
+  tab usage.
+- `src/admin/admin-site-settings-page.tsx` — the Business-hours textarea becomes a structured
+  `BusinessHoursSection` (enable + timezone + 7 day rows of an open toggle + two `type="time"` inputs).
+- `src/components/contact/contact-page.tsx` — loads `getSiteSettings`; renders a responsive 2-column
+  layout (form + `BusinessHoursCard`) when hours are enabled, single column otherwise.
+- `src/styles/globals.css` — `.caspian-contact-layout` stacks to one column ≤720px.
+
 ## v9.16.0 — Taxonomy-driven product attributes (admin + storefront)
 
 The common-taxonomies catalog (v9.15.0) only controlled which CRUD pages showed under

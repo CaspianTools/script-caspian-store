@@ -427,6 +427,31 @@ export interface StoreAddress {
   postcode: string;
 }
 
+/** Days of the week, keyed for the structured business-hours schedule. */
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+/** Open/close window for a single weekday. Times are `'HH:MM'` (24h). */
+export interface BusinessDayHours {
+  /** Whether the store is open this day. When `false`, `from`/`to` are ignored. */
+  open: boolean;
+  from: string;
+  to: string;
+}
+
+/**
+ * Structured weekly opening hours. When `enabled`, the storefront renders it
+ * (currently on `/contact`); otherwise nothing shows. Supersedes the free-text
+ * `SiteSettings.businessHours`, which is kept for backward compatibility.
+ * `timezone` is a required string (default `''`) so the object never carries a
+ * nested `undefined` — the settings save only strips *top-level* undefined and
+ * Firestore rejects nested ones.
+ */
+export interface BusinessHoursSchedule {
+  enabled: boolean;
+  timezone: string;
+  days: Record<Weekday, BusinessDayHours>;
+}
+
 /**
  * Review-submission policy toggles. Enforced by the `createReview` service;
  * `showVerifiedBadge` is read by the review card. Added in v2.7.
@@ -648,6 +673,13 @@ export interface SiteSettings {
   contactPhone: string;
   contactAddress: string;
   businessHours: string;
+  /**
+   * Structured weekly business hours. When set + `enabled`, the storefront
+   * renders this (on `/contact`) instead of the legacy free-text
+   * `businessHours`. Edited on the admin Settings → Contact section. Added
+   * in v9.17.
+   */
+  businessHoursSchedule?: BusinessHoursSchedule;
   /** ISO 4217 currency code (e.g. `USD`, `EUR`). Optional — added in v1.19. */
   currency?: string;
   /** IANA timezone (e.g. `America/New_York`). Optional — added in v1.19. */
