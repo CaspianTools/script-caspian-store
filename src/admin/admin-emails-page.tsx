@@ -22,6 +22,7 @@ import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { useToast } from '../ui/toast';
 import { FieldDescription } from '../ui/field-description';
 import { FieldHelp } from '../ui/field-help';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 export interface AdminEmailsPageProps {
   className?: string;
@@ -229,20 +230,18 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Emails</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Transactional emails sent by the Cloud Function when orders are created or updated.
-          Template content is merchant-editable; the HTML shell comes from the global settings below.
+          Template content is merchant-editable; the HTML shell comes from the global sender settings.
         </p>
       </header>
 
-      <section
-        style={{
-          border: '1px solid #eee',
-          borderRadius: 'var(--caspian-radius, 8px)',
-          padding: 16,
-          marginBottom: 24,
-          background: '#fff',
-          maxWidth: 720,
-        }}
-      >
+      <Tabs defaultValue="sender">
+        <TabsList>
+          <TabsTrigger value="sender">Sender</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sender">
+          <div style={{ maxWidth: 720 }}>
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, marginBottom: 12 }}>
           Global sender settings
           <FieldHelp>
@@ -348,9 +347,10 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
             </Button>
           </div>
         </div>
-      </section>
+          </div>
+        </TabsContent>
 
-      <h2 style={{ fontSize: 15, fontWeight: 600, margin: '24px 0 12px' }}>Templates</h2>
+        <TabsContent value="templates">
       <Table>
         <THead>
           <TR>
@@ -392,6 +392,8 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
           ))}
         </TBody>
       </Table>
+        </TabsContent>
+      </Tabs>
 
       {draft && (
         <Dialog

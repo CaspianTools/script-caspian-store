@@ -16,6 +16,29 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.18.0 — Tabbed Emails settings page
+
+The admin **Settings → Emails** page was a single long scroll (global sender settings, then the
+templates table). It's now split into **Sender** and **Templates** tabs using the shared `Tabs`
+component, so the two concerns are separated and the page is shorter. The sender form's bordered
+card is dropped — the tab grouping replaces it — and the redundant "Templates" sub-heading is
+removed since the tab already names it. The template-edit dialog is unchanged.
+
+Ported from the standalone luivante store, where the same page additionally has a "Provider" tab
+for the email-plugin picker; this library's Emails page has no plugin-picker section, so it lands
+as a two-tab (Sender / Templates) split.
+
+### No consumer action required
+
+Purely a UI reorganization of an existing admin page — no data model, Firestore, or API changes;
+existing email settings and templates render unchanged.
+
+### Changed
+
+- `src/admin/admin-emails-page.tsx` — Sender / Templates tabs (shared `Tabs`); sender form
+  de-carded into a `maxWidth: 720` panel; redundant "Templates" heading removed; subtitle reworded
+  ("…from the global sender settings", since it's no longer literally "below").
+
 ## v9.17.0 — Underline tabs + structured business hours
 
 The shared `Tabs` component's active tab was a filled dark pill; it now uses an **underline** style
