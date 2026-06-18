@@ -16,6 +16,32 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.20.0 — Federated accounts can set a password + admin account page polish
+
+Two follow-ups to the v9.19.0 admin account page:
+
+1. **`<ChangePasswordCard>` lets federated accounts set a password.** Previously a Google-signed-in user
+   saw a dead-end "manage your password in your Google account" note. The card now detects whether the
+   account already has a `password` provider: if not (Google-only), it offers **Set password**, linking an
+   email/password credential via `linkWithCredential` (reauthenticating through the Google popup on
+   `auth/requires-recent-login`, then `user.reload()`), so the user can also sign in with email + password.
+   Accounts that already have a password keep the reauth-and-`updatePassword` flow. This applies everywhere
+   the card renders — the storefront `/account` Security tab and the admin `/admin/account` page.
+2. **`<AdminAccountPage>` white card.** The account cards now sit in a white card surface instead of floating
+   on the admin background.
+
+### No consumer action required
+
+`<ChangePasswordCard>` gains capability (set-vs-change is auto-detected from the user's providers) with the
+same props; the admin account page is a visual-only wrapper change.
+
+### Changed
+
+- `src/components/auth/change-password-card.tsx` — branch on the `password` provider: **Set password** (link
+  credential, Google-popup reauth fallback) for federated-only accounts; **Change** otherwise.
+- `src/admin/admin-account-page.tsx` — wrap the account cards in a white card.
+- `src/i18n/messages.ts` — `password.set` / `password.setHint` / `password.setSuccess`.
+
 ## v9.19.0 — Admin "My account" page (`/admin/account`)
 
 The admin chrome had no place for an admin to manage their **own** account — `<AdminProfileMenu>`'s

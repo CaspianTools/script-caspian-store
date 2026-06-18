@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
+  linkWithCredential,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
   updatePassword,
 } from 'firebase/auth';
 import { useAuth } from '../../context/auth-context';
-import { useCaspianFirebase } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n/locale-context';
 import { Button } from '../../ui/button';
 import { Input, Label } from '../../ui/input';
@@ -21,7 +23,6 @@ export function ChangePasswordCard({
   className?: string;
 }) {
   const { user } = useAuth();
-  const { auth } = useCaspianFirebase();
   const { toast } = useToast();
   const t = useT();
   const [currentPassword, setCurrent] = useState('');
@@ -32,7 +33,12 @@ export function ChangePasswordCard({
 
   if (!user) return null;
 
-  const isGoogleAccount = user.providerData.some((p) => p.providerId === 'google.com');
+  // Whether the account already has an email/password credential. A federated
+  // account (e.g. Google-only) has no `password` provider yet — instead of
+  // changing a password it doesn't have, it can *set* one (link the credential)
+  // so the user can also sign in with email + password, not just Google.
+  const hasPassword = user.providerData.some((p) => p.providerId === 'password');
+  const hasGoogle = user.providerData.some((p) => p.providerId === 'google.com');
 
   const reset = () => {
     setCurrent('');
@@ -56,10 +62,29 @@ export function ChangePasswordCard({
     }
     setSaving(true);
     try {
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-      toast({ title: t('password.updated') });
+      if (hasPassword) {
+        const credential = EmailAuthProvider.credential(user.email, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, newPassword);
+        toast({ title: t('password.updated') });
+      } else {
+        // Link an email/password credential onto the federated account. If the
+        // sign-in session is stale Firebase demands a fresh login first, so
+        // reauthenticate through the Google popup and retry once.
+        const credential = EmailAuthProvider.credential(user.email, newPassword);
+        try {
+          await linkWithCredential(user, credential);
+        } catch (error) {
+          if ((error as { code?: string })?.code === 'auth/requires-recent-login' && hasGoogle) {
+            await reauthenticateWithPopup(user, new GoogleAuthProvider());
+            await linkWithCredential(user, credential);
+          } else {
+            throw error;
+          }
+        }
+        await user.reload();
+        toast({ title: t('password.setSuccess') });
+      }
       reset();
     } catch (error) {
       console.error('[caspian-store] Password change failed:', error);
@@ -72,8 +97,6 @@ export function ChangePasswordCard({
       setSaving(false);
     }
   };
-  // Reuse the auth instance to silence unused-import warnings while tree-shaking.
-  void auth;
 
   return (
     <section
@@ -82,26 +105,26 @@ export function ChangePasswordCard({
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('password.title')}</h2>
-        {!open && !isGoogleAccount && (
+        {!open && (
           <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-            {t('password.change')}
+            {hasPassword ? t('password.change') : t('password.set')}
           </Button>
         )}
       </header>
 
-      {isGoogleAccount ? (
-        <p style={{ fontSize: 14, color: '#666', margin: 0 }}>{t('password.googleHint')}</p>
-      ) : open ? (
+      {open ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <Label>{t('password.current')}</Label>
-            <Input
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrent(e.target.value)}
-            />
-          </div>
+          {hasPassword && (
+            <div>
+              <Label>{t('password.current')}</Label>
+              <Input
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrent(e.target.value)}
+              />
+            </div>
+          )}
           <div>
             <Label>{t('password.new')}</Label>
             <Input
@@ -126,12 +149,14 @@ export function ChangePasswordCard({
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} loading={saving}>
-              {t('password.update')}
+              {hasPassword ? t('password.update') : t('password.set')}
             </Button>
           </div>
         </div>
       ) : (
-        <p style={{ fontSize: 14, color: '#666', margin: 0 }}>{t('password.subtitle')}</p>
+        <p style={{ fontSize: 14, color: '#666', margin: 0 }}>
+          {hasPassword ? t('password.subtitle') : t('password.setHint')}
+        </p>
       )}
     </section>
   );

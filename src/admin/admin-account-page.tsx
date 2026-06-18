@@ -25,10 +25,21 @@ export function AdminAccountPage({ className }: AdminAccountPageProps) {
           Manage your name, contact details, photo, and password.
         </p>
       </header>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720, minWidth: 0 }}>
-        <ProfilePhotoCard />
-        <ProfileCard />
-        <ChangePasswordCard />
+      <div
+        style={{
+          background: '#fff',
+          border: '1px solid #eee',
+          borderRadius: 'var(--caspian-radius, 8px)',
+          padding: 24,
+          maxWidth: 720,
+          minWidth: 0,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+          <ProfilePhotoCard />
+          <ProfileCard />
+          <ChangePasswordCard />
+        </div>
       </div>
     </div>
   );

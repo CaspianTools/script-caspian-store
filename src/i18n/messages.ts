@@ -111,6 +111,9 @@ export const DEFAULT_MESSAGES: MessageDict = {
   // Password
   'password.title': 'Password',
   'password.change': 'Change',
+  'password.set': 'Set password',
+  'password.setHint': 'Add a password so you can also sign in with your email and password — not just Google.',
+  'password.setSuccess': 'Password set. You can now sign in with your email and password.',
   'password.googleHint': 'You signed in with Google — manage your password in your Google account.',
   'password.subtitle': 'Change your sign-in password.',
   'password.current': 'Current password',
