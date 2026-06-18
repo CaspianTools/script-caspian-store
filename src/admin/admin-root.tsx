@@ -29,6 +29,7 @@ import { AdminPluginInstallPage } from './admin-plugin-install-page';
 import { AdminShippingPluginsPage } from './admin-shipping-plugins-page';
 import { AdminPaymentPluginsPage } from './admin-payment-plugins-page';
 import { AdminEmailPluginsPage } from './admin-email-plugins-page';
+import { AdminAccountPage } from './admin-account-page';
 
 /**
  * Dispatcher for every /admin/** route. Parses pathname from the navigation
@@ -94,6 +95,8 @@ export function AdminRoot(): ReactNode {
       return <AdminTemplatesPage />;
     case 'about':
       return <AdminAboutPage />;
+    case 'account':
+      return <AdminAccountPage />;
     case 'settings':
       return <AdminSettingsShell />;
     case 'plugins':

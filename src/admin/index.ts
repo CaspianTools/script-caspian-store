@@ -68,6 +68,7 @@ export { AdminPromoCodesPage } from './admin-promo-codes-page';
 export { AdminSubscribersPage } from './admin-subscribers-page';
 export { AdminUsersPage, type AdminUsersPageProps } from './admin-users-page';
 export { AdminUserDetail, type AdminUserDetailProps } from './admin-user-detail';
+export { AdminAccountPage, type AdminAccountPageProps } from './admin-account-page';
 export { AdminContactsPage, type AdminContactsPageProps } from './admin-contacts-page';
 export {
   AdminContactsList,

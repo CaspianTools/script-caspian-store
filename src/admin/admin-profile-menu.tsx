@@ -11,7 +11,7 @@ import { useToast } from '../ui/toast';
 export interface AdminProfileMenuProps {
   /** Storefront home URL. Default: `/`. */
   storefrontHref?: string;
-  /** User-facing profile page. Default: `/account`. */
+  /** The admin's own account page. Default: `/admin/account` (in-chrome). */
   profileHref?: string;
   /** Where to send the user after sign-out. Default: `/login`. */
   afterSignOutHref?: string;
@@ -31,7 +31,7 @@ export interface AdminProfileMenuProps {
  */
 export function AdminProfileMenu({
   storefrontHref = '/',
-  profileHref = '/account',
+  profileHref = '/admin/account',
   afterSignOutHref = '/login',
   avatarSize = 36,
   className,

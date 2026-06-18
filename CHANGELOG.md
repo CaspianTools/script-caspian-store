@@ -16,6 +16,38 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.19.0 — Admin "My account" page (`/admin/account`)
+
+The admin chrome had no place for an admin to manage their **own** account — `<AdminProfileMenu>`'s
+"My profile" item linked to the storefront `/account` page, bouncing the admin out of the panel.
+There is now a dedicated **`/admin/account`** page, rendered inside the admin shell, where the
+signed-in admin can edit their display name + phone, upload/remove their profile photo, and change
+their password (email stays read-only). It reuses the existing `ProfilePhotoCard` / `ProfileCard` /
+`ChangePasswordCard` components, so there is no new form or data logic. Address book, orders,
+wishlist, and delete-account are intentionally left off the admin account surface.
+
+`<AdminProfileMenu>`'s `profileHref` default changes from `/account` to `/admin/account` so "My
+profile" lands on the new in-chrome page. `<AdminRoot>` dispatches `/admin/account` automatically, so
+consumers using the default admin route tree get the page for free.
+
+Ported from the standalone luivante store.
+
+### No consumer action required
+
+Additive — a new admin page wired through the existing `<AdminRoot>` dispatcher. The only behavior
+change is `<AdminProfileMenu>`'s "My profile" default destination (`/account` → `/admin/account`); pass
+`profileHref="/account"` to restore the old target if you relied on it.
+
+### Added
+
+- `src/admin/admin-account-page.tsx` — the `/admin/account` page; stacks the three account cards under
+  a page header. Exported from `src/admin/index.ts`.
+
+### Changed
+
+- `src/admin/admin-root.tsx` — `case 'account'` dispatches `<AdminAccountPage />`.
+- `src/admin/admin-profile-menu.tsx` — `profileHref` default `/account` → `/admin/account`.
+
 ## v9.18.0 — Tabbed Emails settings page
 
 The admin **Settings → Emails** page was a single long scroll (global sender settings, then the
