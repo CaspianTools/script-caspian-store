@@ -10,4 +10,5 @@ export {
   deleteInstagramComment,
 } from './comments';
 export { publishInstagramMedia } from './publish-media';
+export { deleteInstagramMedia } from './delete-media';
 export { refreshInstagramTokens } from './refresh-tokens';

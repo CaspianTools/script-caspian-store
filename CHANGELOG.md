@@ -16,6 +16,30 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.23.0 — Instagram delete posts (`deleteInstagramMedia`)
+
+Extends the `functions-instagram` codebase with the "remove old posts" action: new admin callable
+**`deleteInstagramMedia({ mediaId })`** that deletes a published post via `DELETE /{ig-media-id}` on the
+stored Page token. Deletes a whole post / reel / carousel album (not a single carousel slide).
+
+Requires the connected token to carry **`instagram_manage_contents`** (Facebook-Login only, Meta's
+late-2025 addition); the Caspian POS connect flow requests it.
+
+### No consumer action required
+
+Additive to the opt-in `caspian-instagram` codebase. Existing sites are unaffected. Stores already running
+`caspian-instagram` pick up delete on the next `npm run deploy:instagram`; accounts connected before this
+must reconnect so the token grants `instagram_manage_contents`.
+
+### Added
+
+- `firebase/functions-instagram/src/delete-media.ts` — the `deleteInstagramMedia` callable.
+
+### Changed
+
+- `firebase/functions-instagram/src/graph.ts` — `deleteMedia` helper.
+- `firebase/functions-instagram/src/index.ts` — export `deleteInstagramMedia`.
+
 ## v9.22.0 — Instagram publishing (`publishInstagramMedia`)
 
 Extends the `functions-instagram` codebase (v9.21.0) with **content publishing**: a store can post a product

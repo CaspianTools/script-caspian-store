@@ -248,3 +248,12 @@ export async function getPermalink(mediaId: string, token: string): Promise<stri
   });
   return res.permalink ?? '';
 }
+
+/**
+ * Delete a published media item (Phase 3). Facebook-Login only; needs the
+ * `instagram_manage_contents` permission. Deletes whole feed posts / reels /
+ * stories / carousel albums — NOT an individual slide of a carousel.
+ */
+export async function deleteMedia(mediaId: string, token: string): Promise<void> {
+  await graph('DELETE', mediaId, { access_token: token });
+}
