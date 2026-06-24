@@ -128,6 +128,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Instagram channel connection — server-only. The single `instagram/connection`
+    // doc holds the IG Business account id and the access tokens (long-lived user
+    // token + Page token), written/read only by the functions-instagram Cloud
+    // Functions (Admin SDK, which bypasses rules). These are secrets, so deny ALL
+    // client access. Clients (e.g. the Caspian POS) talk to the callables, which
+    // return connection status + feed + comments only — never a token.
+    match /instagram/{id} {
+      allow read, write: if false;
+    }
+
     match /faqs/{id} {
       allow read: if true;
       allow write: if isAdmin();

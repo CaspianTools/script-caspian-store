@@ -24,6 +24,12 @@
       "codebase": "caspian-stripe",
       "runtime": "nodejs22",
       "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    },
+    {
+      "source": "functions-instagram",
+      "codebase": "caspian-instagram",
+      "runtime": "nodejs22",
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
     }
   ],
   "emulators": {

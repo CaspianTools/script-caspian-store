@@ -16,6 +16,54 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.21.0 — Instagram channel Cloud Functions (`functions-instagram`)
+
+New opt-in Cloud Functions codebase **`firebase/functions-instagram/`** (`caspian-instagram`) that lets a
+store manage its Instagram from a connected client (the Caspian POS today): **view the feed and moderate
+comments**, built on **Facebook Login**. It keeps the Meta **app secret** and the long-lived access token
+entirely server-side — clients call the callables and never see a token.
+
+Callables (Node 22, firebase-functions v2):
+- `linkInstagram({ code, redirectUri })` (admin) — completes the Facebook-Login OAuth a client starts:
+  exchanges the code → long-lived user token → discovers the IG Business account on a linked Facebook Page →
+  stores the connection. Returns status only.
+- `unlinkInstagram()` (admin) — clears the connection (tokens included).
+- `instagramInbox()` (staff) — connection status + recent media + their comments (ms-epoch timestamps).
+  Returns `{ connected: false }` cleanly when not linked; throws on a live token error.
+- `replyInstagramComment` / `setInstagramCommentHidden` / `deleteInstagramComment` (admin) — moderation.
+- `refreshInstagramTokens` — daily scheduled refresh of the long-lived token; no-ops when not connected.
+
+The Meta Graph client uses Node's global `fetch` (no HTTP dep) against Graph `v21.0`. `META_APP_ID` /
+`META_APP_SECRET` are declared with `defineSecret` (same model as the email functions) and attached only to
+the OAuth/refresh functions. The `instagram/connection` token doc is **server-only** in `firestore.rules`
+(`allow read, write: if false;`). The scaffolder gains a **`--with-instagram`** flag (mirrors
+`--with-stripe`/`--with-email`) that copies the codebase, registers it in `firebase.json`, and adds a
+`deploy:instagram` script; the store owner connects Instagram at onboarding by setting the two secrets and
+deploying `caspian-instagram`.
+
+This backports the backend shipped in the live stores (luivante / husnella) so the library stays a superset.
+
+### No consumer action required
+
+Purely additive — a new opt-in codebase + scaffolder flag. Existing sites are unaffected and need do nothing
+on upgrade. To adopt Instagram on an existing site: copy `firebase/functions-instagram/` from the package (or
+re-scaffold with `--with-instagram`), add the codebase to your `firebase.json`, redeploy your rules
+(`npm run firebase:sync && firebase deploy --only firestore:rules`), set `META_APP_ID` / `META_APP_SECRET`
+via `firebase functions:secrets:set`, and run `npm run deploy:instagram`. Going live also needs a Meta app
+with Facebook Login + Instagram and Meta App Review.
+
+### Added
+
+- `firebase/functions-instagram/` — new `caspian-instagram` codebase: `package.json`, `tsconfig.json`,
+  `.gitignore`, and `src/{secrets,auth,graph,store,link-instagram,instagram-inbox,comments,refresh-tokens,index}.ts`.
+
+### Changed
+
+- `firebase/firebase.json` — registered the `caspian-instagram` functions codebase.
+- `firebase/firestore.rules` — added the server-only `match /instagram/{id}` lockdown.
+- `scaffold/create.mjs` — `--with-instagram` flag: copies the codebase, registers it in the generated
+  `firebase.json`, adds the `deploy:instagram` script + `functions-instagram/lib/` to `.gitignore`.
+
 ## v9.20.0 — Federated accounts can set a password + admin account page polish
 
 Two follow-ups to the v9.19.0 admin account page:

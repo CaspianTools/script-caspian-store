@@ -14,6 +14,9 @@
  *     [--with-email]                # also copy firebase/functions-email/ (transactional
  *                                    #   email via SendGrid/Brevo plugins — configure at
  *                                    #   /admin/plugins/email-providers after deploy)
+ *     [--with-instagram]            # also copy firebase/functions-instagram/ (Instagram
+ *                                    #   feed + comment moderation for the Caspian POS;
+ *                                    #   set META_APP_ID / META_APP_SECRET then deploy)
  *     [--with-functions]            # deprecated alias for --with-stripe (back-compat)
  *     [--no-apphosting]             # suppress apphosting.yaml in the output (default: emit).
  *                                    #   Useful for Vercel deployments where the file would
@@ -52,6 +55,7 @@ const { positionals, values: args } = parseArgs({
     force: { type: 'boolean', default: false },
     'with-stripe': { type: 'boolean', default: false },
     'with-email': { type: 'boolean', default: false },
+    'with-instagram': { type: 'boolean', default: false },
     'with-functions': { type: 'boolean', default: false },
     'no-apphosting': { type: 'boolean', default: false },
   },
@@ -68,6 +72,12 @@ const includeStripe = args['with-stripe'] || args['with-functions'];
 // @sendgrid/mail + @getbrevo/brevo SDKs, and the admin codebase keeps its
 // zero-secrets invariant.
 const includeEmail = args['with-email'];
+// --with-instagram opts into the caspian-instagram codebase — the Facebook-Login
+// OAuth exchange + feed/comment-moderation callables (e.g. for the Caspian POS).
+// Mirrors --with-stripe/--with-email: it ships as a separate codebase so installs
+// that don't use it don't deploy it, and the store owner connects Instagram at
+// onboarding by setting META_APP_ID / META_APP_SECRET and deploying caspian-instagram.
+const includeInstagram = args['with-instagram'];
 const suppressApphosting = args['no-apphosting'];
 
 const targetDir = positionals[0];
@@ -75,7 +85,7 @@ if (!targetDir) {
   console.error(
     'Usage: node create.mjs <project-dir> [--package-tag vX.Y.Z] [--next-version <spec>]\n' +
     '                       [--use-create-next-app] [--with-stripe] [--with-email]\n' +
-    '                       [--no-apphosting] [--force]',
+    '                       [--with-instagram] [--no-apphosting] [--force]',
   );
   process.exit(1);
 }
@@ -169,6 +179,7 @@ const ourScripts = {
   'deploy:admin': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-admin',
   'deploy:email': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-email',
   'deploy:stripe': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-stripe',
+  'deploy:instagram': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-instagram',
   'firebase:seed': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/seed/seed.mjs',
   'grant-admin': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/seed/grant-admin.mjs',
 };
@@ -346,6 +357,7 @@ if (!useCreateNextApp) {
 service-account*.json
 functions-admin/lib/
 functions-stripe/lib/
+functions-instagram/lib/
 `);
   write('next-env.d.ts', `/// <reference types="next" />
 /// <reference types="next/image-types/global" />
@@ -662,6 +674,14 @@ if (includeStripe) {
     predeploy: ['npm --prefix "$RESOURCE_DIR" run build'],
   });
 }
+if (includeInstagram) {
+  firebaseConfig.functions.push({
+    source: 'functions-instagram',
+    codebase: 'caspian-instagram',
+    runtime: 'nodejs22',
+    predeploy: ['npm --prefix "$RESOURCE_DIR" run build'],
+  });
+}
 write('firebase.json', JSON.stringify(firebaseConfig, null, 2) + '\n');
 
 // Always copy functions-admin; copy functions-email / functions-stripe only on opt-in.
@@ -679,6 +699,10 @@ if (includeEmail) {
 if (includeStripe) {
   cpSync(join(sourceFirebaseDir, 'functions-stripe'), join(root, 'functions-stripe'), { recursive: true });
   write('functions-stripe/.gitignore', 'node_modules\nlib/\n');
+}
+if (includeInstagram) {
+  cpSync(join(sourceFirebaseDir, 'functions-instagram'), join(root, 'functions-instagram'), { recursive: true });
+  write('functions-instagram/.gitignore', 'node_modules\nlib/\n');
 }
 
 // ---- apphosting.yaml ----
@@ -773,6 +797,15 @@ npm run dev                  # http://localhost:3000
    \`\`\`
 
    Then go to \`/admin/plugins/email-providers\`, click **Browse providers → Install** on SendGrid or Brevo, paste the API key, save, and click **Enable**. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
+
+   If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase (feed + comment moderation for the Caspian POS). Set the Meta app credentials first, then deploy:
+   \`\`\`bash
+   cd functions-instagram && npm install && cd ..
+   firebase functions:secrets:set META_APP_ID      # your Meta (Facebook) app id
+   firebase functions:secrets:set META_APP_SECRET  # your Meta app secret
+   npm run deploy:instagram
+   \`\`\`
+   Going live also needs a Meta app with **Facebook Login** + **Instagram**, your IG as a **Professional** account linked to a **Facebook Page**, and **Meta App Review**. The store owner then connects Instagram from the POS (or any client that drives the \`linkInstagram\` callable).
 5. **Seed Firestore:**
    \`\`\`bash
    # After downloading a service-account JSON:
