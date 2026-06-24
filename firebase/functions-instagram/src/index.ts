@@ -9,4 +9,5 @@ export {
   setInstagramCommentHidden,
   deleteInstagramComment,
 } from './comments';
+export { publishInstagramMedia } from './publish-media';
 export { refreshInstagramTokens } from './refresh-tokens';

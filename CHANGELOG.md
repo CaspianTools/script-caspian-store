@@ -16,6 +16,33 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.22.0 — Instagram publishing (`publishInstagramMedia`)
+
+Extends the `functions-instagram` codebase (v9.21.0) with **content publishing**: a store can post a product
+to its Instagram. New admin callable **`publishInstagramMedia({ imageUrls, caption })`** — 1 image → a photo
+post, 2–10 → a carousel — using the two-step Graph flow (create container(s) from the PUBLIC image URLs, then
+`media_publish`) on the stored Page token, returning `{ mediaId, permalink }`. The Caspian POS passes a
+product's Firebase Storage image URLs.
+
+Requires the connected token to carry `instagram_content_publish` (the POS connect flow requests it) and is
+subject to Instagram's ~100-posts/24h content-publishing limit.
+
+### No consumer action required
+
+Additive to the opt-in `caspian-instagram` codebase. Existing sites are unaffected. Stores already running
+`caspian-instagram` pick up publishing on the next `npm run deploy:instagram`; accounts connected before this
+must reconnect so the token grants `instagram_content_publish`.
+
+### Added
+
+- `firebase/functions-instagram/src/publish-media.ts` — the `publishInstagramMedia` callable.
+
+### Changed
+
+- `firebase/functions-instagram/src/graph.ts` — `createMediaContainer` / `createCarouselItem` /
+  `createCarouselContainer` / `publishMedia` / `getPermalink` helpers.
+- `firebase/functions-instagram/src/index.ts` — export `publishInstagramMedia`.
+
 ## v9.21.0 — Instagram channel Cloud Functions (`functions-instagram`)
 
 New opt-in Cloud Functions codebase **`firebase/functions-instagram/`** (`caspian-instagram`) that lets a

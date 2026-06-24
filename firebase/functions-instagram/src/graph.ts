@@ -170,3 +170,81 @@ export async function setCommentHidden(commentId: string, hide: boolean, token: 
 export async function deleteComment(commentId: string, token: string): Promise<void> {
   await graph('DELETE', commentId, { access_token: token });
 }
+
+/* --- Content publishing (Phase 2) -------------------------------------------
+ * Two-step container flow: create a media container from a PUBLIC image URL,
+ * then publish it. Carousels create one child container per image, then a
+ * parent CAROUSEL container over the children. Images must be reachable by
+ * Instagram (public HTTPS) — POS product images on Firebase Storage qualify.
+ */
+
+/** Create a single-image media container; returns the creation id. */
+export async function createMediaContainer(
+  igUserId: string,
+  imageUrl: string,
+  caption: string,
+  token: string,
+): Promise<string> {
+  const res = await graph<{ id?: string }>('POST', `${igUserId}/media`, {
+    image_url: imageUrl,
+    caption,
+    access_token: token,
+  });
+  if (!res.id) throw new HttpsError('internal', 'Instagram: media container returned no id.');
+  return res.id;
+}
+
+/** Create one carousel child container (no caption); returns its id. */
+export async function createCarouselItem(
+  igUserId: string,
+  imageUrl: string,
+  token: string,
+): Promise<string> {
+  const res = await graph<{ id?: string }>('POST', `${igUserId}/media`, {
+    image_url: imageUrl,
+    is_carousel_item: 'true',
+    access_token: token,
+  });
+  if (!res.id) throw new HttpsError('internal', 'Instagram: carousel item returned no id.');
+  return res.id;
+}
+
+/** Create the parent CAROUSEL container over child ids; returns the creation id. */
+export async function createCarouselContainer(
+  igUserId: string,
+  childIds: string[],
+  caption: string,
+  token: string,
+): Promise<string> {
+  const res = await graph<{ id?: string }>('POST', `${igUserId}/media`, {
+    media_type: 'CAROUSEL',
+    children: childIds.join(','),
+    caption,
+    access_token: token,
+  });
+  if (!res.id) throw new HttpsError('internal', 'Instagram: carousel container returned no id.');
+  return res.id;
+}
+
+/** Publish a previously created container; returns the published media id. */
+export async function publishMedia(
+  igUserId: string,
+  creationId: string,
+  token: string,
+): Promise<string> {
+  const res = await graph<{ id?: string }>('POST', `${igUserId}/media_publish`, {
+    creation_id: creationId,
+    access_token: token,
+  });
+  if (!res.id) throw new HttpsError('internal', 'Instagram: publish returned no media id.');
+  return res.id;
+}
+
+/** Fetch the public permalink for a published media id. */
+export async function getPermalink(mediaId: string, token: string): Promise<string> {
+  const res = await graph<{ permalink?: string }>('GET', mediaId, {
+    fields: 'permalink',
+    access_token: token,
+  });
+  return res.permalink ?? '';
+}
