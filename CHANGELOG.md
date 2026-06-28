@@ -16,6 +16,26 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.24.0 — Instagram setup docs (INSTALL.md + scaffold README)
+
+Documents the `caspian-instagram` codebase end-to-end so a store owner can actually turn it on. **INSTALL.md
+§5 (Deploy Cloud Functions)** gains a `caspian-instagram` summary bullet, a copy line, and an **Instagram
+codebase** deploy block (mirroring the Stripe/email blocks): `firebase functions:secrets:set META_APP_ID` /
+`META_APP_SECRET`, `npm run deploy:instagram`, enable Cloud Scheduler, redeploy rules, plus the one-time Meta
+app (Facebook Login + Instagram, the required permissions, App Review) + per-shop IG Professional/Page, and
+that the Caspian POS drives Connect. The **scaffolded store README** (`--with-instagram`) block was expanded
+to cover publishing + deleting and the full go-live note.
+
+### No consumer action required
+
+Docs-only — INSTALL.md + the scaffolder's generated README. No source, build, or `exports` change; existing
+installs are unaffected.
+
+### Changed
+
+- `INSTALL.md` — Instagram codebase deploy block + summary bullet + copy line in §5.
+- `scaffold/create.mjs` — expanded the generated-store Instagram README block (publish/delete + go-live note).
+
 ## v9.23.0 — Instagram delete posts (`deleteInstagramMedia`)
 
 Extends the `functions-instagram` codebase with the "remove old posts" action: new admin callable

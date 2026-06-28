@@ -798,14 +798,14 @@ npm run dev                  # http://localhost:3000
 
    Then go to \`/admin/plugins/email-providers\`, click **Browse providers → Install** on SendGrid or Brevo, paste the API key, save, and click **Enable**. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
 
-   If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase (feed + comment moderation for the Caspian POS). Set the Meta app credentials first, then deploy:
+   If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase — it lets the **Caspian POS** view the feed, moderate comments, **publish a product as a post**, and **delete posts** (the Meta app secret + token stay server-side). Set the Meta app credentials first, then deploy:
    \`\`\`bash
    cd functions-instagram && npm install && cd ..
    firebase functions:secrets:set META_APP_ID      # your Meta (Facebook) app id
    firebase functions:secrets:set META_APP_SECRET  # your Meta app secret
    npm run deploy:instagram
    \`\`\`
-   Going live also needs a Meta app with **Facebook Login** + **Instagram**, your IG as a **Professional** account linked to a **Facebook Page**, and **Meta App Review**. The store owner then connects Instagram from the POS (or any client that drives the \`linkInstagram\` callable).
+   Enable the **Cloud Scheduler** API (daily token refresh) and redeploy rules (\`firebase deploy --only firestore:rules\`) so the \`instagram/connection\` token doc stays server-only. Going live also needs a Meta app with **Facebook Login** + **Instagram** (loopback redirect \`http://127.0.0.1:47113/\`, the \`instagram_*\` + \`pages_*\` permissions, and **App Review**), and your IG as a **Professional** account linked to a **Facebook Page**. The store owner then connects Instagram from the POS (which drives the \`linkInstagram\` OAuth exchange) and sets the Meta **App ID** per shop under POS Shops → Edit.
 5. **Seed Firestore:**
    \`\`\`bash
    # After downloading a service-account JSON:
