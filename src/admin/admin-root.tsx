@@ -21,6 +21,7 @@ import { AdminProductCategoriesPage } from './admin-product-categories-page';
 import { AdminCategoryEditor } from './admin-category-editor';
 import { AdminProductCollectionsPage } from './admin-product-collections-page';
 import { AdminAboutPage } from './admin-about-page';
+import { AdminHelpPage } from './admin-help-page';
 import { AdminAppearancePage } from './admin-appearance-page';
 import { AdminTemplatesPage } from './admin-templates-page';
 import { AdminSettingsShell } from './admin-settings-shell';
@@ -95,6 +96,8 @@ export function AdminRoot(): ReactNode {
       return <AdminTemplatesPage />;
     case 'about':
       return <AdminAboutPage />;
+    case 'help':
+      return <AdminHelpPage />;
     case 'account':
       return <AdminAccountPage />;
     case 'settings':

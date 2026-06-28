@@ -16,6 +16,31 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.25.0 — In-admin Help & documentation page (`/admin/help`)
+
+Added a searchable, in-app **Help & documentation** page to the admin — an operator handbook covering the
+catalog, orders, engagement, content/pages, plugins (shipping/payments/email), settings, roles, plus the
+**Caspian POS** (desktop) and **Instagram channel** go-live steps. A sticky table-of-contents sidebar
+(scroll-spy + click-to-jump) and a search box make it navigable; content is read-only, brand-neutral prose
+so it reads correctly in forks. Generated stores inherit it automatically.
+
+New page at **`/admin/help`** with a **Help & docs** link in the admin sidebar.
+
+### No consumer action required
+
+Additive — a new admin page in the default dispatcher + sidebar nav. Existing installs pick it up on the next
+`npm install`/redeploy; no config or migration.
+
+### Added
+
+- `src/admin/admin-help-page.tsx` — the searchable `AdminHelpPage` (TOC sidebar + full-text search).
+- Exported from `src/admin/index.ts`.
+
+### Changed
+
+- `src/admin/admin-root.tsx` — route `case 'help'` → `<AdminHelpPage />`.
+- `src/admin/admin-shell.tsx` — **Help & docs** entry in `DEFAULT_ADMIN_NAV`.
+
 ## v9.24.0 — Instagram setup docs (INSTALL.md + scaffold README)
 
 Documents the `caspian-instagram` codebase end-to-end so a store owner can actually turn it on. **INSTALL.md
