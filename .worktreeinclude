@@ -1,0 +1,26 @@
+# .worktreeinclude — gitignored files copied into each new Claude Code worktree.
+#
+# Uses .gitignore syntax. A file is copied only when it BOTH matches a pattern
+# here AND is gitignored AND actually exists — tracked files are never
+# duplicated, and missing files are silently skipped (so unused patterns no-op).
+# Docs: https://code.claude.com/docs/en/worktrees#copy-gitignored-files-into-worktrees
+#
+# This is a framework-agnostic React library (bring-your-own-Firebase). The
+# patterns below mirror the local-secret conventions in .gitignore: if such a
+# file exists locally, new worktrees inherit it automatically; until then these
+# lines do nothing.
+#
+# NOT copied on purpose: node_modules/ and dist/ (large / generated — run
+# `npm install` in each worktree; the `prepare` hook rebuilds dist/). Firebase
+# Functions build output (firebase/functions-*/lib/) is likewise regenerated.
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Firebase / service-account credentials (mirrors the .gitignore secret block)
+service-account.json
+serviceAccountKey.json
+serviceAccountKey*.json
+credentials.json

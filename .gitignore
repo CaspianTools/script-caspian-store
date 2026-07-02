@@ -3,7 +3,13 @@ dist/
 firebase/functions-admin/lib/
 firebase/functions-email/lib/
 firebase/functions-stripe/lib/
-.claude/
+# Claude Code local state. Ignore everything under .claude/ EXCEPT a committed
+# settings.json, so shared worktree/session config can be tracked while the
+# isolated worktrees (.claude/worktrees/, parallel sessions) never surface as
+# untracked files in the main checkout.
+.claude/*
+!.claude/settings.json
+.claude/worktrees/
 .vscode/
 package-lock.json
 examples/**/next-env.d.ts
