@@ -1099,3 +1099,171 @@ export const DEFAULT_SCRIPT_SETTINGS: Omit<ScriptSettings, 'updatedAt'> = {
     showQuickAddIcon: true,
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page builder (ported from luivante v9.3→v9.5). Self-contained; depends only on
+// Timestamp + these types. See src/page-builder/.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A responsive breakpoint the builder can target. */
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
+
+/**
+ * Per-edge spacing. Edge values are unit-less numbers; the box-level `unit`
+ * (absent ⇒ `'px'`, for back-compat with layouts saved before units existed)
+ * applies to all four edges. Any edge omitted = inherit / 0.
+ */
+export interface BoxSpacing {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+  /** Length unit for all four edges. Absent = `'px'`. */
+  unit?: 'px' | 'rem' | '%' | 'vw';
+}
+
+/**
+ * Credit for an image inserted from the stock-image search. Captured so the
+ * storefront can render attribution — a legal requirement for CC-BY* images
+ * (CC0 / public-domain make it optional). `attributionText` is the provider's
+ * ready-to-render string.
+ */
+export interface StockImageAttribution {
+  source: 'openverse';
+  title: string;
+  creator: string | null;
+  creatorUrl: string | null;
+  license: string;
+  licenseVersion: string;
+  licenseUrl: string;
+  foreignLandingUrl: string;
+  attributionText: string;
+}
+
+/** One normalized stock-image search result (from the stock-image proxy). */
+export interface StockImageResult {
+  id: string;
+  thumbUrl: string;
+  fullUrl: string;
+  title: string;
+  width: number;
+  height: number;
+  attribution: StockImageAttribution;
+}
+
+/**
+ * Per-block visual overrides the renderer applies as inline styles on the block
+ * wrapper. Empty/omitted = the design-system default for the block's type.
+ */
+export interface BlockStyle {
+  background?: {
+    color?: string;
+    imageUrl?: string;
+    /** `cover` | `contain` | `auto` | a CSS background-size. */
+    size?: string;
+    /** CSS background-position, e.g. `center` or `30% 70%` (focal point). */
+    position?: string;
+    /** When true, tile the image instead of `no-repeat`. */
+    repeat?: boolean;
+    /** Optional rgba() laid over the image (darken/tint). */
+    overlay?: string;
+    /** A CSS gradient used AS the background when no image is set. */
+    gradient?: string;
+    /** A CSS gradient laid OVER the image (replaces the flat `overlay` when set). */
+    overlayGradient?: string;
+    /** Credit for a stock image used as the background. */
+    imageAttribution?: StockImageAttribution;
+  };
+  padding?: BoxSpacing;
+  margin?: BoxSpacing;
+  align?: 'left' | 'center' | 'right';
+  /** CSS width for the block (columns: track width; widgets: max-width). */
+  width?: string;
+  textColor?: string;
+  /** Typography overrides. All optional; absent = inherit. */
+  typography?: {
+    fontSize?: string;
+    fontWeight?: number;
+    lineHeight?: string;
+    letterSpacing?: string;
+    textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  };
+  border?: { width?: number; style?: 'solid' | 'dashed' | 'dotted'; color?: string };
+  /** Corner radius: a single px value, or per-corner px values. */
+  radius?: number | { topLeft?: number; topRight?: number; bottomRight?: number; bottomLeft?: number };
+  /** Box-shadow: a preset token (`sm|md|lg|xl`) or a custom CSS box-shadow. */
+  shadow?: string;
+}
+
+/**
+ * One block placed on an editable page. `type` keys into the block catalog
+ * (`src/page-builder/catalog.ts`). `props` holds editable field values, merged
+ * over the catalog entry's `defaultProps` at render. `children` holds nested
+ * blocks for container/column types.
+ */
+export interface PageBlock {
+  id: string;
+  type: string;
+  visible: boolean;
+  variant?: string;
+  props: Record<string, unknown>;
+  style?: BlockStyle;
+  responsive?: Partial<
+    Record<Breakpoint, { style?: BlockStyle; props?: Record<string, unknown>; hidden?: boolean }>
+  >;
+  children?: PageBlock[];
+}
+
+/** Legacy flat section list (pre block-tree). Migrated to blocks on read. */
+export type SectionInstance = Pick<PageBlock, 'id' | 'type' | 'visible' | 'variant' | 'props'>;
+
+/**
+ * A page's PUBLISHED layout (`pageLayouts/{id}`). Absent doc → the storefront
+ * renders the catalog's seed defaults. `version` is the monotonic publish
+ * counter (draft/publish concurrency + revision id).
+ */
+export interface PageLayout {
+  id: string;
+  schemaVersion?: number;
+  blocks: PageBlock[];
+  updatedAt: Timestamp;
+  version?: number;
+  publishedAt?: Timestamp;
+}
+
+/**
+ * A page's working DRAFT (`pageLayoutDrafts/{id}`) — admin-only; never read by
+ * the storefront. `baseVersion` is the published version it forked from;
+ * `draftRev` bumps each save (optimistic concurrency).
+ */
+export interface DraftLayout {
+  id: string;
+  schemaVersion?: number;
+  blocks: PageBlock[];
+  updatedAt: Timestamp;
+  baseVersion: number;
+  draftRev: number;
+  updatedBy?: string;
+  updatedByName?: string;
+}
+
+/** Metadata for one published-layout revision (`pageLayouts/{id}/revisions/{version}`). */
+export interface PageRevisionMeta {
+  version: number;
+  createdAt: Timestamp;
+  createdByName?: string;
+  source: 'publish' | 'restore';
+}
+
+/**
+ * A page-builder–managed page beyond the homepage. The doc id is the URL slug;
+ * its block layout lives in `pageLayouts/{slug}`. `status` gates public
+ * rendering — drafts render only for admins.
+ */
+export interface BuilderPage {
+  id: string;
+  slug: string;
+  title: string;
+  status: 'draft' | 'published';
+  updatedAt: Timestamp;
+}

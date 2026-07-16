@@ -5,8 +5,10 @@ import { useT } from '../i18n';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { diagnoseUploadDenial, uploadAdminImage } from '../services/storage-service';
 import { cn } from '../utils/cn';
+import type { StockImageAttribution } from '../types';
 import { Button } from './button';
 import { Input, Label } from './input';
+import { StockImagePicker } from './stock-image-picker';
 import { useToast } from './toast';
 
 export interface ImageUploadFieldProps {
@@ -14,6 +16,10 @@ export interface ImageUploadFieldProps {
   value: string;
   /** Called with the new URL after a successful upload or URL edit. */
   onChange: (url: string) => void;
+  /** When true, offer an inline open-stock-image (Openverse) search. */
+  allowStockSearch?: boolean;
+  /** Called with the picked stock image's attribution (null when cleared). */
+  onAttributionChange?: (attribution: StockImageAttribution | null) => void;
   /**
    * Storage path prefix. The uploaded file is saved as
    * `<storagePath>/<timestamp>-<random>.<ext>`. Must match a path allowed by
@@ -61,6 +67,8 @@ function extFromType(type: string): string {
 export function ImageUploadField({
   value,
   onChange,
+  allowStockSearch = false,
+  onAttributionChange,
   storagePath,
   label,
   aspectRatio = '1 / 1',
@@ -76,6 +84,7 @@ export function ImageUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
+  const [stockOpen, setStockOpen] = useState(false);
 
   const handleFile = async (file: File) => {
     setUploading(true);
@@ -161,6 +170,7 @@ export function ImageUploadField({
 
   const handleRemove = () => {
     onChange('');
+    onAttributionChange?.(null);
   };
 
   return (
@@ -233,7 +243,7 @@ export function ImageUploadField({
             if (file) void handleFile(file);
           }}
         />
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <Button
             type="button"
             variant="outline"
@@ -243,6 +253,11 @@ export function ImageUploadField({
           >
             {value ? 'Replace' : 'Upload'}
           </Button>
+          {allowStockSearch && (
+            <Button type="button" variant="outline" size="sm" onClick={() => setStockOpen(true)}>
+              {t('stockImage.search')}
+            </Button>
+          )}
           {value && (
             <Button type="button" variant="ghost" size="sm" onClick={handleRemove}>
               Remove
@@ -262,6 +277,18 @@ export function ImageUploadField({
           </div>
         )}
       </div>
+
+      {allowStockSearch && (
+        <StockImagePicker
+          open={stockOpen}
+          onOpenChange={setStockOpen}
+          storagePath={storagePath}
+          onSelect={(url, attribution) => {
+            onChange(url);
+            onAttributionChange?.(attribution);
+          }}
+        />
+      )}
     </div>
   );
 }

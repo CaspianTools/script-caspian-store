@@ -43,3 +43,8 @@ export {
   type RichTextEditorProps,
 } from './rich-text-editor';
 export { HtmlContent, type HtmlContentProps } from './html-content';
+// Page-builder UI primitives (v9.26.0).
+export { Switch, type SwitchProps } from './switch';
+export { ColorField, type ColorFieldProps } from './color-field';
+export { FocalPointField, type FocalPointFieldProps } from './focal-point-field';
+export { StockImagePicker, type StockImagePickerProps } from './stock-image-picker';

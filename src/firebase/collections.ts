@@ -26,6 +26,13 @@ export function caspianCollections(db: Firestore) {
     // `type` field. Brands keep their own `productBrands` collection. Added in v9.13.0.
     taxonomyTerms: collection(db, 'taxonomyTerms'),
     pageContents: collection(db, 'pageContents'),
+    // Page builder (v9.26.0). Published layouts (public read) + admin-only
+    // working drafts + publish schedules; `builderPages` is the registry of
+    // custom pages beyond the homepage.
+    pageLayouts: collection(db, 'pageLayouts'),
+    pageLayoutDrafts: collection(db, 'pageLayoutDrafts'),
+    pageLayoutSchedules: collection(db, 'pageLayoutSchedules'),
+    builderPages: collection(db, 'builderPages'),
     languages: collection(db, 'languages'),
     searchTerms: collection(db, 'searchTerms'),
     emailTemplates: collection(db, 'emailTemplates'),
@@ -43,3 +50,8 @@ export function caspianCollections(db: Firestore) {
 }
 
 export type CaspianCollections = ReturnType<typeof caspianCollections>;
+
+/** Published-layout revision history for one page (`pageLayouts/{id}/revisions`). */
+export function pageLayoutRevisions(db: Firestore, pageId: string) {
+  return collection(db, 'pageLayouts', pageId, 'revisions');
+}

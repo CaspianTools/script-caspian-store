@@ -205,6 +205,80 @@ export {
   type PageContentViewProps,
 } from './components/content';
 
+// Page builder (v9.26.0) — catalog-driven drag-and-drop block editor with
+// draft/publish, revision history, scheduling, and per-block styling. Ported
+// from the luivante standalone site. Consumers opt in by mounting
+// `HomeEditorProvider` + `BlockRenderer` + `HomeEditorChrome` (see scaffold and
+// INSTALL.md); the storefront read path is unchanged for anyone who doesn't.
+export {
+  BLOCK_CATALOG,
+  SECTION_CATALOG,
+  HOME_SECTION_ORDER,
+  blockCategoryOf,
+  getBlockType,
+  listBlockTypes,
+  listBlockTypesByCategory,
+  getSectionType,
+  listSectionTypes,
+  buildDefaultHomeLayout,
+  BlockRenderer,
+  HomeSectionRenderer,
+  useHomeLayout,
+  HOME_PAGE_ID,
+  SectionEditProvider,
+  useSectionEdit,
+  EditableText,
+  EditableImage,
+  HomeEditorProvider,
+  useHomeEditor,
+  useHomeEditorOptional,
+  HomeEditorChrome,
+  type BlockRendererProps,
+  type HomeSectionRendererProps,
+  type UseHomeLayoutResult,
+  type SectionEditValue,
+  type EditableTextProps,
+  type EditableImageProps,
+  type HomeEditorValue,
+  type SectionType,
+  type SectionField,
+  type SectionFieldType,
+  type SectionVariant,
+  type SectionComponentProps,
+  type BlockType,
+  type BlockField,
+  type BlockFieldType,
+  type BlockCategory,
+  type BlockComponentProps,
+} from './page-builder';
+export { BuilderPageView } from './page-builder/editor/builder-page-view';
+export { PAGE_TEMPLATES, getPageTemplate, type PageTemplate } from './page-builder/page-templates';
+export {
+  getPageLayout,
+  savePageLayout,
+  getDraftLayout,
+  saveDraftLayout,
+  publishLayout,
+  discardDraft,
+  LayoutConflictError,
+} from './services/page-layout-service';
+export {
+  getBuilderPage,
+  listBuilderPages,
+  createBuilderPage,
+  duplicateBuilderPage,
+  updateBuilderPage,
+  deleteBuilderPage,
+} from './services/builder-page-service';
+export { listRevisions, getRevisionBlocks } from './services/page-revision-service';
+export { getPageSchedule, setPageSchedule, type PageSchedule } from './services/page-schedule-service';
+export {
+  searchStockImages,
+  fetchStockImageFile,
+  type StockImageSearchResponse,
+  type StockImageSearchOptions,
+} from './services/stock-image-service';
+
 // FAQs + shipping + size guide (v1.4)
 export { FaqsPage, type FaqsPageProps } from './components/faqs';
 

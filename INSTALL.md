@@ -889,3 +889,250 @@ See [CHANGELOG.md](./CHANGELOG.md) for release notes and migration guidance per 
 **Webhook order never writes** — check the Stripe dashboard event log for `checkout.session.completed` failures; usually the `STRIPE_WEBHOOK_SECRET` is wrong. Re-run `firebase functions:secrets:set STRIPE_WEBHOOK_SECRET` after rotating in Stripe.
 
 **`font-family: Lato / Montserrat` not applying** — the `<FontLoader>` inside `<CaspianStoreProvider>` injects `<link>` tags at mount. If you use a strict CSP, allow `https://fonts.googleapis.com` and `https://fonts.gstatic.com`.
+
+---
+
+## Page builder (v9.26.0)
+
+The library ships a catalog-driven, Elementor-style **page builder** (drag-and-drop blocks, draft/publish
+with revision history + scheduling, per-block styling). It is **opt-in** — your storefront renders exactly
+as before until you mount it.
+
+**Prerequisites** (see the CHANGELOG's "Consumer action required"): `firebase deploy --only firestore:rules`
+(the `pageLayoutDrafts` / `pageLayoutSchedules` collections + `pageLayouts/*/revisions` are admin-only) and
+`firebase deploy --only functions:caspian-admin` (enables `runScheduledPublish` for scheduled publishing).
+
+**Mount it** on any page you want editable (an admin sees an "Edit page" pill; shoppers see the published
+layout). Everything is exported from the package root:
+
+```tsx
+'use client';
+import {
+  HomeEditorProvider, BlockRenderer, HomeEditorChrome, useHomeEditor,
+} from '@caspian-explorer/script-caspian-store';
+
+function EditableHome() {
+  return (
+    <HomeEditorProvider pageId="home">
+      <HomeBody />
+      <HomeEditorChrome /> {/* admin-only editor chrome (pill + panel + toolbar) */}
+    </HomeEditorProvider>
+  );
+}
+
+function HomeBody() {
+  const { blocks, siteSettings, isEditing, selectedId, breakpoint, updateField, select } = useHomeEditor();
+  return (
+    <main>
+      <BlockRenderer
+        blocks={blocks}
+        siteSettings={siteSettings}
+        editing={isEditing}
+        selectedId={selectedId}
+        breakpoint={breakpoint}
+        onFieldChange={updateField}
+        onSelect={(id) => select(id)}
+      />
+    </main>
+  );
+}
+```
+
+Custom pages beyond the homepage use `createBuilderPage` / `listBuilderPages` (admin) and a
+`<HomeEditorProvider pageId={slug}>` + `<BuilderPageView />` on the route; the static content pages work
+the same way with a `pageId` of `about` / `press` / etc.
+
+### Optional: stock-image proxy route
+
+The Image widget and the Style-tab background can search **Openverse** stock images inline. This needs an
+**admin-only** server route in your Next.js app (the library can't ship a Next route — it's framework-
+agnostic). Without it, image **upload** and **URL** still work; only inline search is disabled. Add
+`app/api/stock-images/route.ts` (App Router) with the content below — it verifies an admin Firebase ID
+token, blocks SSRF (DNS-resolving guard + per-redirect re-validation, HTTPS-only), and streams a size cap:
+
+```ts
+import { NextResponse } from 'next/server';
+import { promises as dns } from 'node:dns';
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import type { StockImageResult } from '@caspian-explorer/script-caspian-store';
+
+export const runtime = 'nodejs';
+
+const OPENVERSE = 'https://api.openverse.org/v1';
+const MAX_BYTES = 10 * 1024 * 1024;
+const ALLOWED_CT = /^image\/(jpeg|png|webp|gif)\b/;
+const MAX_REDIRECTS = 3;
+
+let adminInited = false;
+function ensureAdminApp(): boolean {
+  if (adminInited) return getApps().length > 0;
+  adminInited = true;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (!projectId) return false;
+  try {
+    if (getApps().length === 0) initializeApp({ projectId });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function isAdminRequest(request: Request): Promise<boolean> {
+  if (!ensureAdminApp()) return false;
+  const m = (request.headers.get('authorization') || '').match(/^Bearer (.+)$/);
+  if (!m) return false;
+  try {
+    const decoded = await getAuth().verifyIdToken(m[1]);
+    return decoded.role === 'admin';
+  } catch {
+    return false;
+  }
+}
+
+function isPrivateAddress(ip: string): boolean {
+  const host = ip.toLowerCase();
+  if (/^(127\.|10\.|192\.168\.|169\.254\.)/.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return true;
+  if (host === '::1' || host === '::') return true;
+  if (/^f[cd][0-9a-f]{2}:/.test(host)) return true;
+  if (host.startsWith('fe80:')) return true;
+  if (host.startsWith('::ffff:')) return true;
+  return false;
+}
+
+const clampInt = (v: string | null, lo: number, hi: number, dflt: number): number => {
+  const n = Number.parseInt(v ?? '', 10);
+  return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
+};
+
+interface OpenverseResult {
+  id?: string; title?: string; url?: string; thumbnail?: string;
+  creator?: string | null; creator_url?: string | null;
+  license?: string; license_version?: string; license_url?: string;
+  foreign_landing_url?: string; attribution?: string; width?: number; height?: number;
+}
+
+function normalize(r: OpenverseResult): StockImageResult {
+  return {
+    id: String(r.id ?? r.url ?? Math.random()),
+    thumbUrl: r.thumbnail || r.url || '',
+    fullUrl: r.url || '',
+    title: r.title || '',
+    width: r.width || 0,
+    height: r.height || 0,
+    attribution: {
+      source: 'openverse',
+      title: r.title || '',
+      creator: r.creator ?? null,
+      creatorUrl: r.creator_url ?? null,
+      license: r.license || '',
+      licenseVersion: r.license_version || '',
+      licenseUrl: r.license_url || '',
+      foreignLandingUrl: r.foreign_landing_url || '',
+      attributionText: r.attribution || '',
+    },
+  };
+}
+
+async function isSafePublicUrl(raw: string): Promise<boolean> {
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  if (u.protocol !== 'https:') return false;
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost' || host.endsWith('.localhost')) return false;
+  if (isPrivateAddress(host)) return false;
+  try {
+    const records = await dns.lookup(host, { all: true });
+    if (records.length === 0) return false;
+    if (records.some((r) => isPrivateAddress(r.address.toLowerCase()))) return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+async function safeImageFetch(startUrl: string): Promise<Response | null> {
+  let current = startUrl;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (!(await isSafePublicUrl(current))) return null;
+    const res = await fetch(current, { redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location');
+      if (!location) return null;
+      current = new URL(location, current).toString();
+      continue;
+    }
+    return res;
+  }
+  return null;
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  if (!(await isAdminRequest(request))) {
+    return new NextResponse('forbidden', { status: 403 });
+  }
+
+  const download = searchParams.get('download');
+  if (download) {
+    let upstream: Response | null;
+    try { upstream = await safeImageFetch(download); } catch { return new NextResponse('fetch failed', { status: 502 }); }
+    if (!upstream) return new NextResponse('invalid url', { status: 400 });
+    if (!upstream.ok || !upstream.body) return new NextResponse('fetch failed', { status: 502 });
+    const ct = upstream.headers.get('content-type') ?? '';
+    if (!ALLOWED_CT.test(ct)) return new NextResponse('unsupported media type', { status: 415 });
+    const declared = Number.parseInt(upstream.headers.get('content-length') ?? '', 10);
+    if (Number.isFinite(declared) && declared > MAX_BYTES) return new NextResponse('too large', { status: 413 });
+    const reader = upstream.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          total += value.byteLength;
+          if (total > MAX_BYTES) { await reader.cancel(); return new NextResponse('too large', { status: 413 }); }
+          chunks.push(value);
+        }
+      }
+    } catch { return new NextResponse('fetch failed', { status: 502 }); }
+    const body = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) { body.set(c, offset); offset += c.byteLength; }
+    return new NextResponse(body, { status: 200, headers: { 'content-type': ct, 'cache-control': 'private, max-age=60' } });
+  }
+
+  const q = searchParams.get('q')?.trim();
+  if (!q) return NextResponse.json({ results: [], page: 1, pageCount: 0, resultCount: 0 });
+  const page = clampInt(searchParams.get('page'), 1, 50, 1);
+  const license = searchParams.get('license')?.trim() ?? '';
+  const licenseType = searchParams.get('licenseType')?.trim() ?? 'commercial,modification';
+
+  const url = new URL(`${OPENVERSE}/images/`);
+  url.searchParams.set('q', q);
+  url.searchParams.set('page', String(page));
+  url.searchParams.set('page_size', '20');
+  url.searchParams.set('format', 'json');
+  if (license) url.searchParams.set('license', license);
+  else if (licenseType) url.searchParams.set('license_type', licenseType);
+
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return new NextResponse('stock provider error', { status: 502 });
+    const data = (await res.json()) as { results?: OpenverseResult[]; page?: number; page_count?: number; result_count?: number };
+    return NextResponse.json(
+      {
+        results: (data.results ?? []).map(normalize).filter((r) => r.fullUrl),
+        page: data.page ?? page,
+        pageCount: data.page_count ?? 0,
+        resultCount: data.result_count ?? 0,
+      },
+      { headers: { 'cache-control': 'private, max-age=30' } },
+    );
+  } catch {
+    return new NextResponse('stock provider error', { status: 502 });
+  }
+}
+```

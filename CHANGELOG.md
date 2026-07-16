@@ -16,7 +16,59 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
-## v9.25.0 — In-admin Help & documentation page (`/admin/help`)
+## v9.26.0 — Page builder: drag-and-drop blocks, draft/publish, styling depth
+
+Brings the full **page builder** into the library — a catalog-driven, Elementor-style block editor that
+had until now only lived in the `luivante` standalone site (built there across v9.3→v9.5). This lands it
+as a first-class, exported capability so forks and consumers inherit it. It is **additive and opt-in**:
+the storefront read path is unchanged, and a store that never mounts the editor renders exactly as before.
+
+Highlights:
+
+- **Blocks** — 6 premade sections (hero, trust strip, collections grid, editorial split, featured
+  products, story panel), 7 widgets (heading, text, image, button, spacer, divider, embed), and 3 layout
+  containers (container, columns, column), all catalog-driven (`src/page-builder/catalog.ts`).
+- **Editor** — on-canvas drag-and-drop (handle reorder + drag-from-library) and a Layers/Add/Settings side
+  panel, inline text editing, duplicate/copy/paste, redo + coalesced undo, keyboard shortcuts, autosave,
+  and insert-panel search.
+- **Draft → publish** — saving writes an **admin-only draft** (`pageLayoutDrafts`), and a separate
+  **Publish** pushes it live and snapshots a **revision** (history + restore). Optimistic concurrency
+  guards two admins editing at once. **Scheduled publish/unpublish** via a new `runScheduledPublish`
+  Cloud Function in the `caspian-admin` codebase.
+- **Styling** — per-block background/gradient, padding/margin (px/rem/%/vw), typography, border, radius,
+  shadow, alignment, max-width, and per-breakpoint style **and content** overrides.
+- **Stock images** — optional inline Openverse search (admin-only proxy; DNS-resolving SSRF guard,
+  HTTPS-only, streamed size cap). Requires the consumer to add the proxy route (see below).
+
+New Firestore collections + rules (`pageLayouts` + its `revisions` subcollection, `pageLayoutDrafts`,
+`pageLayoutSchedules`, `builderPages`), 227 new `pageBuilder.*` i18n keys, five UI primitives
+(`Switch`, `ColorField`, `FocalPointField`, `StockImagePicker`, richer `ImageUploadField`), and
+`@dnd-kit` added to dependencies (bundled). The two dynamic sections were adapted to this library's
+single-`category` product shape, and the trust strip's four items are fully editable (no dependency on
+luivante-only `SiteSettings.returns` / free-shipping fields).
+
+### Consumer action required on upgrade
+
+```bash
+# 1. Install (pulls in @dnd-kit; rebuilds dist via the prepare hook)
+npm install github:CaspianTools/script-caspian-store#v9.26.0
+
+# 2. Deploy the new Firestore rules (draft/schedule collections are admin-only;
+#    without this, saving a draft or opening the editor fails permission checks)
+firebase deploy --only firestore:rules
+
+# 3. Deploy the admin functions to enable scheduled publish
+firebase deploy --only functions:caspian-admin
+```
+
+4. **To use the builder**, mount it in your app (see INSTALL.md → "Page builder"): wrap an editable page
+   in `<HomeEditorProvider>` and render `<BlockRenderer>` + `<HomeEditorChrome>` (all exported from the
+   package root). Existing home/content pages are untouched until you opt in.
+5. **Optional — inline stock-image search:** add the admin-only proxy route
+   `app/api/stock-images/route.ts` in your Next app (full source in INSTALL.md → "Stock-image proxy").
+   The Image widget and Style-tab background work fully without it (upload / URL still available).
+
+
 
 Added a searchable, in-app **Help & documentation** page to the admin — an operator handbook covering the
 catalog, orders, engagement, content/pages, plugins (shipping/payments/email), settings, roles, plus the

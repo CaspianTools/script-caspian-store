@@ -153,6 +153,29 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Page builder (v9.26.0). PUBLISHED layouts are public-read (the storefront
+    // renders from them), admin-write; their `revisions` subcollection is
+    // admin-only history. WORKING DRAFTS and publish SCHEDULES are admin-only
+    // read AND write, so unpublished content never leaks. `builderPages` is the
+    // public-read custom-page registry (drafts hidden in app code, not rules).
+    match /pageLayouts/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+      match /revisions/{version} {
+        allow read, write: if isAdmin();
+      }
+    }
+    match /pageLayoutDrafts/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /pageLayoutSchedules/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /builderPages/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /languages/{id} {
       allow read: if true;
       allow write: if isAdmin();
