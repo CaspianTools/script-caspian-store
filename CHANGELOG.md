@@ -16,6 +16,33 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v9.26.1 — Security: raise functions-template dependency floors to patched versions
+
+Ports the dependency-vulnerability hardening done in the `luivante` standalone site back into the
+library's shipped Cloud Functions templates (`firebase/functions-*/`), keeping the library a superset.
+An `npm audit` re-check (not the raw heuristic scan) confirmed the patched floors: **protobufjs** is
+vulnerable `<=7.6.2` (GHSA-f38q-mgvj-vph7 + a cluster of code-injection/DoS advisories) and
+**form-data** `<2.5.6` (GHSA-hmw2-7cc7-3qxx, CRLF injection).
+
+The library's own **shipped runtime surface is unaffected** — its published `dependencies`
+(`@dnd-kit/*`, `clsx`, `tailwind-merge`) carry none of these; the vulnerable packages only ever appear
+transitively under `firebase` (a peer dependency the consumer resolves) and `firebase-admin` (a
+devDependency used for tests/build). This release only tightens the override floors in the functions
+templates so a consumer who commits a lockfile can't pin below the patched line.
+
+### No consumer action required
+
+Fresh installs already resolve the patched versions within the previous `^7.5.5` / `^2.5.4` ranges;
+this only raises the documented floor. Existing deployed functions are unaffected until their next
+`npm install`. `.gitignore` credential patterns (`serviceAccountKey*.json`, `credentials.json`) were
+already present.
+
+### Changed
+- `firebase/functions-admin`, `functions-email`, `functions-instagram`, `functions-stripe`
+  `package.json` — `protobufjs` override floor `^7.5.5 → ^7.6.5`.
+- `firebase/functions-email/package.json` — `form-data` override floor `^2.5.4 → ^2.5.6`
+  (its `qs ^6.14.1` / `tough-cookie ^4.1.3` floors were already patched).
+
 ## v9.26.0 — Page builder: drag-and-drop blocks, draft/publish, styling depth
 
 Brings the full **page builder** into the library — a catalog-driven, Elementor-style block editor that
