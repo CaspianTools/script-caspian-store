@@ -182,6 +182,14 @@ const az: MessageDict = {
   'pos.license.bannerUnlicensed': 'Lisenziyasız kassa — Tənzimləmələrdən aktivləşdirin.',
   'pos.license.bannerExpired': 'Lisenziyanın müddəti bitib — Tənzimləmələrdən yeniləyin.',
   'pos.license.dismiss': 'Bağla',
+  'pos.license.remove': 'Açarı sil',
+  'pos.license.activated': 'Lisenziya aktivləşdirildi',
+  'pos.license.keyHelp':
+    'Bu kassanı alanda sizə göndərilən açarı yapışdırın. Açar yalnız bu bir kompüterə bağlıdır.',
+  'pos.license.unverifiable':
+    'Açar saxlanıldı, lakin bu brauzer onu yoxlaya bilmir. Kassa onlayn olanda təsdiqlənəcək.',
+  'pos.license.offline':
+    'Bu kompüterdə saxlanıldı. Növbəti dəfə onlayn olanda lisenziya serveri ilə təsdiqlənəcək.',
 };
 
 export default az;

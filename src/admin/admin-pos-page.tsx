@@ -14,6 +14,7 @@ import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { DEFAULT_POS_SETTINGS, type PosSettings } from '../types';
+import { AdminPosLicenses } from './admin-pos-licenses';
 
 export interface AdminPosPageProps {
   className?: string;
@@ -174,6 +175,8 @@ export function AdminPosPage({ className }: AdminPosPageProps) {
           </label>
         </section>
       ) : null}
+
+      <AdminPosLicenses />
 
       <section style={card}>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>

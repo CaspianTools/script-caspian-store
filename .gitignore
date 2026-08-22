@@ -23,6 +23,10 @@ examples/**/next-env.d.ts
 .env.*.local
 service-account.json
 serviceAccountKey*.json
+# POS licence signing key. Losing it means no new licences can ever be minted;
+# committing it means anyone can mint their own.
+pos-signing-key*.pem
+*-signing-key.pem
 credentials.json
 .turbo/
 .next/

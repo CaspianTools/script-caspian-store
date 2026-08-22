@@ -4,6 +4,9 @@ import type { ReactNode } from 'react';
 import { useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
+import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { usePosLicense } from './license/use-pos-license';
+import { PosLicenseBanner } from './license/pos-license-banner';
 import { PosRegister } from './pos-register';
 import { PosSettingsPage } from './pos-settings-page';
 
@@ -18,7 +21,9 @@ export function PosShell({ children }: { children: ReactNode }) {
   const { pathname } = useCaspianNavigation();
   const Link = useCaspianLink();
   const { userProfile, signOut } = useAuth();
+  const { functions } = useCaspianFirebase();
   const t = useT();
+  const license = usePosLicense(functions);
 
   const items = [
     { href: '/pos', label: t('pos.nav.register') },
@@ -66,6 +71,8 @@ export function PosShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
+
+      <PosLicenseBanner license={license} />
 
       <main style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</main>
     </div>

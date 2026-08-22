@@ -2212,6 +2212,41 @@ const MANUAL = {
               "The export covers up to 5000 orders, more than the 500 the Orders screen loads.",
               "Refunds taken at the till are not recorded against the original order anywhere in the admin, and nothing in the system currently produces a refund record."
             ]
+          },
+          {
+            "id": "pos-licence",
+            "title": "Licensing a register",
+            "audience": "staff",
+            "route": "/pos/settings",
+            "summary": "If you bought this register, you were sent a licence key. Paste it into the Licence box on the register settings screen. The key belongs to one computer: activating it on a second machine tells you the licence is already in use elsewhere. If your copy did not come with licensing, this box is not on your screen at all and there is nothing to do.",
+            "steps": [
+              "From the register, press Settings in the top bar.",
+              "Find the Licence box. If it is not there, your copy does not use licence keys and you can ignore this section.",
+              "Paste the key you were sent. It starts with \"cslic1.\" and is one long line with no spaces.",
+              "Press Activate. A green label appears reading \"Licensed to\" and your shop name.",
+              "If you replaced this computer, ask whoever sold you the licence to release it from the old machine first. Until they do, the new one reports that the licence is in use elsewhere."
+            ],
+            "fields": [
+              {
+                "name": "Licence key",
+                "what": "The long line beginning \"cslic1.\" that you were sent when you bought the register."
+              },
+              {
+                "name": "Activate",
+                "what": "Checks the key and ties it to this computer. Greyed out until you paste something."
+              },
+              {
+                "name": "Remove key",
+                "what": "Forgets the key on this computer. It does not free the licence up for another machine — only the seller can do that."
+              }
+            ],
+            "notes": [
+              "A licence problem never stops you selling. The worst that happens is a yellow strip across the top of the register, which you can dismiss for the rest of the day. Tills do not stop working over paperwork.",
+              "The key is tied to this computer, not to you. Clearing your browser data, using a different browser, or switching to a private window makes this look like a new computer, and the licence will report itself as in use elsewhere.",
+              "If the register cannot reach the internet when you activate, the key is still saved and a line tells you it will be confirmed next time you are online.",
+              "Some older browsers cannot check the key themselves. If you see a message saying so, the key is still stored and is confirmed by the server the next time the register is online.",
+              "Removing the key here does not cancel anything or refund anything. It only clears it from this machine."
+            ]
           }
         ]
       },
@@ -3906,6 +3941,28 @@ const MANUAL = {
               "This is not a customer support inbox. There is no name, no email and no way to reply to the shopper who hit the error.",
               "When a page of your site crashes badly, the visitor sees a short \"Something went wrong.\" message with a \"Try again\" button, and the crash is added to this list automatically."
             ]
+          },
+          {
+            "id": "admin-pos-licences",
+            "title": "Register licences you have sold",
+            "audience": "owner",
+            "route": "/admin/pos",
+            "summary": "If you sell this register to other shops, this table on the Point of sale page lists every licence that has been activated, which computer it is running on, and when it was last used. Its one action is Release, which unties a licence from its computer so the customer can activate it somewhere else. The table is not shown at all in a copy that does not sell licences.",
+            "steps": [
+              "Open Sales, then Point of sale, and scroll to \"Register licences\".",
+              "Read the table. Each row is one licence: who it was sold to, the computer it is bound to, when it expires, and when that register was last used.",
+              "Look for the amber \"attempts from other computers\" label. That means the same key was pasted into a machine other than the one it is bound to.",
+              "Press Release on a row when a customer has genuinely replaced or wiped their till. The licence is untied and they can activate it on the new machine.",
+              "Press the refresh button at the top right of the box to reload the list."
+            ],
+            "notes": [
+              "Release is the support path that makes per-computer licensing survive real life. A till gets replaced, a browser gets wiped, someone clears site data - all of those look like a new computer, and without Release the customer who paid you is locked out.",
+              "Releasing does not cancel the licence and does not refund anything. It only clears which computer it is tied to.",
+              "The \"attempts from other computers\" count is a record, not a block. The register that made those attempts kept working; it only showed a warning strip.",
+              "The list shows the 200 most recently activated licences. There is no search and no paging beyond that.",
+              "Licence records are only readable here. They are deliberately locked away from the browser, so a compromised admin session cannot download your customer list through the database.",
+              "This table only appears in a copy of the software that was built to sell licences. An ordinary shop never sees it."
+            ]
           }
         ]
       }
@@ -5433,6 +5490,39 @@ const MANUAL = {
               "channel sütunu bütün sayt sifarişlərində və kassa yaranmazdan əvvəl verilmiş bütün sifarişlərdə boş olur. Boş xananı onlayn satış kimi oxumaq lazımdır.",
               "İxrac 5000-ə qədər sifarişi əhatə edir — Sifarişlər ekranının yüklədiyi 500-dən çox.",
               "Kassada edilən geri ödənişlər idarə panelinin heç bir yerində ilkin sifarişə bağlanaraq qeyd olunmur və sistemdə hazırda geri ödəniş qeydi yaradan heç nə yoxdur."
+            ]
+          },
+          {
+            "id": "pos-licence",
+            "title": "Kassanın lisenziyası",
+            "summary": "Bu kassanı almısınızsa, sizə lisenziya açarı göndərilib. Onu kassa tənzimləmələri ekranındakı Lisenziya (Licence) xanasına yapışdırın. Açar bir kompüterə bağlıdır: ikinci maşında aktivləşdirsəniz, lisenziyanın artıq başqa yerdə istifadə olunduğu bildirilir. Sizin nüsxənizdə lisenziya yoxdursa, bu xana ekranda ümumiyyətlə görünmür və etməli bir şey yoxdur.",
+            "steps": [
+              "Kassada yuxarı paneldəki Tənzimləmələr (Settings) düyməsini basın.",
+              "Lisenziya (Licence) xanasını tapın. Yoxdursa, nüsxəniz lisenziya açarlarından istifadə etmir və bu bölməni nəzərə almaya bilərsiniz.",
+              "Sizə göndərilən açarı yapışdırın. Açar \"cslic1.\" ilə başlayır və boşluqsuz bir uzun sətirdir.",
+              "Aktivləşdir (Activate) düyməsini basın. Yaşıl etiket görünür: \"Licensed to\" və mağazanızın adı.",
+              "Bu kompüteri dəyişmisinizsə, lisenziyanı sizə satan şəxsdən əvvəlcə onu köhnə maşından azad etməsini xahiş edin. O bunu etməyincə, yeni kompüter lisenziyanın başqa yerdə istifadə olunduğunu bildirəcək."
+            ],
+            "fields": [
+              {
+                "name": "Lisenziya açarı (Licence key)",
+                "what": "Kassanı alanda sizə göndərilən, \"cslic1.\" ilə başlayan uzun sətir."
+              },
+              {
+                "name": "Aktivləşdir (Activate)",
+                "what": "Açarı yoxlayır və bu kompüterə bağlayır. Nə isə yapışdırmayınca qeyri-aktivdir."
+              },
+              {
+                "name": "Açarı sil (Remove key)",
+                "what": "Açarı bu kompüterdən silir. Lisenziyanı başqa maşın üçün azad etmir - bunu yalnız satıcı edə bilər."
+              }
+            ],
+            "notes": [
+              "Lisenziya problemi heç vaxt satışa mane olmur. Ən pis halda kassanın yuxarısında sarı zolaq görünür və onu günün sonuna qədər bağlaya bilərsiniz. Kassalar sənəd ucbatından dayanmır.",
+              "Açar sizə yox, bu kompüterə bağlıdır. Brauzer məlumatlarını təmizləmək, başqa brauzerdən və ya gizli pəncərədən istifadə etmək yeni kompüter kimi görünür və lisenziya başqa yerdə istifadə olunur kimi bildiriləcək.",
+              "Aktivləşdirmə zamanı internet yoxdursa, açar yenə də saxlanılır və növbəti dəfə onlayn olanda təsdiqlənəcəyi barədə sətir görünür.",
+              "Bəzi köhnə brauzerlər açarı özləri yoxlaya bilmir. Bu barədə mesaj görsəniz, açar yenə saxlanılır və kassa növbəti dəfə onlayn olanda server tərəfindən təsdiqlənir.",
+              "Açarı buradan silmək heç nəyi ləğv etmir və pulu qaytarmır. Sadəcə bu maşından təmizləyir."
             ]
           }
         ]
@@ -7059,6 +7149,26 @@ const MANUAL = {
               "Bu, müştəri dəstəyi qutusu deyil. Xəta ilə üzləşən alıcının nə adı, nə e-poçtu göstərilir, nə də ona cavab vermək imkanı var.",
               "Saytınızın hansısa səhifəsi ciddi şəkildə çökəndə ziyarətçi \"Yenidən cəhd et\" (Try again) düyməsi ilə birlikdə qısa \"Nəsə düz getmədi.\" mesajını görür və çökmə avtomatik olaraq bu siyahıya əlavə olunur."
             ]
+          },
+          {
+            "id": "admin-pos-licences",
+            "title": "Satdığınız kassa lisenziyaları",
+            "summary": "Bu kassanı başqa mağazalara satırsınızsa, Point of sale səhifəsindəki bu cədvəl aktivləşdirilmiş bütün lisenziyaları, hansı kompüterdə işlədiyini və sonuncu dəfə nə vaxt istifadə edildiyini göstərir. Yeganə əməliyyatı Release (Azad et) düyməsidir: lisenziyanı kompüterdən ayırır ki, müştəri onu başqa yerdə aktivləşdirə bilsin. Lisenziya satmayan nüsxədə bu cədvəl ümumiyyətlə göstərilmir.",
+            "steps": [
+              "Sales, sonra Point of sale bölməsini açın və \"Register licences\" hissəsinə enin.",
+              "Cədvəli oxuyun. Hər sətir bir lisenziyadır: kimə satılıb, hansı kompüterə bağlıdır, nə vaxt bitir və həmin kassa sonuncu dəfə nə vaxt işlədilib.",
+              "Kəhrəba rəngli \"attempts from other computers\" etiketinə diqqət edin. Bu o deməkdir ki, eyni açar bağlı olduğu maşından başqa bir kompüterə yapışdırılıb.",
+              "Müştəri kassasını həqiqətən dəyişibsə və ya təmizləyibsə, həmin sətirdə Release düyməsini basın. Lisenziya ayrılır və yeni maşında aktivləşdirilə bilər.",
+              "Siyahını yeniləmək üçün xananın yuxarı sağındakı yeniləmə düyməsini basın."
+            ],
+            "notes": [
+              "Release real həyatda per-kompüter lisenziyanı işlək saxlayan dəstək yoludur. Kassa dəyişdirilir, brauzer təmizlənir, kimsə sayt məlumatlarını silir - bunların hamısı yeni kompüter kimi görünür və Release olmasa, sizə pul ödəyən müştəri bloklanmış qalır.",
+              "Azad etmək lisenziyanı ləğv etmir və pulu qaytarmır. Sadəcə hansı kompüterə bağlı olduğunu təmizləyir.",
+              "\"Attempts from other computers\" sayı qeyddir, blok deyil. Həmin cəhdləri edən kassa işləməyə davam edib, sadəcə xəbərdarlıq zolağı göstərib.",
+              "Siyahı ən son aktivləşdirilmiş 200 lisenziyanı göstərir. Axtarış və bundan artıq səhifələmə yoxdur.",
+              "Lisenziya qeydləri yalnız burada oxuna bilir. Onlar bilərəkdən brauzerdən qorunub, ona görə də sındırılmış admin sessiyası müştəri siyahınızı bazadan yükləyə bilməz.",
+              "Bu cədvəl yalnız lisenziya satmaq üçün hazırlanmış nüsxədə görünür. Adi mağaza onu heç vaxt görmür."
+            ]
           }
         ]
       }
@@ -8586,6 +8696,39 @@ const MANUAL = {
               "Столбец channel пуст у всех заказов с сайта и у всех заказов, сделанных до появления кассы. Пустое значение следует читать как продажу онлайн.",
               "Выгрузка охватывает до 5000 заказов — больше, чем 500, которые загружает экран Заказы (Orders).",
               "Возвраты, оформленные на кассе, нигде в админ-панели не привязываются к исходному заказу, и никакой записи о возврате система сейчас не создаёт."
+            ]
+          },
+          {
+            "id": "pos-licence",
+            "title": "Лицензия для кассы",
+            "summary": "Если вы купили эту кассу, вам прислали лицензионный ключ. Вставьте его в поле «Лицензия» (Licence) на экране настроек кассы. Ключ привязан к одному компьютеру: при активации на втором вам сообщат, что лицензия уже используется в другом месте. Если в вашей копии лицензирования нет, этого поля на экране просто не будет и делать ничего не нужно.",
+            "steps": [
+              "В кассе нажмите «Настройки» (Settings) в верхней панели.",
+              "Найдите поле «Лицензия» (Licence). Если его нет, ваша копия не использует лицензионные ключи и этот раздел можно пропустить.",
+              "Вставьте присланный ключ. Он начинается с «cslic1.» и представляет собой одну длинную строку без пробелов.",
+              "Нажмите «Активировать» (Activate). Появится зелёная отметка «Licensed to» с названием вашего магазина.",
+              "Если вы заменили компьютер, попросите продавца лицензии сначала освободить её со старой машины. Пока это не сделано, новая будет сообщать, что лицензия используется в другом месте."
+            ],
+            "fields": [
+              {
+                "name": "Лицензионный ключ (Licence key)",
+                "what": "Длинная строка, начинающаяся с «cslic1.», которую вам прислали при покупке кассы."
+              },
+              {
+                "name": "Активировать (Activate)",
+                "what": "Проверяет ключ и привязывает его к этому компьютеру. Недоступна, пока вы ничего не вставили."
+              },
+              {
+                "name": "Удалить ключ (Remove key)",
+                "what": "Забывает ключ на этом компьютере. Лицензию для другой машины это не освобождает - так может сделать только продавец."
+              }
+            ],
+            "notes": [
+              "Проблема с лицензией никогда не мешает продавать. Максимум - жёлтая полоса сверху кассы, которую можно скрыть до конца дня. Касса не останавливается из-за бумаг.",
+              "Ключ привязан к компьютеру, а не к вам. Очистка данных браузера, другой браузер или режим инкогнито выглядят как новый компьютер, и лицензия сообщит, что используется в другом месте.",
+              "Если при активации нет интернета, ключ всё равно сохраняется, и строка сообщит, что он будет подтверждён при следующем выходе в сеть.",
+              "Некоторые старые браузеры не могут проверить ключ сами. Если вы видите такое сообщение, ключ всё равно сохранён и будет подтверждён сервером, когда касса выйдет в сеть.",
+              "Удаление ключа здесь ничего не отменяет и не возвращает деньги. Оно лишь очищает его на этой машине."
             ]
           }
         ]
@@ -10212,6 +10355,26 @@ const MANUAL = {
               "Это не почтовый ящик службы поддержки. Здесь нет ни имени, ни почты, ни возможности ответить покупателю, у которого возникла ошибка.",
               "Когда страница вашего сайта серьёзно падает, посетитель видит короткое сообщение «Что-то пошло не так» с кнопкой «Попробовать снова» (Try again), а сам сбой автоматически добавляется в этот список."
             ]
+          },
+          {
+            "id": "admin-pos-licences",
+            "title": "Проданные лицензии на кассу",
+            "summary": "Если вы продаёте эту кассу другим магазинам, таблица на странице Point of sale показывает все активированные лицензии, на каком компьютере каждая работает и когда её использовали последний раз. Единственное действие - «Release» (Освободить): оно отвязывает лицензию от компьютера, чтобы покупатель мог активировать её в другом месте. В копии, которая не продаёт лицензии, таблица не показывается вовсе.",
+            "steps": [
+              "Откройте Sales, затем Point of sale и прокрутите до «Register licences».",
+              "Прочитайте таблицу. Каждая строка - одна лицензия: кому продана, к какому компьютеру привязана, когда истекает и когда касса использовалась последний раз.",
+              "Обратите внимание на янтарную отметку «attempts from other computers». Это значит, что тот же ключ вставляли на другой машине, а не на привязанной.",
+              "Нажмите Release в строке, когда покупатель действительно заменил или очистил кассу. Лицензия отвязывается, и её можно активировать на новой машине.",
+              "Кнопка обновления в правом верхнем углу блока перезагружает список."
+            ],
+            "notes": [
+              "Release - это тот путь поддержки, который позволяет привязке к компьютеру пережить реальную жизнь. Кассу меняют, браузер очищают, кто-то стирает данные сайта - всё это выглядит как новый компьютер, и без Release заплативший вам покупатель остаётся заблокированным.",
+              "Освобождение не отменяет лицензию и не возвращает деньги. Оно лишь очищает привязку к компьютеру.",
+              "Счётчик «attempts from other computers» - это запись, а не блокировка. Касса, с которой были попытки, продолжала работать и лишь показывала предупреждающую полосу.",
+              "Список показывает 200 последних активированных лицензий. Поиска и постраничного просмотра дальше нет.",
+              "Записи о лицензиях читаются только здесь. Они намеренно закрыты от браузера, чтобы взломанная сессия администратора не смогла выгрузить ваш список покупателей из базы.",
+              "Эта таблица появляется только в копии, собранной для продажи лицензий. Обычный магазин её никогда не видит."
+            ]
           }
         ]
       }
@@ -11739,6 +11902,39 @@ const MANUAL = {
               "channel sütunu, her web sitesi siparişinde ve kasa var olmadan önce verilmiş her siparişte boştur. Boş olması çevrimiçi satış olarak okunmalıdır.",
               "Dışa aktarım en fazla 5000 siparişi kapsar; Siparişler ekranının yüklediği 500'den fazlasını.",
               "Kasada alınan iadeler, yönetim panelinin hiçbir yerinde asıl siparişe işlenmez ve sistemde şu anda iade kaydı üreten hiçbir şey yoktur."
+            ]
+          },
+          {
+            "id": "pos-licence",
+            "title": "Kasa lisansı",
+            "summary": "Bu kasayı satın aldıysanız size bir lisans anahtarı gönderildi. Anahtarı kasa ayarları ekranındaki Lisans (Licence) kutusuna yapıştırın. Anahtar tek bir bilgisayara bağlıdır: ikinci bir makinede etkinleştirdiğinizde lisansın başka yerde kullanıldığı bildirilir. Kopyanızda lisans yoksa bu kutu ekranda hiç görünmez ve yapılacak bir şey yoktur.",
+            "steps": [
+              "Kasada üst çubuktaki Ayarlar (Settings) düğmesine basın.",
+              "Lisans (Licence) kutusunu bulun. Yoksa kopyanız lisans anahtarı kullanmıyordur ve bu bölümü atlayabilirsiniz.",
+              "Size gönderilen anahtarı yapıştırın. \"cslic1.\" ile başlar ve boşluksuz tek bir uzun satırdır.",
+              "Etkinleştir (Activate) düğmesine basın. \"Licensed to\" ve mağaza adınızı gösteren yeşil bir etiket belirir.",
+              "Bu bilgisayarı değiştirdiyseniz, lisansı size satan kişiden önce eski makineden serbest bırakmasını isteyin. O yapılana kadar yeni bilgisayar lisansın başka yerde kullanıldığını bildirir."
+            ],
+            "fields": [
+              {
+                "name": "Lisans anahtarı (Licence key)",
+                "what": "Kasayı satın aldığınızda gönderilen, \"cslic1.\" ile başlayan uzun satır."
+              },
+              {
+                "name": "Etkinleştir (Activate)",
+                "what": "Anahtarı kontrol eder ve bu bilgisayara bağlar. Bir şey yapıştırmadan pasiftir."
+              },
+              {
+                "name": "Anahtarı kaldır (Remove key)",
+                "what": "Anahtarı bu bilgisayardan siler. Lisansı başka bir makine için serbest bırakmaz - bunu yalnızca satıcı yapabilir."
+              }
+            ],
+            "notes": [
+              "Lisans sorunu satışı asla durdurmaz. En kötü ihtimalle kasanın üstünde sarı bir şerit çıkar ve günün sonuna kadar kapatabilirsiniz. Kasalar evrak yüzünden durmaz.",
+              "Anahtar size değil, bu bilgisayara bağlıdır. Tarayıcı verilerini temizlemek, başka bir tarayıcı ya da gizli pencere kullanmak yeni bir bilgisayar gibi görünür ve lisans başka yerde kullanılıyor olarak bildirilir.",
+              "Etkinleştirme sırasında internet yoksa anahtar yine kaydedilir ve bir sonraki çevrimiçi olduğunuzda onaylanacağı bir satırla belirtilir.",
+              "Bazı eski tarayıcılar anahtarı kendileri doğrulayamaz. Böyle bir mesaj görürseniz anahtar yine saklanır ve kasa çevrimiçi olduğunda sunucu tarafından onaylanır.",
+              "Anahtarı buradan kaldırmak hiçbir şeyi iptal etmez ve para iadesi yapmaz. Yalnızca bu makineden temizler."
             ]
           }
         ]
@@ -13364,6 +13560,26 @@ const MANUAL = {
               "Siz bir sınır koymadıkça kayıtlar süresiz saklanır. Ayarlar (Settings), sonra Genel (General) bölümüne gidin, Kişisel veri saklama (Personal-data retention) başlığını bulun ve Hata kayıtları (gün) [Error logs (days)] kutusuna bir gün sayısı yazın. Boş bırakmak kayıtları süresiz tutar.",
               "Burası bir müşteri destek gelen kutusu değildir. Hatayla karşılaşan müşterinin adı, e-postası ve ona yanıt verme imkânı yoktur.",
               "Sitenizin bir sayfası ciddi biçimde çöktüğünde ziyaretçi, Yeniden dene (Try again) düğmesiyle birlikte kısa bir \"Bir şeyler ters gitti.\" (Something went wrong.) mesajı görür ve çöküş otomatik olarak bu listeye eklenir."
+            ]
+          },
+          {
+            "id": "admin-pos-licences",
+            "title": "Sattığınız kasa lisansları",
+            "summary": "Bu kasayı başka mağazalara satıyorsanız, Point of sale sayfasındaki bu tablo etkinleştirilmiş tüm lisansları, her birinin hangi bilgisayarda çalıştığını ve en son ne zaman kullanıldığını listeler. Tek işlemi Release (Serbest bırak) düğmesidir: lisansı bilgisayardan ayırır, böylece müşteri onu başka bir yerde etkinleştirebilir. Lisans satmayan bir kopyada bu tablo hiç gösterilmez.",
+            "steps": [
+              "Sales, ardından Point of sale bölümünü açın ve \"Register licences\" kısmına inin.",
+              "Tabloyu okuyun. Her satır bir lisanstır: kime satıldığı, hangi bilgisayara bağlı olduğu, ne zaman biteceği ve o kasanın en son ne zaman kullanıldığı.",
+              "Kehribar renkli \"attempts from other computers\" etiketine dikkat edin. Aynı anahtarın, bağlı olduğu makine dışında bir bilgisayara yapıştırıldığı anlamına gelir.",
+              "Müşteri kasasını gerçekten değiştirdiyse ya da sildiyse o satırda Release düğmesine basın. Lisans ayrılır ve yeni makinede etkinleştirilebilir.",
+              "Listeyi yeniden yüklemek için kutunun sağ üstündeki yenileme düğmesine basın."
+            ],
+            "notes": [
+              "Release, bilgisayar başına lisanslamanın gerçek hayatta ayakta kalmasını sağlayan destek yoludur. Kasa değiştirilir, tarayıcı silinir, biri site verilerini temizler - hepsi yeni bir bilgisayar gibi görünür ve Release olmadan size para ödeyen müşteri kilitli kalır.",
+              "Serbest bırakmak lisansı iptal etmez ve para iadesi yapmaz. Yalnızca hangi bilgisayara bağlı olduğunu temizler.",
+              "\"Attempts from other computers\" sayısı bir kayıttır, engelleme değil. O denemeleri yapan kasa çalışmaya devam etti, yalnızca uyarı şeridi gösterdi.",
+              "Liste en son etkinleştirilen 200 lisansı gösterir. Arama ve bunun ötesinde sayfalama yoktur.",
+              "Lisans kayıtları yalnızca burada okunabilir. Ele geçirilmiş bir yönetici oturumu müşteri listenizi veritabanından indiremesin diye tarayıcıya bilerek kapatılmıştır.",
+              "Bu tablo yalnızca lisans satmak üzere hazırlanmış bir kopyada görünür. Sıradan bir mağaza onu hiç görmez."
             ]
           }
         ]

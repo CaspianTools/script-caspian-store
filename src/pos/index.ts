@@ -42,3 +42,21 @@ export {
   type BuildReceiptArgs,
 } from './receipt/build-receipt-model';
 export { PosReceipt, type PosReceiptProps } from './receipt/pos-receipt';
+export {
+  usePosLicense,
+  verifyLicenseKey,
+  parseLicenseKey,
+  formatLicenseKey,
+  isLicensingConfigured,
+  POS_LICENSE_PUBLIC_KEY,
+  LICENSE_KEY_PREFIX,
+  PosLicenseBanner,
+  PosLicenseSection,
+  type PosLicenseState,
+  type PosLicenseCheck,
+  type PosLicenseStatus,
+  type PosLicensePayload,
+  type PosSeatState,
+  type PosLicenseBannerProps,
+  type PosLicenseSectionProps,
+} from './license';

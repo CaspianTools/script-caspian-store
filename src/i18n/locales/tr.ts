@@ -181,6 +181,14 @@ const tr: MessageDict = {
   'pos.license.bannerUnlicensed': 'Lisanssız kasa — Ayarlar’dan etkinleştirin.',
   'pos.license.bannerExpired': 'Lisans süresi doldu — Ayarlar’dan yenileyin.',
   'pos.license.dismiss': 'Kapat',
+  'pos.license.remove': 'Anahtarı kaldır',
+  'pos.license.activated': 'Lisans etkinleştirildi',
+  'pos.license.keyHelp':
+    'Bu kasayı satın aldığınızda size gönderilen anahtarı yapıştırın. Yalnızca bu bilgisayara bağlıdır.',
+  'pos.license.unverifiable':
+    'Anahtar kaydedildi, ancak bu tarayıcı onu doğrulayamıyor. Kasa çevrimiçi olduğunda onaylanacak.',
+  'pos.license.offline':
+    'Bu bilgisayara kaydedildi. Bir sonraki çevrimiçi olduğunuzda lisans sunucusunda onaylanacak.',
 };
 
 export default tr;

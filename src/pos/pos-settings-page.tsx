@@ -16,6 +16,9 @@ import {
   writeStorageMode,
 } from './pos-preferences';
 import type { PosStorageMode } from './storage/types';
+import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { usePosLicense } from './license/use-pos-license';
+import { PosLicenseSection } from './license/pos-license-section';
 
 export interface PosSettingsPageProps {
   className?: string;
@@ -33,6 +36,8 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const t = useT();
   const { toast } = useToast();
   const { locale, setLocale, pinned } = useLocaleControls();
+  const { functions } = useCaspianFirebase();
+  const license = usePosLicense(functions);
 
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
@@ -98,6 +103,8 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
           <Input value={deviceId} readOnly style={{ fontFamily: 'ui-monospace, monospace' }} />
         </label>
       </section>
+
+      <PosLicenseSection license={license} />
 
       <section style={section}>
         <span style={fieldLabel}>{t('pos.storage.title')}</span>

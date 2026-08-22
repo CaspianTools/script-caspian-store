@@ -870,3 +870,31 @@ test('staff cannot self-promote to admin', async () => {
   await seedStaff('cashier1');
   await assertFails(updateDoc(doc(authed('cashier1'), 'users', 'cashier1'), { role: 'admin' }));
 });
+
+// --- POS licences (v10.1.0) ---
+//
+// `posLicenses` carries the customer name for every licence sold, so it is
+// server-only on BOTH sides. Admins reach it through the `listPosLicenses`
+// callable instead, which keeps a compromised admin session from vacuuming the
+// customer list out through the SDK.
+
+test('posLicenses: staff cannot read or write', async () => {
+  await env.clearFirestore();
+  await seedStaff('cashier1');
+  const db = authed('cashier1');
+  await assertFails(getDoc(doc(db, 'posLicenses', 'lic1')));
+  await assertFails(setDoc(doc(db, 'posLicenses', 'lic1'), { deviceId: 'x' }));
+});
+
+test('posLicenses: admin cannot read or write directly either', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  const db = authed('admin1');
+  await assertFails(getDoc(doc(db, 'posLicenses', 'lic1')));
+  await assertFails(setDoc(doc(db, 'posLicenses', 'lic1'), { name: 'Acme' }));
+});
+
+test('posLicenses: a signed-out visitor is denied', async () => {
+  await env.clearFirestore();
+  await assertFails(getDoc(doc(unauthed(), 'posLicenses', 'lic1')));
+});

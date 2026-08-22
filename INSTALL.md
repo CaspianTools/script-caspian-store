@@ -386,6 +386,33 @@ has installed, on an 80 mm continuous roll. Set the header and footer under **Sa
 interface language, and its scanner timing. One shop can run an English till at the counter and
 another in a different language without touching the website.
 
+**Selling register licences (v10.1.0+, optional).** Only relevant if you *distribute* this product to
+other shops. An ordinary store ignores all of this — with no signing key configured, the licence
+surface does not render at all.
+
+```bash
+# Once, ever. Back the private key up somewhere that is not this repo.
+node scripts/generate-pos-signing-key.mjs
+
+# Paste the printed public key into BOTH:
+#   src/pos/license/public-key.ts      -> POS_LICENSE_PUBLIC_KEY
+#   caspian-pos functions environment  -> CASPIAN_POS_LICENSE_PUBLIC_KEY
+
+# Then per sale:
+node scripts/mint-pos-license.mjs --name "Acme Shop" --expires 2027-01-01
+```
+
+Send the printed `cslic1.…` key to the customer; they paste it at `/pos/settings`. Activation binds it
+to one computer, and `/admin/pos` lists what has been sold with a **Release** button for when a till is
+replaced or wiped — without that, a customer who paid you gets locked out by their own IT.
+
+**Be clear-eyed about what this enforces.** This library is MIT-licensed with public source, so the
+browser-side check is a speed bump, not a lock — a fork can delete it. The half with teeth is
+server-side: `activatePosLicense` re-verifies the signature and records which device claimed the
+licence, so a key used on a second machine is logged where the customer cannot edit it. Enforcement is
+**warning-only by design**: a licence problem shows a dismissible strip and never blocks a sale,
+because a shop that cannot serve a customer over paperwork is a worse outcome than an unlicensed shop.
+
 **Register-only stores.** Turn on **Register-only store** under Sales → Point of sale (or scaffold with
 `--pos-only`) and the public storefront is switched off: `/` redirects to `/pos` and storefront routes
 show a notice. `/admin`, `/login` and `/setup` stay reachable, and you can switch it back on at any

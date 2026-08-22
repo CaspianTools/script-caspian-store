@@ -388,6 +388,7 @@ export {
 
 // --- Point of sale (v10.0.0) ---
 export { AdminPosPage, type AdminPosPageProps } from './admin/admin-pos-page';
+export { AdminPosLicenses, type AdminPosLicensesProps } from './admin/admin-pos-licenses';
 export {
   PosGuard,
   PosRoot,
@@ -431,6 +432,22 @@ export {
   type PosReceiptLine,
   type PosReceiptTender,
   type BuildReceiptArgs,
+  usePosLicense,
+  verifyLicenseKey,
+  parseLicenseKey,
+  formatLicenseKey,
+  isLicensingConfigured,
+  POS_LICENSE_PUBLIC_KEY,
+  LICENSE_KEY_PREFIX,
+  PosLicenseBanner,
+  PosLicenseSection,
+  type PosLicenseState,
+  type PosLicenseCheck,
+  type PosLicenseStatus,
+  type PosLicensePayload,
+  type PosSeatState,
+  type PosLicenseBannerProps,
+  type PosLicenseSectionProps,
 } from './pos';
 export {
   findProductByCode,

@@ -1516,6 +1516,21 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.pos.col.items': 'Items',
   'admin.pos.col.payment': 'Payment',
   'admin.pos.col.total': 'Total',
+  'admin.pos.license.title': 'Register licences',
+  'admin.pos.license.subtitle':
+    'Licences sold for this product, and which computer each one is running on.',
+  'admin.pos.license.none': 'No register has been activated yet.',
+  'admin.pos.license.col.customer': 'Sold to',
+  'admin.pos.license.col.computer': 'Computer',
+  'admin.pos.license.col.expires': 'Expires',
+  'admin.pos.license.col.lastSeen': 'Last seen',
+  'admin.pos.license.release': 'Release',
+  'admin.pos.license.released': 'Seat released',
+  'admin.pos.license.unbound': 'Not in use',
+  'admin.pos.license.blocked':
+    '{count, plural, one {# attempt from another computer} other {# attempts from other computers}}',
+  'admin.pos.license.confirmRelease':
+    'Release this licence from its computer? The customer can then activate it on a different one. Use this when a till has been replaced or wiped.',
 
   // --- Point of sale (v10.0.0) ---
   'pos.title': 'Register',
@@ -1647,6 +1662,14 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.license.bannerUnlicensed': 'Unlicensed register — please activate in Settings.',
   'pos.license.bannerExpired': 'Licence expired — please renew in Settings.',
   'pos.license.dismiss': 'Dismiss',
+  'pos.license.remove': 'Remove key',
+  'pos.license.activated': 'Licence activated',
+  'pos.license.keyHelp':
+    'Paste the key you were sent when you bought this register. It is tied to this one computer.',
+  'pos.license.unverifiable':
+    'Key stored, but this browser cannot check it. It will be confirmed when the register is online.',
+  'pos.license.offline':
+    'Saved on this computer. It will be confirmed with the licence server next time you are online.',
 
 };
 

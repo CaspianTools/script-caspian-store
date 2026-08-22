@@ -111,3 +111,4 @@ export {
   type MultiSelectProps,
 } from './admin-multi-select';
 export { AdminPosPage, type AdminPosPageProps } from './admin-pos-page';
+export { AdminPosLicenses, type AdminPosLicensesProps } from './admin-pos-licenses';

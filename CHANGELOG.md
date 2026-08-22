@@ -16,6 +16,65 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.1.0 — Per-computer register licences
+
+Adds the machinery to sell the in-person register as a licensed product: an Ed25519-signed key you
+mint per sale, a register that verifies it offline and binds it to one computer, and an admin table
+showing what has been sold with the one support action that matters — releasing a seat when a till is
+replaced.
+
+**Off unless you turn it on.** With no vendor public key configured — the default, and what every
+ordinary shop gets — the licence surface does not render at all: no box on the settings screen, no
+banner, no admin table. A store that never bought a licence from anyone is never asked about one.
+
+### No consumer action required
+
+Nothing changes for an existing store. If you *distribute* this product and want to sell licences, see
+the new "Selling register licences" section in [INSTALL.md](INSTALL.md); it is a one-time key
+generation plus an environment variable on the `caspian-pos` codebase.
+
+### Added
+
+- **Licence key format** (`cslic1.<payload>.<signature>`) and codecs in
+  [src/pos/license/key-format.ts](src/pos/license/key-format.ts). The signature covers the *encoded
+  payload text*, not a re-serialised object, so the two verifiers can never disagree about canonical
+  JSON — key order, whitespace and number formatting are all irrelevant by construction.
+- **Offline verification** in the register ([verify.ts](src/pos/license/verify.ts)) via Web Crypto
+  Ed25519, so a key pasted at a counter with no internet still gets an immediate answer.
+- **`scripts/generate-pos-signing-key.mjs`** — creates the keypair once, writes the private half to a
+  gitignored file, prints the public half to paste into the library and the Functions environment. It
+  refuses to overwrite an existing key, because doing so would invalidate every licence already sold.
+- **`scripts/mint-pos-license.mjs`** — mints one key per sale with a name, optional expiry and tier.
+- **`activatePosLicense`, `listPosLicenses`, `releasePosLicenseSeat`** in the `caspian-pos` codebase.
+  Activation re-verifies the signature server-side with `node:crypto` and binds the licence to the
+  first `deviceId` that presents it, inside a transaction. A second computer is recorded — with a
+  count and the offending device id — rather than refused.
+- **Licence panel** at `/pos/settings` and a dismissible warning strip across the register.
+- **`/admin/pos` → Register licences** — who bought what, which computer it runs on, attempts from
+  other machines, and a **Release** button.
+- **User manual** gains two sections in all four languages: licensing a register, and the licences you
+  have sold. 64 sections now.
+
+### Notes — what this does and does not enforce
+
+Stated plainly, because it affects a commercial decision rather than a technical one.
+
+This library is MIT-licensed with public source. **A check that runs in the browser is a speed bump,
+not a lock** — anyone can fork the package and delete it. Client-side verification exists so an honest
+shop gets instant, offline feedback about the key it pasted, not to stop a determined copy.
+
+The half with teeth is server-side. `activatePosLicense` re-verifies the same signature with the Admin
+SDK and records which computer claimed each licence in a collection the customer cannot read or write,
+so a key used on a second machine leaves an auditable trail.
+
+**Enforcement is warning-only, deliberately.** A licence problem shows a strip that can be dismissed
+for the session and nothing else: `commitPosSale` never consults licence state. A shop that cannot
+serve a customer because of a clock skew, a network blip, or an expired card on the vendor's side is a
+far worse outcome than an unlicensed shop, and a till is the last place to learn that lesson.
+
+`posLicenses` is server-only on both read and write. Admins reach it through `listPosLicenses` instead
+of the SDK, so a compromised admin session cannot download the customer list out of the database.
+
 ## v10.0.1 — A user manual in four languages, and five register fixes it found
 
 Adds [`docs/user-manual.html`](docs/user-manual.html): one self-contained file covering every screen a
