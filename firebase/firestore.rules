@@ -19,6 +19,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Staff signal (v10.0.0) — the POS cashier role. Same claim-first,
+    // Firestore-fallback shape as isAdmin(), and deliberately inclusive of
+    // 'admin': an owner working the counter must not need a second account.
+    // Staff reach the register at /pos and read the catalog; they are denied
+    // every admin surface (AdminGuard still requires 'admin') and every
+    // settings write. `syncUserRoleClaim` mirrors users/{uid}.role onto the
+    // Auth custom claim so the fast path needs no document read.
+    function isStaff() {
+      return request.auth != null
+          && (request.auth.token.role in ['staff', 'admin']
+              || (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                  && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin']));
+    }
+
     match /products/{id} {
       allow read: if true;
       allow write: if isAdmin();
@@ -132,8 +146,8 @@ service cloud.firestore {
     // doc holds the IG Business account id and the access tokens (long-lived user
     // token + Page token), written/read only by the functions-instagram Cloud
     // Functions (Admin SDK, which bypasses rules). These are secrets, so deny ALL
-    // client access. Clients (e.g. the Caspian POS) talk to the callables, which
-    // return connection status + feed + comments only — never a token.
+    // client access. Clients (the admin panel and the register) talk to the
+    // callables, which return connection status + feed + comments — never a token.
     match /instagram/{id} {
       allow read, write: if false;
     }
@@ -305,6 +319,40 @@ service cloud.firestore {
                     && request.resource.data.libraryVersion.size() <= 40
                     && request.resource.data.seenCount == 1;
       allow read, update, delete: if isAdmin();
+    }
+
+    // --- Point of sale (v10.0.0) ---
+
+    // Till sessions. Written ONLY by the caspian-pos Cloud Functions via the
+    // Admin SDK (which bypasses rules), never from the register — otherwise a
+    // cashier could edit `expectedCash` to paper over a drawer variance.
+    // Staff read so the register can show its own open shift and the X-report.
+    match /posSessions/{id} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
+    // Register registry: one document per physical till / browser profile.
+    // Staff read (the register resolves its own label + saved locale on boot);
+    // admins name and retire registers from the admin panel.
+    match /posDevices/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    // Monotonic receipt-number counter (`posCounters/receipt`). Server-only on
+    // both sides: allocation happens inside the commitPosSale transaction, and
+    // a client that could read it would learn the store's total sale count.
+    match /posCounters/{id} {
+      allow read, write: if false;
+    }
+
+    // Sold per-computer POS licenses. Server-only: `activatePosLicense` binds a
+    // key to the first deviceId that presents it, and the documents carry
+    // customer contact details. A register learns its own status from the
+    // callable's response, never by reading the collection.
+    match /posLicenses/{id} {
+      allow read, write: if false;
     }
   }
 }

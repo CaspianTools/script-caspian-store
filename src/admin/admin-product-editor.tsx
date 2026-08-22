@@ -54,6 +54,7 @@ interface FormState {
   brand: string;
   /** Optional stock-keeping unit. Free text; not enforced unique. */
   sku: string;
+  barcode: string;
   description: string;
   shortDescription: string;
   /** Rich-text HTML produced by `<RichTextEditor>`. Sanitized on render. */
@@ -84,6 +85,7 @@ const empty: FormState = {
   slug: '',
   brand: '',
   sku: '',
+  barcode: '',
   description: '',
   shortDescription: '',
   details: '',
@@ -244,6 +246,7 @@ export function AdminProductEditor({
           slug: p.slug ?? '',
           brand: p.brand,
           sku: p.sku ?? '',
+          barcode: p.barcode ?? '',
           description: p.description,
           shortDescription: p.shortDescription ?? '',
           details: p.details ?? '',
@@ -480,6 +483,7 @@ export function AdminProductEditor({
         slug: form.slug.trim() || undefined,
         brand: form.brand.trim(),
         sku: form.sku.trim() || undefined,
+        barcode: form.barcode.trim() || undefined,
         description: form.description.trim(),
         shortDescription: shortDescTrimmed || undefined,
         details: detailsTrimmed || undefined,
@@ -575,6 +579,17 @@ export function AdminProductEditor({
             onChange={(e) => setForm((s) => ({ ...s, sku: e.target.value }))}
             placeholder="Stock-keeping unit (optional)"
           />
+        </Field>
+        <Field label="Barcode">
+          <Input
+            value={form.barcode}
+            onChange={(e) => setForm((s) => ({ ...s, barcode: e.target.value }))}
+            placeholder="Scan or type the barcode (optional)"
+          />
+          <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+            EAN, UPC, or Code 128. With the field focused, most USB scanners fill this in
+            directly — just scan the product. This is what the POS register matches first.
+          </p>
         </Field>
         <Field label="Description">
           <Textarea

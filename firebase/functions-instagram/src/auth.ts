@@ -5,7 +5,7 @@ import { getFirestore } from 'firebase-admin/firestore';
  * Defense-in-depth admin gate: requires both the `admin` custom claim AND
  * `users/{uid}.role === 'admin'` in Firestore. Used by the connect/disconnect
  * and comment-moderation callables (the token-touching, write surfaces).
- * Mirror of functions-inventory/src/auth.ts.
+ * Mirror of functions-pos/src/auth.ts.
  */
 export async function assertAdmin(request: CallableRequest): Promise<void> {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in required.');

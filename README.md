@@ -99,9 +99,11 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | **Order confirmation:** `<OrderConfirmationPage />` — polls Firestore for the webhook-created order | ✅ |
 | **Order history:** `<OrderHistoryList />` for signed-in customers; `<GuestOrderLookupPage />` at `/order-status` for guests (order # + email) | ✅ |
 | **Wishlist:** `useWishlist()` + `<WishlistButton />` + `<WishlistPanel />` (account page section) | ✅ |
+| **Point of sale:** `/pos` full-screen register — barcode scanning (USB/Bluetooth keyboard-wedge, camera, manual), cash / card / split tender with change due, 80 mm receipt, server-priced sales via the `caspian-pos` codebase; per-device language + scanner settings at `/pos/settings`; register-only mode disables the storefront | ✅ (v10.0.0+) |
+| **Staff role:** `staff` accounts reach the register and the catalog but no admin surface; three-role picker in `<AdminUsersPage />`, enforced in `firestore.rules` via `isStaff()` | ✅ (v10.0.0+) |
 | **Admin:** `<AdminGuard />`, `<AdminShell />`, `<AdminDashboard />`, product CRUD, orders (table + drag-and-drop Kanban board) + status, reviews moderation, `<AdminAboutPage />` (installed version + GitHub release feed + one-click self-update) | ✅ |
 | **Auth:** `<LoginPage />`, `<RegisterPage />`, `<ForgotPasswordPage />`, `<AccountPage />` — sidebar-driven: profile (name/email/phone/photo), orders, addresses, wishlist, security | ✅ |
-| **i18n:** `<LocaleProvider>` + `useT()` + `DEFAULT_MESSAGES` + `<LocaleSwitcher />` (all surfaces migrated) | ✅ |
+| **i18n:** `<LocaleProvider>` + `useT()` + `DEFAULT_MESSAGES` + `<LocaleSwitcher />`; **per-device persisted locale** via `useLocaleControls()` with a store default from `ScriptSettings.defaultLocale`; built-in **az / ru / tr** dictionaries covering the register + shared strings (everything else falls back to English) | ✅ (persistence + locales v10.0.0+) |
 | **Theming:** 10-theme `THEME_CATALOG` + Avada-style `<AdminAppearancePage>` grid + popup `<AdminAppearancePreviewPage>` with dummy-data storefront | ✅ |
 | **Profile photo:** `<ProfilePhotoCard />` (Firebase Storage, JPEG/PNG/WebP ≤5 MB) | ✅ |
 | **Delete account:** `<DeleteAccountCard />` with reauth + typed confirmation | ✅ |

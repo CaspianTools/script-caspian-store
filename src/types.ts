@@ -30,6 +30,16 @@ export interface Product {
   brand: string;
   /** Optional stock-keeping unit. Admin-entered free text; not enforced unique. */
   sku?: string;
+  /**
+   * Scannable barcode payload — EAN-13 / EAN-8 / UPC-A / UPC-E / Code 128 /
+   * Code 39, stored verbatim as the scanner emits it. This is the POS
+   * register's primary lookup key (`findProductByCode` tries `barcode` before
+   * `sku`). Admin-entered free text; not enforced unique, because the same
+   * physical barcode legitimately appears on multi-pack and single variants
+   * in some catalogs — the register shows a picker when a code matches more
+   * than one product. Added in v10.0.0.
+   */
+  barcode?: string;
   description: string;
   /**
    * Short marketing blurb shown in the PDP hero column above the Add-to-Cart
@@ -99,6 +109,20 @@ export interface OrderItem {
   selectedSize: string | null;
   selectedColor: string | null;
   imageUrl: string;
+  /**
+   * SKU / barcode captured at sale time. Snapshots (like `name` and `price`)
+   * so a reprinted receipt and a till return still show the codes the cashier
+   * actually scanned, even if the product is later re-coded. POS sales always
+   * populate these; online orders leave them undefined. Added in v10.0.0.
+   */
+  sku?: string;
+  barcode?: string;
+  /**
+   * Per-line discount in currency units, applied by the cashier at the till
+   * (a damaged-item markdown, a manager override). Subtracted from
+   * `price * quantity` when computing the order subtotal. Added in v10.0.0.
+   */
+  lineDiscount?: number;
 }
 
 export interface OrderPayment {
@@ -111,8 +135,46 @@ export interface OrderPayment {
    * set `'stripe'`; manual-payment orders (BACS / cheque / cash on delivery)
    * set it to the matching plugin id so admins can filter + display the
    * right "awaiting payment" instructions. Added in v2.8.
+   *
+   * v10.0.0 added the three in-person values written by the POS register:
+   * `'cash'` (money taken at the till), `'card-terminal'` (settled on a
+   * standalone card machine the library does not drive), and `'pos-split'`
+   * (more than one tender — see `Order.tenders` for the breakdown).
    */
-  method?: 'stripe' | 'bacs' | 'cheque' | 'cod';
+  method?: 'stripe' | 'bacs' | 'cheque' | 'cod' | 'cash' | 'card-terminal' | 'pos-split';
+}
+
+/**
+ * One tender line on an in-person sale. A single-tender sale has exactly one
+ * entry; a split payment ("$20 cash, rest on card") has several whose
+ * `amount`s sum to `Order.total`. Added in v10.0.0.
+ */
+export interface PosTender {
+  kind: 'cash' | 'card' | 'other';
+  /** Amount applied to the sale from this tender. */
+  amount: number;
+  /** Cash only — what the customer handed over. `tendered - amount = change`. */
+  tendered?: number;
+  /** Cash only — change given back, already rounded per `PosSettings.roundCashTo`. */
+  change?: number;
+  /** Free-text reference: card auth code, voucher number, transfer id. */
+  reference?: string;
+}
+
+/**
+ * Recorded when an offline sale replayed against stock that had since run
+ * out. The sale still commits — the money was taken at the counter and the
+ * goods left the shop — so this is a reconciliation signal for the admin,
+ * not an error. Added in v10.0.0.
+ */
+export interface PosStockShortfall {
+  productId: string;
+  /** Stock key: the size, or `_default` for sizeless products. */
+  sizeKey: string;
+  /** Units requested by the sale. */
+  requested: number;
+  /** Units actually on hand at replay time (may be zero or negative). */
+  available: number;
 }
 
 export interface ShippingInfo {
@@ -154,9 +216,56 @@ export interface Order {
    * created with the matching `userEmail`. Added in v9.1.
    */
   isGuest?: boolean;
+  /**
+   * Where the sale was rung up. Absent means `'online'` — every order written
+   * before v10.0.0 predates the POS, so the absent case must keep reading as
+   * a storefront sale. `'pos'` orders are written exclusively by the
+   * `commitPosSale` callable, never from the browser.
+   */
+  channel?: 'online' | 'pos';
+  /** POS only — uid of the staff/admin account that rang the sale. */
+  cashierId?: string;
+  /** POS only — the register device that captured the sale (see `PosDevice`). */
+  deviceId?: string;
+  /** POS only — the `posSessions` shift this sale belongs to, when shifts are in use. */
+  sessionId?: string;
+  /**
+   * POS only — human-readable receipt number, allocated server-side from the
+   * `posCounters/receipt` document so it is monotonic across every register
+   * in the store. Distinct from the Firestore document id, which is the
+   * device-scoped idempotency key.
+   */
+  receiptNumber?: string;
+  /** POS only — how the sale was paid. See `PosTender`. */
+  tenders?: PosTender[];
+  /**
+   * POS only — set on a refund order, pointing at the id of the sale being
+   * returned. Refund orders carry negative `items[].quantity` and a negative
+   * `total`, so store-wide sums net out correctly without special-casing.
+   */
+  refundOf?: string | null;
+  /** POS only — see `PosStockShortfall`. Absent on every healthy sale. */
+  stockShortfall?: PosStockShortfall[];
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
+
+/**
+ * `ShippingInfo` stamped on a walk-in POS sale. `Order.shippingInfo` is
+ * required and read unguarded across the admin order pages, the confirmation
+ * page, the CSV export, and the transactional emails — so rather than widen
+ * it to optional (and force a null check into every one of those call sites),
+ * an in-person sale records that the goods left with the customer. A POS sale
+ * that *is* being delivered gets a real address attached at the till instead.
+ */
+export const POS_WALK_IN_SHIPPING: ShippingInfo = {
+  name: 'Walk-in customer',
+  address: '',
+  city: '',
+  zip: '',
+  country: '',
+  shippingMethod: 'pos-pickup',
+};
 
 export interface UserAddress {
   id: string;
@@ -174,12 +283,31 @@ export interface UserProfile {
   displayName: string;
   photoURL: string | null;
   phone?: string;
-  role: 'customer' | 'admin';
+  /**
+   * `'staff'` (v10.0.0) is the cashier role: it reaches the POS register at
+   * `/pos` and reads the catalog, but is denied every admin surface and every
+   * settings write. `AdminGuard` still requires `'admin'`; `PosGuard` accepts
+   * `'staff'` or `'admin'`. The value is mirrored onto a Firebase Auth custom
+   * claim by the `syncUserRoleClaim` trigger so Firestore and Storage rules
+   * can authorize without a cross-document read.
+   */
+  role: UserRole;
   addresses: UserAddress[];
   wishlist: string[];
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
+
+/**
+ * Account roles, least to most privileged. Added `'staff'` in v10.0.0 for
+ * POS cashiers — see `UserProfile.role`.
+ */
+export type UserRole = 'customer' | 'staff' | 'admin';
+
+export const USER_ROLES: readonly UserRole[] = ['customer', 'staff', 'admin'] as const;
+
+/** Roles allowed to open the POS register. */
+export const POS_ROLES: readonly UserRole[] = ['staff', 'admin'] as const;
 
 export type OrderStatus =
   | 'pending'
@@ -500,6 +628,121 @@ export interface InventorySettings {
   stockDisplay: 'always' | 'low' | 'never';
 }
 
+// --- Point of sale (v10.0.0) ---
+
+/**
+ * Operational POS configuration, stored on `SiteSettings.pos` next to
+ * `inventory`. The *routing* switches (`pos`, `posOnly`) live on
+ * `ScriptSettings.features` instead, because `CaspianRoot` needs them from
+ * context to decide what to render before any Firestore read resolves.
+ */
+export interface PosSettings {
+  /** Free-text lines printed above the sale on every receipt (store name, address, tax id). */
+  receiptHeader: string;
+  /** Free-text lines printed below the totals (returns policy, thank-you). */
+  receiptFooter: string;
+  /** Print the tax breakdown on the receipt. Only meaningful when `SiteSettings.taxMode` is configured. */
+  showTaxOnReceipt: boolean;
+  /**
+   * When true, the register refuses to ring a sale until a shift is open.
+   * Stores that don't reconcile a cash drawer leave this false.
+   */
+  requireShift: boolean;
+  /**
+   * Smallest cash denomination in circulation, used to round the change due
+   * (e.g. `0.05` where 1¢/2¢ coins are withdrawn). `0` disables rounding.
+   * Only cash tenders are rounded — card totals are always exact.
+   */
+  roundCashTo: number;
+  /**
+   * Prefix for generated receipt numbers, e.g. `'R'` → `R-000123`. The
+   * numeric part comes from the store-wide `posCounters/receipt` document.
+   */
+  receiptPrefix: string;
+}
+
+export const DEFAULT_POS_SETTINGS: PosSettings = {
+  receiptHeader: '',
+  receiptFooter: '',
+  showTaxOnReceipt: true,
+  requireShift: false,
+  roundCashTo: 0,
+  receiptPrefix: 'R',
+};
+
+/**
+ * A register — one physical till, browser profile, or tablet. Created from
+ * `/pos/settings` the first time a device opens the register; the id is a
+ * `crypto.randomUUID()` held in that device's localStorage, so it survives
+ * reloads but is never shared between devices. Stamped on every sale as
+ * `Order.deviceId` and used to namespace offline idempotency keys.
+ */
+export interface PosDevice {
+  id: string;
+  /** Merchant-facing name: "Front counter", "Tablet 2". */
+  label: string;
+  /** Per-device UI language override. Falls back to the store default. */
+  locale?: string;
+  /** Which receipt transport this device last used. */
+  printerTransport?: PosPrinterTransport;
+  lastSeenAt?: Timestamp;
+  createdAt?: Timestamp;
+}
+
+/**
+ * How a register gets a receipt out. `'browser'` is `window.print()` against
+ * an OS printer driver and works everywhere; the other two stream ESC/POS
+ * bytes straight to the printer and are Chromium-only. Added in v10.0.0
+ * (transports implemented in v10.3.0).
+ */
+export type PosPrinterTransport = 'browser' | 'webserial' | 'webusb';
+
+/** Money moved in or out of the drawer during a shift, outside of sales. */
+export interface PosCashMovement {
+  kind: 'in' | 'out';
+  amount: number;
+  /** Why: "float top-up", "supplier paid cash", "bank drop". */
+  reason: string;
+  /** uid of whoever recorded it. */
+  byUserId: string;
+  at: Timestamp;
+}
+
+/**
+ * One cashier's till session. Written exclusively by the `openPosShift` /
+ * `closePosShift` callables — clients read but never write, so `expectedCash`
+ * cannot be edited to hide a variance. Implemented in v10.2.0.
+ */
+export interface PosSession {
+  id: string;
+  cashierId: string;
+  cashierName: string;
+  deviceId: string;
+  status: 'open' | 'closed';
+  openedAt: Timestamp;
+  /** Cash in the drawer at open. */
+  openingFloat: number;
+  /**
+   * Paid-in / paid-out events. Embedded rather than a subcollection: a shift
+   * accumulates tens of these, not thousands, and the Z-report needs them all
+   * at once anyway.
+   */
+  movements: PosCashMovement[];
+  closedAt?: Timestamp;
+  /** What the cashier counted at close. */
+  countedCash?: number;
+  /** Server-computed: opening float + cash sales + movements − cash refunds. */
+  expectedCash?: number;
+  /** `countedCash − expectedCash`. Negative means the drawer is short. */
+  variance?: number;
+  /** Totals per tender kind over the shift, for the Z-report. */
+  totalsByTender?: Record<string, number>;
+  /** Gross sales, refunds, and net for the shift. */
+  salesTotal?: number;
+  refundsTotal?: number;
+  saleCount?: number;
+}
+
 /**
  * Global shipping checkout-behavior toggles consumed by `<CheckoutPage>` when
  * computing which rates to render. Added in v2.9.
@@ -720,6 +963,8 @@ export interface SiteSettings {
   cartBehavior?: CartBehavior;
   /** Inventory tracking + display config. Added in v2.9. */
   inventory?: InventorySettings;
+  /** Point-of-sale receipt + drawer config. Added in v10.0.0. See `PosSettings`. */
+  pos?: PosSettings;
   /** Checkout shipping rate display rules. Added in v2.9. */
   shippingOptions?: ShippingOptions;
   /** Account-creation policy (guest checkout, registration gating). Added in v2.10. */
@@ -1022,6 +1267,18 @@ export interface FeatureFlags {
    */
   guestCheckout: boolean;
   multiLanguage: boolean;
+  /**
+   * Expose the in-person register at `/pos`. Off by default so existing
+   * storefronts don't sprout a new public route on upgrade. Added in v10.0.0.
+   */
+  pos?: boolean;
+  /**
+   * Register-only deployment: `/` redirects to `/pos` and every storefront
+   * route renders a "storefront disabled" notice. `/pos`, `/admin`, `/login`
+   * and `/setup` stay reachable, so this is a switch an admin can flip back —
+   * not a build-time fork. Implies `pos`. Added in v10.0.0.
+   */
+  posOnly?: boolean;
 }
 
 /** Per-card UI display toggles for `<ProductCard />`. Added in v8.18.0. */
@@ -1093,6 +1350,8 @@ export const DEFAULT_SCRIPT_SETTINGS: Omit<ScriptSettings, 'updatedAt'> = {
     promoCodes: true,
     guestCheckout: true,
     multiLanguage: false,
+    pos: false,
+    posOnly: false,
   },
   productCard: {
     showWishlistIcon: true,

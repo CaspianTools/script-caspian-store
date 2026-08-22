@@ -14,7 +14,7 @@ interface HelpSection {
 
 /**
  * In-admin Help & documentation: an operator handbook for running the store —
- * catalog, orders, plugins, settings, roles — plus the Caspian POS (desktop) and
+ * catalog, orders, plugins, settings, roles — plus the in-person register and
  * Instagram channel integrations. A sticky table-of-contents sidebar (scroll-spy
  * + click-to-jump) and a search box make it navigable. Content is read-only prose
  * (hard-coded English, like the other admin pages) and brand-neutral so it reads
@@ -56,9 +56,9 @@ const HELP_SECTIONS: HelpSection[] = [
           materials, …) are flat.
         </li>
         <li>
-          <b>Locations</b> (if your store uses multi-location inventory) define the warehouses/stores stock
-          lives in. Stock is derived from a movement ledger, not edited directly — receive/count/transfer
-          adjustments flow through it.
+          <b>Stock</b> is a per-size count on each product, edited in the product editor. Online orders and
+          in-person sales both decrement it automatically. Turn tracking, low-stock badges, and
+          out-of-stock behaviour on or off under Settings → General → Inventory.
         </li>
         <li>
           <b>Import / Export</b> (Settings) moves catalog data in bulk as CSV — download a template, fill it
@@ -180,36 +180,49 @@ const HELP_SECTIONS: HelpSection[] = [
           script) or via the setup wizard.
         </li>
         <li>
-          <b>Cashiers</b> for the Caspian POS need the <b>staff</b> role (Users → make staff). Staff can ring
-          up sales and read inventory but can’t change store settings.
+          <b>Cashiers</b> need the <b>staff</b> role (Users → set the role menu to Staff). Staff can ring up
+          sales at <code>/pos</code> and read the catalog, but can’t change store settings.
         </li>
       </ul>
     ),
   },
   {
     id: 'pos',
-    title: 'Caspian POS (desktop)',
+    title: 'Point of sale (in-person register)',
     body: (
       <>
         <p>
-          The <b>Caspian POS</b> is a desktop app that connects to this store’s Firebase backend to ring up
-          in-person sales offline and sync them back. To set it up:
+          The <b>register</b> is built in. It runs in this same app at <code>/pos</code> — there is
+          nothing extra to install. Turn it on under <b>Sales → Point of sale</b>.
         </p>
         <ol>
           <li>
-            In <b>Settings → API keys (Desktop POS)</b>, click <b>Generate key</b> and copy the connection
-            key (<code>cspos1.…</code>). It only bundles the store’s public web config — it isn’t a password.
-          </li>
-          <li>Give each cashier the <b>staff</b> role (Users → make staff).</li>
-          <li>
-            Create at least one <b>active</b> inventory location (Locations) — the POS sells from a location,
-            and only active ones appear there.
+            Give each cashier the <b>staff</b> role (Users → pick <b>Staff</b> from the role menu).
+            Staff can ring up sales and read the catalog, but cannot reach the admin panel or change
+            settings.
           </li>
           <li>
-            In the POS app: add the shop (paste the key), sign in, <b>Sync stock</b>, pick the location, and
-            sell. Sales captured offline replay exactly once when back online.
+            Put a <b>barcode</b> on your products (Products → edit → Barcode). Almost any USB or
+            Bluetooth scanner will fill that field in for you — click into it and scan.
+          </li>
+          <li>
+            Open <code>/pos</code> and scan. A hardware scanner needs no setup at all; you can also use
+            the camera (Chrome and Edge only), or type a barcode or SKU by hand.
+          </li>
+          <li>
+            Take cash, card, or a split of both. Change is worked out for you, and the receipt prints
+            through your normal printer dialog.
           </li>
         </ol>
+        <p>
+          Each register remembers its own name, language, and scanner settings at{' '}
+          <code>/pos/settings</code> — so one shop can run an English till at the counter and another
+          in a different language, without touching the website.
+        </p>
+        <p>
+          Prices, discounts, and stock are worked out on the server rather than by the till, so a sale
+          records what a product actually costs even if someone tampers with the browser.
+        </p>
       </>
     ),
   },
@@ -219,9 +232,9 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <>
         <p>
-          With the Instagram functions deployed, the Caspian POS can view this store’s Instagram feed,
-          moderate comments, publish a product as a post, and delete posts. The Meta app secret and access
-          token stay server-side in your Cloud Functions — they never reach the desktop app. To go live:
+          With the Instagram functions deployed, staff can view this store’s Instagram feed, moderate
+          comments, publish a product as a post, and delete posts. The Meta app secret and access token
+          stay server-side in your Cloud Functions — they never reach the browser. To go live:
         </p>
         <ol>
           <li>
@@ -368,7 +381,7 @@ export function AdminHelpPage({ className }: AdminHelpPageProps): ReactNode {
       <style>{HELP_STYLES}</style>
       <div className="cs-help__head">
         <h1>Help &amp; documentation</h1>
-        <p>Run the store, set up the Caspian POS, and go live with the Instagram channel.</p>
+        <p>Run the store, open the in-person register, and go live with the Instagram channel.</p>
       </div>
 
       <div className="cs-help__layout">

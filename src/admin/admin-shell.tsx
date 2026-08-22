@@ -40,6 +40,7 @@ import {
   UserIcon,
   UsersIcon,
 } from '../ui/icons';
+import { useT } from '../i18n/locale-context';
 import { Badge } from '../ui/misc';
 import { cn } from '../utils/cn';
 import { CASPIAN_STORE_VERSION } from '../version';
@@ -54,7 +55,19 @@ import {
 export interface AdminNavLeaf {
   kind?: 'leaf';
   href: string;
+  /**
+   * Fallback English label. Kept required so consumers passing their own
+   * `navItems` are unaffected, and so a missing translation still renders a
+   * word rather than a raw message key.
+   */
   label: string;
+  /**
+   * i18n key resolved through `useT()`. When present it wins over `label`.
+   * Added in v10.0.0: the sidebar was hardcoded English, which made the new
+   * language picker look half-broken — the register would translate while the
+   * navigation around it did not.
+   */
+  labelKey?: string;
   /** Optional icon — any renderable node. Defaults from the catalog below. */
   icon?: ReactNode;
 }
@@ -64,6 +77,8 @@ export interface AdminNavGroup {
   /** Stable key used to persist expand/collapse state in localStorage. */
   id: string;
   label: string;
+  /** i18n key resolved through `useT()`. Wins over `label` when present. */
+  labelKey?: string;
   icon?: ReactNode;
   children: AdminNavLeaf[];
   /**
@@ -86,50 +101,51 @@ function isGroup(item: AdminNavItem): item is AdminNavGroup {
 const ICON_SIZE = 16;
 
 export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
-  { href: '/admin', label: 'Dashboard', icon: <DashboardIcon size={ICON_SIZE} /> },
+  { href: '/admin', label: 'Dashboard', labelKey: 'admin.nav.dashboard', icon: <DashboardIcon size={ICON_SIZE} /> },
   {
     kind: 'group',
     id: 'catalog',
-    label: 'Catalog',
+    label: 'Catalog', labelKey: 'admin.nav.catalog',
     icon: <PackageIcon size={ICON_SIZE} />,
     children: [
-      { href: '/admin/products', label: 'Products', icon: <TagIcon size={ICON_SIZE} /> },
-      { href: '/admin/taxonomies', label: 'Taxonomies', icon: <BookmarkIcon size={ICON_SIZE} /> },
-      { href: '/admin/categories', label: 'Categories', icon: <FolderIcon size={ICON_SIZE} /> },
-      { href: '/admin/collections', label: 'Collections', icon: <LayersIcon size={ICON_SIZE} /> },
-      { href: '/admin/promo-codes', label: 'Promo codes', icon: <TicketIcon size={ICON_SIZE} /> },
+      { href: '/admin/products', label: 'Products', labelKey: 'admin.nav.products', icon: <TagIcon size={ICON_SIZE} /> },
+      { href: '/admin/taxonomies', label: 'Taxonomies', labelKey: 'admin.nav.taxonomies', icon: <BookmarkIcon size={ICON_SIZE} /> },
+      { href: '/admin/categories', label: 'Categories', labelKey: 'admin.nav.categories', icon: <FolderIcon size={ICON_SIZE} /> },
+      { href: '/admin/collections', label: 'Collections', labelKey: 'admin.nav.collections', icon: <LayersIcon size={ICON_SIZE} /> },
+      { href: '/admin/promo-codes', label: 'Promo codes', labelKey: 'admin.nav.promoCodes', icon: <TicketIcon size={ICON_SIZE} /> },
     ],
   },
   {
     kind: 'group',
     id: 'people',
-    label: 'People',
+    label: 'People', labelKey: 'admin.nav.people',
     icon: <UsersIcon size={ICON_SIZE} />,
     children: [
-      { href: '/admin/users', label: 'Users', icon: <UserIcon size={ICON_SIZE} /> },
-      { href: '/admin/contacts', label: 'Contacts', icon: <MailIcon size={ICON_SIZE} /> },
-      { href: '/admin/subscribers', label: 'Subscribers', icon: <MailIcon size={ICON_SIZE} /> },
+      { href: '/admin/users', label: 'Users', labelKey: 'admin.nav.users', icon: <UserIcon size={ICON_SIZE} /> },
+      { href: '/admin/contacts', label: 'Contacts', labelKey: 'admin.nav.contacts', icon: <MailIcon size={ICON_SIZE} /> },
+      { href: '/admin/subscribers', label: 'Subscribers', labelKey: 'admin.nav.subscribers', icon: <MailIcon size={ICON_SIZE} /> },
     ],
   },
   {
     kind: 'group',
     id: 'sales',
-    label: 'Sales',
+    label: 'Sales', labelKey: 'admin.nav.sales',
     icon: <ShoppingCartIcon size={ICON_SIZE} />,
     children: [
-      { href: '/admin/orders', label: 'Orders', icon: <ReceiptIcon size={ICON_SIZE} /> },
-      { href: '/admin/reviews', label: 'Reviews', icon: <StarIcon size={ICON_SIZE} /> },
+      { href: '/admin/orders', label: 'Orders', labelKey: 'admin.nav.orders', icon: <ReceiptIcon size={ICON_SIZE} /> },
+      { href: '/admin/reviews', label: 'Reviews', labelKey: 'admin.nav.reviews', icon: <StarIcon size={ICON_SIZE} /> },
+      { href: '/admin/pos', label: 'Point of sale', labelKey: 'admin.nav.pos', icon: <ShoppingCartIcon size={ICON_SIZE} /> },
     ],
   },
   {
     kind: 'group',
     id: 'content',
-    label: 'Content',
+    label: 'Content', labelKey: 'admin.nav.content',
     icon: <FileTextIcon size={ICON_SIZE} />,
     children: [
-      { href: '/admin/pages', label: 'Pages', icon: <FileIcon size={ICON_SIZE} /> },
-      { href: '/admin/faqs', label: 'FAQs', icon: <HelpIcon size={ICON_SIZE} /> },
-      { href: '/admin/journal', label: 'Journal', icon: <BookOpenIcon size={ICON_SIZE} /> },
+      { href: '/admin/pages', label: 'Pages', labelKey: 'admin.nav.pages', icon: <FileIcon size={ICON_SIZE} /> },
+      { href: '/admin/faqs', label: 'FAQs', labelKey: 'admin.nav.faqs', icon: <HelpIcon size={ICON_SIZE} /> },
+      { href: '/admin/journal', label: 'Journal', labelKey: 'admin.nav.journal', icon: <BookOpenIcon size={ICON_SIZE} /> },
     ],
   },
   {
@@ -142,7 +158,7 @@ export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
     // group's id is `plugins`.
     kind: 'group',
     id: 'plugins',
-    label: 'Plugins',
+    label: 'Plugins', labelKey: 'admin.nav.plugins',
     icon: <PlugIcon size={ICON_SIZE} />,
     href: '/admin/plugins',
     children: [],
@@ -150,34 +166,34 @@ export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
   {
     kind: 'group',
     id: 'settings',
-    label: 'Settings',
+    label: 'Settings', labelKey: 'admin.nav.settings',
     icon: <SettingsIcon size={ICON_SIZE} />,
     href: '/admin/settings',
     children: [
-      { href: '/admin/appearance', label: 'Appearance', icon: <PaletteIcon size={ICON_SIZE} /> },
-      { href: '/admin/templates', label: 'Templates', icon: <BookmarkIcon size={ICON_SIZE} /> },
+      { href: '/admin/appearance', label: 'Appearance', labelKey: 'admin.nav.appearance', icon: <PaletteIcon size={ICON_SIZE} /> },
+      { href: '/admin/templates', label: 'Templates', labelKey: 'admin.nav.templates', icon: <BookmarkIcon size={ICON_SIZE} /> },
     ],
   },
-  { href: '/admin/help', label: 'Help & docs', icon: <HelpIcon size={ICON_SIZE} /> },
-  { href: '/admin/about', label: 'About', icon: <InfoIcon size={ICON_SIZE} /> },
+  { href: '/admin/help', label: 'Help & docs', labelKey: 'admin.nav.help', icon: <HelpIcon size={ICON_SIZE} /> },
+  { href: '/admin/about', label: 'About', labelKey: 'admin.nav.about', icon: <InfoIcon size={ICON_SIZE} /> },
 ];
 
 // Settings sub-sidebar items. Exported for use by AdminSettingsShell so both
 // surfaces share the same ordering and icon set. Appearance promoted to a
 // top-level Settings sidebar child in v8.2.0 (was a sub-tab here in v7.1.0–v8.1.x).
 export const SETTINGS_SUB_NAV: AdminNavLeaf[] = [
-  { href: '/admin/settings/general', label: 'General', icon: <SlidersIcon size={ICON_SIZE} /> },
-  { href: '/admin/settings/taxonomies', label: 'Taxonomies', icon: <LayersIcon size={ICON_SIZE} /> },
+  { href: '/admin/settings/general', label: 'General', labelKey: 'admin.nav.general', icon: <SlidersIcon size={ICON_SIZE} /> },
+  { href: '/admin/settings/taxonomies', label: 'Taxonomies', labelKey: 'admin.nav.taxonomies', icon: <LayersIcon size={ICON_SIZE} /> },
   {
     href: '/admin/settings/shipping-options',
-    label: 'Shipping options',
+    label: 'Shipping options', labelKey: 'admin.nav.shippingOptions',
     icon: <TruckIcon size={ICON_SIZE} />,
   },
-  { href: '/admin/settings/emails', label: 'Emails', icon: <InboxIcon size={ICON_SIZE} /> },
-  { href: '/admin/settings/languages', label: 'Languages', icon: <GlobeIcon size={ICON_SIZE} /> },
+  { href: '/admin/settings/emails', label: 'Emails', labelKey: 'admin.nav.emails', icon: <InboxIcon size={ICON_SIZE} /> },
+  { href: '/admin/settings/languages', label: 'Languages', labelKey: 'admin.nav.languages', icon: <GlobeIcon size={ICON_SIZE} /> },
   {
     href: '/admin/settings/import-export',
-    label: 'Import / Export',
+    label: 'Import / Export', labelKey: 'admin.nav.importExport',
     icon: <TableIcon size={ICON_SIZE} />,
   },
 ];
@@ -536,6 +552,21 @@ const leafRowStyle = (active: boolean, indent: number): CSSProperties => ({
   whiteSpace: 'nowrap',
 });
 
+/**
+ * Resolve a nav item's visible text: translation when the item declares a key
+ * and the dictionary has it, otherwise the item's own English label. Falling
+ * back to `label` rather than to the key itself matters for consumers who pass
+ * custom `navItems` without keys — they keep their own wording untouched.
+ */
+function useNavLabel(): (item: { label: string; labelKey?: string }) => string {
+  const t = useT();
+  return (item) => {
+    if (!item.labelKey) return item.label;
+    const translated = t(item.labelKey);
+    return translated === item.labelKey ? item.label : translated;
+  };
+}
+
 function LeafLink({
   leaf,
   active,
@@ -547,6 +578,7 @@ function LeafLink({
   Link: ReturnType<typeof useCaspianLink>;
   indent?: number;
 }) {
+  const navLabel = useNavLabel();
   return (
     <Link
       href={leaf.href}
@@ -554,7 +586,7 @@ function LeafLink({
     >
       <span style={leafRowStyle(active, indent)}>
         {leaf.icon && <span style={{ display: 'inline-flex', flexShrink: 0 }}>{leaf.icon}</span>}
-        {leaf.label}
+        {navLabel(leaf)}
       </span>
     </Link>
   );
@@ -569,14 +601,16 @@ function RailLink({
   active: boolean;
   Link: ReturnType<typeof useCaspianLink>;
 }) {
+  const navLabel = useNavLabel();
+  const label = navLabel(leaf);
   return (
     <Link
       href={leaf.href}
-      aria-label={leaf.label}
+      aria-label={label}
       className={cn('caspian-admin-nav-item', active && 'is-active')}
     >
       <span
-        title={leaf.label}
+        title={label}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -589,7 +623,7 @@ function RailLink({
           textDecoration: 'none',
         }}
       >
-        {leaf.icon ?? leaf.label.slice(0, 1).toUpperCase()}
+        {leaf.icon ?? label.slice(0, 1).toUpperCase()}
       </span>
     </Link>
   );
@@ -608,6 +642,7 @@ function GroupNode({
   isActive: (href: string) => boolean;
   Link: ReturnType<typeof useCaspianLink>;
 }) {
+  const navLabel = useNavLabel();
   const groupActive =
     (group.href && isActive(group.href)) ||
     group.children.some((c) => isActive(c.href));
@@ -640,7 +675,7 @@ function GroupNode({
   const labelContent = (
     <>
       {group.icon && <span style={{ display: 'inline-flex', flexShrink: 0 }}>{group.icon}</span>}
-      <span style={{ flex: 1 }}>{group.label}</span>
+      <span style={{ flex: 1 }}>{navLabel(group)}</span>
     </>
   );
 

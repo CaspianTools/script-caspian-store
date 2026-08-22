@@ -43,6 +43,13 @@ export function caspianCollections(db: Firestore) {
     // doc id is the lowercase, trimmed email; on signup `onUserCreate`
     // promotes the matching account to admin and deletes the doc.
     pendingSuperAdmin: collection(db, 'pendingSuperAdmin'),
+    // v10.0.0 point of sale. `posSessions` and `posCounters` are written only
+    // by the `caspian-pos` Cloud Functions (Admin SDK); clients read sessions
+    // and never touch the counter. `posDevices` is the register registry —
+    // staff read it, admins name/retire registers.
+    posSessions: collection(db, 'posSessions'),
+    posDevices: collection(db, 'posDevices'),
+    posCounters: collection(db, 'posCounters'),
     scriptSettingsDoc: doc(db, 'scriptSettings', 'site'),
     siteSettingsDoc: doc(db, 'settings', 'site'),
     emailSettingsDoc: doc(db, 'emailSettings', 'site'),

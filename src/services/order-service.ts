@@ -75,3 +75,23 @@ export async function hasUserPurchasedProduct(
     return data.items?.some((item) => item.productId === productId) ?? false;
   });
 }
+
+/**
+ * In-person sales, newest first. Backed by the `(channel, createdAt)` composite
+ * index added in v10.0.0.
+ *
+ * Note this returns only orders written by the register — orders created before
+ * v10.0.0 have no `channel` field at all, and Firestore equality filters skip
+ * documents missing the field, which is the behaviour we want here: everything
+ * that predates the POS was a storefront sale.
+ */
+export async function listPosOrders(db: Firestore, max = 50): Promise<Order[]> {
+  const q = query(
+    caspianCollections(db).orders,
+    where('channel', '==', 'pos'),
+    orderBy('createdAt', 'desc'),
+    firestoreLimit(max),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Order, 'id'>) }));
+}

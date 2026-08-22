@@ -6,6 +6,7 @@ import { AdminDashboard } from './admin-dashboard';
 import { AdminProductsList } from './admin-products-list';
 import { AdminProductEditor } from './admin-product-editor';
 import { AdminOrdersList } from './admin-orders-list';
+import { AdminPosPage } from './admin-pos-page';
 import { AdminOrderDetail } from './admin-order-detail';
 import { AdminReviewsModeration } from './admin-reviews-moderation';
 import { AdminJournalPage } from './admin-journal-page';
@@ -70,6 +71,8 @@ export function AdminRoot(): ReactNode {
       return <AdminSubscribersPage />;
     case 'reviews':
       return <AdminReviewsModeration />;
+    case 'pos':
+      return <AdminPosPage />;
     case 'brands':
       // Brands moved under the Taxonomies page. Redirect the old top-level URL
       // for one release so existing bookmarks don't 404.

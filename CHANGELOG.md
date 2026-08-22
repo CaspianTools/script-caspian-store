@@ -16,6 +16,143 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.0.0 — Built-in point of sale: barcode register, staff role, and a language you can actually pick
+
+Adds an in-person **register** to the library. It runs in the same app at `/pos`, scans barcodes with
+any USB or Bluetooth scanner, takes cash and card, prints a receipt, and decrements stock — with the
+whole sale priced on the server rather than by the till. A store can run register-only, with the
+online storefront switched off entirely.
+
+Two long-standing gaps closed alongside it. `UserProfile.role` gains **`staff`**, the cashier role the
+in-app help page has described since v9.24 but which never existed in the type, the rules, or the UI.
+And the locale is now **persisted per device**, so "let the store admin pick the interface language"
+is expressible for the first time — before this, `locale` was a bare provider prop with no storage
+anywhere in the library.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v10.0.0
+
+# 1. New collections and a new isStaff() predicate — rules MUST be redeployed
+#    or /pos and the admin POS page will fail with "missing or insufficient
+#    permissions".
+npm run firebase:sync           # copies firestore.rules + indexes + storage.rules
+firebase deploy --only firestore:rules,firestore:indexes
+
+# 2. Deploy the new POS Cloud Functions codebase. Sales cannot commit without
+#    it. No secrets to set.
+cd functions-pos && npm install && cd ..
+firebase deploy --only functions:caspian-pos
+
+# 3. Redeploy the admin codebase — it gains setUserRole, and the role-claim
+#    trigger now mirrors `staff` as well as `admin`.
+firebase deploy --only functions:caspian-admin
+```
+
+Then in the admin panel: **Sales → Point of sale → Enable the register**, set at least one user to
+**Staff** under Users, and add barcodes to products (Products → edit → Barcode).
+
+Scaffolded sites that predate this release do not have a `functions-pos/` directory. Copy it from the
+installed package (`node_modules/@caspian-explorer/script-caspian-store/firebase/functions-pos`) and
+add the `caspian-pos` codebase to `firebase.json`, or re-scaffold with `--with-pos`.
+
+### Added
+
+- **`/pos` register** ([src/pos/](src/pos/)) — full-screen, outside both the storefront shell and the
+  admin sidebar. Scan or search on the left, live ticket on the right; per-line quantity and cashier
+  markdown; cash / card / split tender with change due; sale-complete screen with an 80 mm receipt.
+  `PosGuard` admits `staff` and `admin` and refuses when the feature is off.
+- **Barcode scanning** ([use-barcode-scanner.ts](src/pos/hardware/use-barcode-scanner.ts)) — three
+  inputs into one handler. A **keyboard-wedge** listener (inter-key timing, `Enter` terminates) works
+  with essentially every USB/Bluetooth retail scanner with no setup, no driver, and no permission
+  prompt. **Camera** scanning via the native `BarcodeDetector`, feature-detected so Safari and Firefox
+  get an explicit message rather than a dead button. **Manual entry** is always present, because a
+  scuffed label is a daily event at a counter.
+- **`Product.barcode`** — the register's primary lookup key, tried before `sku` and the document id.
+  Added to the product editor, the CSV export, the import template, and the import parser together, so
+  an export → import round-trip preserves it.
+- **`caspian-pos` Cloud Functions** ([firebase/functions-pos/](firebase/functions-pos/)) —
+  `commitPosSale` prices the whole ticket from Firestore inside one transaction, applies the promo,
+  decrements stock, allocates a monotonic receipt number, and writes the order. `getPosCatalogDelta`
+  serves the offline catalog cache landing in a later release. No secrets required.
+- **Idempotent sales.** The client-minted `saleId` (`deviceId` + a per-register counter) *is* the
+  Firestore document id, so a double-tap, a retried call, and a replayed offline sale all collide with
+  the committed order instead of charging twice. The register reuses one id across retries of the same
+  sale for exactly this reason.
+- **`staff` role**, end to end — `UserProfile.role`, an `isStaff()` predicate in Firestore rules, a new
+  `setUserRole` callable, a three-role picker in Users and the user detail page, and nine rules tests
+  covering both the custom-claim and Firestore-document authorization paths.
+- **Per-device locale** — `useLocaleControls()`, `localStorage` persistence, and a store default
+  published from `ScriptSettings.defaultLocale` (which existed but was read by nothing). Resolution is
+  prop → device → store default → `en`; the prop keeps its old precedence so no existing consumer
+  changes behaviour.
+- **Azerbaijani, Russian, and Turkish** ([src/i18n/locales/](src/i18n/locales/)). Scope is stated
+  plainly: these cover the register and the shared `common.*` / `auth.*` strings its operator meets.
+  The other ~1000 keys still fall through to English. Machine-translating them to look complete would
+  be worse than the visible gap.
+- **`/admin/pos`** — enable the register, edit receipt header/footer, and see recent in-person sales.
+- **Register-only mode** — `features.posOnly` redirects `/` to `/pos` and disables storefront routes
+  at runtime. `/admin`, `/login` and `/setup` stay reachable, so it is a switch an admin can flip back,
+  not a build-time fork. Scaffolder flags `--with-pos` and `--pos-only`.
+- **Localized admin navigation** — the sidebar was hardcoded English, which would have made the new
+  language picker look half-broken. Nav items now carry a `labelKey`; a custom `navItems` array without
+  keys is unaffected.
+
+### Fixed
+
+- **`CASPIAN_FIRESTORE_RULES` was 181 lines stale.** [README.md](README.md) tells consumers to deploy
+  from this export, but the constant had drifted to 130 lines against the 311 in
+  `firebase/firestore.rules` — missing `taxonomyTerms`, `emailPluginInstalls`, `instagram`, the entire
+  page builder, `contacts`, `searchTerms`, `errorLogs`, `adminTodos`, `pendingSuperAdmin`, the
+  corrected `users` create/update split, and the admin cart read. Anyone who followed the README had
+  rules that denied the setup wizard and half the admin panel. Both rules constants and the indexes
+  constant are now **generated from the files on disk** by the `tsup.config.ts` pre-step (the same
+  mechanism that already produced `src/version.ts`), so this class of drift cannot recur. The old
+  byte-for-byte guard on `CASPIAN_STORAGE_RULES` is removed as redundant.
+- **The in-admin help page described features that did not exist** — a separate desktop POS app, a
+  `Settings → API keys` screen with `cspos1.…` pairing keys, and a multi-location `Locations` page with
+  a stock-movement ledger. None were ever in this repo. The POS section now documents the register that
+  actually ships, and the inventory paragraph describes the per-size stock that actually exists.
+- **`admin.users.role.staff` / `admin.users.filter.staff` labelled the *admin* role**, because no staff
+  role existed. They now name what they say, and `admin.users.role.admin` was added.
+- **A dangling reference to a `functions-inventory` codebase** in
+  [functions-instagram/src/auth.ts](firebase/functions-instagram/src/auth.ts) now points at
+  `functions-pos`. Its `assertStaff()` was unreachable code until this release, since no account could
+  hold `role: 'staff'`.
+- `firebase/functions-instagram/lib/` and `firebase/functions-pos/lib/` added to `.gitignore` — the
+  instagram one had been missing since v9.21.
+
+### Changed
+
+- **`UserProfile.role`** widens to `'customer' | 'staff' | 'admin'`. Additive; existing values are
+  unaffected.
+- **`OrderPayment.method`** gains `'cash' | 'card-terminal' | 'pos-split'`.
+- **`Order`** gains `channel`, `cashierId`, `deviceId`, `sessionId`, `receiptNumber`, `tenders`,
+  `refundOf`, and `stockShortfall`. All optional — an absent `channel` reads as `'online'`, which is
+  correct for every order written before this release.
+- **`LocaleProvider`** resolves an omitted `locale` prop from the device preference and store default
+  rather than always `'en'`. It also now sets `document.documentElement.dir` and `lang`, which it
+  should always have done — previously it set only a CSS custom property that nothing consumed, so an
+  RTL locale rendered left-to-right regardless.
+- `syncAdminClaim` mirrors any claim-bearing role, not just `admin`. **The exported symbol keeps its
+  old name on purpose** so the deployed function's identity is unchanged and no consumer is prompted to
+  delete and recreate a trigger; the file and the const are named `syncUserRoleClaim`.
+- Walk-in POS sales record a `pos-pickup` shipping stub rather than widening `Order.shippingInfo` to
+  optional, which would have forced a null check into every admin order screen, the confirmation page,
+  the CSV export, and the transactional emails.
+
+### Notes
+
+`commitPosSale` decrements stock but never refuses a sale for insufficient stock. An in-person sale has
+already happened — the customer is holding the goods and the money is in the drawer — so losing the
+sale record is strictly worse than recording an oversell. Shortfalls are stamped on
+`Order.stockShortfall` for the admin to reconcile.
+
+A pre-existing gap this release does **not** change: `orders` still allows `create: if isAuth()` with no
+shape validation, which the storefront's manual-payment plugins rely on. POS sales do not widen it —
+they never write orders from the browser.
+
 ## v9.26.1 — Security: raise functions-template dependency floors to patched versions
 
 Ports the dependency-vulnerability hardening done in the `luivante` standalone site back into the

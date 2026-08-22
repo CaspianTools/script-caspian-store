@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import type { ContactSubmission, Order, OrderStatus, Product, CartItemRef, UserProfile } from '../types';
+import {
+  USER_ROLES,
+  type ContactSubmission,
+  type Order,
+  type OrderStatus,
+  type Product,
+  type CartItemRef,
+  type UserProfile,
+  type UserRole,
+} from '../types';
 import { getUserById } from '../services/user-service';
 import { getOrdersByUser } from '../services/order-service';
 import { loadUserCart } from '../services/cart-service';
@@ -15,6 +24,7 @@ import { useT } from '../i18n/locale-context';
 import { useToast } from '../ui/toast';
 import { Badge, Skeleton, Avatar } from '../ui/misc';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Select } from '../ui/select';
 
 // Statuses that count as a completed purchase for the lifetime-spend total.
 const PURCHASED_STATUSES: OrderStatus[] = ['paid', 'processing', 'shipped', 'delivered'];
@@ -55,7 +65,7 @@ export function AdminUserDetail({
   const [messages, setMessages] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [role, setRole] = useState<'admin' | 'customer'>('customer');
+  const [role, setRole] = useState<UserRole>('customer');
   const [roleBusy, setRoleBusy] = useState(false);
 
   useEffect(() => {
@@ -130,25 +140,25 @@ export function AdminUserDetail({
 
   const isSelf = !!user && !!profile && profile.uid === user.uid;
 
-  const runRoleChange = async (action: 'promote' | 'demote') => {
+  const CONFIRM_KEY: Record<UserRole, string> = {
+    admin: 'admin.users.action.confirmMakeAdmin',
+    staff: 'admin.users.action.confirmMakeStaff',
+    customer: 'admin.users.action.confirmMakeCustomer',
+  };
+
+  const runRoleChange = async (nextRole: UserRole) => {
     if (!profile) return;
-    if (typeof window !== 'undefined') {
-      const ok = window.confirm(
-        action === 'promote'
-          ? t('admin.users.action.confirmPromote')
-          : t('admin.users.action.confirmDemote'),
-      );
-      if (!ok) return;
-    }
+    if (typeof window !== 'undefined' && !window.confirm(t(CONFIRM_KEY[nextRole]))) return;
     setRoleBusy(true);
     try {
-      const name = action === 'promote' ? 'promoteUserToAdmin' : 'demoteAdminToCustomer';
-      await httpsCallable(functions, name)({ uid: profile.uid });
-      setRole(action === 'promote' ? 'admin' : 'customer');
-      toast({ title: action === 'promote' ? 'Promoted to admin' : 'Removed admin role' });
+      // `setUserRole` supersedes promoteUserToAdmin / demoteAdminToCustomer,
+      // which only knew two roles and cannot express staff.
+      await httpsCallable(functions, 'setUserRole')({ uid: profile.uid, role: nextRole });
+      setRole(nextRole);
+      toast({ title: t('admin.users.action.roleChanged') });
     } catch (error) {
-      reportServiceError(db, `admin-user-detail.${action}`, error);
-      toast({ title: 'Action failed', variant: 'destructive' });
+      reportServiceError(db, 'admin-user-detail.setRole', error);
+      toast({ title: t('admin.users.action.errorGeneric'), variant: 'destructive' });
     } finally {
       setRoleBusy(false);
     }
@@ -215,8 +225,8 @@ export function AdminUserDetail({
               fontSize: 13,
             }}
           >
-            <Badge variant={role === 'admin' ? 'secondary' : 'outline'}>
-              {role === 'admin' ? t('admin.users.role.staff') : t('admin.users.role.customer')}
+            <Badge variant={role === 'customer' ? 'outline' : 'secondary'}>
+              {t(`admin.users.role.${role}`)}
             </Badge>
             <span>{profile.email}</span>
             {profile.phone && <span>· {profile.phone}</span>}
@@ -243,26 +253,20 @@ export function AdminUserDetail({
           >
             {t('admin.users.detail.copyUid')}
           </button>
-          {!isSelf &&
-            (role === 'admin' ? (
-              <button
-                type="button"
-                style={actionBtnStyle}
-                disabled={roleBusy}
-                onClick={() => runRoleChange('demote')}
-              >
-                {t('admin.users.action.demote')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                style={actionBtnStyle}
-                disabled={roleBusy}
-                onClick={() => runRoleChange('promote')}
-              >
-                {t('admin.users.action.promote')}
-              </button>
-            ))}
+          {!isSelf && (
+            // A picker, not a toggle: there are three roles now and
+            // "promote"/"demote" cannot express staff.
+            <Select
+              aria-label={t('admin.users.action.setRole')}
+              value={role}
+              disabled={roleBusy}
+              onChange={(e) => runRoleChange(e.target.value as UserRole)}
+              options={USER_ROLES.map((r) => ({
+                value: r,
+                label: t(`admin.users.role.${r}`),
+              }))}
+            />
+          )}
         </div>
       </section>
 

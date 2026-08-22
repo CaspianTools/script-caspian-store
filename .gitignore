@@ -3,6 +3,8 @@ dist/
 firebase/functions-admin/lib/
 firebase/functions-email/lib/
 firebase/functions-stripe/lib/
+firebase/functions-instagram/lib/
+firebase/functions-pos/lib/
 # Claude Code local state. Ignore everything under .claude/ EXCEPT a committed
 # settings.json, so shared worktree/session config can be tracked while the
 # isolated worktrees (.claude/worktrees/, parallel sessions) never surface as

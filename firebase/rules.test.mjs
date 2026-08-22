@@ -772,3 +772,101 @@ test('storage pageContents/**: admin (custom claim) write allowed', async () => 
     }),
   );
 });
+
+// --- Point of sale: the `staff` role (v10.0.0) ---
+//
+// `isStaff()` mirrors `isAdmin()`: the Auth custom claim is the fast path and a
+// Firestore document read is the fallback. Both paths are exercised below —
+// `staffClaim()` for the claim, `seedStaff()` + `authed()` for the document —
+// because a cashier promoted before their token rotated relies on the second
+// one, and it is the path most likely to rot unnoticed.
+
+async function seedStaff(uid) {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users', uid), {
+      email: `${uid}@test.example`,
+      role: 'staff',
+      addresses: [],
+      wishlist: [],
+    });
+  });
+}
+
+function staffClaim(uid) {
+  return env.authenticatedContext(uid, { role: 'staff' }).firestore();
+}
+
+test('posSessions: staff (Firestore role) can read', async () => {
+  await env.clearFirestore();
+  await seedStaff('cashier1');
+  await assertSucceeds(getDoc(doc(authed('cashier1'), 'posSessions', 'shift1')));
+});
+
+test('posSessions: staff (custom claim) can read', async () => {
+  await env.clearFirestore();
+  await assertSucceeds(getDoc(doc(staffClaim('cashier1'), 'posSessions', 'shift1')));
+});
+
+test('posSessions: customer cannot read', async () => {
+  await env.clearFirestore();
+  await assertFails(getDoc(doc(authed('bob'), 'posSessions', 'shift1')));
+});
+
+test('posSessions: even staff cannot write — Cloud Functions own this', async () => {
+  await env.clearFirestore();
+  await seedStaff('cashier1');
+  // The whole point: a cashier must not be able to edit `expectedCash` and
+  // paper over a drawer variance at close.
+  await assertFails(
+    setDoc(doc(authed('cashier1'), 'posSessions', 'shift1'), { cashierId: 'cashier1' }),
+  );
+});
+
+test('posSessions: admin cannot write either', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  await assertFails(
+    setDoc(doc(authed('admin1'), 'posSessions', 'shift1'), { expectedCash: 0 }),
+  );
+});
+
+test('posCounters: nobody reads or writes the receipt counter', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  await assertFails(getDoc(doc(authed('admin1'), 'posCounters', 'receipt')));
+  await assertFails(setDoc(doc(authed('admin1'), 'posCounters', 'receipt'), { value: 999 }));
+});
+
+test('posLicenses: server-only on both sides', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  await assertFails(getDoc(doc(authed('admin1'), 'posLicenses', 'lic1')));
+  await assertFails(setDoc(doc(authed('admin1'), 'posLicenses', 'lic1'), { deviceId: 'x' }));
+});
+
+test('posDevices: staff read, admin write, customer denied', async () => {
+  await env.clearFirestore();
+  await seedStaff('cashier1');
+  await seedAdmin('admin1');
+  await assertSucceeds(getDoc(doc(authed('cashier1'), 'posDevices', 'till1')));
+  await assertFails(setDoc(doc(authed('cashier1'), 'posDevices', 'till1'), { label: 'Front' }));
+  await assertSucceeds(setDoc(doc(authed('admin1'), 'posDevices', 'till1'), { label: 'Front' }));
+  await assertFails(getDoc(doc(authed('bob'), 'posDevices', 'till1')));
+});
+
+test('staff can read the catalog but cannot write products or settings', async () => {
+  await env.clearFirestore();
+  await seedStaff('cashier1');
+  const db = authed('cashier1');
+  await assertSucceeds(getDoc(doc(db, 'products', 'p1')));
+  // Staff sell; they do not re-price. Everything admin stays shut.
+  await assertFails(setDoc(doc(db, 'products', 'p1'), { name: 'Tampered', price: 1 }));
+  await assertFails(setDoc(doc(db, 'settings', 'site'), { brandName: 'Nope' }));
+  await assertFails(setDoc(doc(db, 'scriptSettings', 'site'), { brandName: 'Nope' }));
+});
+
+test('staff cannot self-promote to admin', async () => {
+  await env.clearFirestore();
+  await seedStaff('cashier1');
+  await assertFails(updateDoc(doc(authed('cashier1'), 'users', 'cashier1'), { role: 'admin' }));
+});

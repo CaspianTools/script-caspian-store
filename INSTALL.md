@@ -275,7 +275,8 @@ v1.16.0+ ships **three codebases** so you can deploy admin triggers without havi
 - `caspian-admin` — `onUserCreate` (auto-promote first user to admin), `claimAdmin`, scheduled retention cleanup, `linkGuestOrdersOnUserCreate` (re-stamps prior guest orders to a newly-registered account that matches the same email — v9.1+), `getGuestOrder` (unauthenticated HTTPS callable that powers `<GuestOrderLookupPage />` at `/order-status` — v9.1+). **No secrets**, no provider deps. Always deployable.
 - `caspian-email` (v3.0.0+) — transactional email triggers (`runEmailOnOrderCreate`, `runEmailOnOrderUpdate`, `runEmailOnContactCreate`) + `sendTestEmail` callable. **v8.0.0+ requires Cloud Secret Manager:** before deploy, run `firebase functions:secrets:set CASPIAN_EMAIL_SENDGRID_API_KEY` and/or `CASPIAN_EMAIL_BREVO_API_KEY` (you only need the secrets for providers you actually use). Functions read the keys via `defineSecret(...)` at runtime.
 - `caspian-stripe` — `createStripeCheckoutSession`, `stripeWebhook`, `getStripeSession`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as Functions secrets.
-- `caspian-instagram` (v9.21.0+) — the Instagram channel for the **Caspian POS**: `linkInstagram` / `unlinkInstagram`, `instagramInbox` (feed + comments), `replyInstagramComment` / `setInstagramCommentHidden` / `deleteInstagramComment`, `publishInstagramMedia` (publish a product), `deleteInstagramMedia`, and a scheduled token refresh. Requires `META_APP_ID` + `META_APP_SECRET` as Functions secrets (`defineSecret`). Scaffold it with `--with-instagram`.
+- `caspian-pos` (v10.0.0+) — the in-person register: `commitPosSale` (prices the whole ticket from Firestore in one transaction, applies the promo, decrements stock, allocates the receipt number, writes the order) and `getPosCatalogDelta`. **No secrets.** Scaffold it with `--with-pos`. The register cannot commit a sale without this codebase deployed.
+- `caspian-instagram` (v9.21.0+) — the Instagram channel for store staff: `linkInstagram` / `unlinkInstagram`, `instagramInbox` (feed + comments), `replyInstagramComment` / `setInstagramCommentHidden` / `deleteInstagramComment`, `publishInstagramMedia` (publish a product), `deleteInstagramMedia`, and a scheduled token refresh. Requires `META_APP_ID` + `META_APP_SECRET` as Functions secrets (`defineSecret`). Scaffold it with `--with-instagram`.
 
 Copy the codebases you need from `node_modules` into your project root, merge the `functions` entries into your `firebase.json`, then deploy them separately:
 
@@ -283,6 +284,7 @@ Copy the codebases you need from `node_modules` into your project root, merge th
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-admin ./functions-admin
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-email  ./functions-email     # skip if no email
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-stripe ./functions-stripe    # skip if no Stripe
+cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-pos    ./functions-pos       # skip if no register
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-instagram ./functions-instagram  # skip if no Instagram
 cp node_modules/@caspian-explorer/script-caspian-store/firebase/firebase.json .                          # or merge manually
 ```
@@ -338,7 +340,7 @@ Subscribe to `checkout.session.completed`. Paste the resulting `whsec_…` into 
 
 **Install Stripe in the admin UI.** Once the Cloud Functions are deployed, sign in as admin and go to `/admin/plugins/payments`. Click **Browse providers** → **Install** on the Stripe card, paste your publishable key (`pk_live_…` or `pk_test_…`), save, then click **Enable**. The publishable key is stored in Firestore under `paymentPluginInstalls`; only the secret/webhook keys live in Cloud Functions secrets. `useCheckout` picks up enabled plugin installs automatically — no redeploy needed after flipping a provider on or off.
 
-**Instagram codebase (v9.21.0+ — only when you run the Caspian POS Instagram channel):**
+**Instagram codebase (v9.21.0+ — only when you run the Instagram channel):**
 
 ```bash
 cd functions-instagram && npm install && cd ..
@@ -347,9 +349,47 @@ firebase functions:secrets:set META_APP_SECRET    # your Meta app secret
 npm run deploy:instagram
 ```
 
-This lets the Caspian POS view the store's Instagram feed, moderate comments, publish a product as a post, and delete posts — the Meta app secret + the long-lived token stay server-side in these functions and never reach the desktop app. Enable the **Cloud Scheduler** API for the daily token refresh, and (re)deploy your Firestore rules so the server-only `instagram/connection` doc is locked down: `firebase deploy --only firestore:rules`.
+This lets store staff view the store's Instagram feed, moderate comments, publish a product as a post, and delete posts — the Meta app secret + the long-lived token stay server-side in these functions and never reach the browser. Enable the **Cloud Scheduler** API for the daily token refresh, and (re)deploy your Firestore rules so the server-only `instagram/connection` doc is locked down: `firebase deploy --only firestore:rules`.
 
 Going live also needs, **outside this repo**: one **Meta app** with **Facebook Login** + **Instagram** (register the POS loopback redirect `http://127.0.0.1:47113/`, request `instagram_basic` / `instagram_manage_comments` / `instagram_content_publish` / `instagram_manage_contents` / `pages_show_list` / `pages_read_engagement` / `business_management`, and complete **App Review** + Business Verification), and this store's Instagram as a **Professional** account linked to a **Facebook Page**. The store owner then connects from the POS (which drives the `linkInstagram` OAuth exchange) and sets the Meta **App ID** per shop under POS **Shops → Edit**.
+
+**POS codebase (v10.0.0+ — only when you use the in-person register):**
+
+```bash
+cd functions-pos && npm install && cd ..
+firebase deploy --only functions:caspian-pos
+```
+
+No secrets to set. Sales are priced entirely server-side here — the register only ever sends *what was
+scanned*, never what it costs — so a tampered browser cannot ring up a discounted sale.
+
+Then, in the admin panel:
+
+1. **Sales → Point of sale → Enable the register.**
+2. **Users →** set each cashier's role to **Staff**. Staff reach `/pos` and read the catalog; they are
+   denied every admin surface. `admin` accounts can use the register too, so an owner working the
+   counter does not need a second login.
+3. **Products → edit → Barcode.** Click into the field and scan — most USB and Bluetooth scanners type
+   the code straight in. The register matches `barcode` first, then `sku`, then the product id.
+4. Open `/pos`.
+
+**Scanners.** Any USB or Bluetooth barcode scanner that presents as a keyboard (essentially all retail
+scanners) works with no setup, driver, or permission prompt — the register recognises a scan by how
+fast the characters arrive. If scans arrive split across two lines, raise the gap in `/pos/settings`;
+if fast typing is mistaken for a scan, lower it. Camera scanning uses the browser's native
+`BarcodeDetector` and is Chromium-only; Safari and Firefox show a message and fall back to typing.
+
+**Receipts** print through the normal browser print dialog against any printer your computer already
+has installed, on an 80 mm continuous roll. Set the header and footer under **Sales → Point of sale**.
+
+**Per-register settings** live at `/pos/settings` and apply to that computer only — its name, its
+interface language, and its scanner timing. One shop can run an English till at the counter and
+another in a different language without touching the website.
+
+**Register-only stores.** Turn on **Register-only store** under Sales → Point of sale (or scaffold with
+`--pos-only`) and the public storefront is switched off: `/` redirects to `/pos` and storefront routes
+show a notice. `/admin`, `/login` and `/setup` stay reachable, and you can switch it back on at any
+time — it is a runtime setting, not a build-time fork.
 
 ---
 

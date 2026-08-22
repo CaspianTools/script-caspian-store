@@ -15,6 +15,7 @@ import {
   DEFAULT_SCRIPT_SETTINGS,
   type ScriptSettings,
 } from '../types';
+import { setStoreDefaultLocale } from '../i18n/locale-preference';
 
 interface ScriptSettingsContextValue {
   settings: ScriptSettings;
@@ -46,11 +47,15 @@ export function ScriptSettingsProvider({
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        if (snap.exists()) {
-          setSettings({ ...defaultsWithTimestamp(), ...(snap.data() as ScriptSettings) });
-        } else {
-          setSettings(defaultsWithTimestamp());
-        }
+        const next = snap.exists()
+          ? { ...defaultsWithTimestamp(), ...(snap.data() as ScriptSettings) }
+          : defaultsWithTimestamp();
+        setSettings(next);
+        // LocaleProvider mounts ABOVE this provider and the order is fixed, so
+        // the store's default language cannot reach it through context.
+        // Publishing it to the locale external store is how it gets there
+        // without a second read of this same document.
+        setStoreDefaultLocale(next.defaultLocale ?? null);
         setLoading(false);
       },
       (error) => {

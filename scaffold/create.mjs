@@ -14,8 +14,12 @@
  *     [--with-email]                # also copy firebase/functions-email/ (transactional
  *                                    #   email via SendGrid/Brevo plugins — configure at
  *                                    #   /admin/plugins/email-providers after deploy)
+ *     [--with-pos]                  # also copy firebase/functions-pos/ (in-person register:
+ *                                   #   server-priced sale commits, idempotent offline replay)
+ *     [--pos-only]                  # register-only store: implies --with-pos and seeds the
+ *                                   #   storefront-off feature flag
  *     [--with-instagram]            # also copy firebase/functions-instagram/ (Instagram
- *                                    #   feed + comment moderation for the Caspian POS;
+ *                                    #   feed + comment moderation for store staff;
  *                                    #   set META_APP_ID / META_APP_SECRET then deploy)
  *     [--with-functions]            # deprecated alias for --with-stripe (back-compat)
  *     [--no-apphosting]             # suppress apphosting.yaml in the output (default: emit).
@@ -56,6 +60,8 @@ const { positionals, values: args } = parseArgs({
     'with-stripe': { type: 'boolean', default: false },
     'with-email': { type: 'boolean', default: false },
     'with-instagram': { type: 'boolean', default: false },
+    'with-pos': { type: 'boolean', default: false },
+    'pos-only': { type: 'boolean', default: false },
     'with-functions': { type: 'boolean', default: false },
     'no-apphosting': { type: 'boolean', default: false },
   },
@@ -73,11 +79,18 @@ const includeStripe = args['with-stripe'] || args['with-functions'];
 // zero-secrets invariant.
 const includeEmail = args['with-email'];
 // --with-instagram opts into the caspian-instagram codebase — the Facebook-Login
-// OAuth exchange + feed/comment-moderation callables (e.g. for the Caspian POS).
+// OAuth exchange + feed/comment-moderation callables used by store staff.
 // Mirrors --with-stripe/--with-email: it ships as a separate codebase so installs
 // that don't use it don't deploy it, and the store owner connects Instagram at
 // onboarding by setting META_APP_ID / META_APP_SECRET and deploying caspian-instagram.
 const includeInstagram = args['with-instagram'];
+
+// --pos-only is a register-only store: no public storefront. It implies
+// --with-pos because the register cannot commit a sale without the callables,
+// and a scaffold that produced a till which refuses to sell would be worse
+// than refusing the flag.
+const posOnly = args['pos-only'];
+const includePos = args['with-pos'] || posOnly;
 const suppressApphosting = args['no-apphosting'];
 
 const targetDir = positionals[0];
@@ -85,7 +98,8 @@ if (!targetDir) {
   console.error(
     'Usage: node create.mjs <project-dir> [--package-tag vX.Y.Z] [--next-version <spec>]\n' +
     '                       [--use-create-next-app] [--with-stripe] [--with-email]\n' +
-    '                       [--with-instagram] [--no-apphosting] [--force]',
+    '                       [--with-instagram] [--with-pos] [--pos-only]\n' +
+    '                       [--no-apphosting] [--force]',
   );
   process.exit(1);
 }
@@ -682,6 +696,14 @@ if (includeInstagram) {
     predeploy: ['npm --prefix "$RESOURCE_DIR" run build'],
   });
 }
+if (includePos) {
+  firebaseConfig.functions.push({
+    source: 'functions-pos',
+    codebase: 'caspian-pos',
+    runtime: 'nodejs22',
+    predeploy: ['npm --prefix "$RESOURCE_DIR" run build'],
+  });
+}
 write('firebase.json', JSON.stringify(firebaseConfig, null, 2) + '\n');
 
 // Always copy functions-admin; copy functions-email / functions-stripe only on opt-in.
@@ -798,7 +820,7 @@ npm run dev                  # http://localhost:3000
 
    Then go to \`/admin/plugins/email-providers\`, click **Browse providers → Install** on SendGrid or Brevo, paste the API key, save, and click **Enable**. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
 
-   If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase — it lets the **Caspian POS** view the feed, moderate comments, **publish a product as a post**, and **delete posts** (the Meta app secret + token stay server-side). Set the Meta app credentials first, then deploy:
+   If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase — it lets store staff view the feed, moderate comments, **publish a product as a post**, and **delete posts** (the Meta app secret + token stay server-side). Set the Meta app credentials first, then deploy:
    \`\`\`bash
    cd functions-instagram && npm install && cd ..
    firebase functions:secrets:set META_APP_ID      # your Meta (Facebook) app id

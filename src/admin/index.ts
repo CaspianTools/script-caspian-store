@@ -110,3 +110,4 @@ export {
   type MultiSelectItem,
   type MultiSelectProps,
 } from './admin-multi-select';
+export { AdminPosPage, type AdminPosPageProps } from './admin-pos-page';

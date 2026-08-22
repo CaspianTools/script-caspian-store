@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import type { UserProfile } from '../types';
+import { USER_ROLES, type UserProfile, type UserRole } from '../types';
 import { listUsers } from '../services/user-service';
 import { reportServiceError } from '../services/error-log-service';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
@@ -26,7 +26,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
   const t = useT();
   const [users, setUsers] = useState<UserProfile[] | null>(null);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'customer'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
 
   useEffect(() => {
@@ -49,8 +49,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
     if (!users) return [];
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
-      if (roleFilter === 'admin' && u.role !== 'admin') return false;
-      if (roleFilter === 'customer' && u.role === 'admin') return false;
+      if (roleFilter !== 'all' && (u.role ?? 'customer') !== roleFilter) return false;
       if (!q) return true;
       return (
         Boolean(u.email?.toLowerCase().includes(q)) ||
@@ -59,30 +58,23 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
     });
   }, [users, search, roleFilter]);
 
-  const runRoleChange = async (
-    target: UserProfile,
-    action: 'promote' | 'demote',
-  ) => {
-    const confirmKey =
-      action === 'promote'
-        ? 'admin.users.action.confirmPromote'
-        : 'admin.users.action.confirmDemote';
-    if (typeof window !== 'undefined' && !window.confirm(t(confirmKey))) return;
+  const CONFIRM_KEY: Record<UserRole, string> = {
+    admin: 'admin.users.action.confirmMakeAdmin',
+    staff: 'admin.users.action.confirmMakeStaff',
+    customer: 'admin.users.action.confirmMakeCustomer',
+  };
+
+  const runRoleChange = async (target: UserProfile, nextRole: UserRole) => {
+    if (typeof window !== 'undefined' && !window.confirm(t(CONFIRM_KEY[nextRole]))) return;
 
     setRowState((s) => ({ ...s, [target.uid]: { kind: 'busy' } }));
     try {
-      const name =
-        action === 'promote' ? 'promoteUserToAdmin' : 'demoteAdminToCustomer';
-      await httpsCallable(functions, name)({ uid: target.uid });
+      // `setUserRole` supersedes the two-role promoteUserToAdmin /
+      // demoteAdminToCustomer callables, which stay deployed for back-compat.
+      await httpsCallable(functions, 'setUserRole')({ uid: target.uid, role: nextRole });
       // Optimistic local update — avoid a refetch round-trip.
       setUsers((prev) =>
-        prev
-          ? prev.map((u) =>
-              u.uid === target.uid
-                ? { ...u, role: action === 'promote' ? 'admin' : 'customer' }
-                : u,
-            )
-          : prev,
+        prev ? prev.map((u) => (u.uid === target.uid ? { ...u, role: nextRole } : u)) : prev,
       );
       setRowState((s) => {
         const next = { ...s };
@@ -90,7 +82,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
         return next;
       });
     } catch (error) {
-      reportServiceError(db, `admin-users-page.${action}`, error);
+      reportServiceError(db, 'admin-users-page.setRole', error);
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String((error as { message?: unknown }).message)
@@ -98,18 +90,6 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
       setRowState((s) => ({ ...s, [target.uid]: { kind: 'error', message } }));
     }
   };
-
-  const buttonStyle = (variant: 'promote' | 'demote', busy: boolean) => ({
-    padding: '4px 10px',
-    border: '1px solid',
-    borderColor: variant === 'demote' ? '#d33' : '#111',
-    borderRadius: 4,
-    background: busy ? '#eee' : variant === 'demote' ? '#fff' : '#111',
-    color: busy ? '#888' : variant === 'demote' ? '#d33' : '#fff',
-    cursor: busy ? 'default' : 'pointer',
-    fontSize: 12,
-    fontWeight: 500 as const,
-  });
 
   return (
     <div className={className}>
@@ -131,10 +111,11 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
         <Select
           aria-label={t('admin.users.col.role')}
           value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'customer')}
+          onChange={(e) => setRoleFilter(e.target.value as 'all' | UserRole)}
           options={[
             { value: 'all', label: t('admin.users.filter.all') },
-            { value: 'admin', label: t('admin.users.filter.staff') },
+            { value: 'admin', label: t('admin.users.filter.admins') },
+            { value: 'staff', label: t('admin.users.filter.staff') },
             { value: 'customer', label: t('admin.users.filter.customers') },
           ]}
         />
@@ -182,24 +163,19 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
                       <span style={{ color: '#888', fontSize: 12 }}>
                         {t('admin.users.action.self')}
                       </span>
-                    ) : isAdmin ? (
-                      <button
-                        type="button"
-                        onClick={() => runRoleChange(u, 'demote')}
-                        disabled={busy}
-                        style={buttonStyle('demote', busy)}
-                      >
-                        {busy ? t('admin.users.action.busy') : t('admin.users.action.demote')}
-                      </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => runRoleChange(u, 'promote')}
+                      // A picker rather than one toggle: there are three roles
+                      // now, and "promote"/"demote" cannot express staff.
+                      <Select
+                        aria-label={t('admin.users.action.setRole')}
+                        value={u.role ?? 'customer'}
                         disabled={busy}
-                        style={buttonStyle('promote', busy)}
-                      >
-                        {busy ? t('admin.users.action.busy') : t('admin.users.action.promote')}
-                      </button>
+                        onChange={(e) => runRoleChange(u, e.target.value as UserRole)}
+                        options={USER_ROLES.map((r) => ({
+                          value: r,
+                          label: t(`admin.users.role.${r}`),
+                        }))}
+                      />
                     )}
                     {state?.kind === 'error' && (
                       <div style={{ color: '#c00', fontSize: 11, marginTop: 4, maxWidth: 220 }}>

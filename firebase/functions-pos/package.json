@@ -1,0 +1,32 @@
+{
+  "name": "caspian-pos-functions",
+  "version": "0.1.0",
+  "description": "Firebase Cloud Functions for the Caspian Store point of sale — server-authoritative in-person sale commits, idempotent offline replay, catalog deltas, shift lifecycle, and per-computer license seat binding. No secrets required.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions:caspian-pos",
+    "lint": "echo \"(no lint configured)\"",
+    "logs": "firebase functions:log --only caspian-pos"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.8.0",
+    "firebase-functions": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "@tootallnate/once": "^3.0.1",
+    "http-proxy-agent": "^7.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "protobufjs": "^7.6.5",
+    "uuid": "^14.0.0"
+  },
+  "private": true
+}

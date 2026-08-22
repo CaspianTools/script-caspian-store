@@ -20,6 +20,14 @@ const orderColumns: ColumnMeta[] = [
   { header: 'promoCode', sample: '' },
   { header: 'itemCount', sample: '' },
   { header: 'items', sample: '' },
+  // POS columns (v10.0.0). Blank on every online order, which is the honest
+  // representation — `channel` is absent on orders written before the POS
+  // existed, and those are storefront sales by definition.
+  { header: 'channel', sample: '', help: 'online or pos. Blank on orders placed before v10.0.0.' },
+  { header: 'receiptNumber', sample: '', help: 'Printed receipt number. POS sales only.' },
+  { header: 'cashierId', sample: '', help: 'Account that rang the sale. POS sales only.' },
+  { header: 'deviceId', sample: '', help: 'Register that captured the sale. POS sales only.' },
+  { header: 'tenders', sample: '', help: 'How it was paid, e.g. "cash 20.00; card 5.50".' },
 ];
 
 export const ORDERS_DATASET: DatasetDescriptor = {
@@ -45,6 +53,11 @@ export const ORDERS_DATASET: DatasetDescriptor = {
       o.promoCode ?? '',
       o.items?.length ?? 0,
       (o.items ?? []).map((i) => `${i.name} x${i.quantity}`).join('; '),
+      o.channel ?? '',
+      o.receiptNumber ?? '',
+      o.cashierId ?? '',
+      o.deviceId ?? '',
+      (o.tenders ?? []).map((t) => `${t.kind} ${t.amount}`).join('; '),
     ]);
   },
 };

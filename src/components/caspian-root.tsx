@@ -33,6 +33,10 @@ import { WishlistPage } from './wishlist/wishlist-page';
 import type { SiteHeaderProps } from './site-header';
 import type { SiteFooterProps } from './site-footer';
 
+import { useScriptSettings } from '../context/script-settings-context';
+import { PosGuard } from '../pos/pos-guard';
+import { PosRoot, PosShell } from '../pos/pos-root';
+
 import { AdminGuard } from '../admin/admin-guard';
 import { AdminShell } from '../admin/admin-shell';
 import { AdminProfileMenu } from '../admin/admin-profile-menu';
@@ -88,7 +92,9 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   } = props;
 
   const nav = useCaspianNavigation();
+  const { settings } = useScriptSettings();
   const path = stripLocalePrefix(nav.pathname) || '/';
+  const posOnly = Boolean(settings.features?.posOnly);
 
   // Admin tree — AdminShell renders its own chrome. LayoutShell already
   // auto-bypasses its header/footer for `/admin/**`, so we don't wrap
@@ -100,6 +106,19 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
           <AdminRoot />
         </AdminShell>
       </AdminGuard>
+    );
+  }
+
+  // Point of sale (v10.0.0). Full-screen, outside LayoutShell and AdminShell:
+  // a till has no storefront chrome and no admin sidebar. PosGuard admits
+  // `staff` as well as `admin`, and refuses outright when the feature is off.
+  if (path === '/pos' || path.startsWith('/pos/')) {
+    return (
+      <PosGuard>
+        <PosShell>
+          <PosRoot />
+        </PosShell>
+      </PosGuard>
     );
   }
 
@@ -122,6 +141,13 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
         )}
       </AdminGuard>
     );
+  }
+
+  // Register-only deployment. The storefront is switched off at runtime rather
+  // than compiled out, so a shop that later wants a website flips one setting
+  // instead of rebuilding. /admin, /login and /setup stayed reachable above.
+  if (posOnly) {
+    return <StorefrontDisabled />;
   }
 
   return (
@@ -227,6 +253,23 @@ function stripLocalePrefix(pathname: string): string {
   const match = pathname.match(/^\/([a-z]{2})(\/|$)/i);
   if (!match) return pathname;
   return pathname.slice(match[1].length + 1) || '/';
+}
+
+/**
+ * Shown for every storefront path when `features.posOnly` is on. Points at the
+ * register rather than rendering a bare 404 — on a register-only install the
+ * person who lands on `/` is almost always staff who typed the wrong address.
+ */
+function StorefrontDisabled() {
+  return (
+    <div style={{ maxWidth: 520, margin: '80px auto', padding: 24, textAlign: 'center' }}>
+      <h1 style={{ fontSize: 28, margin: 0 }}>This store runs at the counter</h1>
+      <p style={{ color: '#666', marginTop: 8 }}>
+        Online shopping is turned off for this store. Staff can open the register at{' '}
+        <a href="/pos">/pos</a>.
+      </p>
+    </div>
+  );
 }
 
 function NotFound({ path }: { path: string }) {
