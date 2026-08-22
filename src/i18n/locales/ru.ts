@@ -55,6 +55,7 @@ const ru: MessageDict = {
   // POS — scanning
   'pos.scan.placeholder': 'Отсканируйте или введите штрихкод / артикул',
   'pos.scan.hint': 'USB- или Bluetooth-сканер работает без настройки — просто сканируйте.',
+  'pos.scan.submit': 'Добавить в продажу',
   'pos.scan.camera': 'Использовать камеру',
   'pos.scan.cameraStop': 'Остановить камеру',
   'pos.scan.cameraUnsupported':
@@ -138,6 +139,7 @@ const ru: MessageDict = {
   'pos.receipt.number': 'Номер чека',
   'pos.receipt.date': 'Дата',
   'pos.receipt.cashier': 'Обслужил',
+  'pos.receipt.register': 'Касса',
   'pos.receipt.thanks': 'Спасибо',
   'pos.receipt.paidWith': 'Способ оплаты',
 
@@ -145,7 +147,7 @@ const ru: MessageDict = {
   'pos.settings.title': 'Настройки кассы',
   'pos.settings.subtitle': 'Применяются только к этому компьютеру.',
   'pos.settings.deviceLabel': 'Название кассы',
-  'pos.settings.deviceLabelHelp': 'Показывается в чеках и отчётах по сменам. Например «Передняя стойка».',
+  'pos.settings.deviceLabelHelp': 'Печатается на чеке, чтобы было видно, какая касса приняла продажу. Например «Передняя стойка».',
   'pos.settings.deviceId': 'Идентификатор устройства',
   'pos.settings.language': 'Язык',
   'pos.settings.languageHelp': 'Меняет интерфейс кассы только на этом компьютере.',

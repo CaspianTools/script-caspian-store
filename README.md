@@ -212,6 +212,18 @@ Stripe is handled by Firebase Cloud Functions (callable + webhook), so the packa
 - **Tree-shaking:** the ESM bundle is side-effect-free except for `styles.css`, which you import once at your app root.
 - **One store per page:** pass `appName="my-shop"` if you need multiple `CaspianStoreProvider` instances (e.g. a preview alongside the live storefront).
 
+## User manual
+
+[`docs/user-manual.html`](docs/user-manual.html) is a manual for the person **running** the shop, not the person installing it — every admin screen, the storefront, and the in-person register, written in plain language. It ships in the package, so an installed copy sits at:
+
+```
+node_modules/@caspian-explorer/script-caspian-store/docs/user-manual.html
+```
+
+Open it straight from disk — one self-contained file, no build step and no network requests. It has a sidebar, a search box, light and dark modes, a print stylesheet, and a language switch covering **English, Azerbaijani, Russian and Turkish**. Hand it to a new member of staff.
+
+Every screen it describes was checked against the source. Where a control is deliberately not available yet, the manual says so rather than describing it as working.
+
 ## Release history
 
 The full release log lives in [CHANGELOG.md](./CHANGELOG.md). High-level:

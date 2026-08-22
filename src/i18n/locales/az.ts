@@ -56,6 +56,7 @@ const az: MessageDict = {
   // POS — scanning
   'pos.scan.placeholder': 'Barkod və ya SKU skan edin ya da yazın',
   'pos.scan.hint': 'USB və ya Bluetooth skaner heç bir quraşdırma olmadan işləyir — sadəcə skan edin.',
+  'pos.scan.submit': 'Satışa əlavə et',
   'pos.scan.camera': 'Kameradan istifadə et',
   'pos.scan.cameraStop': 'Kameranı dayandır',
   'pos.scan.cameraUnsupported':
@@ -138,6 +139,7 @@ const az: MessageDict = {
   'pos.receipt.number': 'Qəbz nömrəsi',
   'pos.receipt.date': 'Tarix',
   'pos.receipt.cashier': 'Xidmət göstərdi',
+  'pos.receipt.register': 'Kassa',
   'pos.receipt.thanks': 'Təşəkkür edirik',
   'pos.receipt.paidWith': 'Ödəniş üsulu',
 
@@ -145,7 +147,7 @@ const az: MessageDict = {
   'pos.settings.title': 'Kassa tənzimləmələri',
   'pos.settings.subtitle': 'Bunlar yalnız bu kompüterə aiddir.',
   'pos.settings.deviceLabel': 'Kassa adı',
-  'pos.settings.deviceLabelHelp': 'Qəbzlərdə və növbə hesabatlarında görünür. Məsələn "Ön piştaxta".',
+  'pos.settings.deviceLabelHelp': 'Qəbzdə çap olunur ki, satışın hansı kassadan keçdiyi bilinsin. Məsələn "Ön piştaxta".',
   'pos.settings.deviceId': 'Cihaz identifikatoru',
   'pos.settings.language': 'Dil',
   'pos.settings.languageHelp': 'Kassa interfeysini yalnız bu kompüterdə dəyişir.',

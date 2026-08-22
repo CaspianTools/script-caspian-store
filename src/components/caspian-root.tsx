@@ -145,8 +145,16 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
 
   // Register-only deployment. The storefront is switched off at runtime rather
   // than compiled out, so a shop that later wants a website flips one setting
-  // instead of rebuilding. /admin, /login and /setup stayed reachable above.
-  if (posOnly) {
+  // instead of rebuilding.
+  //
+  // The auth pages are exempt, and that exemption is load-bearing: `/admin` and
+  // `/pos` are matched above, but both of them send a signed-out visitor to
+  // `/login` — which lives inside `renderStorefrontPage()` below. Returning the
+  // storefront-disabled notice for it would leave a register-only shop with no
+  // way to sign in at all, and therefore no way back into the admin panel to
+  // turn the setting off. Password reset is included for the same reason.
+  const AUTH_PATHS = ['/login', '/auth/login', '/register', '/auth/register', '/forgot-password', '/auth/forgot-password'];
+  if (posOnly && !AUTH_PATHS.includes(path)) {
     return <StorefrontDisabled />;
   }
 

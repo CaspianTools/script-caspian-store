@@ -100,6 +100,20 @@ Rules, indexes, and `collections.ts` move together.
 
 **Rule: any change to a catalog-backed entity updates its import/export descriptor — including the template — in the same change.** When you add, rename, or remove a field on Product, Category, Collection, Brand, PromoCode, Subscriber, Order, User, or Review, update the matching `datasets/*.ts` descriptor's `columns` (this updates the export, template, and column reference together), the export getter, and the import parse/validate, so an export → import round-trip still reproduces the record. A new exportable/importable entity = new descriptor file + register in `catalog.ts` + add `admin.importExport.dataset.<id>` i18n keys. A template missing a newly-added column silently drops that field on every import — never let a model change ship with a stale catalog. (Note: this catalog has no `tags` dataset and uses the library's single-`category` product shape.)
 
+**User manual — [docs/user-manual.html](docs/user-manual.html).** A single self-contained HTML file (no build step, no external requests, opens from `file://`) documenting every screen a **shop owner or cashier** touches. Ships in the package via the `files` list and the `./user-manual.html` export. Structure:
+
+- `LANGS` / `UI` — the chrome strings, per locale.
+- `MANUAL.en` — the canonical content: `intro` plus `parts[]`, each part carrying `{ id, icon, title, blurb, sections[] }`, and each section `{ id, title, audience, route, summary, steps[], fields[], notes[] }`. Only `id`, `title` and `summary` are required; a section renders whichever blocks it has.
+- `MANUAL.az` / `MANUAL.ru` / `MANUAL.tr` — **overlays**, not copies. `resolved()` merges each over English section-by-section, so a missing translation renders the English text with a visible "not translated yet" note instead of vanishing. Same posture as the library's own `LocaleProvider` merge. A translation may therefore be partial and still safe to ship.
+- Icons are an inline `<svg><defs>` sprite referenced by `<use href="#i-…">`. **No emoji anywhere** — add a new `<g id="i-…">` to the sprite instead.
+
+**Rule: any change that alters what an owner or cashier sees or does updates the manual in the same change.** A new admin page, a new field on an existing screen, a renamed control, a changed default, a new role capability, a new setting, a new POS behaviour — all of it lands in `MANUAL.en` in the same commit, and the affected `az`/`ru`/`tr` sections are either translated or deleted so the fallback notice shows rather than stale text.
+
+Two hard constraints, both learned the expensive way:
+
+1. **Document only what the code renders.** Until v10.0.0 the in-admin help page described a `Settings → API keys` screen, a `Locations` page, and a separate desktop POS app. None existed. Before writing a step, open the component and confirm the control is there. A type definition, a Firestore field, or a code comment is *not* evidence that a user-facing screen exists.
+2. **Deliberate gaps must stay visible.** Where the UI ships a disabled control or a "coming in a later release" affordance (currently: the local-storage option and the non-browser printer transports at `/pos/settings`), the manual says so plainly. Never document a placeholder as if it works.
+
 **Server Component boundary.** The library emits `"use client"` directives in client-heavy files (providers, contexts, interactive components, admin pages). Consumers mount the provider tree from a Server Component parent; the library *is* the client boundary. When adding a new component that uses React state/effects/refs, put `"use client"` at the top — match the surrounding files.
 
 ## Conventions

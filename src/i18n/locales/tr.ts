@@ -55,6 +55,7 @@ const tr: MessageDict = {
   // POS — scanning
   'pos.scan.placeholder': 'Barkod veya stok kodu okutun ya da yazın',
   'pos.scan.hint': 'USB veya Bluetooth okuyucu kurulum gerektirmeden çalışır — sadece okutun.',
+  'pos.scan.submit': 'Satışa ekle',
   'pos.scan.camera': 'Kamerayı kullan',
   'pos.scan.cameraStop': 'Kamerayı durdur',
   'pos.scan.cameraUnsupported':
@@ -137,6 +138,7 @@ const tr: MessageDict = {
   'pos.receipt.number': 'Fiş no.',
   'pos.receipt.date': 'Tarih',
   'pos.receipt.cashier': 'Hizmet veren',
+  'pos.receipt.register': 'Kasa',
   'pos.receipt.thanks': 'Teşekkür ederiz',
   'pos.receipt.paidWith': 'Ödeme yöntemi',
 
@@ -144,7 +146,7 @@ const tr: MessageDict = {
   'pos.settings.title': 'Kasa ayarları',
   'pos.settings.subtitle': 'Bunlar yalnızca bu bilgisayar için geçerlidir.',
   'pos.settings.deviceLabel': 'Kasa adı',
-  'pos.settings.deviceLabelHelp': 'Fişlerde ve vardiya raporlarında görünür. Örn. “Ön kasa”.',
+  'pos.settings.deviceLabelHelp': 'Satışı hangi kasanın aldığını görebilmek için fişe basılır. Örn. “Ön kasa”.',
   'pos.settings.deviceId': 'Cihaz kimliği',
   'pos.settings.language': 'Dil',
   'pos.settings.languageHelp': 'Kasa arayüzünü yalnızca bu bilgisayarda değiştirir.',

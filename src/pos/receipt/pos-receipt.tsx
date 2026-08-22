@@ -67,6 +67,12 @@ export function PosReceipt({ model, formatPrice, autoPrint, onAfterPrint }: PosR
           <span>{model.cashierName}</span>
         </div>
       ) : null}
+      {model.deviceLabel ? (
+        <div className="rc-row">
+          <span>{t('pos.receipt.register')}</span>
+          <span>{model.deviceLabel}</span>
+        </div>
+      ) : null}
 
       <div className="rc-rule" />
 
@@ -181,9 +187,27 @@ const RECEIPT_CSS = `
   @page { size: 80mm auto; margin: 0; }
   html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
   /* Hide the register behind the receipt without unmounting it, so the sale
-     state survives the print and the cashier lands back on a live screen. */
-  body > *:not(.caspian-pos-print-root) { display: none !important; }
-  .caspian-pos-print-root { display: block !important; }
-  .caspian-pos-receipt { width: auto; padding: 0; }
+     state survives the print and the cashier lands back on a live screen.
+
+     This uses visibility rather than display, and that matters. The obvious
+     rule — hiding every direct child of <body> except the print root — printed
+     a BLANK page, because the print root is not a child of <body>: it sits
+     several levels down inside the register's own layout, so the rule hid one
+     of its own ancestors and took the receipt with it.
+
+     The visibility property inherits and, unlike display, leaves the box tree
+     intact, so hiding an ancestor and re-showing the receipt inside it works
+     where the display-based rule could not. The receipt
+     is then lifted to the top-left so it does not print where the (now
+     invisible, but still laid out) register had pushed it down the page. */
+  body * { visibility: hidden !important; }
+  .caspian-pos-print-root,
+  .caspian-pos-print-root * { visibility: visible !important; }
+  .caspian-pos-print-root {
+    display: block !important;
+    position: absolute !important;
+    left: 0; top: 0; width: 100%;
+  }
+  .caspian-pos-receipt { width: auto; padding: 0; margin: 0 auto; }
 }
 `;

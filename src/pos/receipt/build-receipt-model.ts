@@ -49,6 +49,14 @@ export interface BuildReceiptArgs {
   receiptHeader?: string;
   receiptFooter?: string;
   at?: number;
+  /**
+   * `PosSettings.roundCashTo`. Must be the same value the tender screen used,
+   * and the same one the server applies — otherwise the change the cashier
+   * reads off the screen and the change printed on the customer's receipt can
+   * differ by a cent, which is exactly the kind of discrepancy that surfaces
+   * as an unexplained drawer variance at close.
+   */
+  cashRounding?: number;
 }
 
 function toMinor(amount: number): number {
@@ -56,6 +64,13 @@ function toMinor(amount: number): number {
 }
 function fromMinor(minor: number): number {
   return Math.round(minor) / 100;
+}
+
+/** Same rule as the tender screen and `functions-pos/src/money.ts`. */
+function roundCash(amount: number, step: number): number {
+  if (!step || step <= 0) return fromMinor(toMinor(amount));
+  const stepMinor = toMinor(step);
+  return fromMinor(Math.round(toMinor(amount) / stepMinor) * stepMinor);
 }
 
 /**
@@ -95,7 +110,10 @@ export function buildReceiptModel(args: BuildReceiptArgs): PosReceiptModel {
       kind: tender.kind,
       amount: tender.amount,
       tendered: tender.tendered,
-      change: fromMinor(Math.max(0, toMinor(tender.tendered) - toMinor(tender.amount))),
+      change: roundCash(
+        fromMinor(Math.max(0, toMinor(tender.tendered) - toMinor(tender.amount))),
+        args.cashRounding ?? 0,
+      ),
       reference: tender.reference,
     };
   });

@@ -164,6 +164,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           deviceLabel: getPosDeviceLabel(),
           receiptHeader: posSettings?.receiptHeader,
           receiptFooter: posSettings?.receiptFooter,
+          cashRounding: posSettings?.roundCashTo,
         });
         saleIdRef.current = null;
         setPhase({ kind: 'done', sale, receipt });
@@ -229,7 +230,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
             style={{ flex: 1, fontSize: 16 }}
           />
           <Button type="submit" disabled={!manualCode.trim()}>
-            {t('common.confirm')}
+            {t('pos.scan.submit')}
           </Button>
         </form>
         <p style={{ margin: 0, fontSize: 12, color: '#666' }}>{t('pos.scan.hint')}</p>

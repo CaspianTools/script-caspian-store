@@ -16,6 +16,85 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.0.1 — A user manual in four languages, and five register fixes it found
+
+Adds [`docs/user-manual.html`](docs/user-manual.html): one self-contained file covering every screen a
+shop owner or cashier touches, in **English, Azerbaijani, Russian and Turkish**. It ships in the
+package, opens straight from disk, and needs no build step and no network.
+
+Writing it turned out to be a bug hunt. Every claim was checked against the source by a separate pass
+whose only job was to *refute* the draft, which overturned 44 statements — and five of those were not
+documentation errors at all. They were defects in the register shipped in v10.0.0, including a receipt
+that printed blank and a register-only store that could not sign in. All five are fixed here.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v10.0.1
+```
+
+Nothing else. No rules redeploy, no Cloud Functions redeploy — this release changes only client code
+and adds a documentation file.
+
+If you run a **register-only** store, upgrade before anyone signs out: v10.0.0 made `/login`
+unreachable while register-only mode was on (see below).
+
+### Added
+
+- **User manual** at `docs/user-manual.html`, reachable in an installed copy at
+  `node_modules/@caspian-explorer/script-caspian-store/docs/user-manual.html` and via the new
+  `./user-manual.html` package export. 62 sections in 8 parts: getting started, products, selling
+  online, selling in person, people, pages and design, settings, and running the shop.
+  - Sidebar with scroll-spy, live search (`/` focuses it), light and dark, print stylesheet,
+    responsive drawer, skip link.
+  - Language switch across the same four locales the library ships, persisted per device and
+    honouring `?lang=`.
+  - **No emoji.** Icons are an inline SVG sprite.
+  - Translations are **overlays merged over English section by section**, so an untranslated section
+    renders the English text with a visible notice rather than disappearing — the same posture as the
+    library's own `LocaleProvider`. A partial translation is therefore always safe to ship.
+- **`pos.receipt.register`** and **`pos.scan.submit`** message keys, translated into all four locales.
+
+### Fixed
+
+- **Receipt printing produced a blank page.** The print stylesheet hid every direct child of `<body>`
+  except the print root — but the print root is not a child of `<body>`; it sits several levels down
+  inside the register's own layout, so the rule hid one of its own ancestors and took the receipt with
+  it. Rewritten to use `visibility`, which inherits and leaves the box tree intact, plus absolute
+  positioning so the receipt prints at the top of the roll.
+- **A register-only store could not sign in.** `/login` is dispatched inside `renderStorefrontPage()`,
+  which is only reached *after* the register-only branch returns — so `/admin` and `/pos` would send a
+  signed-out user to a page that had been switched off. That is a lockout with no route back into the
+  admin panel to undo the setting. The sign-in, registration and password-reset paths are now exempt
+  from register-only mode, and the reason is recorded at the branch so it does not get "tidied away".
+- **The register's manual-entry button rendered the literal text `common.confirm`** — the key does not
+  exist in the English message table, and the translator falls back to the key itself. Replaced with a
+  purpose-built "Add to sale" label.
+- **The register name was never printed**, although `/pos/settings` told the operator it was "shown on
+  receipts and in shift reports". The receipt now prints a `Register` row under `Served by` when a name
+  is set, and the help text no longer promises shift reports, which do not exist yet.
+- **Change was rounded on screen but not on the receipt.** `buildReceiptModel` computed it raw while the
+  tender screen and the server both applied `PosSettings.roundCashTo`. Harmless at the default (rounding
+  off) but it would have printed a receipt disagreeing with the amount the cashier read out — which
+  surfaces later as an unexplained drawer variance. The rounding value is now threaded through, so till,
+  receipt and server always agree.
+
+### Changed
+
+- `package.json` — `docs` added to `files`, and a `./user-manual.html` export added.
+- [CLAUDE.md](CLAUDE.md) gains a section describing the manual's structure and the rule that any change
+  altering what an owner or cashier sees updates it in the same commit. Two constraints are written down
+  because this repo has already paid for them once: **document only what the code renders** (the pre-v10
+  help page described a `Settings → API keys` screen, a `Locations` page and a desktop app, none of which
+  existed), and **keep deliberate gaps visible** — where the UI ships a disabled control, the manual says
+  so rather than describing it as working.
+
+### Notes
+
+The manual documents the current placeholders honestly: the "This computer only" storage option and the
+non-browser printer transports at `/pos/settings` are described as not yet available, because that is
+what they are.
+
 ## v10.0.0 — Built-in point of sale: barcode register, staff role, and a language you can actually pick
 
 Adds an in-person **register** to the library. It runs in the same app at `/pos`, scans barcodes with
