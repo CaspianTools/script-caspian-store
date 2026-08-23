@@ -15,7 +15,6 @@ name: Desktop — Windows register installer
 on:
   push:
     tags: ['desktop/v*']
-    paths-ignore: []
   pull_request:
     paths:
       - 'desktop/**'
