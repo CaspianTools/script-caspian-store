@@ -37,7 +37,8 @@ does not change a till, and updating a till does not require upgrading the libra
 
 - **`desktop/` — the address is checked before it is saved.** The setup screen requests `/pos` on
   whatever was typed and refuses a definitive 404, naming the mistake it is almost always catching: a
-  company's marketing site rather than the address the shop itself runs on. **Only a 404 refuses.** An
+  company's marketing site rather than the address the shop itself runs on. **Only a definitive 404 or
+  410 refuses.** An
   unreachable host, a timeout, a TLS failure or a 500 are all accepted, because a till is routinely set
   up before the shop's site is live and on connections having a bad morning — refusing then would strand
   a shop that had typed exactly the right address. The check is a catch for the obvious mistake, not a

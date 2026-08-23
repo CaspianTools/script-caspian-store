@@ -466,7 +466,7 @@ producing signed installers the moment two repository secrets exist:
 
 | Secret | What |
 | --- | --- |
-| `WINDOWS_CERT_PFX_BASE64` | the `.pfx`, base64-encoded (`certutil -encode cert.pfx out.txt`) |
+| `WINDOWS_CERT_PFX_BASE64` | the `.pfx`, base64-encoded — see [desktop/README.md](desktop/README.md); not `certutil -encode`, whose PEM armor breaks the workflow decode |
 | `WINDOWS_CERT_PASSWORD` | its password |
 
 The build logs the signature status and warns loudly when a release ships unsigned, so it can never

@@ -39,10 +39,11 @@ The app asks once for the shop address, checks that a register actually answers 
 the app config directory, and opens the register.
 
 **A wrong address is refused before it is saved.** The setup screen requests `/pos` on whatever was
-typed, and a definitive 404 comes back as an error under the box. The mistake this catches is the
+typed, and a definitive 404 (or 410 Gone) comes back as an error under the box. The mistake this catches is the
 common one: a shop typing its company website rather than the site the store itself runs on.
 
-Only a 404 refuses. An unreachable host, a timeout, a TLS failure or a 500 are all accepted,
+Only a definitive 404 or 410 refuses. An unreachable host, a timeout, a TLS failure or a 500 are
+all accepted,
 because a till is routinely set up before the shop's site is live and on connections having a bad
 morning — refusing then would strand a shop that had typed exactly the right address. The check is
 a catch for the obvious mistake, not a guarantee that the address is right.
@@ -112,8 +113,10 @@ The step **skips cleanly when no certificate is configured**, so the build keeps
 starts producing signed installers the moment two repository secrets exist:
 
 ```bash
-# Encode the certificate
-certutil -encode cert.pfx cert-base64.txt
+# Encode the certificate. NOT `certutil -encode`: it wraps the output in
+# -----BEGIN CERTIFICATE----- armor, and the workflow's FromBase64String
+# throws on those lines, failing the build on the first signed release.
+powershell -Command "[Convert]::ToBase64String([IO.File]::ReadAllBytes('cert.pfx')) | Set-Content cert-base64.txt"
 
 gh secret set WINDOWS_CERT_PFX_BASE64 < cert-base64.txt
 gh secret set WINDOWS_CERT_PASSWORD

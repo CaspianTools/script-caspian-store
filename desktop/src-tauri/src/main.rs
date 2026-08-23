@@ -89,8 +89,12 @@ fn normalise_store_url(input: &str) -> Result<String, String> {
 
     // Anything after the host is dropped: the shell appends /pos itself, and
     // "https://shop.example/pos" pasted in here would otherwise become
-    // "https://shop.example/pos/pos".
-    let host = rest.split('/').next().unwrap_or("");
+    // "https://shop.example/pos/pos". '?' and '#' terminate the host too --
+    // splitting on '/' alone kept them, and "{origin}/pos" then appended /pos
+    // *inside* the query or fragment, so both the probe and the window asked
+    // the server for "/". The site root answers 200, so the check confirmed
+    // exactly the wrong address it exists to reject.
+    let host = rest.split(['/', '?', '#']).next().unwrap_or("");
     if host.is_empty() {
         return Err("That does not look like a web address. Example: shop.example.com".into());
     }
@@ -121,7 +125,17 @@ fn normalise_store_url(input: &str) -> Result<String, String> {
         _ if is_local => "http",
         _ => "https",
     };
-    Ok(format!("{resolved_scheme}://{host}"))
+    let origin = format!("{resolved_scheme}://{host}");
+
+    // Everything above judges the shape by hand; this is the one authority on
+    // whether the result can actually be opened. A host containing a space --
+    // "shop example.com", which still has a dot and so passes every test above
+    // -- is rejected here rather than being stored and blowing up at launch.
+    if url::Url::parse(&format!("{origin}/pos")).is_err() {
+        return Err("That does not look like a web address. Example: shop.example.com".into());
+    }
+
+    Ok(origin)
 }
 
 /// Ask the address whether a register actually lives there.
@@ -173,7 +187,7 @@ fn register_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, String> {
 
 fn open_register(app: &AppHandle, store_url: &str) -> Result<(), String> {
     let target = format!("{store_url}/pos");
-    let url = target.parse().map_err(|_| "Could not open that address.".to_string())?;
+    let url = url::Url::parse(&target).map_err(|_| "Could not open that address.".to_string())?;
 
     if let Some(existing) = app.get_webview_window(REGISTER_WINDOW) {
         let _ = existing.set_focus();
@@ -256,6 +270,13 @@ async fn save_store_url(app: AppHandle, url: String) -> Result<String, String> {
         .await
         .map_err(|_| "The address check did not finish. Try again.".to_string())??;
 
+    // Open first, persist second. Writing first meant an address that could not
+    // actually be opened still reached disk, and the next launch read it back
+    // with no window and no way to correct it. It also makes the promise in the
+    // README true: nothing is overwritten until a new address works, so closing
+    // the setup window leaves a working till working.
+    open_register(&app, &normalised)?;
+
     let path = config_file(&app).ok_or("Could not find a place to save the setting.")?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Could not create the settings folder: {e}"))?;
@@ -263,7 +284,6 @@ async fn save_store_url(app: AppHandle, url: String) -> Result<String, String> {
     let body = serde_json::json!({ "storeUrl": normalised });
     fs::write(&path, serde_json::to_vec_pretty(&body).unwrap_or_default())
         .map_err(|e| format!("Could not save the setting: {e}"))?;
-    open_register(&app, &normalised)?;
     Ok(normalised)
 }
 
@@ -286,7 +306,17 @@ fn main() {
                 // A till that has been set up goes straight to the counter. No
                 // probe here on purpose: a shop opening on a slow morning must
                 // never be met with a setup screen instead of its register.
-                Some(url) => open_register(&handle, &url).map_err(|e| e.to_string())?,
+                //
+                // If the stored address cannot be opened at all -- a file left
+                // by an older build, or hand-edited -- fall back to the setup
+                // screen. Propagating the error here aborts the setup hook, and
+                // with no console on a release build that is a process which
+                // starts, shows nothing at all, and exits.
+                Some(url) => {
+                    if open_register(&handle, &url).is_err() {
+                        open_setup(&handle).map_err(|e| e.to_string())?;
+                    }
+                }
                 None => open_setup(&handle).map_err(|e| e.to_string())?,
             }
             Ok(())
