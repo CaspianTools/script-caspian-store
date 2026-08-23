@@ -2,7 +2,7 @@
 /**
  * create-caspian-store — entry point for `npm create caspian-store@latest`.
  *
- * Works by cloning Caspian-Explorer/script-caspian-store from GitHub into a
+ * Works by cloning CaspianTools/script-caspian-store from GitHub into a
  * temporary directory (shallow, main branch), invoking the cloned
  * scaffold/create.mjs against the user's target directory, then removing the
  * clone. All user flags are forwarded through to the scaffolder unchanged.
@@ -24,7 +24,7 @@ if (userArgs.length === 0 || userArgs[0].startsWith('-')) {
     'Usage: npm create caspian-store@latest <project-dir> [--package-tag vX.Y.Z] [--with-functions] [--force]',
   );
   console.error('');
-  console.error('See https://github.com/Caspian-Explorer/script-caspian-store for more.');
+  console.error('See https://github.com/CaspianTools/script-caspian-store for more.');
   process.exit(1);
 }
 
@@ -44,7 +44,7 @@ try {
       'clone',
       '--depth',
       '1',
-      'https://github.com/Caspian-Explorer/script-caspian-store.git',
+      'https://github.com/CaspianTools/script-caspian-store.git',
       tempDir,
     ],
     { stdio: 'inherit' },

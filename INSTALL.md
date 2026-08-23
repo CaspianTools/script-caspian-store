@@ -34,7 +34,7 @@ Flags:
 If you can't use `npm create` (e.g. offline mirror, locked-down network), the same scaffolder can be invoked directly from a clone:
 
 ```bash
-git clone https://github.com/Caspian-Explorer/script-caspian-store /tmp/scs
+git clone https://github.com/CaspianTools/script-caspian-store /tmp/scs
 node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ```
 
@@ -45,11 +45,11 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:Caspian-Explorer/script-caspian-store#v8.0.0 firebase
-# v8.0.0 is the current release. For other versions, see:
-#   https://github.com/Caspian-Explorer/script-caspian-store/releases
+npm install github:CaspianTools/script-caspian-store#v10.3.2 firebase
+# v10.3.2 is the current release. For other versions, see:
+#   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
-# npm install github:Caspian-Explorer/script-caspian-store#<sha>
+# npm install github:CaspianTools/script-caspian-store#<sha>
 ```
 
 For private-repo access, GitHub's `git` over HTTPS or SSH works — same credentials you use for `git clone`.
@@ -60,7 +60,7 @@ Peer deps: React 18/19, `firebase` 10, 11, or 12. Next.js consumers: install `ne
 
 ```bash
 npm install react@^19 react-dom@^19 firebase@^12
-npm install github:Caspian-Explorer/script-caspian-store#v6.0.0
+npm install github:CaspianTools/script-caspian-store#v10.3.2
 ```
 
 Newly scaffolded sites (`npm create caspian-store@latest`) get the new versions automatically.
@@ -769,7 +769,7 @@ Consumers who used the [one-command scaffolder](#0-one-command-scaffold) already
 Pin to a tag; bump when ready:
 
 ```bash
-npm install github:Caspian-Explorer/script-caspian-store#vX.Y.Z
+npm install github:CaspianTools/script-caspian-store#vX.Y.Z
 ```
 
 **Resync rules and indexes on every upgrade — even patch releases.** They're cheap to redeploy and skipping is the #1 cause of `storage/unauthorized` after a library bump (the `siteSettings/**` Storage rule was added in v3.0.0; admins who upgrade across that boundary without redeploying still default-deny logo / favicon / page-image uploads). v1.20.1+:

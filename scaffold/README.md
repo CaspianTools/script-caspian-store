@@ -6,7 +6,7 @@ Generates a ready-to-run Next.js storefront wired up to `@caspian-explorer/scrip
 
 ```bash
 # Clone the package repo temporarily and run the scaffolder:
-git clone https://github.com/Caspian-Explorer/script-caspian-store /tmp/scs
+git clone https://github.com/CaspianTools/script-caspian-store /tmp/scs
 node /tmp/scs/scaffold/create.mjs my-store
 
 cd my-store

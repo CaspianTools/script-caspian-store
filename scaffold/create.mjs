@@ -124,7 +124,7 @@ if (existsSync(root) && !args.force) {
 mkdirSync(root, { recursive: true });
 
 const packageTag = args['package-tag'];
-const packageSpec = `github:Caspian-Explorer/script-caspian-store#${packageTag}`;
+const packageSpec = `github:CaspianTools/script-caspian-store#${packageTag}`;
 const nextVersion = args['next-version'];
 const useCreateNextApp = args['use-create-next-app'];
 const sourceFirebaseDir = join(packageRoot, 'firebase');
@@ -899,7 +899,7 @@ export async function POST(request: Request) {
 `);
 
 // ---- Caspian self-update API route (v2.4.0+) ----
-// Runs `npm install github:Caspian-Explorer/script-caspian-store#v<version>`
+// Runs `npm install github:CaspianTools/script-caspian-store#v<version>`
 // on the host when an admin clicks "Update to vX.Y.Z" in /admin/about.
 // Verifies the caller is an admin via Firebase Admin SDK ID-token check,
 // validates the version string, spawns npm, and on success schedules
@@ -1069,7 +1069,7 @@ env:
 // ---- README ----
 write('README.md', `# ${targetDir.split(/[\\/]/).pop()}
 
-A storefront powered by [\`@caspian-explorer/script-caspian-store\`](https://github.com/Caspian-Explorer/script-caspian-store) (pinned to \`${packageTag}\`).
+A storefront powered by [\`@caspian-explorer/script-caspian-store\`](https://github.com/CaspianTools/script-caspian-store) (pinned to \`${packageTag}\`).
 
 ## Getting started
 
@@ -1203,7 +1203,7 @@ Stop any running \`next dev\` first — swapping the package under a live dev se
 \`\`\`bash
 # 1. Stop next dev (Ctrl+C).
 # 2. Bump the dep:
-npm install github:Caspian-Explorer/script-caspian-store#vX.Y.Z
+npm install github:CaspianTools/script-caspian-store#vX.Y.Z
 # 3. If the CHANGELOG for the target release mentions rule changes,
 #    copy the updated rules and redeploy:
 npm run firebase:sync              # copies updated rules/indexes from the library (v1.20.1+)
@@ -1213,7 +1213,7 @@ rm -rf .next
 npm run dev
 \`\`\`
 
-See [CHANGELOG](https://github.com/Caspian-Explorer/script-caspian-store/blob/main/CHANGELOG.md) for release-specific notes.
+See [CHANGELOG](https://github.com/CaspianTools/script-caspian-store/blob/main/CHANGELOG.md) for release-specific notes.
 `);
 
 console.log(`[create-caspian-store] scaffolded ${targetDir}/ pinned to ${packageTag}`);

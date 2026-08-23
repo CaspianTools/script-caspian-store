@@ -14,10 +14,10 @@
   "author": "Caspian-Explorer",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Caspian-Explorer/script-caspian-store.git",
+    "url": "git+https://github.com/CaspianTools/script-caspian-store.git",
     "directory": "create-caspian-store"
   },
-  "homepage": "https://github.com/Caspian-Explorer/script-caspian-store",
+  "homepage": "https://github.com/CaspianTools/script-caspian-store",
   "keywords": [
     "create",
     "scaffold",

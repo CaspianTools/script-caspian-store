@@ -1,6 +1,6 @@
 # create-caspian-store
 
-One-command scaffolder for [`@caspian-explorer/script-caspian-store`](https://github.com/Caspian-Explorer/script-caspian-store) — a framework-agnostic React e-commerce storefront + admin panel.
+One-command scaffolder for [`@caspian-explorer/script-caspian-store`](https://github.com/CaspianTools/script-caspian-store) — a framework-agnostic React e-commerce storefront + admin panel.
 
 ## Usage
 
@@ -37,15 +37,15 @@ All flags are forwarded to the underlying scaffolder:
 
 ## How it works
 
-This package is a thin launcher. It clones the main [`script-caspian-store`](https://github.com/Caspian-Explorer/script-caspian-store) repo into a temporary directory, runs the scaffolder inside it against your target directory, then removes the clone.
+This package is a thin launcher. It clones the main [`script-caspian-store`](https://github.com/CaspianTools/script-caspian-store) repo into a temporary directory, runs the scaffolder inside it against your target directory, then removes the clone.
 
 Requires `git` on `PATH` and Node ≥ 18.
 
 ## Links
 
-- Main repo: https://github.com/Caspian-Explorer/script-caspian-store
-- INSTALL guide: https://github.com/Caspian-Explorer/script-caspian-store/blob/main/INSTALL.md
-- CHANGELOG: https://github.com/Caspian-Explorer/script-caspian-store/blob/main/CHANGELOG.md
+- Main repo: https://github.com/CaspianTools/script-caspian-store
+- INSTALL guide: https://github.com/CaspianTools/script-caspian-store/blob/main/INSTALL.md
+- CHANGELOG: https://github.com/CaspianTools/script-caspian-store/blob/main/CHANGELOG.md
 
 ## License
 

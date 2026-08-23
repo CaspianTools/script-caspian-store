@@ -16,6 +16,36 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.3.2 — Point the scaffolder at the org that actually exists
+
+Housekeeping ahead of the offline work. The scaffolder installed the library from
+`github:Caspian-Explorer/...` while the repository lives at `CaspianTools/...`. GitHub's rename
+redirect has been quietly covering for it, so nothing was broken — but a redirect is not a guarantee,
+and it stops the day somebody else claims the old organisation name.
+
+### No consumer action required
+
+Existing installs are unaffected; both spellings still resolve today. New scaffolds now install from
+the canonical URL instead of relying on a redirect.
+
+### Fixed
+
+- **24 GitHub URLs repointed** from `Caspian-Explorer/` to `CaspianTools/` across `package.json`,
+  `README.md`, `INSTALL.md`, `scaffold/create.mjs`, `scaffold/README.md` and `create-caspian-store/`.
+  The load-bearing one is `scaffold/create.mjs`, which is the spec every scaffolded site installs from.
+  `Caspian-Explorer` is left untouched wherever it is the **author or copyright holder** — that is a
+  name, not a typo.
+- **Install examples were three majors stale.** `README.md` and `INSTALL.md` told people to install
+  `#v8.0.0`, and INSTALL.md asserted "v8.0.0 is the current release", while the package was on v10.3.1.
+- `stripLocalePrefix` had a third private copy in `layout-shell.tsx`; it now uses the shared helper.
+
+### Added
+
+- **`scripts/check-manuals.mjs` gains check C7** — the install examples that claim to be *current*
+  must pin the current version. This is the same rot as the manual's footer version stamp, which sat
+  at `v10.0.0` through two releases because nothing checked it. Historical migration notes are left
+  alone: naming v9.0.0 in a v9 upgrade section is correct.
+
 ## v10.3.1 — A Windows installer for the register
 
 The register can now be handed to a shop as a file. `desktop/` is a small Tauri shell — a native

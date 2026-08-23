@@ -13,6 +13,7 @@
 //   C5 a translation overlay going stale — the failure that renders confidently
 //      and wrongly, hiding newly-added English text with no warning at all
 //   C4 the footer version string rotting (it sat at v10.0.0 through two releases)
+//   C7 the install examples in README/INSTALL pinning a version three majors old
 //   C3 a part icon with no <symbol> — how v10.0.1 shipped every icon clipped
 //   C6 the same section id landing in both files, breaking a deep link
 //
@@ -187,6 +188,28 @@ for (const f of MANUALS) {
         }
         if (!ts.summary) fail(`docs/${f}: ${lang} section "${ts.id}" is present but has no summary.`);
       }
+    }
+  }
+}
+
+// ------------------------------------------------- C7. install-example versions
+// Same rot as C4, different file. README told people to install v8.0.0 while the
+// package was on v10.3.1. Only the two examples that claim to be CURRENT are
+// checked -- historical migration notes legitimately name old versions.
+{
+  const want = pkg.version;
+  const checks = [
+    ['README.md', `script-caspian-store#v${want} firebase`],
+    ['INSTALL.md', `# v${want} is the current release.`],
+  ];
+  for (const [file, needle] of checks) {
+    const full = join(ROOT, file);
+    if (!existsSync(full)) continue;
+    if (!readFileSync(full, 'utf8').includes(needle)) {
+      fail(
+        `${file}: no install example pinning the current version. Expected to find ` +
+          `${JSON.stringify(needle)}. Bump it alongside package.json (Pre-Commit Checklist step 5).`,
+      );
     }
   }
 }

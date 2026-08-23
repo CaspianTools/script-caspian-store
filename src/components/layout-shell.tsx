@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { SiteSettings } from '../types';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useTemplateComponent } from '../provider/template-provider';
 import { useAuth } from '../context/auth-context';
@@ -146,8 +147,3 @@ function isPreviewSession(queryKey: string, settings: SiteSettings): boolean {
   }
 }
 
-function stripLocalePrefix(pathname: string): string {
-  const match = pathname.match(/^\/([a-z]{2})(\/|$)/i);
-  if (!match) return pathname;
-  return pathname.slice(match[1].length + 1) || '/';
-}
