@@ -99,7 +99,7 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | **Order confirmation:** `<OrderConfirmationPage />` — polls Firestore for the webhook-created order | ✅ |
 | **Order history:** `<OrderHistoryList />` for signed-in customers; `<GuestOrderLookupPage />` at `/order-status` for guests (order # + email) | ✅ |
 | **Wishlist:** `useWishlist()` + `<WishlistButton />` + `<WishlistPanel />` (account page section) | ✅ |
-| **Point of sale:** `/pos` full-screen register — barcode scanning (USB/Bluetooth keyboard-wedge, camera, manual), cash / card / split tender with change due, 80 mm receipt, server-priced sales via the `caspian-pos` codebase; per-device language + scanner settings at `/pos/settings`; register-only mode disables the storefront | ✅ (v10.0.0+) |
+| **Point of sale:** `/pos` full-screen register — barcode scanning (USB/Bluetooth keyboard-wedge, camera, manual), cash / card / split tender with change due, 80 mm receipt, server-priced sales via the `caspian-pos` codebase; per-device language + scanner settings at `/pos/settings`; register-only mode disables the storefront. Owner + cashier documentation in [`docs/pos-manual.html`](docs/pos-manual.html) | ✅ (v10.0.0+) |
 | **Staff role:** `staff` accounts reach the register and the catalog but no admin surface; three-role picker in `<AdminUsersPage />`, enforced in `firestore.rules` via `isStaff()` | ✅ (v10.0.0+) |
 | **Admin:** `<AdminGuard />`, `<AdminShell />`, `<AdminDashboard />`, product CRUD, orders (table + drag-and-drop Kanban board) + status, reviews moderation, `<AdminAboutPage />` (installed version + GitHub release feed + one-click self-update) | ✅ |
 | **Auth:** `<LoginPage />`, `<RegisterPage />`, `<ForgotPasswordPage />`, `<AccountPage />` — sidebar-driven: profile (name/email/phone/photo), orders, addresses, wishlist, security | ✅ |
@@ -212,17 +212,27 @@ Stripe is handled by Firebase Cloud Functions (callable + webhook), so the packa
 - **Tree-shaking:** the ESM bundle is side-effect-free except for `styles.css`, which you import once at your app root.
 - **One store per page:** pass `appName="my-shop"` if you need multiple `CaspianStoreProvider` instances (e.g. a preview alongside the live storefront).
 
-## User manual
+## User manuals
 
-[`docs/user-manual.html`](docs/user-manual.html) is a manual for the person **running** the shop, not the person installing it — every admin screen, the storefront, and the in-person register, written in plain language. It ships in the package, so an installed copy sits at:
+Two manuals, one per product, written for the person **running** the shop rather than the person installing it. **Hand the register manual to a cashier and nothing else** — that separation is the whole reason there are two.
+
+| File | Covers |
+| --- | --- |
+| [`docs/index.html`](docs/index.html) | A picker. Start here; it links to both and carries your language across. |
+| [`docs/user-manual.html`](docs/user-manual.html) | **The store** — products, orders, customers, content, the page builder, themes and settings. 7 parts / 57 sections. |
+| [`docs/pos-manual.html`](docs/pos-manual.html) | **The register** — a full lifecycle: installing it, the hardware, cashier access, a day at the counter, sales records, and winding a till down again. 7 parts / 38 sections. |
+
+They ship in the package, so installed copies sit at:
 
 ```
+node_modules/@caspian-explorer/script-caspian-store/docs/index.html
 node_modules/@caspian-explorer/script-caspian-store/docs/user-manual.html
+node_modules/@caspian-explorer/script-caspian-store/docs/pos-manual.html
 ```
 
-Open it straight from disk — one self-contained file, no build step and no network requests. It has a sidebar, a search box, light and dark modes, a print stylesheet, and a language switch covering **English, Azerbaijani, Russian and Turkish**. Hand it to a new member of staff.
+Open them straight from disk — each is one self-contained file, no build step and no network requests. Each has a sidebar, a search box, light and dark modes, a print stylesheet, and a language switch covering **English, Azerbaijani, Russian and Turkish**.
 
-Every screen it describes was checked against the source. Where a control is deliberately not available yet, the manual says so rather than describing it as working.
+Every screen they describe was checked against the source. Where a control is deliberately not available yet — a disabled option, a feature that does not exist — the manual says so plainly rather than describing it as working.
 
 ## Release history
 

@@ -27,6 +27,8 @@ Flags:
 - `--no-apphosting` — suppress `apphosting.yaml` in the output. Set this on Vercel-only deploys so the file doesn't sit unused. (v1.20.0+)
 - `--force` — scaffold into a non-empty directory (`.git`, `.gitignore`, `README.md`, `LICENSE` are preserved automatically)
 
+**Running the shop day to day is documented separately:** the two manuals ship in the package at `node_modules/@caspian-explorer/script-caspian-store/docs/index.html` — one for the store, one for the register.
+
 **If you used the scaffolder, stop here and follow the generated `my-store/README.md`** for Firebase + Stripe + seeding. The remainder of this document (§1–§12) is the manual-install path for people embedding the package into an existing React app; you don't need it after scaffolding.
 
 If you can't use `npm create` (e.g. offline mirror, locked-down network), the same scaffolder can be invoked directly from a clone:
@@ -351,7 +353,7 @@ npm run deploy:instagram
 
 This lets store staff view the store's Instagram feed, moderate comments, publish a product as a post, and delete posts — the Meta app secret + the long-lived token stay server-side in these functions and never reach the browser. Enable the **Cloud Scheduler** API for the daily token refresh, and (re)deploy your Firestore rules so the server-only `instagram/connection` doc is locked down: `firebase deploy --only firestore:rules`.
 
-Going live also needs, **outside this repo**: one **Meta app** with **Facebook Login** + **Instagram** (register the POS loopback redirect `http://127.0.0.1:47113/`, request `instagram_basic` / `instagram_manage_comments` / `instagram_content_publish` / `instagram_manage_contents` / `pages_show_list` / `pages_read_engagement` / `business_management`, and complete **App Review** + Business Verification), and this store's Instagram as a **Professional** account linked to a **Facebook Page**. The store owner then connects from the POS (which drives the `linkInstagram` OAuth exchange) and sets the Meta **App ID** per shop under POS **Shops → Edit**.
+Going live also needs, **outside this repo**: one **Meta app** with **Facebook Login** + **Instagram** (register the POS loopback redirect `http://127.0.0.1:47113/`, request `instagram_basic` / `instagram_manage_comments` / `instagram_content_publish` / `instagram_manage_contents` / `pages_show_list` / `pages_read_engagement` / `business_management`, and complete **App Review** + Business Verification), and this store's Instagram as a **Professional** account linked to a **Facebook Page**. This package ships the Instagram Cloud Functions only — **there is no Instagram screen in the admin panel**. Call `linkInstagram` from your own front end to run the OAuth exchange, and store the Meta **App ID** wherever that front end keeps it.
 
 **POS codebase (v10.0.0+ — only when you use the in-person register):**
 
@@ -381,6 +383,8 @@ if fast typing is mistaken for a scan, lower it. Camera scanning uses the browse
 
 **Receipts** print through the normal browser print dialog against any printer your computer already
 has installed, on an 80 mm continuous roll. Set the header and footer under **Sales → Point of sale**.
+
+**The register has its own manual.** `docs/pos-manual.html` covers the whole lifecycle for owners and cashiers — hardware, cashier access, a day at the counter, and closing a till down. Installed copy: `node_modules/@caspian-explorer/script-caspian-store/docs/pos-manual.html`.
 
 **Per-register settings** live at `/pos/settings` and apply to that computer only — its name, its
 interface language, and its scanner timing. One shop can run an English till at the counter and

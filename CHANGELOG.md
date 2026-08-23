@@ -16,6 +16,89 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.2.0 — The register gets its own manual
+
+Splits the user manual per product. The register — a different job, done by a different person, often
+on a different machine — now has a standalone manual that runs the whole lifecycle: what to buy,
+installing it, giving cashiers access, a day at the counter, where the sales end up, and winding a
+till down when the contract ends. Hand it to a cashier and nothing else.
+
+Writing it found four things wrong in this repo's own documentation, all fixed here.
+
+### No consumer action required
+
+Documentation only — no code, rules, config or API change. One caveat: if you linked to a register
+section of `user-manual.html`, that anchor now lives in `pos-manual.html` under the same or a renamed
+id. See **Changed**.
+
+### Added
+
+- **`docs/pos-manual.html`** — the register manual. 7 parts / 38 sections, **fully translated into all
+  four languages** (English, Azerbaijani, Russian, Turkish — no section falls back). The parts follow
+  the lifecycle: Before you start · Installing the register · Setting up each till · Cashiers and
+  access · A day at the counter · Sales records and licences · Winding down and cancelling.
+- **`docs/index.html`** — a picker page linking to both manuals, carrying the reader's language across
+  in the query string (`file://` documents have opaque origins, so `localStorage` is not reliable
+  across the hop).
+- New exports: **`./pos-manual.html`** and **`./manuals.html`**. `docs` was already in `files`.
+- **`scripts/check-manuals.mjs`** + **`.github/workflows/manuals-smoke.yml`** — a drift guard for the
+  two failures that are silent and expensive: the shared shell drifting apart between the two files,
+  and a translation overlay going stale so it renders confidently while hiding new English text. It
+  also pins the footer version string, asserts every `<symbol>` carries a `viewBox`, and asserts the
+  two files' section ids stay disjoint.
+- `scripts/check-exports.mjs` now asserts every `.html` export target actually exists in the packed
+  tarball — the `exports` map could name a path `files` no longer packs, and nothing would notice.
+
+### Changed
+
+- **`docs/user-manual.html` is now the store manual**: 8 parts / 64 sections → 7 parts / 57 sections.
+  The `counter` part and `admin-pos-licences` moved out; a `selling-in-person` signpost section moved
+  in. Both manuals now cross-link from the header, the intro cards and the empty-search state.
+- Moved anchors, old id → new file and id:
+  `pos-turning-the-register-on` → `turn-the-register-on`, `pos-ringing-up-a-sale` → `ringing-up-a-sale`,
+  `pos-register-settings` → `till-settings`, `register-language` → `till-language`,
+  `pos-order-records` → `where-sales-appear`, `pos-licence` → `activating-a-licence`,
+  `admin-pos-licences` → `licences-you-have-sold`, and `pos-payment-and-receipt` split into
+  `taking-payment` + `the-receipt` — all in `pos-manual.html`.
+- `CLAUDE.md` gains the routing rule (which manual owns a change), the shell rule (the ~1150-line shell
+  is byte-identical across both files and is **not** to be refactored into a build step), overlay
+  parity as a hard requirement, and a third hard constraint: do not trust this repo's own prose as
+  evidence — verify against `src/`.
+
+### Fixed
+
+- **`--pos-only` never did what three docs claimed.** `scaffold/create.mjs` and
+  `create-caspian-store/README.md` both said it "turns the public storefront off" / "seeds the
+  storefront-off feature flag". It does neither: it is read once and used only to imply `--with-pos`.
+  The scaffolder writes files and never touches Firestore, so register-only mode is — and always
+  was — a switch you flip at `/admin/pos` after deploying. Corrected in both, and the manual says so.
+- **A screen that has never existed in this package.** `INSTALL.md`, the scaffolder's generated README
+  and the in-admin help page all told owners to set the Meta app ID under "POS → **Shops → Edit**".
+  There is no Shops page, and no Instagram screen at all — this package ships the Instagram Cloud
+  Functions only. All three corrected. This is the exact failure mode `CLAUDE.md` was written about.
+- **The manual was wrong about the licence banner.** All four languages said the yellow strip could be
+  dismissed "for the rest of the day". Dismissal is component state: it comes back on the next page
+  load. Corrected in `en`, `az`, `ru` and `tr`.
+- **Translated part blurbs never rendered.** `resolved()` lifted only `title` from an overlay part, so
+  all 24 translated `blurb` strings had been dead since v10.0.0 and every part card read English in
+  Azerbaijani, Russian and Turkish.
+- **The footer version string was stuck at `v10.0.0`** through two releases because nothing checked it.
+  Now `v10.2.0`, and asserted against `package.json` in CI.
+- Intro cards linked to a part's *first section* rather than the part heading, so reordering a part's
+  sections silently changed where its card landed. They now link to `#part-<id>`, and both part
+  headings and sections carry `scroll-margin-top` so a deep link is not hidden under the sticky header.
+
+### Removed
+
+- The dead `MANUAL.en.intro.updated` footer read (the key never existed) and the never-read
+  `UI.*.onThisPage` strings in all four locales.
+
+### Notes
+
+`create-caspian-store` bumped to **0.3.1** — its README documented the `--pos-only` behaviour that
+turned out to be wrong. No change to what it does; running `npm create caspian-store@latest` is
+unchanged.
+
 ## v10.1.0 — Per-computer register licences
 
 Adds the machinery to sell the in-person register as a licensed product: an Ed25519-signed key you

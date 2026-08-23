@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caspian Store — Manuals</title>
+<meta name="description" content="The two Caspian Store manuals: running the shop, and running the register.">
+<style>
+/* TOKENS:START — the design tokens, shared verbatim with docs/index.html. */
+:root {
+  --bg:            #ffffff;
+  --bg-subtle:     #f7f7f8;
+  --surface:       #ffffff;
+  --surface-2:     #f4f4f5;
+  --border:        #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text:          #18181b;
+  --text-muted:    #62626b;
+  --text-faint:    #8e8e97;
+  --accent:        #1d4ed8;
+  --accent-weak:   #eff4ff;
+  --accent-text:   #1d4ed8;
+  --warn:          #92650e;
+  --warn-weak:     #fdf6e3;
+  --warn-border:   #eedcae;
+  --mark-bg:       #fde68a;
+  --mark-text:     #18181b;
+  --shadow:        0 1px 2px rgba(24, 24, 27, .06), 0 8px 24px rgba(24, 24, 27, .06);
+
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, "Noto Sans", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --sidebar-w: 286px;
+  --header-h: 61px;
+  --radius: 10px;
+  --maxw: 780px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:            #0d0d0f;
+    --bg-subtle:     #121214;
+    --surface:       #151517;
+    --surface-2:     #1c1c20;
+    --border:        #2a2a30;
+    --border-strong: #3a3a42;
+    --text:          #f2f2f3;
+    --text-muted:    #a2a2ad;
+    --text-faint:    #74747f;
+    --accent:        #7ea6ff;
+    --accent-weak:   #16203a;
+    --accent-text:   #9dbaff;
+    --warn:          #e8c877;
+    --warn-weak:     #2a2313;
+    --warn-border:   #4a3d1c;
+    --mark-bg:       #6b5312;
+    --mark-text:     #fdf6e3;
+    --shadow:        0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px rgba(0, 0, 0, .4);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:            #0d0d0f;
+  --bg-subtle:     #121214;
+  --surface:       #151517;
+  --surface-2:     #1c1c20;
+  --border:        #2a2a30;
+  --border-strong: #3a3a42;
+  --text:          #f2f2f3;
+  --text-muted:    #a2a2ad;
+  --text-faint:    #74747f;
+  --accent:        #7ea6ff;
+  --accent-weak:   #16203a;
+  --accent-text:   #9dbaff;
+  --warn:          #e8c877;
+  --warn-weak:     #2a2313;
+  --warn-border:   #4a3d1c;
+  --mark-bg:       #6b5312;
+  --mark-text:     #fdf6e3;
+  --shadow:        0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px rgba(0, 0, 0, .4);
+}
+/* TOKENS:END */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 var(--font);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+.shell { width: 100%; max-width: 720px; }
+.head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.brand-mark {
+  display: inline-grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--accent-weak); color: var(--accent);
+}
+.brand-name { font-weight: 650; letter-spacing: -0.01em; }
+.spacer { flex: 1; }
+.icon { width: 18px; height: 18px; }
+.icon-lg { width: 22px; height: 22px; }
+h1 { font-size: 26px; line-height: 1.25; letter-spacing: -0.02em; margin: 14px 0 6px; }
+.lede { color: var(--text-muted); margin: 0 0 22px; }
+.cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: inherit; text-decoration: none;
+}
+.card:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.card svg { color: var(--accent); flex: none; margin-top: 2px; }
+.card b { display: block; margin-bottom: 3px; }
+.card span { color: var(--text-muted); font-size: 13.5px; }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+.seg button {
+  border: 0; background: var(--surface); color: var(--text-muted);
+  font: inherit; font-size: 12.5px; padding: 5px 9px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--accent-weak); color: var(--accent-text); font-weight: 600; }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 30px; height: 30px;
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); color: var(--text-muted); cursor: pointer;
+}
+.icon-btn:hover { background: var(--surface-2); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.foot { margin-top: 22px; color: var(--text-faint); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 4.5 4h15L21 9.5"/><path d="M3 9.5h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 20.5v-6h6v6"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10.5 8v8M14 8v8M17 8v8"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  </defs>
+</svg>
+
+<div class="shell">
+  <div class="head">
+    <span class="brand-mark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg></span>
+    <span class="brand-name">Caspian Store</span>
+    <span class="spacer"></span>
+    <div class="seg" id="lang" role="group" aria-label="Language"></div>
+    <button class="icon-btn" id="theme-toggle" type="button" aria-label="Theme">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun" id="theme-icon"/></svg>
+    </button>
+  </div>
+  <h1 id="title"></h1>
+  <p class="lede" id="lede"></p>
+  <div class="cards" id="cards"></div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+/* A two-link landing page. It deliberately does not carry the manuals' 47 KB
+   shell — but its design tokens above are copied verbatim from
+   docs/user-manual.html and scripts/check-manuals.mjs asserts they stay equal. */
+const LANGS = [
+  { code: 'en', label: 'English' },
+  { code: 'az', label: 'Azərbaycan' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'tr', label: 'Türkçe' },
+];
+
+const PICK = {
+  en: {
+    title: 'Which manual do you need?',
+    lede: 'Two manuals, one for each side of the product. Every screen described in them was opened in the software and checked.',
+    store: { name: 'Store manual', blurb: 'Products, orders, customers, content, themes and settings — everything outside the register.' },
+    pos: { name: 'Register manual', blurb: 'The in-person till: installing it, the hardware, cashiers, a day at the counter, and closing it down.' },
+    foot: 'Hand the register manual to a cashier and nothing else.',
+  },
+  az: {
+    title: 'Hansı təlimat lazımdır?',
+    lede: 'İki təlimat, məhsulun hər tərəfi üçün biri. Onlarda təsvir olunan hər ekran proqramda açılıb və yoxlanılıb.',
+    store: { name: 'Mağaza təlimatı', blurb: 'Məhsullar, sifarişlər, müştərilər, məzmun, mövzular və tənzimlər - kassadan kənarda qalan hər şey.' },
+    pos: { name: 'Kassa təlimatı', blurb: 'Piştaxta kassası: quraşdırılması, avadanlıq, kassirlər, piştaxtada bir gün və bağlanması.' },
+    foot: 'Kassirə yalnız kassa təlimatını verin, başqa heç nə.',
+  },
+  ru: {
+    title: 'Какое руководство вам нужно?',
+    lede: 'Два руководства, по одному на каждую сторону продукта. Каждый описанный в них экран был открыт в программе и проверен.',
+    store: { name: 'Руководство по магазину', blurb: 'Товары, заказы, покупатели, содержимое, темы и настройки - всё, что вне кассы.' },
+    pos: { name: 'Руководство по кассе', blurb: 'Касса за прилавком: установка, оборудование, кассиры, рабочий день и закрытие.' },
+    foot: 'Кассиру достаточно дать руководство по кассе и больше ничего.',
+  },
+  tr: {
+    title: 'Hangi kılavuza ihtiyacınız var?',
+    lede: 'İki kılavuz, ürünün her bir tarafı için bir tane. İçlerinde anlatılan her ekran yazılımda açıldı ve doğrulandı.',
+    store: { name: 'Mağaza kılavuzu', blurb: 'Ürünler, siparişler, müşteriler, içerik, temalar ve ayarlar - kasanın dışındaki her şey.' },
+    pos: { name: 'Kasa kılavuzu', blurb: 'Tezgâh kasası: kurulumu, donanım, kasiyerler, tezgâhta bir gün ve kapatılması.' },
+    foot: 'Bir kasiyere yalnızca kasa kılavuzunu verin, başka bir şey değil.',
+  },
+};
+
+const LANG_KEY = 'caspian:manual:lang';
+const THEME_KEY = 'caspian:manual:theme';
+const $ = (s) => document.querySelector(s);
+
+function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* file:// */ } }
+function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+function initialLang() {
+  const q = new URLSearchParams(location.search).get('lang');
+  if (q && LANGS.some((l) => l.code === q)) return q;
+  const saved = read(LANG_KEY);
+  if (saved && LANGS.some((l) => l.code === saved)) return saved;
+  for (const nav of navigator.languages || [navigator.language || 'en']) {
+    const primary = String(nav).split('-')[0];
+    if (LANGS.some((l) => l.code === primary)) return primary;
+  }
+  return 'en';
+}
+
+let lang = initialLang();
+
+function el(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  Object.assign(n, props || {});
+  for (const k of kids) if (k) n.append(k);
+  return n;
+}
+
+function icon(id, cls) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', cls || 'icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', '#' + id);
+  svg.append(use);
+  return svg;
+}
+
+function card(href, iconId, name, blurb) {
+  // The language rides along in the query string: file:// documents have opaque
+  // origins, so localStorage is not reliable across the hop between the files.
+  const a = el('a', { className: 'card', href: href + '?lang=' + lang });
+  a.append(icon(iconId, 'icon icon-lg'));
+  a.append(el('div', {}, el('b', { textContent: name }), el('span', { textContent: blurb })));
+  return a;
+}
+
+function renderLangSwitch() {
+  const host = $('#lang');
+  host.replaceChildren(
+    ...LANGS.map((l) => {
+      const b = el('button', { type: 'button', textContent: l.code.toUpperCase(), title: l.label });
+      b.setAttribute('aria-pressed', String(l.code === lang));
+      b.addEventListener('click', () => setLang(l.code));
+      return b;
+    }),
+  );
+}
+
+function setLang(code) {
+  lang = code;
+  store(LANG_KEY, code);
+  try {
+    const url = new URL(location.href);
+    url.searchParams.set('lang', code);
+    history.replaceState(null, '', url);
+  } catch (e) { /* chrome refuses this on file:// */ }
+  document.documentElement.lang = code;
+  render();
+}
+
+function render() {
+  const t = PICK[lang] || PICK.en;
+  document.title = 'Caspian Store — ' + t.title;
+  $('#title').textContent = t.title;
+  $('#lede').textContent = t.lede;
+  $('#foot').textContent = t.foot;
+  renderLangSwitch();
+  $('#cards').replaceChildren(
+    card('user-manual.html', 'i-store', t.store.name, t.store.blurb),
+    card('pos-manual.html', 'i-scan', t.pos.name, t.pos.blurb),
+  );
+}
+
+function applyTheme(mode) {
+  if (mode === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', mode);
+  $('#theme-icon').setAttribute('href', mode === 'dark' ? '#i-moon' : '#i-sun');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(read(THEME_KEY) || 'auto');
+  document.documentElement.lang = lang;
+  render();
+  $('#theme-toggle').addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    store(THEME_KEY, next);
+    applyTheme(next);
+  });
+});
+</script>
+</body>
+</html>

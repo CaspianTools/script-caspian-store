@@ -21,7 +21,7 @@ All flags are forwarded to the underlying scaffolder:
 - `--with-email` — also scaffold the transactional-email Cloud Functions tree into `functions-email/` (v8.0.0+ requires `firebase functions:secrets:set CASPIAN_EMAIL_<PROVIDER>_API_KEY` before first deploy)
 - `--with-instagram` — also scaffold the Instagram-channel Cloud Functions tree into `functions-instagram/` (requires `META_APP_ID` + `META_APP_SECRET` as Functions secrets)
 - `--with-pos` — also scaffold the point-of-sale Cloud Functions tree into `functions-pos/`, for the in-person register at `/pos`. **No secrets to set.** The register cannot record a sale without this deployed.
-- `--pos-only` — build a register-only store: implies `--with-pos` and turns the public storefront off, so the site serves the till and the admin panel and nothing else. It's a runtime setting, so you can switch the storefront back on later without re-scaffolding.
+- `--pos-only` — implies `--with-pos`. It **only** adds the register's Cloud Functions; it does not switch the public storefront off. The scaffolder writes files and never touches your database, so register-only mode is a switch you flip at `/admin/pos` after deploying. It's a runtime setting, so you can switch the storefront back on later without re-scaffolding.
 - `--with-functions` — **deprecated** alias for `--with-stripe`, kept for back-compat
 - `--no-apphosting` — suppress `apphosting.yaml` in the output. **Set this when deploying to Vercel** so the unused file doesn't sit in your repo.
 - `--force` — scaffold into a non-empty directory (`.git`, `.gitignore`, `README.md`, `LICENSE` are preserved automatically)

@@ -81,6 +81,26 @@ const installedRoot = join(
   '@caspian-explorer',
   'script-caspian-store',
 );
+// Docs ship as files, not code: the `exports` map can name a path the `files`
+// list no longer packs, and nothing else would notice until a consumer opened a
+// dead link. Assert every .html export target exists in the real installed tree.
+{
+  const installedPkg = JSON.parse(readFileSync(join(installedRoot, 'package.json'), 'utf8'));
+  const htmlTargets = Object.entries(installedPkg.exports || {}).filter(
+    ([, target]) => typeof target === 'string' && target.endsWith('.html'),
+  );
+  const missing = htmlTargets.filter(([, target]) => !existsSync(join(installedRoot, target)));
+  if (missing.length) {
+    console.error('');
+    console.error('Missing doc files in the packed tarball:');
+    for (const [key, target] of missing) console.error(`  ${key} -> ${target}`);
+    console.error('');
+    console.error('Check the `files` list in package.json.');
+    process.exit(1);
+  }
+  log(`${htmlTargets.length} doc export target(s) present in the tarball`);
+}
+
 const mainEntry = join(installedRoot, 'dist', 'index.mjs');
 const firebaseEntry = join(installedRoot, 'dist', 'firebase', 'index.mjs');
 

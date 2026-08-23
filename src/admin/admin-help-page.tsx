@@ -258,8 +258,10 @@ const HELP_SECTIONS: HelpSection[] = [
             (<code>npm run deploy:instagram</code>).
           </li>
           <li>
-            In the POS: set the <b>Meta app ID</b> per shop (Shops → Edit), then open <b>Instagram</b> and{' '}
-            <b>Connect</b>. After an update that adds a capability, reconnect once to grant the new permission.
+            Note there is <b>no Instagram screen in this admin panel</b>. This package ships the Cloud
+            Functions only, so the OAuth exchange (<code>linkInstagram</code>) and the Meta app ID are driven
+            from whatever front end you build on them. After an update that adds a capability, reconnect once
+            to grant the new permission.
           </li>
         </ol>
         <p>

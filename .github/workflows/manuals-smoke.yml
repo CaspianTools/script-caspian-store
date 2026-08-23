@@ -1,0 +1,38 @@
+name: Manuals — shell + translation drift
+
+# The two manuals in docs/ share a ~1150-line shell that is hand-copied between
+# them, and each carries four language overlays. Two failures are silent and
+# expensive: the shells drifting apart, and a translation overlay going stale so
+# it renders confidently while hiding newly-added English text. This also pins
+# the footer version string, which sat at v10.0.0 through two releases because
+# nothing checked it. See scripts/check-manuals.mjs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'scripts/check-manuals.mjs'
+      - 'package.json'
+      - '.github/workflows/manuals-smoke.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'scripts/check-manuals.mjs'
+      - 'package.json'
+      - '.github/workflows/manuals-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # No npm install: the script imports nothing outside node: builtins.
+      - name: Check manual shell equality, icons, and locale parity
+        run: node scripts/check-manuals.mjs

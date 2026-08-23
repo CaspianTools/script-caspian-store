@@ -16,8 +16,10 @@
  *                                    #   /admin/plugins/email-providers after deploy)
  *     [--with-pos]                  # also copy firebase/functions-pos/ (in-person register:
  *                                   #   server-priced sale commits, idempotent offline replay)
- *     [--pos-only]                  # register-only store: implies --with-pos and seeds the
- *                                   #   storefront-off feature flag
+ *     [--pos-only]                  # implies --with-pos. NOTE: this only adds the register's
+ *                                   #   Cloud Functions. It does NOT switch the storefront off --
+ *                                   #   the scaffolder writes files and never touches Firestore.
+ *                                   #   Register-only mode is a switch at /admin/pos, post-deploy.
  *     [--with-instagram]            # also copy firebase/functions-instagram/ (Instagram
  *                                    #   feed + comment moderation for store staff;
  *                                    #   set META_APP_ID / META_APP_SECRET then deploy)
@@ -827,7 +829,7 @@ npm run dev                  # http://localhost:3000
    firebase functions:secrets:set META_APP_SECRET  # your Meta app secret
    npm run deploy:instagram
    \`\`\`
-   Enable the **Cloud Scheduler** API (daily token refresh) and redeploy rules (\`firebase deploy --only firestore:rules\`) so the \`instagram/connection\` token doc stays server-only. Going live also needs a Meta app with **Facebook Login** + **Instagram** (loopback redirect \`http://127.0.0.1:47113/\`, the \`instagram_*\` + \`pages_*\` permissions, and **App Review**), and your IG as a **Professional** account linked to a **Facebook Page**. The store owner then connects Instagram from the POS (which drives the \`linkInstagram\` OAuth exchange) and sets the Meta **App ID** per shop under POS Shops → Edit.
+   Enable the **Cloud Scheduler** API (daily token refresh) and redeploy rules (\`firebase deploy --only firestore:rules\`) so the \`instagram/connection\` token doc stays server-only. Going live also needs a Meta app with **Facebook Login** + **Instagram** (loopback redirect \`http://127.0.0.1:47113/\`, the \`instagram_*\` + \`pages_*\` permissions, and **App Review**), and your IG as a **Professional** account linked to a **Facebook Page**. This package ships the Instagram Cloud Functions only -- there is no Instagram screen in the admin panel. Drive the \`linkInstagram\` OAuth exchange, and store the Meta **App ID**, from your own front end.
 5. **Seed Firestore:**
    \`\`\`bash
    # After downloading a service-account JSON:
