@@ -16,6 +16,70 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.2.1 — `--with-pos` never actually installed the register
+
+Scaffolding a store with `--with-pos` registered the register's Cloud Functions in the generated
+`firebase.json` and then never copied them. Every such site got a `firebase.json` pointing at a
+`functions-pos/` directory that did not exist: the deploy fails, and until it is deployed the register
+can build a ticket and take a payment but cannot record the sale. Fixed, along with a second bug that
+could quietly lose an item from a sale.
+
+### Consumer action required on upgrade
+
+Only if you scaffolded with `--with-pos` or `--pos-only` **before** this release. Your project is
+missing `functions-pos/`. Upgrade, copy it in once, then deploy:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v10.2.1
+cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-pos ./functions-pos
+cd functions-pos && npm install && cd ..
+firebase deploy --only functions:caspian-pos
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+New scaffolds need none of this. Everyone else is unaffected — nothing outside the register changed.
+
+### Fixed
+
+- **`scaffold/create.mjs` registered `caspian-pos` but never copied it.** The `cpSync` calls covered
+  `functions-admin`, `-email`, `-stripe` and `-instagram`; `functions-pos` was missing, while the
+  `firebase.json` entry for it was written unconditionally under `--with-pos`. The scaffolder now
+  copies it, writes its `.gitignore`, and adds the `deploy:pos` script alongside the other four. The
+  register manual has described this copy since v10.0.1 — the code now does what the manual says.
+
+- **Backing out of a failed payment could silently drop an item from the sale.** The tender dialog's
+  Cancel reset the phase but cleared neither the burnt sale id nor the error, while both the success
+  path and New sale cleared both. So: commit fails → cancel → scan another item → take payment again →
+  the retry reuses the same sale id → if the first call had actually landed, the idempotency gate
+  returns the *original* order and the newly-scanned item is gone.
+
+  The obvious fix — clear the sale id on cancel — trades that for something worse: a commit that
+  landed but lost its response would be re-committed under a fresh id, charging the customer twice.
+  Neither reaction is safe without knowing whether the sale landed, so the register now asks. A new
+  `findCommittedSale(saleId)` on the storage adapter reads back `orders/{saleId}` — permitted because
+  `commitPosSale` stamps the order's `userId` with the caller's uid — and Cancel branches on the
+  answer: recover the sale and print its receipt if it landed, start a clean id if it definitively did
+  not, and if the check itself fails, keep the id and tell the cashier not to change the sale.
+
+- **Three hard-coded English strings on the register's Settings page** now go through i18n and are
+  translated into all four languages: the "Available in a coming release" notice under the storage
+  choice, the locale-pinned language note, and the register-name placeholder.
+
+### Changed
+
+- `PosStorageAdapter` gains `findCommittedSale(saleId)`. Any adapter must now answer it. Its contract
+  is deliberately three-valued: a sale, `null` for definitively absent, and a rejection for "could not
+  find out" — the caller must treat the last two differently.
+- Five stale comments that pinned unshipped features to specific versions (`v10.2.0` for standalone
+  local mode and POS sessions, `v10.3.0` for the ESC/POS transports) no longer name a version. v10.2.0
+  shipped without them while the comments claimed otherwise.
+
+### Notes
+
+`create-caspian-store` sibling unaffected — no change to `create-caspian-store/` and no scaffolder CLI
+surface change. `--with-pos` and `--pos-only` behave as their existing documentation describes; only
+the implementation was missing.
+
 ## v10.2.0 — The register gets its own manual
 
 Splits the user manual per product. The register — a different job, done by a different person, often

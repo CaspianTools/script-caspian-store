@@ -196,6 +196,7 @@ const ourScripts = {
   'deploy:email': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-email',
   'deploy:stripe': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-stripe',
   'deploy:instagram': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-instagram',
+  'deploy:pos': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-pos',
   'firebase:seed': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/seed/seed.mjs',
   'grant-admin': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/seed/grant-admin.mjs',
 };
@@ -708,7 +709,7 @@ if (includePos) {
 }
 write('firebase.json', JSON.stringify(firebaseConfig, null, 2) + '\n');
 
-// Always copy functions-admin; copy functions-email / functions-stripe only on opt-in.
+// Always copy functions-admin; copy the other four codebases only on opt-in.
 // Per-codebase .gitignore is written inline here (not relied on from cpSync):
 // npm silently consumes `.gitignore` files in the tarball as ignore rules and
 // does NOT ship them as regular files, so the ones that live in the package's
@@ -727,6 +728,10 @@ if (includeStripe) {
 if (includeInstagram) {
   cpSync(join(sourceFirebaseDir, 'functions-instagram'), join(root, 'functions-instagram'), { recursive: true });
   write('functions-instagram/.gitignore', 'node_modules\nlib/\n');
+}
+if (includePos) {
+  cpSync(join(sourceFirebaseDir, 'functions-pos'), join(root, 'functions-pos'), { recursive: true });
+  write('functions-pos/.gitignore', 'node_modules\nlib/\n');
 }
 
 // ---- apphosting.yaml ----

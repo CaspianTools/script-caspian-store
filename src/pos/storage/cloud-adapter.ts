@@ -1,5 +1,6 @@
 import { httpsCallable, type Functions } from 'firebase/functions';
-import type { Firestore } from 'firebase/firestore';
+import { doc, getDoc, type Firestore } from 'firebase/firestore';
+import { caspianCollections } from '../../firebase/collections';
 import { findProductByCode, searchPosProducts } from '../../services/pos-catalog-service';
 import type {
   PosCommittedSale,
@@ -65,6 +66,24 @@ export class PosCloudAdapter implements PosStorageAdapter {
       total: data.total,
       duplicate: Boolean(data.duplicate),
       stockShortfall: data.stockShortfall ?? [],
+      pending: false,
+    };
+  }
+
+  async findCommittedSale(saleId: string): Promise<PosCommittedSale | null> {
+    // A direct read rather than a callable: `commitPosSale` writes the order at
+    // `orders/{saleId}` and stamps `userId` with the caller's uid for a walk-in
+    // sale, and the rules let a signed-in user read back their own order. So the
+    // till that made the sale is exactly the client allowed to ask about it.
+    const snap = await getDoc(doc(caspianCollections(this.db).orders, saleId));
+    if (!snap.exists()) return null;
+    const data = snap.data() as { receiptNumber?: string; total?: number };
+    return {
+      orderId: saleId,
+      receiptNumber: typeof data.receiptNumber === 'string' ? data.receiptNumber : '',
+      total: typeof data.total === 'number' ? data.total : 0,
+      duplicate: true,
+      stockShortfall: [],
       pending: false,
     };
   }

@@ -693,7 +693,7 @@ export interface PosDevice {
  * How a register gets a receipt out. `'browser'` is `window.print()` against
  * an OS printer driver and works everywhere; the other two stream ESC/POS
  * bytes straight to the printer and are Chromium-only. Added in v10.0.0
- * (transports implemented in v10.3.0).
+ * (transports not implemented yet).
  */
 export type PosPrinterTransport = 'browser' | 'webserial' | 'webusb';
 
@@ -711,7 +711,8 @@ export interface PosCashMovement {
 /**
  * One cashier's till session. Written exclusively by the `openPosShift` /
  * `closePosShift` callables — clients read but never write, so `expectedCash`
- * cannot be edited to hide a variance. Implemented in v10.2.0.
+ * cannot be edited to hide a variance. Not implemented yet — there is no
+ * shift UI anywhere in the product, and this type is declared ahead of it.
  */
 export interface PosSession {
   id: string;

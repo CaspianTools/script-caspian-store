@@ -58,6 +58,9 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const deviceId = useMemo(() => getPosDeviceId(), []);
   // Held across retries of the SAME sale — see the note in `commit`.
   const saleIdRef = useRef<string | null>(null);
+  // What was tendered on the last attempt, so a sale recovered on cancel can
+  // still print a full receipt instead of one missing its payment lines.
+  const lastTendersRef = useRef<PosTenderInput[]>([]);
 
   useEffect(() => {
     setScanGapMs(readScannerGapMs());
@@ -144,6 +147,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
       // charging. Minting a fresh id per retry would create the second sale.
       const saleId = saleIdRef.current ?? nextPosSaleId();
       saleIdRef.current = saleId;
+      lastTendersRef.current = tenders;
       try {
         const sale = await adapter.commitSale({
           saleId,
@@ -179,6 +183,64 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     },
     [adapter, db, deviceId, posSettings, t, ticket.lines, ticket.totals, user, userProfile],
   );
+
+  /**
+   * Backing out of the payment window after a failed commit.
+   *
+   * This looks trivial and is not. A commit that timed out and a commit that
+   * was rejected are indistinguishable from here, so before letting the cashier
+   * edit the ticket the register asks the one question that separates them:
+   * did the sale land? Guessing wrong is expensive in both directions — keeping
+   * the burnt sale id drops anything scanned afterwards (the idempotency gate
+   * returns the original order), while minting a fresh one charges the customer
+   * twice for a sale that actually succeeded.
+   */
+  const cancelTender = useCallback(async () => {
+    const saleId = saleIdRef.current;
+    setCommitError(null);
+    if (!saleId) {
+      setPhase({ kind: 'selling' });
+      return;
+    }
+    setCommitting(true);
+    try {
+      const landed = await adapter.findCommittedSale(saleId);
+      if (landed) {
+        // It succeeded and only the response was lost. The ticket has not been
+        // touched since the attempt, so it still describes this sale exactly.
+        const receipt = buildReceiptModel({
+          receiptNumber: landed.receiptNumber,
+          orderId: landed.orderId,
+          lines: ticket.lines,
+          tenders: lastTendersRef.current,
+          subtotal: ticket.totals.subtotal,
+          discount: ticket.totals.lineDiscounts,
+          total: landed.total || ticket.totals.total,
+          cashierName: userProfile?.displayName || user?.email || '',
+          deviceLabel: getPosDeviceLabel(),
+          receiptHeader: posSettings?.receiptHeader,
+          receiptFooter: posSettings?.receiptFooter,
+          cashRounding: posSettings?.roundCashTo,
+        });
+        saleIdRef.current = null;
+        setPhase({ kind: 'done', sale: landed, receipt });
+        return;
+      }
+      // Definitively absent: nothing was charged, so an edited ticket is free to
+      // start a fresh id.
+      saleIdRef.current = null;
+      setPhase({ kind: 'selling' });
+    } catch (error) {
+      // Could not find out. Keep the id — a retry then collides with the
+      // committed sale instead of creating a second one. The cost is that an
+      // item added now would be swallowed, so say so rather than hide it.
+      reportServiceError(db, 'pos-register.cancelProbe', error);
+      setScanMessage(t('pos.done.outcomeUnknown'));
+      setPhase({ kind: 'selling' });
+    } finally {
+      setCommitting(false);
+    }
+  }, [adapter, db, posSettings, t, ticket.lines, ticket.totals, user, userProfile]);
 
   const startNewSale = useCallback(() => {
     ticket.clear();
@@ -399,7 +461,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           cashRounding={posSettings.roundCashTo}
           submitting={committing}
           error={commitError}
-          onCancel={() => setPhase({ kind: 'selling' })}
+          onCancel={cancelTender}
           onConfirm={commit}
         />
       ) : null}

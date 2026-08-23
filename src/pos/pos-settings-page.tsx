@@ -83,10 +83,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
             // Honest rather than mysteriously inert: a consumer app that drives
             // locale from the URL pins it, and the picker cannot win against
             // that. Saying so beats a control that appears to do nothing.
-            <FieldDescription>
-              This site sets the language from its own routing, so this choice is stored but
-              will not change what you see here.
-            </FieldDescription>
+            <FieldDescription>{t('pos.settings.languagePinned')}</FieldDescription>
           ) : null}
         </label>
       </section>
@@ -94,7 +91,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
       <section style={section}>
         <label style={field}>
           <span style={fieldLabel}>{t('pos.settings.deviceLabel')}</span>
-          <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Front counter" />
+          <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('pos.settings.deviceLabelPlaceholder')} />
           <FieldDescription>{t('pos.settings.deviceLabelHelp')}</FieldDescription>
         </label>
 
@@ -117,16 +114,18 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
                 value={mode}
                 checked={storageMode === mode}
                 onChange={() => setStorageMode(mode)}
-                // Standalone local mode is implemented in v10.2.0. Showing the
-                // choice now (disabled) tells an evaluating merchant it is
-                // coming; silently omitting it would read as "not supported".
+                // Standalone local mode is not built yet. Showing the choice
+                // now (disabled) tells an evaluating merchant it is coming;
+                // silently omitting it would read as "not supported". Do not
+                // pin a version here again — v10.2.0 came and went with this
+                // comment claiming the feature had shipped.
                 disabled={mode === 'local'}
               />
               <span>
                 <strong>{t(`pos.storage.${mode}`)}</strong>
                 <div style={{ fontSize: 12, color: '#666' }}>{t(`pos.storage.${mode}Help`)}</div>
                 {mode === 'local' ? (
-                  <div style={{ fontSize: 12, color: '#b45309' }}>Available in a coming release.</div>
+                  <div style={{ fontSize: 12, color: '#b45309' }}>{t('pos.storage.comingSoon')}</div>
                 ) : null}
               </span>
             </label>

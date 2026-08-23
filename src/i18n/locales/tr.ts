@@ -129,6 +129,12 @@ const tr: MessageDict = {
   'pos.done.print': 'Fişi yazdır',
   'pos.done.newSale': 'Yeni satış',
   'pos.done.failed': 'Satış kaydedilemedi',
+  'pos.done.outcomeUnknown':
+    'Son satış denetlenemedi. Bu satışı değiştirmeyin - bitirmek için yeniden Ödeme al düğmesine basın.',
+  'pos.storage.comingSoon': 'Gelecek bir sürümde kullanılabilir olacak.',
+  'pos.settings.languagePinned':
+    'Bu site dili kendi yönlendirmesinden belirler; bu yüzden seçiminiz saklanır ama burada gördüğünüzü değiştirmez.',
+  'pos.settings.deviceLabelPlaceholder': 'Ön tezgâh',
   'pos.done.retry': 'Tekrar dene',
   'pos.done.stockWarning':
     'Kaydedildi, ancak {count, plural, one {# satırda} other {# satırda}} stok eksiye düştü. Envanteri kontrol edin.',

@@ -73,9 +73,9 @@ export interface PosCommittedSale {
  * The single seam between the register UI and wherever its data lives.
  *
  * Every screen is written against this interface and never against Firestore
- * directly, so the standalone local-storage mode is an implementation of it
+ * directly, so a standalone local-storage mode would be an implementation of it
  * rather than a second copy of the register. Introduced in v10.0.0 with the
- * cloud implementation only; the local one lands in v10.2.0.
+ * cloud implementation, which is still the only one that ships.
  */
 export interface PosStorageAdapter {
   readonly mode: PosStorageMode;
@@ -91,4 +91,17 @@ export interface PosStorageAdapter {
    * the same draft twice yields one sale and reports the second as a duplicate.
    */
   commitSale(draft: PosSaleDraft): Promise<PosCommittedSale>;
+
+  /**
+   * Did this sale already land? Answers the one question the register cannot
+   * guess after a failed commit: a lost response and a rejected call look
+   * identical from the client, and the two safe reactions are opposite.
+   * Reusing the sale id when the sale did NOT land is fine; reusing it when it
+   * DID land silently discards anything scanned since. Minting a fresh id has
+   * the mirror-image failure, and that one double-charges a customer.
+   *
+   * Resolves `null` when the sale is definitively absent, and rejects when the
+   * answer could not be obtained — callers must treat those differently.
+   */
+  findCommittedSale(saleId: string): Promise<PosCommittedSale | null>;
 }

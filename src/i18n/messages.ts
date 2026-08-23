@@ -1618,6 +1618,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.done.print': 'Print receipt',
   'pos.done.newSale': 'New sale',
   'pos.done.failed': 'The sale could not be saved',
+  'pos.done.outcomeUnknown':
+    'The last sale could not be checked. Do not change this sale - press Take payment again to finish it.',
   'pos.done.retry': 'Try again',
   'pos.done.stockWarning':
     'Recorded, but stock went negative on {count, plural, one {# line} other {# lines}}. Check inventory.',
@@ -1635,6 +1637,9 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.settings.deviceId': 'Device id',
   'pos.settings.language': 'Language',
   'pos.settings.languageHelp': 'Changes the register interface on this computer only.',
+  'pos.settings.languagePinned':
+    'This site sets the language from its own routing, so this choice is stored but will not change what you see here.',
+  'pos.settings.deviceLabelPlaceholder': 'Front counter',
   'pos.settings.printer': 'Receipt printer',
   'pos.settings.printerBrowser': 'Browser print dialog',
   'pos.settings.printerBrowserHelp': 'Works with any printer your computer already has installed.',
@@ -1650,6 +1655,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.storage.local': 'This computer only',
   'pos.storage.localHelp':
     'Sales stay on this computer and never leave it. No internet needed, but nothing appears in the online admin panel and you are responsible for backups.',
+  'pos.storage.comingSoon': 'Available in a coming release.',
   'pos.license.title': 'Licence',
   'pos.license.key': 'Licence key',
   'pos.license.activate': 'Activate',

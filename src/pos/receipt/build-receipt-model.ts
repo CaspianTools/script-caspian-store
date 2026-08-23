@@ -77,7 +77,7 @@ function roundCash(amount: number, step: number): number {
  * The one description of what a receipt says.
  *
  * Both output paths render from this: the React component (browser print, any
- * OS printer) and, from v10.3.0, the ESC/POS byte encoder that talks to a
+ * OS printer) and, once it ships, the ESC/POS byte encoder that talks to a
  * thermal printer over WebUSB/WebSerial. Keeping the *content* in one place
  * means the two can never disagree about what a customer was charged, which
  * they inevitably would if each formatted the sale itself.

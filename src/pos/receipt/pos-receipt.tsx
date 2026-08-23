@@ -17,7 +17,7 @@ export interface PosReceiptProps {
  *
  * This path works with any printer the computer already has a driver for,
  * including every thermal printer sold with one — which is why it is the
- * default and the fallback for the direct ESC/POS transports in v10.3.0. It
+ * default, and would remain the fallback if the direct ESC/POS transports ship. It
  * also renders every glyph correctly, which the byte path cannot promise:
  * ESC/POS is codepage-based and Azerbaijani's `ə` is in no standard codepage.
  *
