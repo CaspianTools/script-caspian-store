@@ -180,17 +180,29 @@ The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/s
 - **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
-- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, and a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
-- **Whenever a new `.exe` is compiled, hand over TWO links: a local path and a GitHub URL.** Not the release page, not "see the Releases tab". The GitHub URL is what gets sent to a shop; the local path is what gets tested on this machine before it is sent. Download the asset into the user's `Downloads` folder so both exist:
-  ```
-  https://github.com/CaspianTools/script-caspian-store/releases/download/desktop/vX.Y.Z/Caspian.Register_X.Y.Z_x64-setup.exe
-  ```
-  Get the URL from the release rather than composing it by hand, so a rename cannot make the link a lie, and pull a local copy in the same step:
+- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version, **and the POS installer links, every single time** (next rule).
+- **Every end-of-task report hands over the POS installer — TWO links, every time.** A local path and a GitHub URL. Not the release page, not "see the Releases tab". The GitHub URL is what gets sent to a shop; the local path is what gets tested on this machine before it is sent.
+
+  **This is unconditional.** It is *not* limited to tasks that compiled a new `.exe`. A report about a library release, a docs fix, a scaffolder tweak or a bug investigation still ends with the installer links, because "where do I get the thing I install on a till?" has one answer and the user should never have to ask for it twice.
+
+  - If this task built a new `.exe`, link that one.
+  - Otherwise link the **current newest `desktop/v*` release**. What a shop downloads does not change just because this task did not touch `desktop/`.
+
+  Read the URL back from the release rather than composing it by hand — a rename would otherwise make the link a lie — and pull a local copy in the same step:
+
   ```bash
-  gh api repos/CaspianTools/script-caspian-store/releases/tags/desktop%2FvX.Y.Z --jq '.assets[].browser_download_url'
-  gh release download desktop/vX.Y.Z --dir ~/Downloads --clobber
+  LATEST=$(gh release list --limit 100 --json tagName,createdAt \
+    --jq '[.[] | select(.tagName | startswith("desktop/"))] | sort_by(.createdAt) | reverse | .[0].tagName')
+  gh api "repos/CaspianTools/script-caspian-store/releases/tags/${LATEST/\//%2F}" \
+    --jq '.assets[].browser_download_url'
+  gh release download "$LATEST" --dir ~/Downloads --clobber
   ```
-  Report the local one as a plain Windows path the user can paste into Explorer.
+
+  Report the local one as a plain Windows path the user can paste into Explorer — `C:\Users\<you>\Downloads\Caspian.Register_X.Y.Z_x64-setup.exe`.
+
+  **If no `desktop/v*` release exists yet, say that plainly and say what it would take to cut one.** Never silently omit the links, and never substitute the Releases tab for them.
+
+  Say which version the link points at, and whether this task changed it. A shop that already installed `0.1.0` needs to know the link is the same file, not a new one.
 - **Every compiled `.exe` carries its version in the filename.** `Caspian.Register_0.1.0_x64-setup.exe`, never `setup.exe` or `Caspian.Register-setup.exe`. A shop keeps installers in a downloads folder for years and a support call starts with "which one are you running?" — an unversioned file makes that unanswerable. Tauri's NSIS bundler does this by default from `version` in `desktop/src-tauri/tauri.conf.json`; `.github/workflows/desktop-build.yml` asserts it rather than trusting it.
 
 ---
