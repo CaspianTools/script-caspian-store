@@ -27,6 +27,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +60,37 @@ jobs:
         working-directory: desktop
         run: npx tauri icon src-tauri/icons/icon.png
 
+      # Code signing is what removes the "Windows protected your PC" screen.
+      # It is skipped, not failed, when no certificate is configured -- so the
+      # build keeps working for anyone who has not bought one yet, and starts
+      # producing signed installers the moment the secrets exist.
+      - name: Configure code signing
+        id: signing
+        if: env.WINDOWS_CERT_PFX_BASE64 != ''
+        shell: pwsh
+        working-directory: desktop
+        env:
+          WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'code-signing.pfx'
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:WINDOWS_CERT_PFX_BASE64))
+          $password = ConvertTo-SecureString -String $env:WINDOWS_CERT_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          Remove-Item $pfxPath -Force
+
+          # Tauri signs during the bundle step when the config names a thumbprint,
+          # which is why this is patched in rather than signed post-hoc.
+          $conf = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          if (-not $conf.bundle.windows) {
+            $conf.bundle | Add-Member -NotePropertyName windows -NotePropertyValue ([pscustomobject]@{})
+          }
+          $conf.bundle.windows | Add-Member -NotePropertyName certificateThumbprint -NotePropertyValue $cert.Thumbprint -Force
+          $conf.bundle.windows | Add-Member -NotePropertyName digestAlgorithm -NotePropertyValue 'sha256' -Force
+          $conf.bundle.windows | Add-Member -NotePropertyName timestampUrl -NotePropertyValue 'http://timestamp.digicert.com' -Force
+          $conf | ConvertTo-Json -Depth 20 | Set-Content src-tauri/tauri.conf.json -Encoding utf8
+          Write-Host "Signing enabled with certificate $($cert.Thumbprint)"
+
       - name: Build the installer
         working-directory: desktop
         run: npx tauri build
@@ -84,7 +117,12 @@ jobs:
           "path=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "name=$($exe.Name)"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "version=$version"      | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          Write-Host "Built $($exe.Name) ($([math]::Round($exe.Length/1MB,2)) MB), version $version"
+          $sig = Get-AuthenticodeSignature $exe.FullName
+          "signed=$($sig.Status -eq 'Valid')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Built $($exe.Name) ($([math]::Round($exe.Length/1MB,2)) MB), version $version, signature: $($sig.Status)"
+          if ($sig.Status -ne 'Valid') {
+            Write-Warning "UNSIGNED build. Windows SmartScreen will warn on first run. See desktop/README.md."
+          }
 
       - uses: actions/upload-artifact@v4
         with:

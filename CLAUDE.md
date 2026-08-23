@@ -167,14 +167,16 @@ Two hard constraints, both learned the expensive way:
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
 - **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, and a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
-- **Whenever a new `.exe` is compiled, hand over a direct download link.** Not the release page, not "see the Releases tab" — the full URL to the file itself, ready to click or paste to a shop:
+- **Whenever a new `.exe` is compiled, hand over TWO links: a local path and a GitHub URL.** Not the release page, not "see the Releases tab". The GitHub URL is what gets sent to a shop; the local path is what gets tested on this machine before it is sent. Download the asset into the user's `Downloads` folder so both exist:
   ```
   https://github.com/CaspianTools/script-caspian-store/releases/download/desktop/vX.Y.Z/Caspian.Register_X.Y.Z_x64-setup.exe
   ```
-  Get it from the release rather than composing it by hand, so a rename cannot make the link a lie:
+  Get the URL from the release rather than composing it by hand, so a rename cannot make the link a lie, and pull a local copy in the same step:
   ```bash
   gh api repos/CaspianTools/script-caspian-store/releases/tags/desktop%2FvX.Y.Z --jq '.assets[].browser_download_url'
+  gh release download desktop/vX.Y.Z --dir ~/Downloads --clobber
   ```
+  Report the local one as a plain Windows path the user can paste into Explorer.
 - **Every compiled `.exe` carries its version in the filename.** `Caspian.Register_0.1.0_x64-setup.exe`, never `setup.exe` or `Caspian.Register-setup.exe`. A shop keeps installers in a downloads folder for years and a support call starts with "which one are you running?" — an unversioned file makes that unanswerable. Tauri's NSIS bundler does this by default from `version` in `desktop/src-tauri/tauri.conf.json`; `.github/workflows/desktop-build.yml` asserts it rather than trusting it.
 
 ---
@@ -411,9 +413,20 @@ to discipline:
 There is no local build path on most maintainer machines — the shell is Rust and this repo's usual
 toolchain has no `cargo`. CI is the build, not a mirror of it.
 
-**The installer is unsigned.** Windows SmartScreen warns on first run until a certificate is bought;
-that is procurement, not a code change, and is deliberately not wired up with placeholder secrets that
-would fail every build. See [desktop/README.md](desktop/README.md).
+**The installer is unsigned until a certificate exists.** Windows SmartScreen shows *"Windows protected
+your PC"* on first run. The workflow already does the signing — it imports a PFX, patches the
+thumbprint into `tauri.conf.json`, and lets Tauri sign both the app and the installer — and **skips
+that step cleanly when the secrets are absent**, so the build keeps working either way and starts
+producing signed installers the moment two repository secrets exist:
+
+| Secret | What |
+| --- | --- |
+| `WINDOWS_CERT_PFX_BASE64` | the `.pfx`, base64-encoded (`certutil -encode cert.pfx out.txt`) |
+| `WINDOWS_CERT_PASSWORD` | its password |
+
+The build logs the signature status and warns loudly when a release ships unsigned, so it can never
+happen quietly. Buying the certificate is procurement, not a code change — see
+[desktop/README.md](desktop/README.md) for the options and what each one actually buys.
 
 ---
 

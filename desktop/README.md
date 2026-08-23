@@ -58,26 +58,52 @@ CI does the same on `windows-latest`. Push a `desktop/v*` tag to cut a release w
 attached, or run the **Desktop — Windows register installer** workflow by hand to get an artifact
 without tagging.
 
-## Code signing
+## Code signing — fixing "Windows protected your PC"
 
-**The installer is currently unsigned**, so Windows SmartScreen shows *"Windows protected your PC"*
-on first run. Users can proceed via **More info → Run anyway**, but a shop being sold a till will
-not find that reassuring.
+The installer is **unsigned**, so Microsoft Defender SmartScreen blocks it on first run. Nothing in
+the code can remove that screen: it is a statement about who signed the binary, and an unsigned binary
+has no answer. Only a certificate fixes it.
 
-Fixing it is procurement, not code:
+**Right now, to run it anyway:** click **More info** → **Run anyway**. That is safe for a build you
+produced yourself, but it is not something to ask a paying shop to do.
 
-1. Buy an OV or EV code-signing certificate (roughly $200–400/year). EV clears SmartScreen
-   immediately; OV builds reputation over time and installs.
-2. Add the certificate and password as repository secrets.
-3. Set `bundle.windows.certificateThumbprint` (and `signCommand` if using a cloud HSM) in
-   `src-tauri/tauri.conf.json`.
+### What each option actually buys
 
-It is not wired up with placeholder secrets, because that would fail every build until someone
-bought a certificate.
+| Option | Cost | Warning gone |
+| --- | --- | --- |
+| **Azure Trusted Signing** | ~$10/month | After reputation builds. Cheapest real option; certificate is Microsoft-managed, so nothing to store or rotate. Requires an organisation that can be identity-verified. |
+| **EV certificate** | ~$300-600/year | **Immediately.** The only option that clears SmartScreen on day one. Usually ships on a hardware token, which is awkward in CI — most people pair it with a cloud HSM. |
+| **OV certificate** | ~$200-400/year | After reputation builds — days to weeks, driven by how many people download and run it. |
+| **Nothing** | free | Never. Every shop sees the warning on every new version. |
 
-**Reputation accrues per signed binary, so there is one build for every shop** — the store address is
-configured at first run rather than compiled in. Per-customer builds would leave every customer
-staring at the SmartScreen warning forever.
+Two things worth knowing before choosing:
+
+- **Reputation attaches to the certificate, not just the file.** With an unsigned build, every new
+  version starts from zero forever. With any certificate, later versions inherit what earlier ones
+  earned — which is why OV becomes painless after the first release or two.
+- **Signing is not the same as being trusted.** A signature proves who built it. SmartScreen still
+  decides separately whether that publisher is known, which is what the "reputation" column means.
+
+### Turning it on
+
+The build already does the signing. It imports a PFX, patches the thumbprint into
+`tauri.conf.json`, and lets Tauri sign **both** the app and the installer that wraps it — signing only
+the installer would leave the register itself unsigned, and the warning would come back the first time
+a shop actually launched it.
+
+The step **skips cleanly when no certificate is configured**, so the build keeps working today and
+starts producing signed installers the moment two repository secrets exist:
+
+```bash
+# Encode the certificate
+certutil -encode cert.pfx cert-base64.txt
+
+gh secret set WINDOWS_CERT_PFX_BASE64 < cert-base64.txt
+gh secret set WINDOWS_CERT_PASSWORD
+```
+
+Nothing else changes — no config edit, no workflow edit. The build logs the signature status and
+warns loudly when a release ships unsigned, so it cannot happen quietly.
 
 ## The icons
 
