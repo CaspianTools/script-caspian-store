@@ -91,6 +91,23 @@ jobs:
           $conf | ConvertTo-Json -Depth 20 | Set-Content src-tauri/tauri.conf.json -Encoding utf8
           Write-Host "Signing enabled with certificate $($cert.Thumbprint)"
 
+      # The cargo cache carries desktop/src-tauri/target between runs, and that
+      # includes the previous release's bundle/. Without this the collect step
+      # globs a directory holding two installers and can pick the older one --
+      # which is exactly what happened on the first 0.2.0 build, where a
+      # correctly-produced 0.2.0 installer was rejected because the cached
+      # 0.1.0 one sorted first.
+      - name: Clear stale bundles
+        shell: pwsh
+        working-directory: desktop
+        run: |
+          $bundle = 'src-tauri/target/release/bundle'
+          if (Test-Path $bundle) {
+            Get-ChildItem -Recurse -Path $bundle -Filter *-setup.exe |
+              ForEach-Object { Write-Host "Removing cached installer: $($_.Name)" }
+            Remove-Item -Recurse -Force $bundle
+          }
+
       - name: Build the installer
         working-directory: desktop
         run: npx tauri build
@@ -101,9 +118,13 @@ jobs:
         working-directory: desktop
         run: |
           $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
-          $exe = Get-ChildItem -Recurse -Path src-tauri/target/release/bundle -Filter *-setup.exe |
-                 Select-Object -First 1
-          if (-not $exe) { Write-Error "No installer produced"; exit 1 }
+          $all = @(Get-ChildItem -Recurse -Path src-tauri/target/release/bundle -Filter *-setup.exe)
+          if ($all.Count -eq 0) { Write-Error "No installer produced"; exit 1 }
+          if ($all.Count -gt 1) {
+            Write-Error "Expected exactly one installer, found $($all.Count): $($all.Name -join ', '). Two installers means the choice is ambiguous and the wrong one can ship."
+            exit 1
+          }
+          $exe = $all[0]
 
           # A shop keeps installers in a downloads folder for years, and a support
           # call opens with "which one are you running?". An unversioned filename

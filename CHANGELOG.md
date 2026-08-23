@@ -59,6 +59,12 @@ does not change a till, and updating a till does not require upgrading the libra
   was a `starts_with("http://localhost")` prefix match on the whole string rather than on the host. The
   host is now parsed out and compared. A bare `localhost:3000` is also accepted now and defaults to
   http, rather than being rejected as "not a web address".
+- **The desktop release build could ship the previous release's installer.** `desktop-build.yml` caches
+  `src-tauri/target`, which carries the last build's `bundle/` with it, so the collect step globbed a
+  directory holding two `-setup.exe` files and took whichever sorted first. The 0.2.0 build produced a
+  correct `Caspian Register_0.2.0_x64-setup.exe` and was rejected because the cached 0.1.0 one won the
+  glob. The bundle directory is now cleared before building, and finding more than one installer is a
+  hard failure rather than a coin toss.
 - The register manual told owners to change a till's address by deleting `store.json` by hand. It now
   documents the menu, in all four languages, and states plainly that the new check cannot catch a wrong
   address on a site it cannot reach.
