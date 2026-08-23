@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v10.2.1"
+      "version": "v10.3.0"
     },
     "parts": [
       {
@@ -914,6 +914,36 @@ const MANUAL = {
               "A permission error when you complete a sale, or on the Point of sale page itself, almost always means the caspian-pos server code or the security rules have not been deployed. That is a job for whoever set the shop up.",
               "A blank or half-drawn screen usually means the page is still loading. The register shows two grey placeholder bars while it fetches your shop's settings.",
               "Testing by typing /pos/test or a similar address will not produce an error page. Anything the register does not recognise after /pos quietly shows the sale screen, so you cannot use a bad address to test that routing works."
+            ]
+          },
+          {
+            "id": "install-as-an-app",
+            "title": "Installing the register as an app on a till",
+            "audience": "owner",
+            "route": "/pos",
+            "summary": "The register can be installed onto a till so it opens in its own window, with its own icon, and no browser address bar. It is still the same web page - nothing is downloaded and nothing is kept up to date by hand - but it looks and starts like an ordinary program. The shop and the register install as two separate apps, so a till gets an icon that opens straight into the counter.",
+            "steps": [
+              "On the till, open /pos in Google Chrome or Microsoft Edge and sign in.",
+              "Press Install in the bar across the top of the register.",
+              "Confirm the box the browser shows. The register reopens in its own window and an icon appears in the Start menu or on the desktop.",
+              "On an iPad, there is no Install button. Press Install to see the instructions, or use the browser Share button and choose Add to Home Screen.",
+              "Pin the icon to the taskbar or the home screen so a cashier can find it without a browser."
+            ],
+            "fields": [
+              {
+                "name": "Install",
+                "what": "Button in the register top bar, just before Exit register. It disappears once this till has the register installed, so an empty space there means the job is already done."
+              }
+            ],
+            "notes": [
+              "Installing does NOT make the register work offline. It still needs the internet to look up a product and to complete a sale. What installing gives you is a faster start, its own window, and no address bar for a cashier to type in by accident.",
+              "The shop and the register are two separate apps. A shop that installs both gets two icons: one that opens the online shop, one that opens the counter. Install only the register on a till.",
+              "The button is not shown at all on Safari and Firefox on a desktop, because those browsers cannot install a web app that way. Use Chrome or Edge on a till.",
+              "On an iPad the Install button shows instructions rather than doing it for you. Apple does not let a page start the installation itself.",
+              "Once installed, tapping the icon while the register is already open brings the existing window forward rather than starting a new one. That is deliberate: starting fresh would throw away a half-rung sale.",
+              "When a new version of the register is ready, a strip appears across the top offering to update. It never updates by itself in the middle of a sale - press it between customers, or just close and reopen the register at the end of the day.",
+              "A register-only shop installs one app, not two, because there is no storefront to install.",
+              "Removing the app is done the same way as any other program on that computer. Nothing about your shop or your sales is stored inside it."
             ]
           },
           {
@@ -2128,6 +2158,34 @@ const MANUAL = {
             ]
           },
           {
+            "id": "install-as-an-app",
+            "title": "Kassanı tətbiq kimi quraşdırmaq",
+            "summary": "Kassanı kassa kompüterinə quraşdırmaq olar ki, öz pəncərəsində, öz ikonu ilə və brauzer ünvan sətri olmadan açılsın. Bu, yenə də eyni veb səhifədir - heç nə yüklənmir və heç nəyi əl ilə yeniləmək lazım deyil - amma adi proqram kimi görünür və başlayır. Mağaza və kassa iki ayrı tətbiq kimi quraşdırılır, ona görə kassada birbaşa piştaxtanı açan ikon olur.",
+            "steps": [
+              "Kassada Google Chrome və ya Microsoft Edge-də /pos ünvanını açın və daxil olun.",
+              "Kassanın yuxarı zolağında Quraşdır düyməsini basın.",
+              "Brauzerin göstərdiyi pəncərəni təsdiqləyin. Kassa öz pəncərəsində yenidən açılır və Başlat menyusunda və ya masaüstündə ikon görünür.",
+              "iPad-də Quraşdır düyməsi işi özü görmür. Təlimatı görmək üçün ona toxunun, ya da brauzerin Paylaş düyməsindən Ana ekrana əlavə et seçin.",
+              "İkonu tapşırıq panelinə və ya ana ekrana bərkidin ki, kassir onu brauzersiz tapa bilsin."
+            ],
+            "fields": [
+              {
+                "name": "Quraşdır",
+                "what": "Kassanın yuxarı zolağında, Kassadan çıx düyməsindən bir az əvvəl. Bu kassada kassa artıq quraşdırılıbsa yox olur, ona görə orada boşluq varsa, iş artıq görülüb."
+              }
+            ],
+            "notes": [
+              "Quraşdırmaq kassanı oflayn işlədən ETMİR. Məhsulu tapmaq və satışı tamamlamaq üçün yenə də internet lazımdır. Quraşdırmanın verdiyi şey daha sürətli başlanğıc, öz pəncərə və kassirin səhvən yaza biləcəyi ünvan sətrinin olmamasıdır.",
+              "Mağaza və kassa iki ayrı tətbiqdir. Hər ikisini quraşdıran mağazada iki ikon olur: biri onlayn mağazanı, biri piştaxtanı açır. Kassada yalnız kassanı quraşdırın.",
+              "Masaüstü Safari və Firefox-da düymə ümumiyyətlə görünmür, çünki həmin brauzerlər veb tətbiqi bu yolla quraşdıra bilmir. Kassada Chrome və ya Edge işlədin.",
+              "iPad-də Quraşdır düyməsi işi görmək əvəzinə təlimat göstərir. Apple səhifənin quraşdırmanı özü başlatmasına icazə vermir.",
+              "Quraşdırıldıqdan sonra kassa artıq açıq ikən ikona toxunmaq yeni pəncərə açmaq əvəzinə mövcud pəncərəni önə gətirir. Bu qəsdəndir: yenidən başlamaq yarımçıq satışı atardı.",
+              "Kassanın yeni versiyası hazır olduqda yuxarıda yeniləmə təklif edən zolaq çıxır. O, satışın ortasında öz-özünə yeniləmir - müştərilər arasında basın, ya da gün sonunda kassanı bağlayıb yenidən açın.",
+              "Yalnız-kassa mağazası iki yox, bir tətbiq quraşdırır, çünki quraşdırılacaq vitrin yoxdur.",
+              "Tətbiqi silmək həmin kompüterdəki istənilən proqram kimi edilir. Mağazanız və satışlarınız haqqında heç nə onun içində saxlanılmır."
+            ]
+          },
+          {
             "id": "prepare-your-catalogue",
             "title": "Kataloqu skana hazırlamaq",
             "audience": "owner",
@@ -3321,6 +3379,34 @@ const MANUAL = {
             ]
           },
           {
+            "id": "install-as-an-app",
+            "title": "Установка кассы как приложения",
+            "summary": "Кассу можно установить на кассовый компьютер, чтобы она открывалась в своём окне, со своим значком и без адресной строки браузера. Это по-прежнему та же веб-страница - ничего не скачивается и ничего не нужно обновлять вручную - но выглядит и запускается как обычная программа. Магазин и касса устанавливаются как два отдельных приложения, поэтому на кассе появляется значок, открывающий сразу прилавок.",
+            "steps": [
+              "На кассе откройте /pos в Google Chrome или Microsoft Edge и войдите.",
+              "Нажмите «Установить» в полосе вверху кассы.",
+              "Подтвердите окно, которое показывает браузер. Касса откроется заново в своём окне, а значок появится в меню «Пуск» или на рабочем столе.",
+              "На iPad кнопка «Установить» не делает это за вас. Нажмите её, чтобы увидеть инструкцию, либо используйте кнопку «Поделиться» и выберите «На экран «Домой»».",
+              "Закрепите значок на панели задач или на домашнем экране, чтобы кассир находил его без браузера."
+            ],
+            "fields": [
+              {
+                "name": "Установить",
+                "what": "Кнопка в верхней полосе кассы, прямо перед «Выйти из кассы». Она исчезает, как только касса на этом компьютере установлена, так что пустое место означает, что дело уже сделано."
+              }
+            ],
+            "notes": [
+              "Установка НЕ заставляет кассу работать офлайн. Для поиска товара и завершения продажи по-прежнему нужен интернет. Установка даёт более быстрый запуск, собственное окно и отсутствие адресной строки, в которую кассир может случайно что-то ввести.",
+              "Магазин и касса - два разных приложения. Если установить оба, будет два значка: один открывает интернет-магазин, другой - прилавок. На кассе устанавливайте только кассу.",
+              "В настольных Safari и Firefox кнопка не показывается вовсе, потому что эти браузеры не умеют так устанавливать веб-приложение. На кассе используйте Chrome или Edge.",
+              "На iPad кнопка «Установить» показывает инструкцию, а не выполняет установку. Apple не позволяет странице запускать её самостоятельно.",
+              "После установки нажатие на значок, когда касса уже открыта, выводит вперёд существующее окно, а не открывает новое. Это сделано намеренно: запуск заново выбросил бы наполовину набранную продажу.",
+              "Когда готова новая версия кассы, сверху появляется полоса с предложением обновиться. Она никогда не обновляется сама посреди продажи - нажмите её между покупателями или просто закройте и откройте кассу в конце дня.",
+              "Магазин только с кассой устанавливает одно приложение, а не два, потому что витрины для установки нет.",
+              "Удаляется приложение так же, как любая другая программа на этом компьютере. Внутри него не хранится ничего о вашем магазине и ваших продажах."
+            ]
+          },
+          {
             "id": "prepare-your-catalogue",
             "title": "Подготовка каталога к сканированию",
             "audience": "owner",
@@ -4511,6 +4597,34 @@ const MANUAL = {
               "Satışı tamamladığınızda veya doğrudan Kasa sayfasında çıkan bir izin hatası neredeyse her zaman caspian-pos sunucu kodunun ya da güvenlik kurallarının yayına alınmadığı anlamına gelir. Bu, mağazayı kuran kişinin işidir.",
               "Boş ya da yarım çizilmiş bir ekran genellikle sayfanın hâlâ yüklendiği anlamına gelir. Kasa, mağaza ayarlarınızı getirirken iki gri şerit gösterir.",
               "/pos/test veya benzeri bir adres yazarak denemek hata sayfası vermez. /pos sonrasında kasanın tanımadığı her şey sessizce satış ekranını gösterir; bu yüzden yönlendirmenin çalıştığını yanlış bir adresle sınayamazsınız."
+            ]
+          },
+          {
+            "id": "install-as-an-app",
+            "title": "Kasayı bir uygulama olarak yüklemek",
+            "summary": "Kasa, bir kasa bilgisayarına yüklenebilir; böylece kendi penceresinde, kendi simgesiyle ve tarayıcı adres çubuğu olmadan açılır. Yine aynı web sayfasıdır - hiçbir şey indirilmez ve elle güncellenmesi gereken bir şey yoktur - ama sıradan bir program gibi görünür ve başlar. Mağaza ile kasa iki ayrı uygulama olarak yüklenir; böylece kasada doğrudan tezgâhı açan bir simge olur.",
+            "steps": [
+              "Kasada Google Chrome veya Microsoft Edge ile /pos adresini açın ve giriş yapın.",
+              "Kasanın üst çubuğundaki Yükle düğmesine basın.",
+              "Tarayıcının gösterdiği kutuyu onaylayın. Kasa kendi penceresinde yeniden açılır ve Başlat menüsünde veya masaüstünde bir simge belirir.",
+              "iPad üzerinde Yükle düğmesi işi sizin yerinize yapmaz. Yönergeleri görmek için ona dokunun ya da tarayıcının Paylaş düğmesinden Ana Ekrana Ekle seçeneğini kullanın.",
+              "Simgeyi görev çubuğuna veya ana ekrana sabitleyin ki kasiyer onu tarayıcı olmadan bulabilsin."
+            ],
+            "fields": [
+              {
+                "name": "Yükle",
+                "what": "Kasanın üst çubuğunda, Kasadan çık düğmesinden hemen önce. Bu kasada kasa zaten yüklüyse kaybolur; oradaki boşluk işin çoktan yapıldığı anlamına gelir."
+              }
+            ],
+            "notes": [
+              "Yüklemek kasayı çevrimdışı çalışır hâle GETİRMEZ. Bir ürünü bulmak ve satışı tamamlamak için yine internet gerekir. Yüklemenin kazandırdığı şey daha hızlı bir açılış, kendi penceresi ve kasiyerin yanlışlıkla bir şey yazabileceği bir adres çubuğunun olmamasıdır.",
+              "Mağaza ile kasa iki ayrı uygulamadır. İkisini de yükleyen bir mağazada iki simge olur: biri çevrimiçi mağazayı, diğeri tezgâhı açar. Kasaya yalnızca kasayı yükleyin.",
+              "Masaüstü Safari ve Firefox’ta düğme hiç gösterilmez; çünkü o tarayıcılar bir web uygulamasını bu yolla yükleyemez. Kasada Chrome veya Edge kullanın.",
+              "iPad üzerinde Yükle düğmesi yüklemeyi yapmak yerine yönergeleri gösterir. Apple, bir sayfanın yüklemeyi kendisinin başlatmasına izin vermez.",
+              "Yüklendikten sonra kasa zaten açıkken simgeye dokunmak yeni bir pencere açmak yerine var olan pencereyi öne getirir. Bu bilinçlidir: baştan başlamak yarım kalmış bir satışı çöpe atardı.",
+              "Kasanın yeni bir sürümü hazır olduğunda üstte güncellemeyi öneren bir şerit çıkar. Satışın ortasında kendi kendine asla güncellemez - müşteriler arasında basın ya da gün sonunda kasayı kapatıp yeniden açın.",
+              "Yalnızca kasa mağazası iki değil tek bir uygulama yükler; çünkü yüklenecek bir vitrin yoktur.",
+              "Uygulama, o bilgisayardaki herhangi bir program gibi kaldırılır. Mağazanıza ve satışlarınıza dair hiçbir şey onun içinde saklanmaz."
             ]
           },
           {

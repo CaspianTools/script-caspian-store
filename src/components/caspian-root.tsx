@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useCaspianNavigation } from '../provider/caspian-store-provider';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 
 import { HomePage } from './home';
 import { ProductDetailPage } from './product-detail-page';
@@ -255,12 +256,6 @@ function inferCheckoutSuccessUrl(): string {
 function inferCheckoutCancelUrl(): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `${origin}/checkout`;
-}
-
-function stripLocalePrefix(pathname: string): string {
-  const match = pathname.match(/^\/([a-z]{2})(\/|$)/i);
-  if (!match) return pathname;
-  return pathname.slice(match[1].length + 1) || '/';
 }
 
 /**

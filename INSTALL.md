@@ -683,11 +683,11 @@ import { ServiceWorkerRegister, InstallAppPrompt } from '@caspian-explorer/scrip
 **2. Add `public/sw.js` and `public/offline.html`** — copy them from `examples/nextjs/public/`. The
 worker does network-first navigations with an offline fallback and never caches Firestore/auth.
 
-**3. Serve a dynamic manifest** with a route handler that calls the pure `buildWebManifest()` helper:
+**3. Serve a dynamic manifest** with a route handler that calls the pure `buildWebManifest()` helper. Import it from the **`/pwa`** subpath, not the main entry: the main entry is stamped `'use client'` by the build, so calling it from a server route fails with *"Attempted to call buildWebManifest() from the server"*. That subpath arrived in v10.3.0 — this example was broken from v9.10.0 until then.
 
 ```ts
 // app/manifest.webmanifest/route.ts
-import { buildWebManifest } from '@caspian-explorer/script-caspian-store';
+import { buildWebManifest } from '@caspian-explorer/script-caspian-store/pwa';
 export const dynamic = 'force-dynamic';
 export async function GET() {
   // read settings/site (see examples/nextjs/app/_pwa-brand.ts), then:

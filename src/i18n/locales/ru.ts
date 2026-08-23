@@ -36,6 +36,12 @@ const ru: MessageDict = {
   'pos.nav.shift': 'Смена',
   'pos.nav.settings': 'Настройки',
   'pos.nav.exit': 'Выйти из кассы',
+  'pos.install.action': 'Установить',
+  'pos.install.help': 'Установите кассу на этот компьютер как приложение, чтобы она открывалась в своём окне.',
+  'pos.install.iosHint': 'Нажмите кнопку «Поделиться», затем выберите «На экран «Домой»».',
+  'pos.update.available': 'Готова новая версия кассы.',
+  'pos.update.apply': 'Обновить',
+  'pos.update.later': 'Позже',
   'pos.nav.admin': 'Панель администратора',
 
   // POS — access

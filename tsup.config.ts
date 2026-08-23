@@ -100,6 +100,7 @@ export default defineConfig({
     index: 'src/index.ts',
     'firebase/index': 'src/firebase/index.ts',
     'server/index': 'src/server/index.ts',
+    'pwa/index': 'src/pwa/index.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,
@@ -125,8 +126,9 @@ export default defineConfig({
   // Prepend a raw `'use client';` to the main-entry bundles only. esbuild's
   // `banner` strips module-level directives during bundling ("Module level
   // directives cause errors when bundled"), so we patch post-write.
-  // Only the main entry is client-only: `./firebase` and `./server` are
-  // callable from Node (deploy scripts, Cloud Functions, route.ts handlers).
+  // Only the main entry is client-only: `./firebase`, `./server` and
+  // `./pwa` are callable from Node (deploy scripts, Cloud Functions,
+  // route.ts handlers).
   async onSuccess() {
     prependUseClient('esm');
     prependUseClient('cjs');

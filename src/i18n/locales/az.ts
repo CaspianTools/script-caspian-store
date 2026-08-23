@@ -37,6 +37,12 @@ const az: MessageDict = {
   'pos.nav.shift': 'Növbə',
   'pos.nav.settings': 'Tənzimləmələr',
   'pos.nav.exit': 'Kassadan çıx',
+  'pos.install.action': 'Quraşdır',
+  'pos.install.help': 'Kassanı bu kompüterdə tətbiq kimi quraşdırın ki, öz pəncərəsində açılsın.',
+  'pos.install.iosHint': 'Paylaş düyməsinə toxunun, sonra "Ana ekrana əlavə et" seçin.',
+  'pos.update.available': 'Kassanın yeni versiyası hazırdır.',
+  'pos.update.apply': 'İndi yenilə',
+  'pos.update.later': 'Sonra',
   'pos.nav.admin': 'İdarə paneli',
 
   // POS — access

@@ -7,6 +7,9 @@ import { useT } from '../i18n/locale-context';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
+import { PosInstallButton } from './pos-install-button';
+import { PosServiceWorker } from './pos-service-worker';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { PosRegister } from './pos-register';
 import { PosSettingsPage } from './pos-settings-page';
 
@@ -18,7 +21,9 @@ import { PosSettingsPage } from './pos-settings-page';
  * showing the sale. The nav here is four items and nothing else.
  */
 export function PosShell({ children }: { children: ReactNode }) {
-  const { pathname } = useCaspianNavigation();
+  const { pathname: rawPathname } = useCaspianNavigation();
+  // A consumer that puts the locale in the URL hands us `/az/pos/settings`.
+  const pathname = stripLocalePrefix(rawPathname);
   const Link = useCaspianLink();
   const { userProfile, signOut } = useAuth();
   const { functions } = useCaspianFirebase();
@@ -66,12 +71,14 @@ export function PosShell({ children }: { children: ReactNode }) {
               {t('pos.nav.admin')}
             </Link>
           ) : null}
+          <PosInstallButton />
           <button type="button" onClick={() => void signOut()} style={exitButton}>
             {t('pos.nav.exit')}
           </button>
         </div>
       </header>
 
+      <PosServiceWorker />
       <PosLicenseBanner license={license} />
 
       <main style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</main>
@@ -118,7 +125,7 @@ const exitButton: React.CSSProperties = {
  */
 export function PosRoot(): ReactNode {
   const { pathname } = useCaspianNavigation();
-  const after = pathname.replace(/^\/pos\/?/, '');
+  const after = stripLocalePrefix(pathname).replace(/^\/pos\/?/, '');
   const [head] = after.split('/');
 
   switch (head) {

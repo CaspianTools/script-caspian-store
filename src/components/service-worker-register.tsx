@@ -13,11 +13,20 @@ export interface ServiceWorkerRegisterProps {
   src?: string;
   /** Scope for the worker. Default `/`. */
   scope?: string;
+  /**
+   * Register outside production builds too. Off by default — but offline
+   * behaviour is untestable under `npm run dev` without it.
+   */
+  enableInDev?: boolean;
 }
 
-export function ServiceWorkerRegister({ src = '/sw.js', scope = '/' }: ServiceWorkerRegisterProps = {}) {
+export function ServiceWorkerRegister({
+  src = '/sw.js',
+  scope = '/',
+  enableInDev = false,
+}: ServiceWorkerRegisterProps = {}) {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') return;
+    if (process.env.NODE_ENV !== 'production' && !enableInDev) return;
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
     const register = () => {
       navigator.serviceWorker.register(src, { scope }).catch(() => {
@@ -29,7 +38,7 @@ export function ServiceWorkerRegister({ src = '/sw.js', scope = '/' }: ServiceWo
       window.addEventListener('load', register, { once: true });
       return () => window.removeEventListener('load', register);
     }
-  }, [src, scope]);
+  }, [src, scope, enableInDev]);
 
   return null;
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../i18n/locale-context';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 
 /** The `beforeinstallprompt` event isn't in the standard DOM lib types. */
 interface BeforeInstallPromptEvent extends Event {
@@ -97,7 +98,20 @@ const DISMISS_KEY = 'caspian:pwa-install-dismissed';
  * Android/Chrome and an "Add to Home Screen" hint on iOS. Hidden when already
  * installed (standalone) or previously dismissed. Mount once at the app root.
  */
-export function InstallAppPrompt() {
+export interface InstallAppPromptProps {
+  /**
+   * Path prefixes where the banner must never appear. Defaults to the register
+   * and the admin panel: the banner is `position: fixed; zIndex: 800` and the
+   * register's tender dialog is `zIndex: 60`, so without this a cashier gets
+   * "Add this store to your home screen" floating over the cash keypad. The
+   * register has its own install button in its top bar instead.
+   */
+  hideOnPathPrefixes?: string[];
+}
+
+export function InstallAppPrompt({
+  hideOnPathPrefixes = ['/pos', '/admin'],
+}: InstallAppPromptProps = {}) {
   const t = useT();
   const { canInstall, promptInstall, isIOS, isStandalone } = useInstallPrompt();
   // Start hidden to avoid a flash before the localStorage read resolves.
@@ -121,6 +135,12 @@ export function InstallAppPrompt() {
   };
 
   if (isStandalone || dismissed) return null;
+  if (typeof window !== 'undefined') {
+    const path = stripLocalePrefix(window.location.pathname);
+    if (hideOnPathPrefixes.some((prefix) => path === prefix || path.startsWith(prefix + '/'))) {
+      return null;
+    }
+  }
   const showAndroid = canInstall;
   const showIOS = isIOS && !canInstall;
   if (!showAndroid && !showIOS) return null;

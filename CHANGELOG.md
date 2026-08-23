@@ -16,6 +16,87 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.3.0 — The register installs as its own app
+
+A till can now install the register: its own icon, its own window, no address bar. It is still the same
+web page — nothing to download, nothing to keep up to date by hand — but it starts like a program and a
+cashier can no longer type a URL into it by accident. The storefront and the register install as **two
+separate apps** on one origin, so a counter machine gets an icon that opens straight into the register.
+
+Scaffolded sites get the whole layer generated. Existing sites can adopt it by hand — see below.
+
+### Consumer action required on upgrade
+
+Nothing breaks if you do nothing; the register keeps working exactly as before. To make it installable
+on an existing site you need the generated files, which is easiest to get by scaffolding a throwaway
+project and copying them across:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v10.3.0
+npx create-caspian-store@latest /tmp/pwa-ref -- --with-pos
+# copy from /tmp/pwa-ref into your project:
+#   src/app/_pwa-brand.ts  src/app/manifest.webmanifest/  src/app/pos.webmanifest/
+#   src/app/icon/          src/app/pos/                   public/sw.js  public/sw-pos.js
+#   public/offline.html    public/pos-offline.html
+# then merge the redirects() and headers() blocks from its next.config.mjs
+```
+
+**If you already wired the storefront PWA by following INSTALL.md §9.5, your build has been failing** —
+see the third entry under Fixed. Change that one import to `@caspian-explorer/script-caspian-store/pwa`.
+
+### Added
+
+- **A fourth entry point, `./pwa`** — `buildWebManifest` and the new `buildPosWebManifest`, importable
+  from a **server** route handler. This is the fix for the broken manifest route described below.
+- **`buildPosWebManifest()`** — the register's manifest. `scope`/`start_url` `/pos`, `short_name`
+  "Register" (deliberately not the brand: the OS shows it under the icon, and that word is what tells a
+  cashier which of the two apps to tap), `id` for a stable install identity, and
+  `launch_handler: focus-existing` so tapping the icon during a sale focuses the open window instead of
+  re-navigating and destroying a half-rung ticket.
+- **`<PosInstallButton>`** in the register's top bar, and **`<PosServiceWorker>`**, which registers a
+  `/pos`-scoped worker, asks for persistent storage, and offers updates on a strip that never applies
+  itself mid-sale.
+- **The scaffolder generates the PWA layer**: both manifest routes, a generated icon route, the `/pos`
+  route segment with its own layout, two service workers, two offline pages, plus `redirects()` and
+  `headers()` in `next.config.mjs`. Verified by building a scaffolded site end to end.
+- `<ServiceWorkerRegister>` and `<PosServiceWorker>` gain `enableInDev` — offline behaviour was
+  untestable under `npm run dev`, which is untenable for a feature about the network being down.
+- `stripLocalePrefix` is exported, and the register manual gains **Installing the register as an app on
+  a till** in all four languages.
+
+### Fixed
+
+- **`/az/pos/settings` rendered the register instead of the settings page.** `PosRoot` matched
+  `^/pos/` against a pathname that still carried its locale prefix, so nothing matched and it fell to
+  the default branch. A cashier on any non-English till could not reach their own settings at all —
+  language, register name, scanner speed, printer. The nav highlight was wrong for the same reason.
+- **The storefront's install banner floated over the register's cash keypad.** It is
+  `position: fixed; zIndex: 800`; the tender dialog is `zIndex: 60`. `<InstallAppPrompt>` now takes
+  `hideOnPathPrefixes`, defaulting to `['/pos','/admin']`.
+- **INSTALL.md §9.5's manifest route has never worked.** It told consumers to import
+  `buildWebManifest` from the main entry, but the build stamps that entry `'use client'`, so the
+  Next.js build fails with *"Attempted to call buildWebManifest() from the server."* Broken from
+  v9.10.0 until now. The example now imports from `./pwa`, and it also stopped pointing at
+  `examples/`, a directory that is not in the package's `files` list and so is absent from every
+  installed copy.
+- **Brand colours were silently dropped from the manifest.** `NEXT_PUBLIC_BRAND_THEME_COLOR=#1d4ed8`
+  reads as empty, because dotenv treats an unquoted `#` as the start of a comment. The generated
+  `.env.example` now quotes them, and the generated code accepts a bare `1d4ed8` too rather than
+  making every consumer find that out the hard way.
+- Two service workers on one origin shared a `CacheStorage`, and the reference worker deleted every
+  cache key that was not its own on activate — the storefront worker would have wiped the register's
+  shell out from under a live till. Both now clean only their own prefix.
+- `stripLocalePrefix` was defined privately in two components; it is now one shared helper.
+
+### Notes
+
+Installing does **not** make the register work offline — it still needs the network to look up a
+product and to complete a sale. The manual says so in the first note of the new section rather than
+letting a shop discover it during an outage. The offline sale queue is a separate piece of work.
+
+`create-caspian-store` sibling unaffected — no change to `create-caspian-store/` and no scaffolder CLI
+surface change.
+
 ## v10.2.1 — `--with-pos` never actually installed the register
 
 Scaffolding a store with `--with-pos` registered the register's Cloud Functions in the generated

@@ -36,6 +36,12 @@ const tr: MessageDict = {
   'pos.nav.shift': 'Vardiya',
   'pos.nav.settings': 'Ayarlar',
   'pos.nav.exit': 'Kasadan çık',
+  'pos.install.action': 'Yükle',
+  'pos.install.help': 'Kasayı bu bilgisayara uygulama olarak yükleyin; böylece kendi penceresinde açılır.',
+  'pos.install.iosHint': 'Paylaş düğmesine dokunun, sonra "Ana Ekrana Ekle" seçeneğini seçin.',
+  'pos.update.available': 'Kasanın yeni sürümü hazır.',
+  'pos.update.apply': 'Şimdi güncelle',
+  'pos.update.later': 'Sonra',
   'pos.nav.admin': 'Yönetim paneli',
 
   // POS — access

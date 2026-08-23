@@ -137,12 +137,15 @@ export {
   InstallAppPrompt,
   useInstallPrompt,
   type InstallPromptState,
+  type InstallAppPromptProps,
 } from './components/install-app-prompt';
 export {
   buildWebManifest,
   type WebManifestInput,
   type WebManifestIcon,
 } from './pwa/build-manifest';
+export { buildPosWebManifest, type PosWebManifestInput } from './pwa/pos-manifest';
+export { stripLocalePrefix } from './utils/strip-locale-prefix';
 
 // Homepage surface (v1.2). `<Hero>` is the dispatcher; the per-variant
 // implementations live under `./components/home/variants/` and are
@@ -387,6 +390,8 @@ export {
 } from './i18n';
 
 // --- Point of sale (v10.0.0) ---
+export { PosInstallButton } from './pos/pos-install-button';
+export { PosServiceWorker, type PosServiceWorkerProps } from './pos/pos-service-worker';
 export { AdminPosPage, type AdminPosPageProps } from './admin/admin-pos-page';
 export { AdminPosLicenses, type AdminPosLicensesProps } from './admin/admin-pos-licenses';
 export {

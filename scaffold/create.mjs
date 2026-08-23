@@ -263,6 +263,26 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
+  async redirects() {
+    return [
+      // A locale-prefixed register URL must land on the real /pos route segment.
+      // Without this /az/pos falls through to the root catch-all, which serves
+      // the STOREFRONT manifest — so every non-English till would install the
+      // wrong app. The register's own language is per-device, not per-URL, so
+      // dropping the prefix here loses nothing.
+      { source: '/:locale(az|ru|tr|en)/pos', destination: '/pos', permanent: false },
+      { source: '/:locale(az|ru|tr|en)/pos/:rest*', destination: '/pos/:rest*', permanent: false },
+    ];
+  },
+  async headers() {
+    // Service workers must never be served from cache, or a till can be pinned
+    // to a stale register for as long as the browser keeps the old copy.
+    const noStore = [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }];
+    return [
+      { source: '/sw.js', headers: noStore },
+      { source: '/sw-pos.js', headers: noStore },
+    ];
+  },
   env: {
     // Firebase App Hosting auto-injects FIREBASE_WEBAPP_CONFIG at build time.
     // Forwarding it through Next's env: block is what keeps it inlined into
@@ -356,6 +376,13 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
+
+# Web app manifest (both installable apps: the storefront and the register).
+# Quote the colours. dotenv treats an unquoted # as the start of a comment, so
+# NEXT_PUBLIC_BRAND_THEME_COLOR=#1d4ed8 silently reads as empty.
+NEXT_PUBLIC_BRAND_NAME=
+NEXT_PUBLIC_BRAND_THEME_COLOR="#111111"
+NEXT_PUBLIC_BRAND_BACKGROUND_COLOR="#ffffff"
 
 # Payment providers are installed + configured at runtime via Admin → Payments.
 # Publishable keys (e.g. pk_live_...) live in Firestore, not env vars. Server-side
@@ -523,6 +550,111 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 `);
 
+
+// Shared source for both service workers and both offline pages. Templated
+// rather than duplicated so the two workers cannot drift apart.
+//
+// The cache-key PREFIX matters: two workers share one CacheStorage per origin,
+// and a cleanup that deletes "every key that is not mine" would have the
+// storefront worker wipe the register's shell out from under a live till.
+const SW_SOURCE = `/* Caspian service worker — scope __SCOPE__ */
+const PREFIX = '__PREFIX__';
+const CACHE = PREFIX + '-v1';
+const OFFLINE_URL = '__OFFLINE__';
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([OFFLINE_URL])));
+  // Deliberately NO skipWaiting(): a new worker must never take over a page
+  // that is in the middle of a sale. The page offers the update instead.
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      // Only ever delete OUR OWN old versions.
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type === 'caspian-pos-skip-waiting') {
+    self.skipWaiting();
+    return;
+  }
+  // The page tells the worker what it is actually made of, so there is no
+  // build-time asset manifest to keep in sync with the bundler.
+  if (data.type === 'caspian-pos-precache' && Array.isArray(data.assets)) {
+    event.waitUntil(
+      caches.open(CACHE).then((cache) =>
+        Promise.all(data.assets.map((url) => cache.add(url).catch(() => undefined))),
+      ),
+    );
+  }
+});
+
+function isBypassed(url) {
+  if (url.origin !== self.location.origin) return true; // Firestore, Google APIs, CDNs
+  if (url.pathname.startsWith('/api/')) return true;
+  if (url.pathname.endsWith('.webmanifest')) return true;
+  if (url.pathname.startsWith('/icon/')) return true;
+  return false;
+}
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (isBypassed(url)) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(request).then((hit) => hit || caches.match(OFFLINE_URL)),
+      ),
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith('/_next/static/') || request.destination === 'font' || request.destination === 'style' || request.destination === 'script') {
+    event.respondWith(
+      caches.open(CACHE).then((cache) =>
+        cache.match(request).then((cached) => {
+          const network = fetch(request)
+            .then((res) => {
+              if (res && res.status === 200) cache.put(request, res.clone());
+              return res;
+            })
+            .catch(() => cached);
+          return cached || network;
+        }),
+      ),
+    );
+  }
+});
+`;
+
+const OFFLINE_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  body { margin:0; min-height:100dvh; display:grid; place-items:center; padding:24px;
+         font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:#18181b; background:#fff; }
+  .box { max-width:420px; text-align:center; }
+  h1 { font-size:20px; margin:0 0 8px; }
+  p { color:#62626b; margin:0; }
+  @media (prefers-color-scheme: dark) { body { background:#0b0b0d; color:#f4f4f5; } p { color:#a1a1aa; } }
+</style>
+</head>
+<body><div class="box"><h1>__TITLE__</h1><p>__BODY__</p></div></body>
+</html>
+`;
+
 // ---- Single-mount CaspianRoot (v7.0.0) ----
 //
 // One file owns every library URL — storefront, account, auth, content,
@@ -538,6 +670,165 @@ write('src/app/[[...slug]]/page.tsx', `'use client';
 import { CaspianRoot } from '@caspian-explorer/script-caspian-store';
 export default function Page() { return <CaspianRoot />; }
 `);
+
+// ---- PWA: two installable apps on one origin (v10.3.0) ----
+//
+// The storefront installs at scope '/', the register at scope '/pos'. They are
+// separate apps on purpose: a cashier's till should launch straight into the
+// register, not into the shop with the register two taps away.
+//
+// The register needs a REAL route segment rather than the root catch-all,
+// because <link rel="manifest"> has to be correct on a cold load of /pos. The
+// catch-all is a client component dispatching on pathname, so the earliest it
+// could swap the manifest is a post-hydration effect — which loses the race
+// against the browser's own installability check, and has no equivalent at all
+// on iOS.
+write('src/app/_pwa-brand.ts', `/**
+ * Brand values for both web manifests.
+ *
+ * Read from env rather than Firestore: a manifest route runs on the server with
+ * no user session, so a Firestore read would need admin credentials and could
+ * fail at request time. A manifest is near-static, and a wrong colour is a much
+ * smaller problem than a route that 500s and makes the app uninstallable.
+ */
+/**
+ * dotenv treats an unquoted # as the start of a comment, so a .env line reading
+ * NEXT_PUBLIC_BRAND_THEME_COLOR=#1d4ed8 arrives here as an empty string and the
+ * manifest silently falls back to the default colour. Accept a bare hex too
+ * rather than making every consumer discover that the hard way.
+ */
+function hex(value: string | undefined, fallback: string): string {
+  const raw = (value || '').trim();
+  if (!raw) return fallback;
+  if (raw.startsWith('#')) return raw;
+  return /^[0-9a-fA-F]{3,8}$/.test(raw) ? '#' + raw : fallback;
+}
+
+export const PWA_BRAND = {
+  name: process.env.NEXT_PUBLIC_BRAND_NAME || 'Store',
+  themeColor: hex(process.env.NEXT_PUBLIC_BRAND_THEME_COLOR, '#111111'),
+  backgroundColor: hex(process.env.NEXT_PUBLIC_BRAND_BACKGROUND_COLOR, '#ffffff'),
+};
+`);
+
+write('src/app/manifest.webmanifest/route.ts', `import { buildWebManifest } from '@caspian-explorer/script-caspian-store/pwa';
+import { PWA_BRAND } from '../_pwa-brand';
+
+export const dynamic = 'force-static';
+
+export function GET() {
+  const manifest = buildWebManifest({
+    name: PWA_BRAND.name,
+    themeColor: PWA_BRAND.themeColor,
+    backgroundColor: PWA_BRAND.backgroundColor,
+  });
+  return new Response(JSON.stringify(manifest), {
+    headers: {
+      'Content-Type': 'application/manifest+json',
+      'Cache-Control': 'public, max-age=300',
+    },
+  });
+}
+`);
+
+write('src/app/pos.webmanifest/route.ts', `import { buildPosWebManifest } from '@caspian-explorer/script-caspian-store/pwa';
+import { PWA_BRAND } from '../_pwa-brand';
+
+export const dynamic = 'force-static';
+
+export function GET() {
+  const manifest = buildPosWebManifest({
+    name: PWA_BRAND.name,
+    themeColor: PWA_BRAND.themeColor,
+    backgroundColor: PWA_BRAND.backgroundColor,
+  });
+  return new Response(JSON.stringify(manifest), {
+    headers: {
+      'Content-Type': 'application/manifest+json',
+      'Cache-Control': 'public, max-age=300',
+    },
+  });
+}
+`);
+
+write('src/app/icon/[size]/route.tsx', `import { ImageResponse } from 'next/og';
+import { PWA_BRAND } from '../../_pwa-brand';
+
+export const dynamic = 'force-static';
+
+export function generateStaticParams() {
+  return [{ size: '192' }, { size: '512' }];
+}
+
+/**
+ * Manifest icons, generated rather than shipped as binaries: the scaffolder
+ * cannot author a PNG, and an install prompt will not appear without one.
+ * Replace this route with real artwork before going live.
+ */
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ size: string }> },
+) {
+  const { size: raw } = await params;
+  const size = raw === '512' ? 512 : 192;
+  const letter = (PWA_BRAND.name.trim()[0] || 'S').toUpperCase();
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: PWA_BRAND.themeColor,
+          color: '#ffffff',
+          fontSize: Math.round(size * 0.56),
+          fontWeight: 700,
+        }}
+      >
+        {letter}
+      </div>
+    ),
+    { width: size, height: size },
+  );
+}
+`);
+
+// The register's own route segment. The layout is a server component purely so
+// it can declare the register manifest; the page below it is the same one-line
+// client mount as the root catch-all.
+write('src/app/pos/layout.tsx', `import type { ReactNode } from 'react';
+
+export const metadata = {
+  title: 'Register',
+  manifest: '/pos.webmanifest',
+  appleWebApp: { capable: true, title: 'Register', statusBarStyle: 'default' as const },
+};
+
+export const viewport = {
+  themeColor: '#111111',
+  // A till is a fixed-purpose screen; a stray pinch-zoom mid-sale is a nuisance.
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export default function PosLayout({ children }: { children: ReactNode }) {
+  return children;
+}
+`);
+
+write('src/app/pos/[[...slug]]/page.tsx', `'use client';
+import { CaspianRoot } from '@caspian-explorer/script-caspian-store';
+export default function Page() { return <CaspianRoot />; }
+`);
+
+write('public/offline.html', OFFLINE_HTML.replace(/__TITLE__/g, 'You are offline').replace(/__BODY__/g, 'This page needs an internet connection. It will load once you are back online.'));
+write('public/pos-offline.html', OFFLINE_HTML.replace(/__TITLE__/g, 'Register is offline').replace(/__BODY__/g, 'The till has lost its internet connection. Sales cannot be completed until it returns.'));
+
+write('public/sw.js', SW_SOURCE.replace(/__PREFIX__/g, 'caspian-shell').replace(/__OFFLINE__/g, '/offline.html').replace(/__SCOPE__/g, '/'));
+write('public/sw-pos.js', SW_SOURCE.replace(/__PREFIX__/g, 'caspian-pos-shell').replace(/__OFFLINE__/g, '/pos-offline.html').replace(/__SCOPE__/g, '/pos'));
 
 write('src/app/api/setup/write-env/route.ts', `import { NextResponse } from 'next/server';
 import { writeFile, readFile } from 'node:fs/promises';
