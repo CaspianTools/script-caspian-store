@@ -1,0 +1,14 @@
+{
+  "name": "caspian-register-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows shell for the Caspian Store register. Built and released on a desktop/v* tag; not part of the npm package.",
+  "scripts": {
+    "icons": "tauri icon src-tauri/icons/icon.png",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

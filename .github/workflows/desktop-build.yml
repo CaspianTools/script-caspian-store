@@ -1,0 +1,93 @@
+name: Desktop — Windows register installer
+
+# Builds desktop/ into a Windows installer (.exe).
+#
+# This lives in CI rather than on a maintainer's machine because the shell is
+# Rust and most of the people who maintain this repo do not have a Rust
+# toolchain. workflow_dispatch is the iteration path; a `desktop/v*` tag cuts
+# the actual release, matching how `create-caspian-store/v*` already works.
+#
+# The installer is UNSIGNED. Windows SmartScreen will warn on it until the
+# binary is signed with an OV/EV certificate — see desktop/README.md. Signing
+# is a procurement decision, not a code change, so it is deliberately not
+# wired up with a placeholder secret that would fail every build.
+
+on:
+  push:
+    tags: ['desktop/v*']
+    paths-ignore: []
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/desktop-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('desktop/src-tauri/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install the Tauri CLI
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+
+      # The repo commits only source icons. `tauri icon` derives the full set,
+      # including the .ico that the Windows bundler requires, so no binary that
+      # nobody can regenerate is checked in.
+      - name: Generate icons
+        working-directory: desktop
+        run: npx tauri icon src-tauri/icons/icon.png
+
+      - name: Build the installer
+        working-directory: desktop
+        run: npx tauri build
+
+      - name: Collect the installer
+        id: collect
+        shell: pwsh
+        working-directory: desktop
+        run: |
+          $exe = Get-ChildItem -Recurse -Path src-tauri/target/release/bundle -Filter *-setup.exe |
+                 Select-Object -First 1
+          if (-not $exe) { Write-Error "No installer produced"; exit 1 }
+          "path=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "name=$($exe.Name)"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Built $($exe.Name) ($([math]::Round($exe.Length/1MB,2)) MB)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: caspian-register-windows
+          path: ${{ steps.collect.outputs.path }}
+          if-no-files-found: error
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/desktop/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" `
+            "${{ steps.collect.outputs.path }}" `
+            --title "Caspian Register ${{ github.ref_name }}" `
+            --notes "Windows installer for the Caspian Store register. Unsigned - Windows SmartScreen will warn on first run until the binary is code-signed. See desktop/README.md."
