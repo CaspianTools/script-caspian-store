@@ -163,7 +163,6 @@ const tr: MessageDict = {
   'pos.done.failed': 'Satış kaydedilemedi',
   'pos.done.outcomeUnknown':
     'Son satış denetlenemedi. Bu satışı değiştirmeyin - bitirmek için yeniden Ödeme al düğmesine basın.',
-  'pos.storage.comingSoon': 'Gelecek bir sürümde kullanılabilir olacak.',
   'pos.settings.languagePinned':
     'Bu site dili kendi yönlendirmesinden belirler; bu yüzden seçiminiz saklanır ama burada gördüğünüzü değiştirmez.',
   'pos.settings.deviceLabelPlaceholder': 'Ön tezgâh',

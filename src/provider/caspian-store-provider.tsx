@@ -21,12 +21,38 @@ import { TemplateProvider } from './template-provider';
 import { ToastProvider } from '../ui/toast';
 import { LocaleProvider } from '../i18n/locale-context';
 import type { MessageDict } from '../i18n/messages';
+import { DEFAULT_SCRIPT_SETTINGS, type ScriptSettings } from '../types';
 import { ErrorBoundary } from '../components/error-boundary';
 import { logError } from '../services/error-log-service';
 
 export interface CaspianStoreProviderProps {
-  /** Firebase project config (apiKey, authDomain, projectId, etc.). */
-  firebaseConfig: FirebaseOptions;
+  /**
+   * Firebase project config (apiKey, authDomain, projectId, etc.).
+   *
+   * Required unless `standalone` is set — a storefront without a project is a
+   * broken storefront, and failing loudly at mount beats failing obscurely on
+   * the first read.
+   */
+  firebaseConfig?: FirebaseOptions;
+  /**
+   * Run with no Firebase project at all: a standalone till that keeps its
+   * catalogue, staff and sales on its own disk.
+   *
+   * Deliberately explicit rather than inferred from a missing config. Falling
+   * back automatically would mean a real shop whose credentials broke came up
+   * as an empty local register and started taking sales into a database nobody
+   * knows about — the failure would look like a working till.
+   *
+   * Only the register and the local admin can be mounted this way; the
+   * storefront and the cloud admin need a project and say so when reached.
+   */
+  standalone?: boolean;
+  /**
+   * Settings to use in place of the `scriptSettings/site` document. Consulted
+   * only when `standalone` is set. A standalone till needs `features.pos` on,
+   * so that is defaulted for you.
+   */
+  scriptSettings?: Partial<ScriptSettings>;
   /** Optional Cloud Functions region (default: us-central1). */
   functionsRegion?: string;
   /**
@@ -50,9 +76,12 @@ export interface CaspianStoreProviderProps {
 }
 
 export interface CaspianStoreContextValue {
-  firebase: CaspianFirebase;
-  collections: CaspianCollections;
+  /** `null` in standalone mode. Reach it with `useCaspianFirebaseOptional()`. */
+  firebase: CaspianFirebase | null;
+  /** `null` in standalone mode. */
+  collections: CaspianCollections | null;
   adapters: FrameworkAdapters;
+  standalone: boolean;
 }
 
 const CaspianStoreContext = createContext<CaspianStoreContextValue | null>(null);
@@ -93,6 +122,8 @@ function resolveFirebaseConfig(passed: FirebaseOptions): FirebaseOptions {
 
 export function CaspianStoreProvider({
   firebaseConfig,
+  standalone = false,
+  scriptSettings,
   functionsRegion,
   adapters,
   appName,
@@ -102,22 +133,45 @@ export function CaspianStoreProvider({
   children,
 }: CaspianStoreProviderProps) {
   const value = useMemo<CaspianStoreContextValue>(() => {
-    const resolvedConfig = resolveFirebaseConfig(firebaseConfig);
+    const resolvedAdapters: FrameworkAdapters = {
+      Link: adapters?.Link ?? DefaultCaspianLink,
+      Image: adapters?.Image ?? DefaultCaspianImage,
+      useNavigation: adapters?.useNavigation ?? useDefaultCaspianNavigation,
+    };
+    if (standalone) {
+      return { firebase: null, collections: null, adapters: resolvedAdapters, standalone: true };
+    }
+    const resolvedConfig = resolveFirebaseConfig(firebaseConfig ?? {});
     const firebase = initCaspianFirebase({
       config: resolvedConfig,
       functionsRegion,
       name: appName,
     });
     const collections = caspianCollections(firebase.db);
-    const resolvedAdapters: FrameworkAdapters = {
-      Link: adapters?.Link ?? DefaultCaspianLink,
-      Image: adapters?.Image ?? DefaultCaspianImage,
-      useNavigation: adapters?.useNavigation ?? useDefaultCaspianNavigation,
-    };
-    return { firebase, collections, adapters: resolvedAdapters };
+    return { firebase, collections, adapters: resolvedAdapters, standalone: false };
     // Intentionally stable per mount; consumers should not swap these at runtime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A standalone till must come up with the register reachable. Everything else
+  // stays at its default, so a consumer can still switch other features on.
+  const settingsSeed = useMemo<Partial<ScriptSettings> | undefined>(
+    () =>
+      standalone
+        ? {
+            ...scriptSettings,
+            // `pos` last, so a caller cannot switch off the only screen a
+            // standalone till has. Everything else remains theirs to set.
+            features: {
+              ...DEFAULT_SCRIPT_SETTINGS.features,
+              ...scriptSettings?.features,
+              pos: true,
+            },
+          }
+        : undefined,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [standalone],
+  );
 
   // Serialize the resolved config so the browser sees the same values without
   // requiring next.config.mjs env: forwarding. Reads `app.options` (what
@@ -125,25 +179,27 @@ export function CaspianStoreProvider({
   // passes a partial config. The script runs at HTML parse time, before
   // React hydration, so the client useMemo above can read it via
   // readSsrConfigFromWindow().
-  const ssrConfigJson = JSON.stringify(value.firebase.app.options);
+  const ssrConfigJson = value.firebase ? JSON.stringify(value.firebase.app.options) : null;
 
   return (
     <CaspianStoreContext.Provider value={value}>
-      <script
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: `window.${SSR_CONFIG_GLOBAL}=${ssrConfigJson};`,
-        }}
-      />
-      <ErrorBoundary db={value.firebase.db} origin="CaspianStoreProvider">
-        <GlobalErrorCapture db={value.firebase.db} projectId={firebaseConfig.projectId} />
+      {ssrConfigJson && (
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `window.${SSR_CONFIG_GLOBAL}=${ssrConfigJson};`,
+          }}
+        />
+      )}
+      <ErrorBoundary db={value.firebase?.db} origin="CaspianStoreProvider">
+        <GlobalErrorCapture db={value.firebase?.db ?? null} projectId={firebaseConfig?.projectId} />
         <LocationChangeBridge />
         <LocaleProvider locale={locale} messages={messages} messagesByLocale={messagesByLocale}>
           <ToastProvider>
             <AuthProvider firebase={value.firebase}>
-              <CartProvider db={value.firebase.db}>
-                <WishlistProvider db={value.firebase.db}>
-                  <ScriptSettingsProvider collections={value.collections}>
+              <CartProvider db={value.firebase?.db ?? null}>
+                <WishlistProvider db={value.firebase?.db ?? null}>
+                  <ScriptSettingsProvider collections={value.collections} seed={settingsSeed}>
                     <TemplateProvider>
                       <ThemeInjector />
                       <FontLoader />
@@ -167,9 +223,15 @@ export function CaspianStoreProvider({
  * async throws from event handlers, timers, and unhandled promise
  * rejections. Added for mod1182.
  */
-function GlobalErrorCapture({ db, projectId }: { db: CaspianFirebase['db']; projectId?: string }) {
+function GlobalErrorCapture({
+  db,
+  projectId,
+}: {
+  db: CaspianFirebase['db'] | null;
+  projectId?: string;
+}) {
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !db) return;
     const onError = (ev: ErrorEvent) => {
       void logError(db, {
         source: 'client',
@@ -277,10 +339,42 @@ export function useCaspianNavigation() {
   return hook();
 }
 
-export function useCaspianCollections() {
+const STANDALONE_ACCESS_ERROR =
+  'This screen needs a Firebase project, and <CaspianStoreProvider> was mounted with `standalone`. ' +
+  'A standalone till can open the register and the local admin only — the storefront and the cloud admin have no data to read.';
+
+/**
+ * The Firestore collection refs. Throws in standalone mode.
+ *
+ * Strict on purpose: ninety-odd call sites across the storefront and admin all
+ * need a real project, and widening the return type would push a null check
+ * into every one of them to serve the handful of screens that can run without
+ * one. Those few use the `Optional` variants below.
+ */
+export function useCaspianCollections(): CaspianCollections {
+  const { collections } = useCaspianStore();
+  if (!collections) throw new Error(STANDALONE_ACCESS_ERROR);
+  return collections;
+}
+
+/** The collection refs, or `null` on a standalone till. */
+export function useCaspianCollectionsOptional(): CaspianCollections | null {
   return useCaspianStore().collections;
 }
 
-export function useCaspianFirebase() {
+/** The Firebase handles. Throws in standalone mode — see `useCaspianCollections`. */
+export function useCaspianFirebase(): CaspianFirebase {
+  const { firebase } = useCaspianStore();
+  if (!firebase) throw new Error(STANDALONE_ACCESS_ERROR);
+  return firebase;
+}
+
+/** The Firebase handles, or `null` on a standalone till. */
+export function useCaspianFirebaseOptional(): CaspianFirebase | null {
   return useCaspianStore().firebase;
+}
+
+/** True when this tree was mounted with `standalone`. */
+export function useCaspianStandalone(): boolean {
+  return useCaspianStore().standalone;
 }

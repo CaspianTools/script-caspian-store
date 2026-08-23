@@ -52,7 +52,12 @@ export class PosSaleQueue {
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
-    private readonly functions: Functions,
+    /**
+     * `null` on a standalone till, which has no callables to reach. The queue
+     * still reads and lists — a till switched from cloud to local with sales
+     * already held must not lose sight of them — but it can no longer send.
+     */
+    private readonly functions: Functions | null,
     private readonly deviceId: string,
   ) {}
 
@@ -133,6 +138,7 @@ export class PosSaleQueue {
   /** Top up while online, so an outage starts with numbers in hand. */
   async ensureLease(): Promise<void> {
     if (!posIdbAvailable() || typeof navigator === 'undefined' || !navigator.onLine) return;
+    if (!this.functions) return;
     const { leasedRemaining } = await this.snapshot();
     if (leasedRemaining > LEASE_TOPUP_AT) return;
     try {
@@ -284,6 +290,10 @@ export class PosSaleQueue {
   }
 
   private async send(sale: QueuedSale): Promise<boolean> {
+    // Nothing to send to. Reported as a failed attempt rather than a silent
+    // success so the sale stays held and visible instead of being marked sent
+    // to a server that was never asked.
+    if (!this.functions) return false;
     await posTx(STORE_QUEUE, 'readwrite', (tx) => idbPut(tx, STORE_QUEUE, { ...sale, state: 'sending' }));
     try {
       const call = httpsCallable<Record<string, unknown>, PosCommittedSale>(

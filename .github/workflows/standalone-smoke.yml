@@ -1,0 +1,49 @@
+name: Standalone till — behaviour smoke
+
+# Guards the `local` storage mode: a register with no shop, no website and no
+# Firebase project behind it, where this machine holds the only copy of a
+# shop's catalogue, staff and takings.
+#
+# Two things here are expensive to get wrong and invisible to `tsc`: what a
+# customer is actually charged, and whether a CSV export/import round-trip
+# preserves a catalogue. Both are pure functions by design — the money
+# arithmetic was split out of the IndexedDB transaction into `priceLocalSale`
+# precisely so it could be checked in CI without a browser.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pos/**'
+      - 'src/utils/csv.ts'
+      - 'src/services/import-export/helpers.ts'
+      - 'scripts/check-standalone.mjs'
+      - '.github/workflows/standalone-smoke.yml'
+  pull_request:
+    paths:
+      - 'src/pos/**'
+      - 'src/utils/csv.ts'
+      - 'src/services/import-export/helpers.ts'
+      - 'scripts/check-standalone.mjs'
+      - '.github/workflows/standalone-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # No cache — this repo doesn't commit package-lock.json by policy.
+
+      - name: Install deps
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Check standalone behaviour
+        run: node scripts/check-standalone.mjs

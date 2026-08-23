@@ -64,7 +64,14 @@ function clearLocal() {
   }
 }
 
-export function WishlistProvider({ db, children }: { db: Firestore; children: ReactNode }) {
+export function WishlistProvider({
+  db,
+  children,
+}: {
+  /** `null` on a standalone till. The wishlist then lives in localStorage only. */
+  db: Firestore | null;
+  children: ReactNode;
+}) {
   const { user } = useAuth();
   const [ids, setIds] = useState<string[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
@@ -77,7 +84,7 @@ export function WishlistProvider({ db, children }: { db: Firestore; children: Re
     (async () => {
       setLoading(true);
       try {
-        if (user) {
+        if (user && db) {
           const local = readLocal();
           const merged = await mergeWishlistOnSignIn(db, user.uid, local);
           if (!alive) return;
@@ -107,7 +114,7 @@ export function WishlistProvider({ db, children }: { db: Firestore; children: Re
   // them ready so the grid doesn't flash empty cells.
   useEffect(() => {
     const missing = ids.filter((id) => !products[id]);
-    if (missing.length === 0) return;
+    if (missing.length === 0 || !db) return;
     let alive = true;
     (async () => {
       try {
@@ -129,7 +136,7 @@ export function WishlistProvider({ db, children }: { db: Firestore; children: Re
 
   const persist = useCallback(
     async (next: string[]) => {
-      if (user) {
+      if (user && db) {
         try {
           await saveUserWishlist(db, user.uid, next);
         } catch (error) {

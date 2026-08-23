@@ -12,7 +12,7 @@
  */
 
 export const DB_NAME = 'caspian-pos';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
@@ -20,12 +20,32 @@ export const STORE_CATALOG = 'catalog';
 export const STORE_TICKET = 'openTicket';
 export const STORE_META = 'meta';
 
+/**
+ * Standalone stores, added at version 2.
+ *
+ * Separate from the five above, which all belong to the cloud register: they
+ * are caches and outboxes whose truth lives in Firestore, and every one of them
+ * can be thrown away and rebuilt. The `local*` stores are the opposite — on a
+ * standalone till they ARE the shop's records, and nothing else has a copy.
+ * That difference is why `clearPosDb` still wipes only the cloud five.
+ */
+export const STORE_LOCAL_PRODUCTS = 'localProducts';
+export const STORE_LOCAL_USERS = 'localUsers';
+export const STORE_LOCAL_SALES = 'localSales';
+export const STORE_LOCAL_COUNTERS = 'localCounters';
+export const STORE_LOCAL_SETTINGS = 'localSettings';
+
 export type StoreName =
   | typeof STORE_QUEUE
   | typeof STORE_LEASES
   | typeof STORE_CATALOG
   | typeof STORE_TICKET
-  | typeof STORE_META;
+  | typeof STORE_META
+  | typeof STORE_LOCAL_PRODUCTS
+  | typeof STORE_LOCAL_USERS
+  | typeof STORE_LOCAL_SALES
+  | typeof STORE_LOCAL_COUNTERS
+  | typeof STORE_LOCAL_SETTINGS;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -67,6 +87,27 @@ export function openPosDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_META)) {
         db.createObjectStore(STORE_META, { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_PRODUCTS)) {
+        const local = db.createObjectStore(STORE_LOCAL_PRODUCTS, { keyPath: 'id' });
+        local.createIndex('by-barcode', 'barcode');
+        local.createIndex('by-sku', 'sku');
+        local.createIndex('by-nameLower', 'nameLower');
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_USERS)) {
+        const users = db.createObjectStore(STORE_LOCAL_USERS, { keyPath: 'id' });
+        users.createIndex('by-username', 'username', { unique: true });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_SALES)) {
+        const sales = db.createObjectStore(STORE_LOCAL_SALES, { keyPath: 'saleId' });
+        sales.createIndex('by-committedAt', 'committedAtMillis');
+        sales.createIndex('by-receiptNumber', 'receiptNumber');
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_COUNTERS)) {
+        db.createObjectStore(STORE_LOCAL_COUNTERS, { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_SETTINGS)) {
+        db.createObjectStore(STORE_LOCAL_SETTINGS, { keyPath: 'key' });
       }
     };
     req.onsuccess = () => {
@@ -162,7 +203,16 @@ export function idbCountByIndex(
   return wrap<number>(tx.objectStore(store).index(index).count(key));
 }
 
-/** Wipe everything this device holds. Used only by an explicit operator action. */
+/**
+ * Wipe the cloud register's caches and outbox. An explicit operator action only.
+ *
+ * Deliberately does NOT touch the `local*` stores. Everything cleared here can
+ * be rebuilt from Firestore; a standalone till's catalogue, users and sales
+ * cannot be rebuilt from anywhere, so a support engineer clearing a stuck
+ * offline queue must not be able to delete a shop's trading history by
+ * accident. Resetting a standalone till is `factoryResetLocalStore`, which is a
+ * separate call with its own confirmation.
+ */
 export async function clearPosDb(): Promise<void> {
   await posTx(
     [STORE_QUEUE, STORE_LEASES, STORE_CATALOG, STORE_TICKET, STORE_META],

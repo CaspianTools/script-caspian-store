@@ -166,13 +166,17 @@ function getRoute(): string | undefined {
  * first becomes "handled" (toast shown, skeleton rendered, etc.).
  */
 export function reportServiceError(
-  db: Firestore,
+  db: Firestore | null,
   origin: string,
   err: unknown,
   context?: Record<string, string | number | boolean>,
 ): void {
   // eslint-disable-next-line no-console
   console.error(`[caspian-store] ${origin}:`, err);
+  // A standalone till has no Firestore to log to. The console line above is
+  // the whole report there, which is the honest outcome — inventing a local
+  // error store would give a shop a growing file nobody ever reads.
+  if (!db) return;
   void logError(db, { source: 'service', origin, error: err, context });
 }
 

@@ -164,7 +164,6 @@ const az: MessageDict = {
   'pos.done.failed': 'Satış yadda saxlanılmadı',
   'pos.done.outcomeUnknown':
     'Son satışı yoxlamaq mümkün olmadı. Bu satışa toxunmayın - bitirmək üçün yenidən Ödənişi al düyməsini basın.',
-  'pos.storage.comingSoon': 'Növbəti buraxılışda əlçatan olacaq.',
   'pos.settings.languagePinned':
     'Bu sayt dili öz marşrutlaşdırmasından təyin edir, ona görə seçiminiz saxlanılır, amma burada gördüyünüzü dəyişməyəcək.',
   'pos.settings.deviceLabelPlaceholder': 'Ön piştaxta',

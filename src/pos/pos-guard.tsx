@@ -7,6 +7,9 @@ import { useScriptSettings } from '../context/script-settings-context';
 import { useT } from '../i18n/locale-context';
 import { Skeleton } from '../ui/misc';
 import { POS_ROLES, type UserRole } from '../types';
+import { usePosLocalSession } from './standalone/local-session-context';
+import { PosLocalSignIn } from './standalone/pos-local-sign-in';
+import { canAccess } from './standalone/types';
 
 export interface PosGuardProps {
   children: ReactNode;
@@ -31,22 +34,34 @@ function isPosRole(role: UserRole | undefined): boolean {
  * Also refuses when the feature is switched off, so a store that has never
  * enabled the POS does not expose a working register on a guessable URL just
  * because someone happens to hold the role.
+ *
+ * On a standalone till none of that applies: there is no Firebase Auth to ask,
+ * no `users/{uid}` document to hold a role, and no remote flag to consult. That
+ * path is checked first and returns before any of the cloud checks, because
+ * every one of them would refuse a perfectly valid local cashier.
  */
 export function PosGuard({ children, signInHref = '/login', fallback }: PosGuardProps) {
   const { user, userProfile, loading } = useAuth();
   const { settings } = useScriptSettings();
+  const local = usePosLocalSession();
   const Link = useCaspianLink();
   const t = useT();
 
   const posEnabled = settings.features?.pos || settings.features?.posOnly;
 
+  if (local.standalone) {
+    if (local.loading) return <PosLoading />;
+    if (!local.user) return <PosLocalSignIn />;
+    if (!canAccess(local.user.role, 'register')) {
+      return (
+        <PosNotice title={t('pos.local.noAccessTitle')} body={t('pos.local.noAccessBody')} />
+      );
+    }
+    return <>{children}</>;
+  }
+
   if (loading) {
-    return (
-      <div style={{ padding: 40, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Skeleton style={{ height: 24, width: 200 }} />
-        <Skeleton style={{ height: 14, width: 320 }} />
-      </div>
-    );
+    return <PosLoading />;
   }
 
   if (!posEnabled) {
@@ -73,6 +88,15 @@ export function PosGuard({ children, signInHref = '/login', fallback }: PosGuard
   }
 
   return <>{children}</>;
+}
+
+function PosLoading() {
+  return (
+    <div style={{ padding: 40, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Skeleton style={{ height: 24, width: 200 }} />
+      <Skeleton style={{ height: 14, width: 320 }} />
+    </div>
+  );
 }
 
 function PosNotice({

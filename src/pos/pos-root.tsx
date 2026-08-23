@@ -5,7 +5,10 @@ import type { ReactNode } from 'react';
 import { useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
+import { usePosLocalSession } from './standalone/local-session-context';
+import { PosLocalAdminPage } from './standalone/admin/pos-local-admin-page';
+import { canAccess } from './standalone/types';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
 import { PosInstallButton } from './pos-install-button';
@@ -31,18 +34,30 @@ export function PosShell({ children }: { children: ReactNode }) {
   const pathname = stripLocalePrefix(rawPathname);
   const Link = useCaspianLink();
   const { userProfile, signOut } = useAuth();
-  const { functions } = useCaspianFirebase();
+  const local = usePosLocalSession();
+  const functions = useCaspianFirebaseOptional()?.functions ?? null;
   const t = useT();
   const license = usePosLicense(functions);
   // One queue instance for the chrome, so the pill reflects the same store the
   // register writes to. Cheap: it holds no connection, only a device id.
   const queue = useMemo(() => new PosSaleQueue(functions, getPosDeviceId()), [functions]);
 
+  // A standalone till has no outbox — nothing is ever waiting to be sent — so
+  // the queue tab would only ever show an empty page. In its place it gets the
+  // local back office, for the people allowed to open it.
   const items = [
     { href: '/pos', label: t('pos.nav.register') },
-    { href: '/pos/queue', label: t('pos.nav.queue') },
+    ...(local.standalone ? [] : [{ href: '/pos/queue', label: t('pos.nav.queue') }]),
+    ...(local.standalone && canAccess(local.user?.role, 'admin')
+      ? [{ href: '/pos/admin', label: t('pos.nav.localAdmin') }]
+      : []),
     { href: '/pos/settings', label: t('pos.nav.settings') },
   ];
+
+  const whoIsHere = local.standalone
+    ? (local.user?.displayName ?? '')
+    : userProfile?.displayName || userProfile?.email;
+  const exit = () => (local.standalone ? local.signOut() : void signOut());
 
   return (
     <div style={shell}>
@@ -72,17 +87,15 @@ export function PosShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div style={{ marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#666' }}>
-            {userProfile?.displayName || userProfile?.email}
-          </span>
-          {userProfile?.role === 'admin' ? (
+          <span style={{ fontSize: 13, color: '#666' }}>{whoIsHere}</span>
+          {!local.standalone && userProfile?.role === 'admin' ? (
             <Link href="/admin" style={{ fontSize: 13 }}>
               {t('pos.nav.admin')}
             </Link>
           ) : null}
-          <PosConnectionPill queue={queue} />
+          {local.standalone ? null : <PosConnectionPill queue={queue} />}
           <PosInstallButton />
-          <button type="button" onClick={() => void signOut()} style={exitButton}>
+          <button type="button" onClick={exit} style={exitButton}>
             {t('pos.nav.exit')}
           </button>
         </div>
@@ -135,6 +148,7 @@ const exitButton: React.CSSProperties = {
  */
 export function PosRoot(): ReactNode {
   const { pathname } = useCaspianNavigation();
+  const { standalone } = usePosLocalSession();
   const after = stripLocalePrefix(pathname).replace(/^\/pos\/?/, '');
   const [head] = after.split('/');
 
@@ -143,6 +157,11 @@ export function PosRoot(): ReactNode {
       return <PosSettingsPage />;
     case 'queue':
       return <PosQueuePage />;
+    // Only a standalone till has a local back office. On a cloud till this is
+    // just a mistyped URL, and the rule above is that those land on the
+    // register rather than on a screen with nothing in it.
+    case 'admin':
+      return standalone ? <PosLocalAdminPage /> : <PosRegister />;
     default:
       return <PosRegister />;
   }

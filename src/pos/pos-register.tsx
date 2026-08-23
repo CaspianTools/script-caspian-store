@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/auth-context';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { getSiteSettings } from '../services/site-settings-service';
 import { reportServiceError } from '../services/error-log-service';
@@ -12,13 +12,21 @@ import { Badge, Skeleton } from '../ui/misc';
 import { DEFAULT_POS_SETTINGS, type PosSettings, type Product } from '../types';
 import { useBarcodeScanner, DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-scanner';
 import { PosQueuedCloudAdapter } from './storage/queued-cloud-adapter';
-import type { PosCommittedSale, PosTenderInput } from './storage/types';
+import { PosLocalAdapter } from './storage/local-adapter';
+import type {
+  PosCommittedSale,
+  PosStorageAdapter,
+  PosStorageMode,
+  PosTenderInput,
+} from './storage/types';
+import { usePosLocalSession } from './standalone/local-session-context';
+import { readLocalShopSettings } from './standalone/local-db';
 import { usePosTicket } from './use-pos-ticket';
 import { getPosDeviceId, getPosDeviceLabel, nextPosSaleId } from './pos-device';
 import { PosTenderDialog } from './pos-tender-dialog';
 import { buildReceiptModel, type PosReceiptModel } from './receipt/build-receipt-model';
 import { PosReceipt } from './receipt/pos-receipt';
-import { readScannerGapMs } from './pos-preferences';
+import { readScannerGapMs, resolvePosStorageMode } from './pos-preferences';
 
 type Phase =
   | { kind: 'selling' }
@@ -39,8 +47,10 @@ export interface PosRegisterProps {
  * never have to click into a field before the first scan of the day works.
  */
 export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegisterProps) {
-  const { db, functions } = useCaspianFirebase();
+  const firebase = useCaspianFirebaseOptional();
+  const db = firebase?.db ?? null;
   const { user, userProfile } = useAuth();
+  const local = usePosLocalSession();
   const t = useT();
   const ticket = usePosTicket();
 
@@ -58,15 +68,31 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   // sale held overnight and drained by a different person in the morning is
   // still attributed to the cashier who actually rang it.
   const identity = useRef({ uid: '', name: '' });
-  identity.current = {
-    uid: user?.uid ?? '',
-    name: userProfile?.displayName || user?.email || '',
-  };
-  const adapter = useMemo(
-    () => new PosQueuedCloudAdapter(db, functions, getPosDeviceId(), () => identity.current),
-    [db, functions],
-  );
+  identity.current = local.standalone
+    ? { uid: local.user?.id ?? '', name: local.user?.displayName ?? '' }
+    : { uid: user?.uid ?? '', name: userProfile?.displayName || user?.email || '' };
+
   const deviceId = useMemo(() => getPosDeviceId(), []);
+  const [storageMode, setStorageMode] = useState<PosStorageMode>(() =>
+    resolvePosStorageMode(Boolean(firebase)),
+  );
+  useEffect(() => {
+    // Re-read after mount: the preference lives in localStorage, which is not
+    // there during a server render, so the first value is a guess.
+    setStorageMode(resolvePosStorageMode(Boolean(firebase)));
+  }, [firebase]);
+
+  const adapter = useMemo<PosStorageAdapter>(() => {
+    if (storageMode === 'local' || !firebase) {
+      return new PosLocalAdapter(deviceId, () => identity.current);
+    }
+    return new PosQueuedCloudAdapter(
+      firebase.db,
+      firebase.functions,
+      deviceId,
+      () => identity.current,
+    );
+  }, [storageMode, firebase, deviceId]);
   // Held across retries of the SAME sale — see the note in `commit`.
   const saleIdRef = useRef<string | null>(null);
   // What was tendered on the last attempt, so a sale recovered on cancel can
@@ -79,11 +105,30 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
 
   useEffect(() => {
     let alive = true;
-    getSiteSettings(db)
-      .then((settings) => {
+    // Standalone: receipt wording and currency come from the shop record on
+    // this machine. Same defaults on failure, for the same reason.
+    const load = db
+      ? getSiteSettings(db).then((settings) => ({
+          pos: { ...DEFAULT_POS_SETTINGS, ...(settings?.pos ?? {}) },
+          currency: settings?.currency || 'USD',
+        }))
+      : readLocalShopSettings().then((shop) => ({
+          pos: {
+            ...DEFAULT_POS_SETTINGS,
+            receiptHeader: shop.receiptHeader,
+            receiptFooter: shop.receiptFooter,
+            receiptPrefix: shop.receiptPrefix,
+            roundCashTo: shop.roundCashTo,
+            showTaxOnReceipt: shop.showTaxOnReceipt,
+          },
+          currency: shop.currency || 'USD',
+        }));
+
+    load
+      .then(({ pos, currency: resolved }) => {
         if (!alive) return;
-        setPosSettings({ ...DEFAULT_POS_SETTINGS, ...(settings?.pos ?? {}) });
-        setCurrency(settings?.currency || 'USD');
+        setPosSettings(pos);
+        setCurrency(resolved);
       })
       .catch((error) => {
         reportServiceError(db, 'pos-register.settings', error);
@@ -177,7 +222,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           subtotal: ticket.totals.subtotal,
           discount: ticket.totals.lineDiscounts,
           total: sale.total,
-          cashierName: userProfile?.displayName || user?.email || '',
+          cashierName: identity.current.name,
           deviceLabel: getPosDeviceLabel(),
           receiptHeader: posSettings?.receiptHeader,
           receiptFooter: posSettings?.receiptFooter,
@@ -229,7 +274,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           subtotal: ticket.totals.subtotal,
           discount: ticket.totals.lineDiscounts,
           total: landed.total || ticket.totals.total,
-          cashierName: userProfile?.displayName || user?.email || '',
+          cashierName: identity.current.name,
           deviceLabel: getPosDeviceLabel(),
           receiptHeader: posSettings?.receiptHeader,
           receiptFooter: posSettings?.receiptFooter,

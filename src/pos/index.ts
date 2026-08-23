@@ -24,8 +24,10 @@ export {
   writePrinterTransport,
   readStorageMode,
   writeStorageMode,
+  resolvePosStorageMode,
 } from './pos-preferences';
 export { PosCloudAdapter } from './storage/cloud-adapter';
+export { PosLocalAdapter } from './storage/local-adapter';
 export type {
   PosStorageAdapter,
   PosStorageMode,
@@ -42,6 +44,100 @@ export {
   type BuildReceiptArgs,
 } from './receipt/build-receipt-model';
 export { PosReceipt, type PosReceiptProps } from './receipt/pos-receipt';
+// --- Standalone: a till with no shop, no website and no Firebase project ---
+export {
+  PosLocalSessionProvider,
+  usePosLocalSession,
+  type PosLocalSessionValue,
+} from './standalone/local-session-context';
+export { PosLocalSignIn } from './standalone/pos-local-sign-in';
+export {
+  priceLocalSale,
+  toMinor,
+  fromMinor,
+  type PricedSale,
+  type PricedLineInput,
+} from './standalone/price-local-sale';
+export {
+  PosLocalAdminPage,
+  type PosLocalAdminPageProps,
+} from './standalone/admin/pos-local-admin-page';
+export {
+  LOCAL_PRODUCT_COLUMNS,
+  localProductsToCsv,
+  localProductTemplateCsv,
+  planLocalProductImport,
+  type LocalColumnMeta,
+  type LocalImportPlan,
+  type LocalImportRow,
+} from './standalone/local-csv';
+export {
+  buildLocalBackup,
+  restoreLocalBackup,
+  parseLocalBackup,
+  localBackupFilename,
+  saveTextFile,
+  LOCAL_BACKUP_VERSION,
+  type LocalBackup,
+  type RestoreResult,
+} from './standalone/local-backup';
+export {
+  canAccess,
+  POS_LOCAL_ROLES,
+  DEFAULT_LOCAL_SHOP_SETTINGS,
+  type PosLocalRole,
+  type PosLocalArea,
+  type LocalUser,
+  type LocalProduct,
+  type LocalSale,
+  type LocalSaleLine,
+  type LocalShopSettings,
+} from './standalone/types';
+export {
+  localStoreAvailable,
+  newLocalId,
+  makeLocalProduct,
+  toProduct as localProductToProduct,
+  listLocalProducts,
+  getLocalProduct,
+  saveLocalProduct,
+  saveLocalProducts,
+  deleteLocalProduct,
+  localProductCount,
+  lookupLocalByCode,
+  searchLocalProducts,
+  listLocalUsers,
+  getLocalUser,
+  getLocalUserByUsername,
+  saveLocalUser,
+  deleteLocalUser,
+  localUserCount,
+  getLocalSale,
+  listLocalSales,
+  commitLocalSale,
+  peekLocalReceiptCounter,
+  readLocalShopSettings,
+  writeLocalShopSettings,
+  factoryResetLocalStore,
+  type LocalLookup,
+  type LocalCommitInput,
+  type LocalCommitLine,
+} from './standalone/local-db';
+export {
+  hashLocalPassword,
+  verifyLocalPassword,
+  createLocalUser,
+  setLocalPassword,
+  signInLocal,
+  isCommissioned,
+  restoreLocalSession,
+  clearLocalSession,
+  normaliseUsername,
+  MIN_LOCAL_PASSWORD_LENGTH,
+  type LocalCredentials,
+  type CreateLocalUserResult,
+} from './standalone/local-auth';
+
 export {
   usePosLicense,
   verifyLicenseKey,

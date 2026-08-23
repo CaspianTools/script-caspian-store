@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v10.5.0 firebase
-# v10.5.0 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v11.0.0 firebase
+# v11.0.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -60,7 +60,7 @@ Peer deps: React 18/19, `firebase` 10, 11, or 12. Next.js consumers: install `ne
 
 ```bash
 npm install react@^19 react-dom@^19 firebase@^12
-npm install github:CaspianTools/script-caspian-store#v10.5.0
+npm install github:CaspianTools/script-caspian-store#v11.0.0
 ```
 
 Newly scaffolded sites (`npm create caspian-store@latest`) get the new versions automatically.
@@ -1207,3 +1207,90 @@ export async function GET(request: Request) {
   }
 }
 ```
+
+---
+
+## 13. Standalone till — no website, no Firebase (v11.0.0+)
+
+Most shops running the register have an online store behind it. Many physical
+shops do not, and for those the register can run entirely on one computer:
+catalogue, staff, sales and receipt numbers all live in that machine's
+IndexedDB, and the till contacts nothing.
+
+Mount the provider with `standalone` and leave `firebaseConfig` off:
+
+```tsx
+'use client';
+import { CaspianStoreProvider, CaspianRoot } from '@caspian-explorer/script-caspian-store';
+import '@caspian-explorer/script-caspian-store/styles.css';
+
+export default function Page() {
+  return (
+    <CaspianStoreProvider standalone>
+      <CaspianRoot />
+    </CaspianStoreProvider>
+  );
+}
+```
+
+That is the whole configuration. There is no project to create, no rules to
+deploy and no Cloud Functions codebase.
+
+### What a standalone till has
+
+| Screen | What it does |
+| --- | --- |
+| First run | Creates the **Support** account. Nothing else can happen until it exists. |
+| `/pos` | The register: scan, ticket, tender, receipt — the same screen as a cloud till. |
+| `/pos/admin` | The back office: items (with CSV import/export), sales and takings, people and roles, shop and receipt wording, backup and restore. |
+| `/pos/settings` | Per-device settings: language, register name, scanner speed. |
+
+### The three tiers
+
+Commissioned by whoever installs the till, and separate from the cloud
+`UserRole` — these never reach Firestore and are not mirrored into any claim.
+
+| Role | Reaches |
+| --- | --- |
+| `superadmin` (Support) | Everything, including creating other Support accounts. |
+| `admin` (Owner) | The register and the back office. |
+| `staff` (Cashier) | The register only. |
+
+Access is cumulative: an owner can still work the counter without signing out.
+
+### Two things to be deliberate about
+
+**Backups are the shop's own.** Nothing is copied off the machine — that is the
+whole point of the mode — so a failed disk takes the shop's entire trading
+history with it. `/pos/admin` → Backup writes a dated JSON file holding items,
+people, sales, the receipt counter and the shop record. Tell the shop to put it
+somewhere that is not that computer, and to do it weekly.
+
+**`standalone` is explicit, never inferred.** A missing or broken
+`firebaseConfig` does *not* fall back to standalone. It throws, loudly, at
+mount. Falling back would mean a real shop whose credentials broke came up as an
+empty local register and started taking sales into a database nobody knows
+about — a failure that looks exactly like a working till.
+
+### What it deliberately does not do
+
+- **No sync to a website.** Attaching a shop link later, and pushing local
+  history up to it, is a separate release. Local is the only source of truth
+  today.
+- **No cloud reporting.** Nothing appears in an online admin panel, because
+  there isn't one.
+- **Receipts still print through the browser's print dialogue.** Direct
+  thermal printing is not in this version, in standalone or cloud mode.
+- **The Windows installer still asks for a shop address.** The desktop shell in
+  [`desktop/`](desktop/README.md) is a window over a shop's own `/pos` page and
+  has not moved to standalone yet; packaging a standalone till as an `.exe` that
+  needs no website at all is the next desktop release.
+
+### Mixing the two
+
+`useCaspianFirebase()` and `useCaspianCollections()` throw in standalone mode
+rather than returning null, because ninety-odd storefront and admin call sites
+need a real project and a null check in each of them would serve nobody. The
+handful of screens that must work either way use
+`useCaspianFirebaseOptional()`, `useCaspianCollectionsOptional()` and
+`useCaspianStandalone()`.

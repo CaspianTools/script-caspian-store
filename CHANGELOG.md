@@ -16,6 +16,106 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v11.0.0 — A till that needs no shop behind it
+
+Many physical shops have no online presence at all, and until now the register assumed one: a Firebase
+project, a website, a cloud admin panel. This release adds **standalone mode** — mount the provider with
+`standalone` and the register runs entirely on one computer. Catalogue, staff, sales and receipt numbers
+live in that machine's IndexedDB, and the till contacts nothing.
+
+It comes with its own back office at `/pos/admin`, because a till you cannot put products into is not a
+till. Items (with CSV import and export), sales and takings, people and roles, shop and receipt wording,
+and backups.
+
+### Consumer action required on upgrade
+
+For almost everyone this is a reinstall and nothing else:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v11.0.0
+```
+
+Rules, indexes and Cloud Functions are unchanged. The major bump is for one narrow type change:
+`CaspianStoreContextValue.firebase` and `.collections` are now `| null`, because in standalone mode there
+is no Firebase project. If you read them off the low-level escape hatch:
+
+```ts
+// before
+const { firebase } = useCaspianStore();
+firebase.db;
+
+// after — the documented accessor, which still returns non-null and throws in standalone
+const { db } = useCaspianFirebase();
+```
+
+`useCaspianFirebase()` and `useCaspianCollections()` are **unchanged** and still return non-null, so the
+ninety-odd storefront and admin call sites need no edits.
+
+### Added
+
+- **Standalone mode.** `<CaspianStoreProvider standalone>` boots the whole tree with no Firebase project.
+  Deliberately explicit rather than inferred from a missing config: falling back automatically would mean
+  a real shop whose credentials broke came up as an empty local register and started taking sales into a
+  database nobody knows about — a failure that looks exactly like a working till.
+- **`PosLocalAdapter`**, implementing the `PosStorageAdapter` seam that has been in the codebase since
+  v10.0.0 waiting for it. No queue, no lease, no commit fuse and no online check: those exist to paper
+  over the gap between a sale happening and a server hearing about it, and here there is no gap.
+- **Local accounts and three tiers** — `superadmin` (Support) → `admin` (Owner) → `staff` (Cashier),
+  cumulative rather than exclusive so an owner can work the counter without signing out. Passwords are
+  PBKDF2-SHA-256 with a per-user salt and a per-user iteration count, so the cost can be raised later
+  without locking anyone out. Technical Support commissions a machine by creating the first account; the
+  shop's own staff are added afterwards, from the back office.
+- **A local back office at `/pos/admin`** — items (add, edit, delete, search, CSV template / export /
+  import), sales and takings with a CSV export, people and roles, shop details and receipt wording, and
+  backup / restore.
+- **Backups.** A dated JSON file holding items, people, sales, the receipt counter and the shop record.
+  Restore is additive and never overwrites a sale already on the till, and the receipt counter only ever
+  moves forward — winding it back would reissue numbers already printed. The screen shows the counts
+  before you press the button, because a shop that can see "1,284 sales on this computer" understands
+  what it is about to lose.
+- **CSV headers match the cloud products export** where the two models overlap, and unknown columns are
+  ignored rather than rejected — so a spreadsheet exported from an online store imports straight into a
+  standalone till.
+- **`scripts/check-standalone.mjs`** and a CI workflow: 32 assertions over the money arithmetic and the
+  CSV round-trip. Plain `node:assert`, no test runner and no new dependency, matching the other
+  `scripts/check-*.mjs` guards.
+- New exports: `PosLocalAdapter`, `PosLocalSessionProvider`, `usePosLocalSession`, `PosLocalSignIn`,
+  `PosLocalAdminPage`, `priceLocalSale`, `canAccess`, the `local*` data-access functions, the CSV and
+  backup helpers, `useCaspianFirebaseOptional`, `useCaspianCollectionsOptional`, `useCaspianStandalone`
+  and `tryInitCaspianFirebase`.
+
+### Changed
+
+- **Where sales are stored is now shown at `/pos/settings`, not chosen.** The radio was previously
+  disabled and labelled "Available in a coming release". It now reflects the mode the till is actually in
+  and stays read-only. Offering it as a per-device switch was a trap: a cloud shop that picked "this
+  computer only" would have got a register backed by an empty local catalogue and no way to fill it,
+  which looks exactly like a till that has lost its products.
+- `reportServiceError` accepts a null `Firestore`. On a standalone till the console line is the whole
+  report, which is the honest outcome — a local error store would just be a growing file nobody reads.
+- `PosSaleQueue`, `CartProvider`, `WishlistProvider` and `ScriptSettingsProvider` accept a null database.
+  `ScriptSettingsProvider` gains a `seed`, consulted only when there is no Firestore: it was the single
+  provider making an unconditional read at mount, and a standalone till would otherwise have waited
+  forever on a subscription that never fires.
+- The register's queue tab and connection pill are hidden in standalone mode, where there is no outbox
+  and nothing to be offline from.
+
+### Fixed
+
+- `docs/pos-manual.html` no longer describes local storage as unavailable in all four languages, and the
+  note claiming the "coming release" line stays English is gone with the line it described.
+- README's POS manual section count said 38; it is 41.
+
+### Notes
+
+- **The Windows installer still asks for a shop address.** The desktop shell is a window over a shop's
+  own `/pos` page and has not moved to standalone yet — packaging a standalone till as an `.exe` that
+  needs no website at all is the next desktop release, on its own `desktop/v*` tag.
+- **Nothing syncs to a website.** Attaching a shop link later and pushing local history up to it is a
+  separate release. Local is the only source of truth today.
+- `docs/pos-manual.html` gains no standalone chapter in this release: a shop cannot reach the mode until
+  the desktop shell delivers it, and the manual documents what an owner or cashier can actually do.
+
 ## v10.5.0 — The register keeps selling when the internet drops
 
 A till no longer stops when the connection does. The cashier scans, takes payment and prints a receipt

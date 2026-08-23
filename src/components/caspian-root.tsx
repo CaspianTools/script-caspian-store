@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useCaspianNavigation, useCaspianStandalone } from '../provider/caspian-store-provider';
 import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 
 import { HomePage } from './home';
@@ -37,6 +37,7 @@ import type { SiteFooterProps } from './site-footer';
 import { useScriptSettings } from '../context/script-settings-context';
 import { PosGuard } from '../pos/pos-guard';
 import { PosRoot, PosShell } from '../pos/pos-root';
+import { PosLocalSessionProvider } from '../pos/standalone/local-session-context';
 
 import { AdminGuard } from '../admin/admin-guard';
 import { AdminShell } from '../admin/admin-shell';
@@ -96,6 +97,7 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   const { settings } = useScriptSettings();
   const path = stripLocalePrefix(nav.pathname) || '/';
   const posOnly = Boolean(settings.features?.posOnly);
+  const standalone = useCaspianStandalone();
 
   // Admin tree — AdminShell renders its own chrome. LayoutShell already
   // auto-bypasses its header/footer for `/admin/**`, so we don't wrap
@@ -115,11 +117,13 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   // `staff` as well as `admin`, and refuses outright when the feature is off.
   if (path === '/pos' || path.startsWith('/pos/')) {
     return (
-      <PosGuard>
-        <PosShell>
-          <PosRoot />
-        </PosShell>
-      </PosGuard>
+      <PosLocalSessionProvider>
+        <PosGuard>
+          <PosShell>
+            <PosRoot />
+          </PosShell>
+        </PosGuard>
+      </PosLocalSessionProvider>
     );
   }
 
@@ -154,7 +158,15 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   // storefront-disabled notice for it would leave a register-only shop with no
   // way to sign in at all, and therefore no way back into the admin panel to
   // turn the setting off. Password reset is included for the same reason.
+  //
+  // Standalone is the exception to that exemption. There is no Firebase Auth to
+  // sign in to, so `/login` would render a form whose submit button throws, and
+  // the way back in is the register's own local sign-in at `/pos`. Nothing
+  // outside `/pos` has anything to show on a till with no shop behind it.
   const AUTH_PATHS = ['/login', '/auth/login', '/register', '/auth/register', '/forgot-password', '/auth/forgot-password'];
+  if (standalone) {
+    return <StorefrontDisabled />;
+  }
   if (posOnly && !AUTH_PATHS.includes(path)) {
     return <StorefrontDisabled />;
   }

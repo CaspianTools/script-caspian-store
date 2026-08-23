@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Badge, Skeleton } from '../ui/misc';
@@ -23,7 +23,7 @@ import type { QueuedSale } from './offline/types';
  * server has already accepted.
  */
 export function PosQueuePage() {
-  const { functions } = useCaspianFirebase();
+  const functions = useCaspianFirebaseOptional()?.functions ?? null;
   const t = useT();
   const [rows, setRows] = useState<QueuedSale[] | null>(null);
   const [busy, setBusy] = useState(false);

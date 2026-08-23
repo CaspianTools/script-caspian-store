@@ -71,7 +71,14 @@ function sameLine(a: CartItemRef, b: CartItemRef) {
   );
 }
 
-export function CartProvider({ db, children }: { db: Firestore; children: ReactNode }) {
+export function CartProvider({
+  db,
+  children,
+}: {
+  /** `null` on a standalone till. The cart then lives in localStorage only. */
+  db: Firestore | null;
+  children: ReactNode;
+}) {
   const { user } = useAuth();
   const [refs, setRefs] = useState<CartItemRef[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
@@ -113,7 +120,7 @@ export function CartProvider({ db, children }: { db: Firestore; children: ReactN
     (async () => {
       setLoading(true);
       try {
-        if (user) {
+        if (user && db) {
           const local = readLocal();
           const incoming = combineCartItems(local, carriedFromMemory);
           const merged = await mergeCartOnSignIn(db, user.uid, incoming);
@@ -145,7 +152,7 @@ export function CartProvider({ db, children }: { db: Firestore; children: ReactN
   // Load product details for refs whenever refs change
   useEffect(() => {
     const ids = Array.from(new Set(refs.map((r) => r.productId).filter((id) => !products[id])));
-    if (ids.length === 0) return;
+    if (ids.length === 0 || !db) return;
     let alive = true;
     (async () => {
       try {
@@ -168,7 +175,7 @@ export function CartProvider({ db, children }: { db: Firestore; children: ReactN
   // Persist refs
   const persist = useCallback(
     async (next: CartItemRef[]) => {
-      if (user) {
+      if (user && db) {
         try {
           await saveUserCart(db, user.uid, next);
         } catch (error) {

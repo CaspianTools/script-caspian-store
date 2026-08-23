@@ -63,3 +63,21 @@ export function readStorageMode(): PosStorageMode {
 export function writeStorageMode(value: PosStorageMode): void {
   write(STORAGE_MODE_KEY, value);
 }
+
+/**
+ * What mode the register actually runs in.
+ *
+ * Decided by the deployment, not by the stored preference — which is why
+ * `readStorageMode` is not consulted here despite existing. A till wired to a
+ * Firebase project is a cloud till; one mounted with `standalone` is a local
+ * till, and there is nothing to choose between at the counter.
+ *
+ * The per-device switch this replaced was a trap. A cloud shop that picked
+ * "this computer only" got a register backed by an empty local catalogue and no
+ * way to fill it: the local back office is part of a standalone deployment, so
+ * it was not there. The result looked exactly like a till that had lost its
+ * products. Reflecting the mode is honest; offering it as a choice was not.
+ */
+export function resolvePosStorageMode(firebaseAvailable: boolean): PosStorageMode {
+  return firebaseAvailable ? 'cloud' : 'local';
+}

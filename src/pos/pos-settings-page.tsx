@@ -9,14 +9,9 @@ import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
 import { FieldDescription } from '../ui/field-description';
 import { getPosDeviceId, getPosDeviceLabel, setPosDeviceLabel } from './pos-device';
-import {
-  readScannerGapMs,
-  readStorageMode,
-  writeScannerGapMs,
-  writeStorageMode,
-} from './pos-preferences';
+import { readScannerGapMs, resolvePosStorageMode, writeScannerGapMs } from './pos-preferences';
 import type { PosStorageMode } from './storage/types';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseSection } from './license/pos-license-section';
 
@@ -36,13 +31,15 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const t = useT();
   const { toast } = useToast();
   const { locale, setLocale, pinned } = useLocaleControls();
-  const { functions } = useCaspianFirebase();
+  const firebase = useCaspianFirebaseOptional();
+  const functions = firebase?.functions ?? null;
   const license = usePosLicense(functions);
 
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
   const [gapMs, setGapMs] = useState(40);
-  const [storageMode, setStorageMode] = useState<PosStorageMode>('cloud');
+  // Derived, not chosen — see `resolvePosStorageMode`.
+  const storageMode: PosStorageMode = resolvePosStorageMode(Boolean(firebase));
 
   // Every value here comes from localStorage, which does not exist during
   // server render — read after mount so SSR and hydration agree.
@@ -50,13 +47,11 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
     setDeviceId(getPosDeviceId());
     setLabel(getPosDeviceLabel());
     setGapMs(readScannerGapMs());
-    setStorageMode(readStorageMode());
   }, []);
 
   const save = () => {
     setPosDeviceLabel(label);
     writeScannerGapMs(gapMs);
-    writeStorageMode(storageMode);
     toast({ title: t('pos.settings.saved') });
   };
 
@@ -105,6 +100,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
 
       <section style={section}>
         <span style={fieldLabel}>{t('pos.storage.title')}</span>
+        <FieldDescription>{t('pos.storage.decidedAtSetup')}</FieldDescription>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
           {(['cloud', 'local'] as const).map((mode) => (
             <label key={mode} style={radioRow}>
@@ -113,19 +109,19 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
                 name="pos-storage-mode"
                 value={mode}
                 checked={storageMode === mode}
-                onChange={() => setStorageMode(mode)}
-                // Standalone local mode is not built yet. Showing the choice
-                // now (disabled) tells an evaluating merchant it is coming;
-                // silently omitting it would read as "not supported". Do not
-                // pin a version here again — v10.2.0 came and went with this
-                // comment claiming the feature had shipped.
-                disabled={mode === 'local'}
+                readOnly
+                // Shown, not offered. Where a till keeps its sales is decided
+                // when it is set up, and a cashier flipping it mid-shift would
+                // point the register at a different set of books.
+                disabled
               />
               <span>
                 <strong>{t(`pos.storage.${mode}`)}</strong>
                 <div style={{ fontSize: 12, color: '#666' }}>{t(`pos.storage.${mode}Help`)}</div>
-                {mode === 'local' ? (
-                  <div style={{ fontSize: 12, color: '#b45309' }}>{t('pos.storage.comingSoon')}</div>
+                {mode === 'local' && storageMode === 'local' ? (
+                  <div style={{ fontSize: 12, color: '#b45309' }}>
+                    {t('pos.storage.localWarning')}
+                  </div>
                 ) : null}
               </span>
             </label>

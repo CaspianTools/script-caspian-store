@@ -87,7 +87,13 @@ export function AuthProvider({
   firebase,
   children,
 }: {
-  firebase: CaspianFirebase;
+  /**
+   * `null` on a standalone till, which has no Firebase project. Identity there
+   * comes from the local accounts Technical Support created when the machine
+   * was commissioned, so this provider resolves to a signed-out state and every
+   * cloud sign-in method refuses rather than pretending to work.
+   */
+  firebase: CaspianFirebase | null;
   children: ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
@@ -98,7 +104,25 @@ export function AuthProvider({
   // undeployed (the claim will never arrive — refreshing again won't help).
   const refreshedClaimForUid = useRef<string | null>(null);
 
+  const requireFirebase = useCallback((): CaspianFirebase => {
+    if (!firebase) {
+      throw new Error(
+        'This register runs standalone and has no Firebase project, so there is no cloud account to sign in to. Cashiers sign in with the local accounts created when the till was set up.',
+      );
+    }
+    return firebase;
+  }, [firebase]);
+
   useEffect(() => {
+    // Standalone: settle immediately as signed-out. Leaving `loading` true
+    // would hang every guard in the tree waiting for an auth state that no
+    // one is ever going to publish.
+    if (!firebase) {
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(firebase.auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -151,17 +175,19 @@ export function AuthProvider({
 
   const signIn = useCallback(
     async (email: string, password: string, rememberMe = true) => {
+      const firebase = requireFirebase();
       await setPersistence(
         firebase.auth,
         rememberMe ? browserLocalPersistence : browserSessionPersistence,
       );
       await signInWithEmailAndPassword(firebase.auth, email, password);
     },
-    [firebase],
+    [requireFirebase],
   );
 
   const signUp = useCallback(
     async (email: string, password: string, displayName: string) => {
+      const firebase = requireFirebase();
       const credential = await createUserWithEmailAndPassword(
         firebase.auth,
         email,
@@ -171,11 +197,12 @@ export function AuthProvider({
       const userDocRef = doc(firebase.db, 'users', credential.user.uid);
       await setDoc(userDocRef, { displayName }, { merge: true });
     },
-    [firebase],
+    [requireFirebase],
   );
 
   const signUpWithSetupLink = useCallback(
     async (email: string, displayName: string) => {
+      const firebase = requireFirebase();
       // Generate a high-entropy temporary password the shopper never sees —
       // we immediately email them a reset link so they can set a real one.
       const randomPassword = `TempPwd-${crypto.randomUUID()}-${Date.now()}`;
@@ -202,30 +229,30 @@ export function AuthProvider({
         });
       }
     },
-    [firebase],
+    [requireFirebase],
   );
 
   const signInWithGoogle = useCallback(async () => {
-    await signInWithPopup(firebase.auth, new GoogleAuthProvider());
-  }, [firebase]);
+    await signInWithPopup(requireFirebase().auth, new GoogleAuthProvider());
+  }, [requireFirebase]);
 
   const signInAsGuest = useCallback(async () => {
-    await signInAnonymously(firebase.auth);
-  }, [firebase]);
+    await signInAnonymously(requireFirebase().auth);
+  }, [requireFirebase]);
 
   const signOut = useCallback(async () => {
-    await firebaseSignOut(firebase.auth);
-  }, [firebase]);
+    await firebaseSignOut(requireFirebase().auth);
+  }, [requireFirebase]);
 
   const resetPassword = useCallback(
     async (email: string) => {
-      await sendPasswordResetEmail(firebase.auth, email);
+      await sendPasswordResetEmail(requireFirebase().auth, email);
     },
-    [firebase],
+    [requireFirebase],
   );
 
   const refreshProfile = useCallback(async () => {
-    if (!user) return;
+    if (!user || !firebase) return;
     try {
       const profile = await fetchOrCreateUserProfile(firebase, user);
       setUserProfile(profile);

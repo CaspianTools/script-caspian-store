@@ -72,6 +72,24 @@ export function initCaspianFirebase({
   };
 }
 
+/**
+ * Initialise Firebase if there is a usable config, otherwise return `null`.
+ *
+ * The throwing `initCaspianFirebase` above stays the default because a
+ * storefront that silently comes up without Firebase is a storefront that fails
+ * later and more confusingly. This variant exists for the one case where "no
+ * Firebase project" is a legitimate configuration rather than a mistake: a
+ * standalone till, which keeps its catalogue and sales on its own disk and has
+ * no project to point at.
+ */
+export function tryInitCaspianFirebase(options: InitFirebaseOptions): CaspianFirebase | null {
+  try {
+    return initCaspianFirebase(options);
+  } catch {
+    return null;
+  }
+}
+
 /** Fall back to the default Firebase app if the consumer has already initialized it. */
 export function getDefaultCaspianFirebase(functionsRegion = 'us-central1'): CaspianFirebase | null {
   if (getApps().length === 0) return null;

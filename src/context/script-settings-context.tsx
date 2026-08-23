@@ -33,9 +33,17 @@ function defaultsWithTimestamp(): ScriptSettings {
 
 export function ScriptSettingsProvider({
   collections,
+  seed,
   children,
 }: {
-  collections: CaspianCollections;
+  /** `null` on a standalone till, where there is no Firestore to subscribe to. */
+  collections: CaspianCollections | null;
+  /**
+   * Settings to use instead of the Firestore document. Only consulted when
+   * `collections` is null — a store with a project always reads the real thing,
+   * because a seed that silently overrode live settings would be undebuggable.
+   */
+  seed?: Partial<ScriptSettings>;
   children: ReactNode;
 }) {
   const [settings, setSettings] = useState<ScriptSettings>(() => defaultsWithTimestamp());
@@ -43,6 +51,17 @@ export function ScriptSettingsProvider({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // No project: the seed is the whole of the truth. Resolving `loading`
+    // immediately matters — this provider gates `PosGuard`, and a standalone
+    // till left waiting on a subscription that will never fire would render a
+    // skeleton forever instead of a register.
+    if (!collections) {
+      const next = { ...defaultsWithTimestamp(), ...seed };
+      setSettings(next);
+      setStoreDefaultLocale(next.defaultLocale ?? null);
+      setLoading(false);
+      return;
+    }
     const ref = collections.scriptSettingsDoc;
     const unsub = onSnapshot(
       ref,
@@ -64,10 +83,15 @@ export function ScriptSettingsProvider({
       },
     );
     return unsub;
-  }, [collections]);
+  }, [collections, seed]);
 
   const save = useCallback(
     async (updates: Partial<Omit<ScriptSettings, 'id' | 'updatedAt'>>) => {
+      if (!collections) {
+        throw new Error(
+          'Script settings cannot be saved on a standalone till — there is no Firestore project. Shop settings live in the local admin panel instead.',
+        );
+      }
       setSaving(true);
       try {
         const ref = collections.scriptSettingsDoc;

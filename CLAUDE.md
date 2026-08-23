@@ -55,6 +55,7 @@ Plus exports: `./styles.css` (side-effect CSS, imported once at app root), `./fi
 - [src/services/](src/services/) — Firestore/service-layer functions
 - [src/i18n/](src/i18n/) — LocaleProvider, message tables, formatters, switcher
 - [src/theme/](src/theme/) — theme presets + picker. Each preset lives in its own folder under [src/theme/themes/<id>/index.ts](src/theme/themes/) exporting a single `CatalogTheme` default; [src/theme/catalog.ts](src/theme/catalog.ts) is a barrel that imports each one and assembles `THEME_CATALOG`. To modify a preset, change only its folder — the per-theme `version: string` field combined with [`useThemeUpdateTracker`](src/theme/theme-update-tracker.ts) is what makes the admin Appearance page show an `Updated` pill on only the touched cards. Bumping a theme's version is the contract; if you change tokens/thumbnail/copy without bumping, admins won't see the badge
+- [src/pos/](src/pos/) — the register. `standalone/` inside it is the no-Firebase mode (see below); `storage/` holds the `PosStorageAdapter` seam and its implementations
 - [src/shipping/](src/shipping/) — shipping plugin catalog + per-plugin implementations
 - [src/payments/](src/payments/) — payment plugin catalog + per-plugin implementations (v2.0+)
 - [src/email/](src/email/) — email provider plugin catalog (metadata-only; server `send` impls live in `functions-email/`) (v3.0+)
@@ -135,6 +136,19 @@ Two hard constraints, both learned the expensive way:
 2. **Deliberate gaps must stay visible.** Where the UI ships a disabled control or a "coming in a later release" affordance (currently: the local-storage option and the non-browser printer transports at `/pos/settings`), the manual says so plainly. Never document a placeholder as if it works. The same applies to whole missing features — no returns screen, no shift, no cash drawer, no offline queue — and to enforcement that does not enforce: a POS licence problem never blocks a sale, because `commitPosSale` does not consult licence state at all.
 3. **Do not trust this repo's own docs as evidence either.** v10.2.0 found `scaffold/create.mjs` claiming `--pos-only` "seeds the storefront-off feature flag" (it does not — it only implies `--with-pos`), and `INSTALL.md`, the scaffolder's generated README and the in-admin help page all routing owners to a "POS → Shops → Edit" screen that has never existed in this package. Verify against `src/`, not against prose.
 
+**Standalone mode (v11.0.0).** `<CaspianStoreProvider standalone>` boots the whole tree with **no Firebase project**: catalogue, staff, sales and receipt numbers live in IndexedDB and the till contacts nothing. Four rules hold it together:
+
+1. **`standalone` is explicit, never inferred.** A missing or broken `firebaseConfig` throws at mount as it always did. Falling back automatically would mean a real shop whose credentials broke came up as an empty local register taking sales into a database nobody knows about — a failure that looks like a working till.
+2. **`useCaspianFirebase()` / `useCaspianCollections()` stay strict** and throw in standalone. Ninety-odd storefront and admin call sites need a real project; widening their return type would push a null check into every one of them to serve a handful of screens. Those few use `useCaspianFirebaseOptional()`, `useCaspianCollectionsOptional()` and `useCaspianStandalone()`.
+3. **`PosStorageAdapter` ([src/pos/storage/types.ts](src/pos/storage/types.ts)) is the only seam.** `PosLocalAdapter` is an implementation of it, not a second copy of the register. Every register screen is written against the interface — keep it that way, and do not branch on the mode inside a screen.
+4. **The mode is a property of the deployment, not a per-device toggle.** `resolvePosStorageMode` ignores the stored preference on purpose, and the `/pos/settings` radio is read-only. A per-device switch was a trap: a cloud shop that picked "this computer only" got a register backed by an empty local catalogue with no way to fill it, because the local back office is part of a standalone deployment.
+
+Local roles (`PosLocalRole = 'superadmin' | 'admin' | 'staff'`) are **deliberately not** the cloud `UserRole`, which is mirrored into Auth custom claims and named in `firestore.rules`. The two models answer different questions; keep them apart.
+
+The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/standalone/price-local-sale.ts) as a pure function, split out of the IndexedDB transaction so it can be checked in CI without a browser — `scripts/check-standalone.mjs` does exactly that. Anything that changes what a customer is charged goes there, with a matching assertion.
+
+**Standalone data is not rebuildable.** `clearPosDb` wipes only the five cloud stores (caches and outboxes whose truth is in Firestore). The `local*` stores hold a shop's only copy of its catalogue, staff and trading history; erasing them is `factoryResetLocalStore`, a separate call. Never widen `clearPosDb` to cover them.
+
 **Server Component boundary.** The library emits `"use client"` directives in client-heavy files (providers, contexts, interactive components, admin pages). Consumers mount the provider tree from a Server Component parent; the library *is* the client boundary. When adding a new component that uses React state/effects/refs, put `"use client"` at the top — match the surrounding files.
 
 ## Conventions
@@ -199,7 +213,13 @@ Runs the Firestore + Storage rules-behavior tests in [firebase/rules.test.mjs](f
 
 **Requires:** `firebase-tools` on PATH (or via `npx firebase`), and a JRE (Firebase emulators are Java-based; Java 17+ recommended). Skip locally and rely on CI if you don't have Java installed — the workflow at [.github/workflows/rules.yml](.github/workflows/rules.yml) runs this on every PR that touches `firebase/*.rules`.
 
-**Do not add Jest / Vitest / Playwright for component or unit tests** without asking first. The rules tests are a narrow, deliberately scoped exception.
+**Do not add Jest / Vitest / Playwright for component or unit tests** without asking first. The rules tests are a narrow, deliberately scoped exception, as is [scripts/check-standalone.mjs](scripts/check-standalone.mjs) — plain `node:assert` against the built ESM, no runner and no dependency, in the same family as the other `scripts/check-*.mjs` guards.
+
+```bash
+npm run build && node scripts/check-standalone.mjs
+```
+
+Covers the standalone till's money arithmetic and its CSV round-trip. Both are pure by design; the IndexedDB layer around them needs a browser and is checked by hand.
 
 ### 3. Type-check
 

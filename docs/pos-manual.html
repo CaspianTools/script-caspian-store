@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v10.5.0"
+      "version": "v11.0.0"
     },
     "parts": [
       {
@@ -1061,7 +1061,7 @@ const MANUAL = {
               },
               {
                 "name": "Where sales are stored",
-                "what": "Two choices: Cloud, and \"This computer only\". Cloud is selected. \"This computer only\" is greyed out and labelled \"Available in a coming release.\""
+                "what": "Two lines: Cloud, and \"This computer only\". The one your till uses is already marked, and neither can be picked here — where a till keeps its sales is decided when it is set up. A till connected to your online store shows Cloud; a register running on its own shows \"This computer only\", with a warning that nothing is copied off the machine."
               },
               {
                 "name": "Scanner speed",
@@ -1077,7 +1077,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "\"This computer only\" storage is not available yet. The choice is visible so you know it is planned, but it cannot be selected - the radio button is disabled and marked \"Available in a coming release.\" Every sale goes to your online store.",
+              "Where sales are stored is shown, not chosen. A till wired to your online store keeps them in the cloud. A register set up to run on its own keeps them on that computer and contacts nothing — and then it also shows a warning, because taking backups becomes yours to do.",
               "The receipt printer menu has only one option and cannot be changed. Direct printing to a till printer is not in this version; receipts go through your browser's print dialogue.",
               "The language you pick here is remembered by this browser, and it also changes the language of the admin panel and the shop pages when you open them in this same browser. It does not change anything for your customers or for other computers.",
               "Only the register and the everyday shared wording are translated - roughly 139 phrases out of about 1405. Most admin screens still show English in Azerbaijani, Russian and Turkish.",
@@ -1090,7 +1090,7 @@ const MANUAL = {
               "If your browser blocks site data, most of this page quietly stops working, and nothing on screen warns you. The language is the one exception: it keeps a copy in memory, so your choice still applies for as long as the tab stays open, though it will not survive a reload.",
               "With site data blocked, the register name, the scanner speed and the storage choice are not kept at all. Pressing Save still shows \"Settings saved\", but nothing is written down, and the old values come back the moment you leave this page - you do not have to reload to lose them. Treat that message as confirmation that you pressed the button, not as proof the setting was stored.",
               "With site data blocked the device id is unstable in a way that matters: a new one is invented every time it is needed, so the code shown on this page is not the one stamped on your sales. Do not read it out to support while the browser is in that state.",
-              "The line reading \"Available in a coming release\" under the storage choice is written in English inside the software and stays English on an Azerbaijani, Russian or Turkish till. That is not a translation fault you can fix, and not a sign that anything is wrong."
+              "A register running on its own shows an orange line under \"This computer only\" warning that nothing is stored anywhere else. Take that literally: if that computer is lost or its disk fails, the sales on it are gone. There is no copy in the cloud, because there is no cloud."
             ]
           },
           {
@@ -1121,7 +1121,7 @@ const MANUAL = {
               },
               {
                 "name": "Where sales are stored",
-                "what": "Two choices, Cloud and This computer only. Cloud is selected and This computer only cannot be picked; the screen says it is available in a coming release."
+                "what": "Two lines, Cloud and This computer only, with the one this till uses already marked. Neither can be picked here; it is decided when the till is set up."
               },
               {
                 "name": "Scanner speed",
@@ -1970,7 +1970,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v10.2.0"
+      "version": "v11.0.0"
     },
     "parts": [
       {
@@ -2359,7 +2359,7 @@ const MANUAL = {
               },
               {
                 "name": "Satışlar harada saxlanılır (Where sales are stored)",
-                "what": "İki seçim: Bulud (Cloud) və \"Yalnız bu kompüter\" (This computer only). Bulud seçilidir. \"Yalnız bu kompüter\" sönükdür və \"Yaxın buraxılışda əlçatan olacaq\" (Available in a coming release.) qeydi ilə göstərilir."
+                "what": "İki sətir: Bulud (Cloud) və \"Yalnız bu kompüter\" (This computer only). Kassanızın istifadə etdiyi variant artıq işarələnib və burada heç biri seçilə bilməz — kassanın satışları harada saxlayacağı quraşdırılarkən müəyyən olunur. Onlayn mağazanıza qoşulmuş kassa Bulud göstərir; təkbaşına işləyən kassa isə \"Yalnız bu kompüter\" göstərir və heç nəyin kompüterdən kənara köçürülmədiyi barədə xəbərdarlıq verir."
               },
               {
                 "name": "Skaner sürəti (Scanner speed)",
@@ -2375,7 +2375,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "\"Yalnız bu kompüter\" (This computer only) saxlanma rejimi hələ mövcud deyil. Seçim ona görə görünür ki, planlaşdırıldığını biləsiniz, amma onu seçmək mümkün deyil — düymə deaktivdir və \"Yaxın buraxılışda əlçatan olacaq\" (Available in a coming release.) qeydi daşıyır. Hər satış onlayn mağazanıza gedir.",
+              "Satışların harada saxlanması göstərilir, seçilmir. Onlayn mağazanıza qoşulmuş kassa onları buludda saxlayır. Təkbaşına işləməyə qurulmuş kassa isə onları həmin kompüterdə saxlayır və heç yerə qoşulmur — bu halda ehtiyat nüsxə götürmək sizin öhdənizə keçdiyi üçün ekranda xəbərdarlıq da göstərilir.",
               "Qəbz printeri menyusunda cəmi bir seçim var və onu dəyişmək olmaz. Bu versiyada birbaşa kassa printerinə çap yoxdur; qəbzlər brauzerin çap pəncərəsindən keçir.",
               "Burada seçdiyiniz dili bu brauzer yadda saxlayır və eyni brauzerdə açdığınız idarə panelinin, mağaza səhifələrinin də dilini dəyişir. Müştəriləriniz üçün və başqa kompüterlərdə heç nə dəyişmir.",
               "Yalnız kassa və gündəlik ümumi ifadələr tərcümə olunub — təxminən 1405 ifadədən 139-u. Azərbaycan, rus və türk dillərində əksər idarə paneli ekranları hələ də ingiliscə görünür.",
@@ -2388,7 +2388,7 @@ const MANUAL = {
               "Brauzeriniz sayt məlumatlarını bloklayırsa, bu səhifənin böyük hissəsi səssizcə işləməyi dayandırır və ekranda sizi xəbərdar edən heç nə olmur. Yeganə istisna dildir: onun nüsxəsi yaddaşda saxlanılır, ona görə seçiminiz tab açıq qaldığı müddətdə qüvvədə olur, səhifəni yeniləyəndə isə itir.",
               "Sayt məlumatları bloklananda kassa adı, skaner sürəti və saxlanma seçimi ümumiyyətlə yadda saxlanmır. Yadda saxla (Save) düyməsini basanda yenə \"Tənzimləmələr yadda saxlanıldı\" (Settings saved) yazısı çıxır, amma heç nə yazılmır və bu səhifədən çıxan kimi köhnə dəyərlər geri qayıdır — itirmək üçün səhifəni yeniləmək belə lazım deyil. Həmin mesajı tənzimləmənin saxlandığının sübutu yox, sadəcə düyməni basdığınızın təsdiqi kimi qəbul edin.",
               "Sayt məlumatları bloklananda cihaz identifikatoru ciddi şəkildə qeyri-sabit olur: hər dəfə lazım olanda yenisi yaradılır, ona görə bu səhifədə göstərilən kod satışlarınıza yazılan kod deyil. Brauzer bu vəziyyətdə olduğu müddətdə onu dəstək xidmətinə səsləndirməyin.",
-              "Saxlama seçiminin altındakı Növbəti buraxılışda əlçatan olacaq sətri proqramın içində ingiliscə yazılıb və Azərbaycan, rus və ya türk dilindəki kassada da ingiliscə qalır. Bu, sizin düzəldə biləcəyiniz tərcümə nöqsanı deyil və nəyinsə səhv olduğunun əlaməti də deyil."
+              "Təkbaşına işləyən kassada \"Yalnız bu kompüter\" sətrinin altında narıncı xəbərdarlıq görünür: heç nə başqa yerdə saxlanılmır. Bunu hərfi mənada qəbul edin — həmin kompüter itərsə və ya diski sıradan çıxarsa, oradakı satışlar da yox olur. Buludda nüsxə yoxdur, çünki bulud yoxdur."
             ]
           },
           {
@@ -2417,7 +2417,7 @@ const MANUAL = {
               },
               {
                 "name": "Satışlar harada saxlanılır (Where sales are stored)",
-                "what": "İki seçim: Bulud (Cloud) və Yalnız bu kompüter (This computer only). Bulud seçilidir, Yalnız bu kompüter isə seçilə bilmir; ekranda onun yaxın buraxılışda əlçatan olacağı yazılıb."
+                "what": "İki sətir — Bulud (Cloud) və Yalnız bu kompüter (This computer only) — və bu kassanın istifadə etdiyi variant artıq işarələnib. Burada heç biri seçilə bilməz; bu, kassa quraşdırılarkən müəyyən olunur."
               },
               {
                 "name": "Skaner sürəti (Scanner speed)",
@@ -3251,7 +3251,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v10.2.0"
+      "version": "v11.0.0"
     },
     "parts": [
       {
@@ -3640,7 +3640,7 @@ const MANUAL = {
               },
               {
                 "name": "Где хранятся продажи (Where sales are stored)",
-                "what": "Два варианта: Cloud (облако) и «Только на этом компьютере» (This computer only). Выбран Cloud. Вариант «Только на этом компьютере» неактивен и помечен «Available in a coming release.»"
+                "what": "Две строки: Cloud (облако) и «Только на этом компьютере». Вариант, который использует ваша касса, уже отмечен, и выбрать здесь нельзя ни один — где касса хранит продажи, определяется при её настройке. Касса, подключённая к интернет-магазину, показывает Cloud; касса, работающая сама по себе, показывает «Только на этом компьютере» и предупреждение, что ничего не копируется за пределы машины."
               },
               {
                 "name": "Скорость сканера (Scanner speed)",
@@ -3656,7 +3656,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Хранение «Только на этом компьютере» (This computer only) пока недоступно. Вариант показан, чтобы вы знали о планах, но выбрать его нельзя — переключатель отключён и помечен «Available in a coming release.» Все продажи уходят в ваш интернет-магазин.",
+              "Где хранятся продажи — показывается, а не выбирается. Касса, подключённая к интернет-магазину, хранит их в облаке. Касса, настроенная работать сама по себе, хранит их на этом компьютере и никуда не обращается — и тогда на экране появляется предупреждение, потому что резервные копии становятся вашей заботой.",
               "В меню чекового принтера только один пункт, и изменить его нельзя. Прямой печати на чековый принтер в этой версии нет; чеки идут через окно печати браузера.",
               "Выбранный здесь язык запоминается этим браузером, и он же меняет язык админ-панели и страниц магазина, если открыть их в том же браузере. На ваших покупателей и на другие компьютеры это не влияет.",
               "Переведены только касса и общие повседневные фразы — примерно 139 фраз из примерно 1405. Большинство экранов админ-панели на азербайджанском, русском и турецком по-прежнему показывают английский текст.",
@@ -3669,7 +3669,7 @@ const MANUAL = {
               "Если браузер блокирует хранение данных сайта, большая часть этой страницы тихо перестаёт работать, и никакого предупреждения на экране нет. Исключение — язык: его копия остаётся в памяти, поэтому выбор действует, пока открыта вкладка, но перезагрузку он не переживёт.",
               "При заблокированном хранении данных сайта название кассы, скорость сканера и выбор места хранения не сохраняются вовсе. Нажатие Save по-прежнему выводит «Settings saved», но ничего не записывается, и прежние значения вернутся, как только вы уйдёте с этой страницы, — перезагружать для этого ничего не нужно. Считайте это сообщение подтверждением того, что вы нажали кнопку, а не доказательством того, что настройка сохранена.",
               "При заблокированном хранении данных сайта идентификатор устройства нестабилен, и это важно: он создаётся заново каждый раз, когда требуется, поэтому код на этой странице не тот, что записывается в ваши продажи. Не диктуйте его в поддержку, пока браузер находится в таком состоянии.",
-              "Строка «Available in a coming release» под выбором хранения написана в программе по-английски и остаётся английской на азербайджанской, русской и турецкой кассе. Это не изъян перевода, который вы можете исправить, и не признак того, что что-то не так."
+              "На кассе, работающей сама по себе, под строкой «Только на этом компьютере» показывается оранжевое предупреждение: больше нигде ничего не хранится. Понимайте это буквально — если компьютер потерян или его диск вышел из строя, продажи на нём исчезли. Копии в облаке нет, потому что нет облака."
             ]
           },
           {
@@ -3698,7 +3698,7 @@ const MANUAL = {
               },
               {
                 "name": "Где хранятся продажи (Where sales are stored)",
-                "what": "Два варианта: Cloud (облако) и «Только на этом компьютере» (This computer only). Выбран Cloud, а «Только на этом компьютере» выбрать нельзя; на экране написано, что этот вариант появится в одном из будущих выпусков."
+                "what": "Две строки, Cloud и «Только на этом компьютере», причём вариант этой кассы уже отмечен. Выбрать здесь нельзя ни один; это определяется при настройке кассы."
               },
               {
                 "name": "Скорость сканера (Scanner speed)",
@@ -4532,7 +4532,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v10.2.0"
+      "version": "v11.0.0"
     },
     "parts": [
       {
@@ -4921,7 +4921,7 @@ const MANUAL = {
               },
               {
                 "name": "Satışların saklandığı yer (Where sales are stored)",
-                "what": "İki seçenek: Bulut (Cloud) ve \"Yalnızca bu bilgisayar\" (This computer only). Bulut seçilidir. \"Yalnızca bu bilgisayar\" soluktur ve \"Available in a coming release.\" (yakında çıkacak bir sürümde kullanılabilir) etiketini taşır."
+                "what": "İki satır: Bulut (Cloud) ve \"Yalnızca bu bilgisayar\" (This computer only). Kasanızın kullandığı seçenek zaten işaretlidir ve burada hiçbiri seçilemez — bir kasanın satışları nerede tuttuğu, kurulum sırasında belirlenir. İnternet mağazanıza bağlı bir kasa Bulut gösterir; kendi başına çalışan bir kasa ise \"Yalnızca bu bilgisayar\" gösterir ve hiçbir şeyin makinenin dışına kopyalanmadığı uyarısını verir."
               },
               {
                 "name": "Okuyucu hızı (Scanner speed)",
@@ -4937,7 +4937,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "\"Yalnızca bu bilgisayar\" saklaması henüz kullanılamıyor. Seçenek, planlandığını bilmeniz için görünür durumdadır ama seçilemez; seçim düğmesi devre dışıdır ve \"Available in a coming release.\" olarak işaretlidir. Her satış çevrimiçi mağazanıza gider.",
+              "Satışların nerede tutulduğu gösterilir, seçilmez. İnternet mağazanıza bağlı bir kasa onları bulutta tutar. Kendi başına çalışacak şekilde kurulmuş bir kasa ise onları o bilgisayarda tutar ve hiçbir yere bağlanmaz — bu durumda yedek almak size kaldığı için ekranda bir uyarı da görünür.",
               "Fiş yazıcısı menüsünde tek bir seçenek vardır ve değiştirilemez. Fiş yazıcısına doğrudan yazdırma bu sürümde yoktur; fişler tarayıcınızın yazdırma penceresinden geçer.",
               "Burada seçtiğiniz dil bu tarayıcı tarafından hatırlanır ve aynı tarayıcıda açtığınızda yönetim panelinin ve mağaza sayfalarının dilini de değiştirir. Müşterileriniz veya diğer bilgisayarlar için hiçbir şeyi değiştirmez.",
               "Yalnızca kasa ekranı ve günlük ortak ifadeler çevrilmiştir; yaklaşık 1405 ifadenin kabaca 139'u. Azerbaycanca, Rusça ve Türkçede yönetim ekranlarının çoğu hâlâ İngilizce görünür.",
@@ -4950,7 +4950,7 @@ const MANUAL = {
               "Tarayıcınız site verilerini engelliyorsa bu sayfanın çoğu sessizce çalışmaz ve ekranda sizi uyaran hiçbir şey olmaz. Tek istisna dildir: dil bellekte bir kopya tutar, bu yüzden seçiminiz sekme açık kaldığı sürece geçerli olur, ancak sayfa yenilendiğinde kaybolur.",
               "Site verileri engelliyken kasa adı, okuyucu hızı ve saklama seçimi hiç saklanmaz. Kaydet düğmesine basmak yine \"Settings saved\" mesajını gösterir, ama hiçbir şey yazılmaz ve bu sayfadan ayrılır ayrılmaz eski değerler geri gelir; kaybetmeniz için sayfayı yenilemeniz bile gerekmez. O mesajı, ayarın saklandığının kanıtı değil, düğmeye bastığınızın onayı sayın.",
               "Site verileri engelliyken cihaz kimliği önemli bir biçimde kararsız olur: her gerektiğinde yenisi üretilir, bu yüzden bu sayfada gördüğünüz kod, satışlarınıza işlenen kod değildir. Tarayıcı bu durumdayken o kodu destek ekibine okumayın.",
-              "Depolama seçeneğinin altındaki Available in a coming release satırı yazılımın içinde İngilizce yazılıdır ve Azerice, Rusça veya Türkçe bir kasada da İngilizce kalır. Bu, düzeltebileceğiniz bir çeviri eksiği değildir ve bir şeyin yanlış olduğunun işareti de değildir."
+              "Kendi başına çalışan bir kasada \"Yalnızca bu bilgisayar\" satırının altında turuncu bir uyarı görünür: hiçbir şey başka bir yerde saklanmıyor. Bunu tam anlamıyla ciddiye alın — o bilgisayar kaybolursa ya da diski bozulursa, üzerindeki satışlar da gitmiştir. Bulutta kopya yoktur, çünkü bulut yoktur."
             ]
           },
           {
@@ -4979,7 +4979,7 @@ const MANUAL = {
               },
               {
                 "name": "Satışların saklandığı yer (Where sales are stored)",
-                "what": "İki seçenek: Bulut (Cloud) ve Yalnızca bu bilgisayar (This computer only). Bulut seçilidir; Yalnızca bu bilgisayar seçilemez, ekranda bunun ileride çıkacak bir sürümde kullanılabileceği yazar."
+                "what": "İki satır, Bulut ve Yalnızca bu bilgisayar; bu kasanın kullandığı seçenek zaten işaretlidir. Burada hiçbiri seçilemez; bu, kasa kurulurken belirlenir."
               },
               {
                 "name": "Okuyucu hızı (Scanner speed)",
