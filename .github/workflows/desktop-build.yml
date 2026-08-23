@@ -67,16 +67,28 @@ jobs:
         shell: pwsh
         working-directory: desktop
         run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           $exe = Get-ChildItem -Recurse -Path src-tauri/target/release/bundle -Filter *-setup.exe |
                  Select-Object -First 1
           if (-not $exe) { Write-Error "No installer produced"; exit 1 }
+
+          # A shop keeps installers in a downloads folder for years, and a support
+          # call opens with "which one are you running?". An unversioned filename
+          # makes that unanswerable, so this is asserted rather than assumed --
+          # a bundler default is not a guarantee.
+          if ($exe.Name -notmatch [regex]::Escape($version)) {
+            Write-Error "Installer '$($exe.Name)' does not carry version '$version'. See CLAUDE.md step 14."
+            exit 1
+          }
+
           "path=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "name=$($exe.Name)"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          Write-Host "Built $($exe.Name) ($([math]::Round($exe.Length/1MB,2)) MB)"
+          "version=$version"      | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Built $($exe.Name) ($([math]::Round($exe.Length/1MB,2)) MB), version $version"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: caspian-register-windows
+          name: caspian-register-windows-${{ steps.collect.outputs.version }}
           path: ${{ steps.collect.outputs.path }}
           if-no-files-found: error
 
@@ -90,3 +102,11 @@ jobs:
             "${{ steps.collect.outputs.path }}" `
             --title "Caspian Register ${{ github.ref_name }}" `
             --notes "Windows installer for the Caspian Store register. Unsigned - Windows SmartScreen will warn on first run until the binary is code-signed. See desktop/README.md."
+
+          # Read the URL back rather than composing it: the tag contains a slash,
+          # and a hand-built link is a link that can silently be wrong.
+          $url = gh api "repos/${{ github.repository }}/releases/tags/$([uri]::EscapeDataString('${{ github.ref_name }}'))" --jq '.assets[0].browser_download_url'
+          Write-Host "Installer: $url"
+          "## Caspian Register ${{ steps.collect.outputs.version }}" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "Direct download: <$url>" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append

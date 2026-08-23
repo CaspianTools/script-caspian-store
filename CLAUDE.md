@@ -167,6 +167,15 @@ Two hard constraints, both learned the expensive way:
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
 - **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, and a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
+- **Whenever a new `.exe` is compiled, hand over a direct download link.** Not the release page, not "see the Releases tab" — the full URL to the file itself, ready to click or paste to a shop:
+  ```
+  https://github.com/CaspianTools/script-caspian-store/releases/download/desktop/vX.Y.Z/Caspian.Register_X.Y.Z_x64-setup.exe
+  ```
+  Get it from the release rather than composing it by hand, so a rename cannot make the link a lie:
+  ```bash
+  gh api repos/CaspianTools/script-caspian-store/releases/tags/desktop%2FvX.Y.Z --jq '.assets[].browser_download_url'
+  ```
+- **Every compiled `.exe` carries its version in the filename.** `Caspian.Register_0.1.0_x64-setup.exe`, never `setup.exe` or `Caspian.Register-setup.exe`. A shop keeps installers in a downloads folder for years and a support call starts with "which one are you running?" — an unversioned file makes that unanswerable. Tauri's NSIS bundler does this by default from `version` in `desktop/src-tauri/tauri.conf.json`; `.github/workflows/desktop-build.yml` asserts it rather than trusting it.
 
 ---
 
@@ -372,6 +381,39 @@ cd ..
 Then tag the sibling release separately (e.g. `create-caspian-store/v0.1.1`) to keep its history visible, and cross-link from the main package's GitHub Release notes (step 11) with a one-liner: *"`create-caspian-store` bumped to v0.1.1 — no consumer action beyond running `npm create caspian-store@latest` as usual."*
 
 **This is the only `npm publish` allowed in this repo** — see "Never do without explicit user permission" for the main-package rule.
+
+### 14. Release the Windows register shell (only when `desktop/` changed)
+
+[desktop/](desktop/) is a Tauri shell around the shop's own `/pos` page. It is **not** in the npm
+package — `files` is an allowlist and does not include it — so it versions and releases independently
+on a `desktop/v*` tag, exactly like `create-caspian-store/`. A library release does **not** imply a
+desktop release, and vice versa.
+
+Skip this step unless something under `desktop/` changed, and say so in the commit body
+(`"desktop/ unaffected"`).
+
+```bash
+# 1. Bump the version in desktop/src-tauri/tauri.conf.json (semver, independent of the library).
+# 2. Tag and push. The workflow builds on windows-latest and attaches the installer.
+git tag -a desktop/vX.Y.Z -m "Caspian Register X.Y.Z — <short summary>"
+git push origin desktop/vX.Y.Z
+# 3. Or, to get an artifact without cutting a release:
+gh workflow run desktop-build.yml
+```
+
+Two rules, both enforced in [desktop-build.yml](.github/workflows/desktop-build.yml) rather than left
+to discipline:
+
+- **The filename carries the version** — `Caspian.Register_X.Y.Z_x64-setup.exe`. The build fails if
+  the version in the filename does not match `tauri.conf.json`.
+- **Report the direct download URL**, read back from the release rather than composed by hand.
+
+There is no local build path on most maintainer machines — the shell is Rust and this repo's usual
+toolchain has no `cargo`. CI is the build, not a mirror of it.
+
+**The installer is unsigned.** Windows SmartScreen warns on first run until a certificate is bought;
+that is procurement, not a code change, and is deliberately not wired up with placeholder secrets that
+would fail every build. See [desktop/README.md](desktop/README.md).
 
 ---
 
