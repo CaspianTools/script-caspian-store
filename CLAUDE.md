@@ -427,7 +427,8 @@ Skip this step unless something under `desktop/` changed, and say so in the comm
 (`"desktop/ unaffected"`).
 
 ```bash
-# 1. Bump the version in desktop/src-tauri/tauri.conf.json (semver, independent of the library).
+# 1. Bump the version in desktop/src-tauri/tauri.conf.json, src-tauri/Cargo.toml and package.json
+#    (all three kept in sync; semver, independent of the library).
 # 2. Tag and push. The workflow builds on windows-latest and attaches the installer.
 git tag -a desktop/vX.Y.Z -m "Caspian Register X.Y.Z — <short summary>"
 git push origin desktop/vX.Y.Z
@@ -444,6 +445,18 @@ to discipline:
 
 There is no local build path on most maintainer machines — the shell is Rust and this repo's usual
 toolchain has no `cargo`. CI is the build, not a mirror of it.
+
+**Only a definitive 404 refuses an address.** The setup screen probes `{address}/pos` before saving,
+and every other outcome — unreachable host, timeout, TLS failure, 5xx — is accepted. The asymmetry is
+the design, not an oversight: a till is routinely set up before the shop's site is live, so a hard
+reachability check would refuse correct addresses on the very day they are typed. Do not "tighten" it
+into one. The manual states the resulting gap out loud, per the deliberate-gaps rule.
+
+**The register window's `Till` menu is the only way back to the setup screen.** v0.1.0 shipped a
+`reset_store_url` command that no shipped UI could call, which is why a wrong address was unrecoverable
+without deleting `%APPDATA%\app.caspian.register\store.json` by hand. Do not solve that by adding a
+`capabilities/` directory granting the remote origin IPC access — the shop's own page cannot invoke
+shell commands today, and that is worth keeping.
 
 **The installer is unsigned until a certificate exists.** Windows SmartScreen shows *"Windows protected
 your PC"* on first run. The workflow already does the signing — it imports a PFX, patches the

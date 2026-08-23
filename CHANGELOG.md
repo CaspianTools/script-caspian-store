@@ -16,6 +16,53 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v11.0.1 — The register app refuses an address with no register on it
+
+A shop that typed its company website into the Windows register app got a bare 404 and no way out. The
+address was saved before anything checked it, nothing on screen named the address the window was asking
+for, and the command to change it had no button, menu item or shortcut anywhere in the shipped app — the
+only recovery was deleting a file from `%APPDATA%`.
+
+The shell now checks the address before it saves it, and always carries a way back to the setup screen.
+It is released separately as
+[`desktop/v0.2.0`](https://github.com/CaspianTools/script-caspian-store/releases/tag/desktop%2Fv0.2.0).
+
+### No consumer action required
+
+Documentation only in the npm package — the register manual and the version stamp. The Windows shell is
+not part of the published tarball and releases on its own `desktop/v*` tag, so upgrading the library
+does not change a till, and updating a till does not require upgrading the library.
+
+### Changed
+
+- **`desktop/` — the address is checked before it is saved.** The setup screen requests `/pos` on
+  whatever was typed and refuses a definitive 404, naming the mistake it is almost always catching: a
+  company's marketing site rather than the address the shop itself runs on. **Only a 404 refuses.** An
+  unreachable host, a timeout, a TLS failure or a 500 are all accepted, because a till is routinely set
+  up before the shop's site is live and on connections having a bad morning — refusing then would strand
+  a shop that had typed exactly the right address. The check is a catch for the obvious mistake, not a
+  promise that the address is right, and the manual says so.
+- **The register window has a `Till` menu** — *Change shop address* (`Ctrl+Shift+A`) and *Reload*. It is
+  native, so it still works when the page below it is a 404 or a blank "can't reach this page", which is
+  exactly when somebody needs it. `reset_store_url` existed in v0.1.0, but no shipped UI could call it
+  and the remote origin has no IPC access, so it was unreachable code documented as a feature.
+- **The window title names the address** — `Caspian Register — shop.example.com`. A page that fails to
+  load can now be traced back to what was typed.
+- **Repointing a till is an edit, not a retype.** The setup box opens prefilled with the current address,
+  and the saved value is overwritten only once a new one passes the check, so closing that window leaves
+  a working till working. `reset_store_url` is renamed `change_store_url` and no longer deletes the
+  config file.
+
+### Fixed
+
+- **`http://localhost.evil.com` counted as local** and bypassed the https requirement, because the test
+  was a `starts_with("http://localhost")` prefix match on the whole string rather than on the host. The
+  host is now parsed out and compared. A bare `localhost:3000` is also accepted now and defaults to
+  http, rather than being rejected as "not a web address".
+- The register manual told owners to change a till's address by deleting `store.json` by hand. It now
+  documents the menu, in all four languages, and states plainly that the new check cannot catch a wrong
+  address on a site it cannot reach.
+
 ## v11.0.0 — A till that needs no shop behind it
 
 Many physical shops have no online presence at all, and until now the register assumed one: a Firebase

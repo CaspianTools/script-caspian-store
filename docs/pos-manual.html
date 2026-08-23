@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v11.0.0"
+      "version": "v11.0.1"
     },
     "parts": [
       {
@@ -955,23 +955,26 @@ const MANUAL = {
               "On a computer, open the Releases page of the software and download the file ending in setup.exe.",
               "Run it. Windows will warn you that it does not recognise the program - see the note below. Choose More info, then Run anyway.",
               "The first time it opens it asks for your shop address. Type it once, for example shop.example.com, and press \"Open the register\".",
-              "The register opens. That address is remembered on this computer and you will not be asked again.",
+              "The app checks that a register answers at that address. If it does, the register opens and the address is remembered on this computer - you will not be asked again.",
               "Sign in with a staff or admin account exactly as you would in a browser."
             ],
             "fields": [
               {
                 "name": "Shop address",
-                "what": "Asked once, on the first run. Type just the address of your shop - the register page is found automatically. Only addresses beginning https:// are accepted."
+                "what": "Asked once on the first run, and again whenever you choose Change shop address. Type just the address of your shop - the register page is found automatically. Only addresses beginning https:// are accepted, and the address is checked before it is saved."
               }
             ],
             "notes": [
               "Windows will warn that it does not recognise the program, because the installer is not yet code-signed. It is safe to continue with More info, then Run anyway. Signing it requires buying a certificate, and until that is done every computer will show this warning on first run.",
-              "It does NOT print straight to a till printer. Receipts go through the same print window as in a browser. Direct printing to a thermal printer is the main reason to want this app and it is not in this first version.",
+              "It does NOT print straight to a till printer. Receipts go through the same print window as in a browser. Direct printing to a thermal printer is the main reason to want this app and it is not in this version.",
               "It keeps selling through an outage, exactly like the browser does. Its one advantage is that its stored data is separate from Chrome, so clearing a browser cannot destroy sales the till has not sent yet.",
               "It is Windows only. On a Mac, an iPad or an Android tablet, install the register from the browser instead - see \"Installing the register as an app on a till\".",
               "It is not a copy of the register. It shows your live shop, so when your shop is updated the app follows on its next launch. There is nothing to reinstall when the software is updated.",
               "Only addresses beginning https:// are accepted. The register cannot sign a cashier in over an insecure connection, so an http address would give you a window that looks right and then refuses every login.",
-              "To point a till at a different address, delete the file store.json from the app folder under AppData, then start the app again and it will ask afresh.",
+              "If you type an address with no register on it, the app says so and does not save it. The usual mistake is typing your company's main website instead of the address your shop itself runs on.",
+              "That check only works when the site can be reached. If it cannot be reached at all - the site is not live yet, or the till has no internet - the address is accepted as typed. The check catches the obvious mistake; it is not a promise that the address is correct.",
+              "To point a till at a different address, open the Till menu in the register window and choose Change shop address. The box opens with the current address already in it. Nothing is changed until a new address passes the check, so closing that window leaves the till as it was. Deleting store.json from the app folder under AppData still works as a last resort.",
+              "The window title shows the address the till is pointing at. If a page ever fails to load, that is the first thing to check.",
               "The same installer is used by every shop. Your address is asked at first run rather than built into the file, so there is one file to hand out and one file to trust."
             ]
           },
@@ -1970,7 +1973,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v11.0.0"
+      "version": "v11.0.1"
     },
     "parts": [
       {
@@ -2256,23 +2259,26 @@ const MANUAL = {
               "Kompüterdə proqramın Releases səhifəsini açın və setup.exe ilə bitən faylı yükləyin.",
               "Onu işə salın. Windows proqramı tanımadığını bildirən xəbərdarlıq göstərəcək - aşağıdakı qeydə baxın. Ətraflı məlumat, sonra Yenə də işə sal seçin.",
               "İlk açılışda mağaza ünvanınızı soruşur. Onu bir dəfə yazın, məsələn shop.example.com, və Kassanı aç düyməsini basın.",
-              "Kassa açılır. Həmin ünvan bu kompüterdə yadda saxlanılır və bir daha soruşulmayacaq.",
+              "Tətbiq həmin ünvanda kassanın cavab verdiyini yoxlayır. Cavab verirsə, kassa açılır və ünvan bu kompüterdə yadda saxlanılır - bir daha soruşulmayacaq.",
               "Brauzerdə olduğu kimi işçi və ya admin hesabı ilə daxil olun."
             ],
             "fields": [
               {
                 "name": "Mağaza ünvanı",
-                "what": "İlk açılışda bir dəfə soruşulur. Yalnız mağazanızın ünvanını yazın - kassa səhifəsi avtomatik tapılır. Yalnız https:// ilə başlayan ünvanlar qəbul olunur."
+                "what": "İlk açılışda bir dəfə, sonra isə Change shop address seçdiyiniz hər dəfə soruşulur. Yalnız mağazanızın ünvanını yazın - kassa səhifəsi avtomatik tapılır. Yalnız https:// ilə başlayan ünvanlar qəbul olunur və ünvan yadda saxlanmazdan əvvəl yoxlanılır."
               }
             ],
             "notes": [
               "Windows proqramı tanımadığını bildirən xəbərdarlıq göstərəcək, çünki quraşdırıcı hələ imzalanmayıb. Ətraflı məlumat, sonra Yenə də işə sal ilə davam etmək təhlükəsizdir. İmzalamaq üçün sertifikat almaq lazımdır və bu edilənə qədər hər kompüter ilk açılışda bu xəbərdarlığı göstərəcək.",
-              "O, birbaşa kassa printerinə çap ETMİR. Qəbzlər brauzerdəki eyni çap pəncərəsindən keçir. Termal printerə birbaşa çap bu tətbiqi istəməyin əsas səbəbidir və bu ilk versiyada yoxdur.",
+              "O, birbaşa kassa printerinə çap ETMİR. Qəbzlər brauzerdəki eyni çap pəncərəsindən keçir. Termal printerə birbaşa çap bu tətbiqi istəməyin əsas səbəbidir və bu versiyada yoxdur.",
               "O da brauzer kimi kəsinti zamanı satmağa davam edir. Yeganə üstünlüyü saxladığı məlumatın Chrome-dan ayrı olmasıdır, ona görə brauzeri təmizləmək kassanın hələ göndərmədiyi satışları məhv edə bilmir.",
               "Yalnız Windows üçündür. Mac, iPad və ya Android planşetdə kassanı brauzerdən quraşdırın - Kassanı tətbiq kimi quraşdırmaq bölməsinə baxın.",
               "Bu, kassanın surəti deyil. O, canlı mağazanızı göstərir, ona görə mağazanız yeniləndikdə tətbiq növbəti açılışda onu izləyir. Proqram yeniləndikdə yenidən quraşdırılacaq heç nə yoxdur.",
               "Yalnız https:// ilə başlayan ünvanlar qəbul olunur. Kassa təhlükəsiz olmayan bağlantı üzərindən kassiri sistemə buraxa bilmir, ona görə http ünvan sizə düzgün görünən, amma hər girişi rədd edən pəncərə verərdi.",
-              "Kassanı başqa ünvana yönəltmək üçün AppData altındakı tətbiq qovluğundan store.json faylını silin, sonra tətbiqi yenidən başladın - o, yenidən soruşacaq.",
+              "Kassası olmayan ünvan yazsanız, tətbiq bunu bildirir və ünvanı yadda saxlamır. Adətən edilən səhv mağazanın öz işlədiyi ünvan əvəzinə şirkətin əsas veb saytını yazmaqdır.",
+              "Bu yoxlama yalnız sayta çıxış mümkün olduqda işləyir. Ünvana ümumiyyətlə çatmaq mümkün deyilsə - sayt hələ işə düşməyib və ya kassada internet yoxdur - ünvan yazıldığı kimi qəbul edilir. Yoxlama açıq-aşkar səhvi tutur; ünvanın düzgün olmasına zəmanət vermir.",
+              "Kassanı başqa ünvana yönəltmək üçün kassa pəncərəsində Till menyusunu açın və Change shop address seçin. Xana cari ünvan içində yazılmış halda açılır. Yeni ünvan yoxlamadan keçənə qədər heç nə dəyişmir, ona görə həmin pəncərəni bağlasanız kassa olduğu kimi qalır. Menyuya çata bilmirsinizsə, AppData altındakı tətbiq qovluğundan store.json faylını silmək son çarə olaraq hələ də işləyir.",
+              "Pəncərənin başlığında kassanın yönəldiyi ünvan göstərilir. Səhifə açılmazsa, ilk baxılacaq yer budur.",
               "Eyni quraşdırıcıdan bütün mağazalar istifadə edir. Ünvanınız fayla yazılmaq əvəzinə ilk açılışda soruşulur, ona görə paylanacaq bir fayl və etibar ediləcək bir fayl var."
             ]
           },
@@ -3251,7 +3257,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v11.0.0"
+      "version": "v11.0.1"
     },
     "parts": [
       {
@@ -3537,23 +3543,26 @@ const MANUAL = {
               "На компьютере откройте страницу Releases программы и скачайте файл, оканчивающийся на setup.exe.",
               "Запустите его. Windows предупредит, что не распознаёт программу - смотрите примечание ниже. Выберите «Подробнее», затем «Выполнить в любом случае».",
               "При первом запуске он спросит адрес вашего магазина. Введите его один раз, например shop.example.com, и нажмите «Открыть кассу».",
-              "Касса откроется. Этот адрес запоминается на этом компьютере, и больше его не спросят.",
+              "Приложение проверяет, отвечает ли касса по этому адресу. Если отвечает, касса открывается, а адрес запоминается на этом компьютере - больше его не спросят.",
               "Войдите под учётной записью сотрудника или администратора точно так же, как в браузере."
             ],
             "fields": [
               {
                 "name": "Адрес магазина",
-                "what": "Спрашивается один раз, при первом запуске. Введите только адрес магазина - страница кассы находится автоматически. Принимаются только адреса, начинающиеся с https://."
+                "what": "Спрашивается один раз при первом запуске и затем каждый раз, когда вы выбираете Change shop address. Введите только адрес магазина - страница кассы находится автоматически. Принимаются только адреса, начинающиеся с https://, и адрес проверяется перед сохранением."
               }
             ],
             "notes": [
               "Windows предупредит, что не распознаёт программу, потому что установщик пока не подписан. Продолжить через «Подробнее» и «Выполнить в любом случае» безопасно. Для подписи нужно купить сертификат, и пока это не сделано, каждый компьютер будет показывать это предупреждение при первом запуске.",
-              "Оно НЕ печатает напрямую на кассовый принтер. Чеки идут через то же окно печати, что и в браузере. Прямая печать на термопринтер - главная причина хотеть это приложение, и в этой первой версии её нет.",
+              "Оно НЕ печатает напрямую на кассовый принтер. Чеки идут через то же окно печати, что и в браузере. Прямая печать на термопринтер - главная причина хотеть это приложение, и в этой версии её нет.",
               "Он продолжает продавать при обрыве связи, ровно как и браузер. Его единственное преимущество - хранимые данные отделены от Chrome, поэтому очистка браузера не может уничтожить продажи, которые касса ещё не отправила.",
               "Оно только для Windows. На Mac, iPad или планшете Android установите кассу из браузера - смотрите раздел «Установка кассы как приложения».",
               "Это не копия кассы. Оно показывает ваш живой магазин, поэтому когда магазин обновляется, приложение подхватывает это при следующем запуске. Переустанавливать при обновлении программы нечего.",
               "Принимаются только адреса, начинающиеся с https://. Касса не может впустить кассира по незащищённому соединению, поэтому адрес http дал бы окно, которое выглядит правильно и отказывает при каждом входе.",
-              "Чтобы направить кассу на другой адрес, удалите файл store.json из папки приложения в AppData, затем запустите приложение снова - оно спросит заново.",
+              "Если ввести адрес, по которому кассы нет, приложение сообщит об этом и не сохранит его. Обычная ошибка - ввести главный сайт компании вместо адреса, на котором работает сам магазин.",
+              "Эта проверка работает только тогда, когда сайт доступен. Если до адреса вообще не достучаться - сайт ещё не запущен или у кассы нет интернета - адрес принимается как введён. Проверка ловит очевидную ошибку, но не гарантирует, что адрес правильный.",
+              "Чтобы направить кассу на другой адрес, откройте меню Till в окне кассы и выберите Change shop address. Поле откроется с текущим адресом внутри. Ничего не меняется, пока новый адрес не пройдёт проверку, поэтому закрытие этого окна оставляет кассу как была. Удаление файла store.json из папки приложения в AppData по-прежнему работает как крайняя мера.",
+              "В заголовке окна показан адрес, на который направлена касса. Если страница не загружается, смотреть надо в первую очередь туда.",
               "Один и тот же установщик используют все магазины. Ваш адрес спрашивается при первом запуске, а не встроен в файл, поэтому есть один файл для раздачи и один файл, которому нужно доверять."
             ]
           },
@@ -4532,7 +4541,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v11.0.0"
+      "version": "v11.0.1"
     },
     "parts": [
       {
@@ -4818,23 +4827,26 @@ const MANUAL = {
               "Bir bilgisayarda yazılımın Releases sayfasını açın ve setup.exe ile biten dosyayı indirin.",
               "Çalıştırın. Windows programı tanımadığı uyarısını verecek - aşağıdaki nota bakın. Daha fazla bilgi, ardından Yine de çalıştır seçin.",
               "İlk açılışta mağaza adresinizi sorar. Bir kez yazın, örneğin shop.example.com, ve Kasayı aç düğmesine basın.",
-              "Kasa açılır. Bu adres bu bilgisayarda hatırlanır ve bir daha sorulmaz.",
+              "Uygulama, o adreste bir kasanın yanıt verip vermediğini denetler. Veriyorsa kasa açılır ve adres bu bilgisayarda hatırlanır - bir daha sorulmaz.",
               "Tarayıcıda yapacağınız gibi personel veya yönetici hesabıyla giriş yapın."
             ],
             "fields": [
               {
                 "name": "Mağaza adresi",
-                "what": "İlk çalıştırmada bir kez sorulur. Yalnızca mağazanızın adresini yazın - kasa sayfası kendiliğinden bulunur. Yalnızca https:// ile başlayan adresler kabul edilir."
+                "what": "İlk çalıştırmada bir kez, sonra da Change shop address seçtiğiniz her seferde sorulur. Yalnızca mağazanızın adresini yazın - kasa sayfası kendiliğinden bulunur. Yalnızca https:// ile başlayan adresler kabul edilir ve adres kaydedilmeden önce denetlenir."
               }
             ],
             "notes": [
               "Windows programı tanımadığı uyarısını verecek; çünkü kurulum dosyası henüz imzalanmadı. Daha fazla bilgi ve Yine de çalıştır ile devam etmek güvenlidir. İmzalamak için sertifika satın almak gerekir ve bu yapılana kadar her bilgisayar ilk açılışta bu uyarıyı gösterecek.",
-              "Doğrudan bir kasa yazıcısına BASMAZ. Fişler tarayıcıdaki aynı yazdırma penceresinden geçer. Termal yazıcıya doğrudan baskı, bu uygulamayı istemenin başlıca nedenidir ve bu ilk sürümde yoktur.",
+              "Doğrudan bir kasa yazıcısına BASMAZ. Fişler tarayıcıdaki aynı yazdırma penceresinden geçer. Termal yazıcıya doğrudan baskı, bu uygulamayı istemenin başlıca nedenidir ve bu sürümde yoktur.",
               "Tarayıcıda olduğu gibi kesinti sırasında satmayı sürdürür. Tek üstünlüğü, sakladığı verilerin Chrome’dan ayrı olmasıdır; böylece bir tarayıcıyı temizlemek kasanın henüz göndermediği satışları yok edemez.",
               "Yalnızca Windows içindir. Mac, iPad veya Android tablette kasayı tarayıcıdan yükleyin - Kasayı bir uygulama olarak yüklemek bölümüne bakın.",
               "Kasanın bir kopyası değildir. Canlı mağazanızı gösterir; bu yüzden mağazanız güncellendiğinde uygulama bir sonraki açılışta onu izler. Yazılım güncellendiğinde yeniden kurulacak bir şey yoktur.",
               "Yalnızca https:// ile başlayan adresler kabul edilir. Kasa, güvenli olmayan bir bağlantı üzerinden kasiyeri içeri alamaz; bu yüzden http bir adres size doğru görünen ama her girişi reddeden bir pencere verirdi.",
-              "Bir kasayı farklı bir adrese yöneltmek için AppData altındaki uygulama klasöründen store.json dosyasını silin, sonra uygulamayı yeniden başlatın; yeniden soracaktır.",
+              "Üzerinde kasa bulunmayan bir adres yazarsanız uygulama bunu söyler ve adresi kaydetmez. Sık yapılan hata, mağazanın kendi çalıştığı adres yerine şirketin ana web sitesini yazmaktır.",
+              "Bu denetim yalnızca siteye ulaşılabildiğinde çalışır. Adrese hiç ulaşılamıyorsa - site henüz yayında değilse ya da kasada internet yoksa - adres yazıldığı gibi kabul edilir. Denetim apaçık hatayı yakalar; adresin doğru olduğunun güvencesi değildir.",
+              "Bir kasayı farklı bir adrese yöneltmek için kasa penceresinde Till menüsünü açın ve Change shop address seçin. Kutu, geçerli adres içinde yazılı olarak açılır. Yeni bir adres denetimden geçene kadar hiçbir şey değişmez; bu yüzden o pencereyi kapatmak kasayı olduğu gibi bırakır. Menüye ulaşamıyorsanız AppData altındaki uygulama klasöründen store.json dosyasını silmek son çare olarak hâlâ işe yarar.",
+              "Pencere başlığı, kasanın yöneldiği adresi gösterir. Bir sayfa yüklenmezse ilk bakılacak yer orasıdır.",
               "Aynı kurulum dosyasını bütün mağazalar kullanır. Adresiniz dosyaya gömülmek yerine ilk açılışta sorulur; böylece dağıtılacak tek bir dosya ve güvenilecek tek bir dosya olur."
             ]
           },

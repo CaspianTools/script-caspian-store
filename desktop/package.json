@@ -1,6 +1,6 @@
 {
   "name": "caspian-register-desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Windows shell for the Caspian Store register. Built and released on a desktop/v* tag; not part of the npm package.",
   "scripts": {

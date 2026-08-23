@@ -28,20 +28,37 @@ enough. The native shell exists for the cases the browser cannot cover:
   installer.
 - **It does not print directly to a thermal printer yet.** Receipts go through the WebView print
   dialogue, exactly as in the browser. Native ESC/POS printing over the Windows spooler is the main
-  reason to want this shell and is planned next; it is not in v0.1.0.
+  reason to want this shell and is planned next; it is not in v0.2.0.
 - **It is Windows only.** macOS Gatekeeper is a hard block rather than a warning, so shipping there
   means a second signing pipeline with no usable unsigned path. The PWA covers macOS, Linux and
   tablets.
 
 ## First run
 
-The app asks once for the shop address, stores it in the app config directory, and opens the
-register. To point a till somewhere else, call the `reset_store_url` command — or delete
-`store.json` from `%APPDATA%\app.caspian.register\`.
+The app asks once for the shop address, checks that a register actually answers there, stores it in
+the app config directory, and opens the register.
 
-Only `https://` addresses are accepted, plus `http://localhost` for development. Firebase Auth,
-service workers and the web manifest all refuse to work over plain http, so a till pointed at an
-insecure address would look correct and then fail to sign anybody in.
+**A wrong address is refused before it is saved.** The setup screen requests `/pos` on whatever was
+typed, and a definitive 404 comes back as an error under the box. The mistake this catches is the
+common one: a shop typing its company website rather than the site the store itself runs on.
+
+Only a 404 refuses. An unreachable host, a timeout, a TLS failure or a 500 are all accepted,
+because a till is routinely set up before the shop's site is live and on connections having a bad
+morning — refusing then would strand a shop that had typed exactly the right address. The check is
+a catch for the obvious mistake, not a guarantee that the address is right.
+
+To point a till somewhere else, open **Till → Change shop address** in the register window
+(`Ctrl+Shift+A`). The setup screen reopens with the current address filled in, so it is an edit
+rather than a retype, and the saved address is only overwritten once a new one passes the check —
+closing that window leaves the till exactly as it was. Deleting `store.json` from
+`%APPDATA%\app.caspian.register\` still works as a last resort.
+
+The register window's title carries the address it is pointing at, so a page that fails to load can
+still be traced back to what was typed.
+
+Only `https://` addresses are accepted, plus `http://localhost` and `http://127.0.0.1` for
+development. Firebase Auth, service workers and the web manifest all refuse to work over plain
+http, so a till pointed at an insecure address would look correct and then fail to sign anybody in.
 
 ## Building
 

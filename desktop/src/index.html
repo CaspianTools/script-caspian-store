@@ -47,8 +47,8 @@
 <body>
   <div class="card">
     <div class="mark"></div>
-    <h1>Set up this till</h1>
-    <p class="lede">Type your shop's web address. This is stored on this computer only, and you will not be asked again.</p>
+    <h1 id="heading">Set up this till</h1>
+    <p class="lede" id="lede">Type your shop's web address. This is stored on this computer only, and you will not be asked again.</p>
 
     <label for="url">Shop address</label>
     <input id="url" type="text" inputmode="url" autocomplete="off" spellcheck="false"
@@ -63,6 +63,11 @@
   var input = document.getElementById('url');
   var button = document.getElementById('go');
   var error = document.getElementById('error');
+  var heading = document.getElementById('heading');
+  var lede = document.getElementById('lede');
+
+  // withGlobalTauri is on, so there is no bundler and no import step here.
+  var invoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
 
   function fail(message) {
     error.textContent = message;
@@ -76,15 +81,27 @@
     if (!value) { fail("Enter your shop's web address."); return; }
     error.classList.remove('show');
     button.disabled = true;
-    button.textContent = 'Opening…';
+    // The address is checked against the site before it is saved, which takes
+    // a moment on a slow connection. Say so rather than looking frozen.
+    button.textContent = 'Checking the address…';
 
-    // withGlobalTauri is on, so there is no bundler and no import step here.
-    var invoke = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
     if (!invoke) { fail('This window is not connected to the app. Close it and start again.'); return; }
 
     invoke('save_store_url', { url: value }).catch(function (e) {
       fail(typeof e === 'string' ? e : 'Could not open that address.');
     });
+  }
+
+  // Reopened from the register's Till menu rather than on a first run: show the
+  // address the till is on now, so repointing it is an edit and not a retype.
+  if (invoke) {
+    invoke('get_store_url').then(function (saved) {
+      if (!saved) return;
+      input.value = saved;
+      input.select();
+      heading.textContent = 'Change shop address';
+      lede.textContent = 'This till is pointing at the address below. Change it and press Open the register, or close this window to leave it as it is.';
+    }).catch(function () { /* A till with nothing saved is the normal first run. */ });
   }
 
   button.addEventListener('click', submit);
