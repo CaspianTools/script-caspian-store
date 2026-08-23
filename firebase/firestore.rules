@@ -354,5 +354,19 @@ service cloud.firestore {
     match /posLicenses/{id} {
       allow read, write: if false;
     }
+
+    // Blocks of receipt numbers reserved by leasePosReceiptBlock so a till can
+    // print a real receipt number while offline, and the claim registry that
+    // makes a number impossible to issue twice. Server-only on both sides: the
+    // register learns its block from the callable response and never reads the
+    // collection. Unlisted paths already deny, so these blocks are documentation
+    // as much as enforcement -- deploying them changes no behaviour.
+    match /posReceiptLeases/{id} {
+      allow read, write: if false;
+    }
+
+    match /posReceiptNumbers/{id} {
+      allow read, write: if false;
+    }
   }
 }

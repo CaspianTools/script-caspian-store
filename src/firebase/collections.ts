@@ -50,6 +50,8 @@ export function caspianCollections(db: Firestore) {
     posSessions: collection(db, 'posSessions'),
     posDevices: collection(db, 'posDevices'),
     posCounters: collection(db, 'posCounters'),
+    posReceiptLeases: collection(db, 'posReceiptLeases'),
+    posReceiptNumbers: collection(db, 'posReceiptNumbers'),
     scriptSettingsDoc: doc(db, 'scriptSettings', 'site'),
     siteSettingsDoc: doc(db, 'settings', 'site'),
     emailSettingsDoc: doc(db, 'emailSettings', 'site'),

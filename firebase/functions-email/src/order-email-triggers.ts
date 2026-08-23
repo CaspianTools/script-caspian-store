@@ -85,6 +85,14 @@ export const runEmailOnOrderCreate = onDocumentCreated(
     if (!snap) return;
     const order = snap.data() as OrderDoc;
     const orderId = event.params.id;
+
+    // Counter sales are not an inbox event. A walk-in has no address to write
+    // to, and the shop owner does not want a "new order" mail for every item
+    // rung up at the till — a busy Saturday would send hundreds, and draining a
+    // backlog of held sales would send them all at once. The sale is already
+    // visible on the Point of sale page and in the Orders list.
+    if ((order as { channel?: string }).channel === 'pos') return;
+
     const customerKey = customerTemplateForStatus(order.status);
     const adminKey = adminTemplateForStatus(order.status);
     await sendForOrder(orderId, order, { customerKey, adminKey });

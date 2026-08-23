@@ -16,6 +16,67 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.4.0 — Receipt-number leases, and the till stops emailing you
+
+Groundwork for offline selling, plus a bug that has been filling shop owners' inboxes.
+
+The hard problem with an offline till is the receipt: the server allocates receipt numbers inside the
+commit transaction, so a sale captured offline has no number to print at the moment the customer is
+standing there. A till can now **reserve a block of real numbers in advance** and spend from it while
+offline, so the customer gets an ordinary receipt with a final, store-unique number on it — not a
+slip that says NOT A RECEIPT.
+
+Nothing user-visible changes yet. The register does not use leases until the offline queue ships; this
+release lands the server half first, so an old client keeps working against the new server.
+
+### Consumer action required on upgrade
+
+Redeploy two Cloud Functions codebases. Rules do **not** need redeploying — the new collections are
+server-only, and unlisted paths already deny by default, so the added blocks change no behaviour.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v10.4.0
+firebase deploy --only functions:caspian-pos,functions:caspian-email
+```
+
+### Fixed
+
+- **Every counter sale emailed the shop owner a "new order".** `runEmailOnOrderCreate` fires on any
+  `orders/{id}` create, and a POS sale is written with `status: 'paid'`, which maps to the
+  `new_order_admin` template. The customer half was already gated on there being an address to write
+  to; the admin half was not. A shop doing two hundred sales on a Saturday got two hundred emails.
+  POS orders now return early — the sale is already on the Point of sale page and in the Orders list.
+- **The commit transaction could exceed Firestore's 500-write ceiling.** It writes one update per
+  distinct product, plus the order, plus (now) the receipt-number claim, while the line cap was 500.
+  Over the ceiling it fails as an opaque `internal`, which a retrying client reads as *transient* and
+  replays forever. The cap is now 400.
+- **A backlog drained by a manager was recorded against the manager.** `cashierId` came from the
+  caller, so a held sale replayed the next morning lost the cashier who actually rang it. The client
+  can now send `capturedByUid`, and the caller is kept separately as `replayedByUid`.
+
+### Added
+
+- **`leasePosReceiptBlock`** — reserves a block of receipt numbers for one register. Bumps
+  `posCounters/receipt` once in a two-write transaction; the till then spends ordinals from the block.
+- **`commitPosSale` accepts `receipt: { leaseId, ordinal }`.** The client never sends a receipt
+  *string* — the server derives it from the lease document it wrote itself, so a tampered client can
+  only pick a number inside a block genuinely issued to its own device. Omit it and allocation works
+  exactly as before, so old clients are unaffected.
+- **`posReceiptNumbers` — a claim registry that makes a duplicate number impossible.** This is not
+  belt-and-braces. Imaging a Windows till, which is routine in multi-till rollouts, clones the device
+  id *and* any stored lease, so two registers can hold the same block and spend the same ordinal. The
+  claim catches it and the second sale falls back to a fresh number instead of handing two customers
+  the same receipt.
+- `posReceiptLeases` and `posReceiptNumbers` collections, refs in `collections.ts`, and explicit
+  server-only rules blocks matching the `posCounters` / `posLicenses` pattern.
+
+### Notes
+
+The counter is only read when a sale has no lease. Reading it on every sale is what would serialise a
+whole shop on one document, and removing that contention is half the reason leases exist. Gaps in the
+numbering are expected — a till that leases 200 numbers and sells 3 has burnt 197, and receipt numbers
+were never contiguous across tills anyway. What matters is that no number is ever issued twice.
+
 ## v10.3.2 — Point the scaffolder at the org that actually exists
 
 Housekeeping ahead of the offline work. The scaffolder installed the library from

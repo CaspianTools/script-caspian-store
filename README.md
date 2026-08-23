@@ -18,7 +18,7 @@ npm run dev                  # http://localhost:3000
 ### Manual install (v7.0.0+ — one route file owns every page)
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v10.3.2 firebase
+npm install github:CaspianTools/script-caspian-store#v10.4.0 firebase
 ```
 
 Two files are all you ever need. **No per-page route files, ever, for any library version.** New library pages land automatically.

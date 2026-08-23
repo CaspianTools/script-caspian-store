@@ -40,9 +40,28 @@ interface CommitSaleInput {
   customerEmail?: string | null;
   /** Register clock at capture time, for offline sales replayed later. */
   capturedAtMillis?: number;
+  /**
+   * A number the till already reserved, spent from a block issued by
+   * `leasePosReceiptBlock`. Present on any sale captured offline, because the
+   * customer was handed a receipt carrying this number before the server ever
+   * saw the sale.
+   *
+   * The client sends `{ leaseId, ordinal }` and NEVER the receipt string — the
+   * server derives it from the lease document it wrote itself, so a tampered
+   * client can only choose an ordinal inside a block genuinely issued to it.
+   */
+  receipt?: { leaseId: string; ordinal: number };
+  /**
+   * Who actually rang the sale, when it is being replayed by somebody else.
+   * A backlog drained by a manager the next morning would otherwise record
+   * every sale against the manager.
+   */
+  capturedByUid?: string | null;
+  capturedByName?: string | null;
 }
 
 const SALE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/;
+const MAX_LINES = 400;
 
 function assertShape(data: unknown): CommitSaleInput {
   const d = (data ?? {}) as Partial<CommitSaleInput>;
@@ -55,8 +74,13 @@ function assertShape(data: unknown): CommitSaleInput {
   if (!Array.isArray(d.lines) || d.lines.length === 0) {
     throw new HttpsError('invalid-argument', 'A sale needs at least one line.');
   }
-  if (d.lines.length > 500) {
-    throw new HttpsError('invalid-argument', 'A sale cannot exceed 500 lines.');
+  // Firestore allows 500 writes per transaction and this one writes a product
+  // update per distinct product, plus the order, plus the receipt-number claim.
+  // At the old cap of 500 lines a sale could exceed the ceiling and fail as an
+  // opaque `internal` — which a retrying client would read as transient and
+  // replay forever. 400 leaves headroom no real counter sale will reach.
+  if (d.lines.length > MAX_LINES) {
+    throw new HttpsError('invalid-argument', `A sale cannot exceed ${MAX_LINES} lines.`);
   }
   for (const line of d.lines) {
     if (typeof line?.productId !== 'string' || line.productId.length === 0) {
@@ -78,6 +102,15 @@ function assertShape(data: unknown): CommitSaleInput {
     }
     if (typeof t.amount !== 'number' || !Number.isFinite(t.amount) || t.amount < 0) {
       throw new HttpsError('invalid-argument', 'Tender amount must be a positive number.');
+    }
+  }
+  if (d.receipt != null) {
+    const r = d.receipt as { leaseId?: unknown; ordinal?: unknown };
+    if (typeof r.leaseId !== 'string' || r.leaseId.length === 0) {
+      throw new HttpsError('invalid-argument', 'receipt.leaseId (string) is required.');
+    }
+    if (!Number.isInteger(r.ordinal) || (r.ordinal as number) < 0) {
+      throw new HttpsError('invalid-argument', 'receipt.ordinal must be a non-negative integer.');
     }
   }
   return d as CommitSaleInput;
@@ -136,11 +169,10 @@ export const commitPosSale = onCall({ cors: true }, async (request: CallableRequ
     const byId = new Map(productSnaps.map((s) => [s.id, s]));
 
     const settingsSnap = await tx.get(db.collection('settings').doc('site'));
-    const counterRef = db.collection('posCounters').doc('receipt');
-    const counterSnap = await tx.get(counterRef);
     const promoSnap = data.promoCode
       ? await tx.get(db.collection('promoCodes').doc(String(data.promoCode).toUpperCase()))
       : null;
+    const counterRef = db.collection('posCounters').doc('receipt');
 
     const posSettings = (settingsSnap.data()?.pos ?? {}) as Record<string, unknown>;
     const receiptPrefix =
@@ -241,16 +273,79 @@ export const commitPosSale = onCall({ cors: true }, async (request: CallableRequ
     const method =
       tenders.length > 1 ? 'pos-split' : tenders[0].kind === 'cash' ? 'cash' : 'card-terminal';
 
-    // --- Receipt number, allocated in-transaction so it can't skip or repeat. ---
-    const nextNumber = ((counterSnap.data()?.value as number | undefined) ?? 0) + 1;
-    const receiptNumber = `${receiptPrefix}-${String(nextNumber).padStart(6, '0')}`;
+    // --- Receipt number ---
+    //
+    // Two paths. A sale captured offline arrives carrying an ordinal it already
+    // spent from a leased block, and the customer is holding a receipt with that
+    // number on it — so the server honours it. An online sale has no lease and
+    // allocates from the counter exactly as before.
+    //
+    // Either way the number is claimed in `posReceiptNumbers`, which is what
+    // makes a duplicate impossible. That matters more than it looks: imaging a
+    // Windows till (routine in multi-till rollouts) clones the device id AND the
+    // stored lease, so two registers can hold the same block and try to spend
+    // the same ordinal. The claim catches it and the second sale falls back to a
+    // fresh number rather than handing two customers the same receipt.
+    let receiptNumber = '';
+    let receiptFromLease = false;
+
+    if (data.receipt) {
+      const leaseSnap = await tx.get(
+        db.collection('posReceiptLeases').doc(data.receipt.leaseId),
+      );
+      const lease = leaseSnap.data() as Record<string, unknown> | undefined;
+      if (lease && lease.deviceId === data.deviceId) {
+        const from = Number(lease.from);
+        const size = Number(lease.size);
+        const ordinal = data.receipt.ordinal;
+        if (Number.isFinite(from) && Number.isFinite(size) && ordinal < size) {
+          // The lease's own prefix, not today's setting: the number was reserved
+          // under that prefix and is already printed on the customer's receipt.
+          const prefix = typeof lease.prefix === 'string' ? lease.prefix : receiptPrefix;
+          const candidate = `${prefix}-${String(from + ordinal).padStart(6, '0')}`;
+          const claimSnap = await tx.get(db.collection('posReceiptNumbers').doc(candidate));
+          const claimedBy = claimSnap.data()?.saleId as string | undefined;
+          if (!claimSnap.exists || claimedBy === data.saleId) {
+            receiptNumber = candidate;
+            receiptFromLease = true;
+          } else {
+            logger.warn(
+              `[commitPosSale] ${candidate} already claimed by ${claimedBy}; ` +
+                `sale ${data.saleId} falls back to the counter. Two tills may share a device id.`,
+            );
+          }
+        }
+      } else {
+        logger.warn(
+          `[commitPosSale] lease ${data.receipt.leaseId} missing or not this device; ` +
+            `sale ${data.saleId} falls back to the counter.`,
+        );
+      }
+    }
+
+    let allocatedNumber = 0;
+    if (!receiptFromLease) {
+      // Only read the counter when we actually need it. Reading it on every
+      // sale would serialise the whole shop on one document, which is the
+      // contention leases exist to remove.
+      const counterSnap = await tx.get(counterRef);
+      allocatedNumber = ((counterSnap.data()?.value as number | undefined) ?? 0) + 1;
+      receiptNumber = `${receiptPrefix}-${String(allocatedNumber).padStart(6, '0')}`;
+    }
 
     // --- Writes ---
-    tx.set(
-      counterRef,
-      { value: nextNumber, updatedAt: FieldValue.serverTimestamp() },
-      { merge: true },
-    );
+    if (!receiptFromLease) {
+      tx.set(
+        counterRef,
+        { value: allocatedNumber, updatedAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+    }
+    tx.set(db.collection('posReceiptNumbers').doc(receiptNumber), {
+      saleId: data.saleId,
+      deviceId: data.deviceId,
+      createdAt: FieldValue.serverTimestamp(),
+    });
 
     for (const [productId, sizes] of stockDeltas) {
       const updates: Record<string, unknown> = {};
@@ -298,7 +393,11 @@ export const commitPosSale = onCall({ cors: true }, async (request: CallableRequ
       promoCode: appliedPromo,
       total: fromMinor(totalMinor),
       channel: 'pos',
-      cashierId: caller.uid,
+      // A backlog drained the next morning is still the evening cashier's work.
+      cashierId: data.capturedByUid || caller.uid,
+      ...(data.capturedByUid && data.capturedByUid !== caller.uid
+        ? { replayedByUid: caller.uid, capturedByName: data.capturedByName ?? '' }
+        : {}),
       deviceId: data.deviceId,
       receiptNumber,
       tenders,
