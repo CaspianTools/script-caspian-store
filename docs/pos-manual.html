@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v10.4.0"
+      "version": "v10.5.0"
     },
     "parts": [
       {
@@ -734,7 +734,7 @@ const MANUAL = {
             "notes": [
               "You do not need a licence key to use the register. Licensing is an optional extra that only matters if somebody sells you this software as a product, and most shops have it switched off entirely.",
               "You do not need a separate till program, a Windows installer, or a point-of-sale app from an app store. There is no desktop application. If someone has told you to install one, they are describing a different product.",
-              "The till needs to stay connected to the internet. The register does not work offline and has no queue for sales made while the connection is down.",
+              "The till keeps selling when the internet drops. Sales are held on the computer and sent automatically when the connection returns. It still needs a connection for the first sign-in of the day and to keep its copy of your catalogue up to date.",
               "You do not need one account per till. Accounts belong to people, not to machines. Two cashiers sharing a counter can sign in and out on the same till all day."
             ]
           },
@@ -936,7 +936,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Installing does NOT make the register work offline. It still needs the internet to look up a product and to complete a sale. What installing gives you is a faster start, its own window, and no address bar for a cashier to type in by accident.",
+              "Installing is not what makes the register work offline — it keeps selling through an outage either way. What installing gives you is a faster start, its own window, and no address bar for a cashier to type in by accident.",
               "The shop and the register are two separate apps. A shop that installs both gets two icons: one that opens the online shop, one that opens the counter. Install only the register on a till.",
               "The button is not shown at all on Safari and Firefox on a desktop, because those browsers cannot install a web app that way. Use Chrome or Edge on a till.",
               "On an iPad the Install button shows instructions rather than doing it for you. Apple does not let a page start the installation itself.",
@@ -967,7 +967,7 @@ const MANUAL = {
             "notes": [
               "Windows will warn that it does not recognise the program, because the installer is not yet code-signed. It is safe to continue with More info, then Run anyway. Signing it requires buying a certificate, and until that is done every computer will show this warning on first run.",
               "It does NOT print straight to a till printer. Receipts go through the same print window as in a browser. Direct printing to a thermal printer is the main reason to want this app and it is not in this first version.",
-              "It does NOT work offline, exactly like the browser. Looking up a product and completing a sale both still need the internet.",
+              "It keeps selling through an outage, exactly like the browser does. Its one advantage is that its stored data is separate from Chrome, so clearing a browser cannot destroy sales the till has not sent yet.",
               "It is Windows only. On a Mac, an iPad or an Android tablet, install the register from the browser instead - see \"Installing the register as an app on a till\".",
               "It is not a copy of the register. It shows your live shop, so when your shop is updated the app follows on its next launch. There is nothing to reinstall when the software is updated.",
               "Only addresses beginning https:// are accepted. The register cannot sign a cashier in over an insecure connection, so an http address would give you a window that looks right and then refuses every login.",
@@ -1560,6 +1560,40 @@ const MANUAL = {
             ]
           },
           {
+            "id": "selling-when-the-internet-drops",
+            "title": "Selling when the internet drops",
+            "audience": "staff",
+            "route": "/pos/queue",
+            "summary": "The till keeps working through an outage. You scan, take payment and print a receipt exactly as always; the sale is written to this computer instead of the shop, and sent by itself the moment the connection comes back. The customer gets an ordinary receipt with a real receipt number on it, because the till reserves a block of numbers in advance while it is still online.",
+            "steps": [
+              "Carry on as normal. Nothing about scanning or taking payment changes.",
+              "A yellow marker appears in the top bar saying there is no internet and how many sales are waiting.",
+              "Print the receipt as usual. It carries a real receipt number and one extra line saying it was an offline sale.",
+              "When the connection returns the waiting sales are sent by themselves, oldest first. The marker disappears.",
+              "To check what is waiting, or to push them through by hand, open Held sales in the top bar."
+            ],
+            "fields": [
+              {
+                "name": "Held sales",
+                "what": "Link in the top bar. Lists every sale taken on this till that the shop has not received yet, plus anything that needs a person to look at it."
+              },
+              {
+                "name": "Send now",
+                "what": "On the Held sales page. Tries the waiting sales immediately instead of waiting for the next automatic attempt."
+              }
+            ],
+            "notes": [
+              "The sale is written to this computer BEFORE the till tries to send it. That order matters: a request that timed out and a request that was refused look identical from the till, so it never has to guess afterwards whether your sale survived.",
+              "Do not clear this browser’s site data while sales are waiting. They exist nowhere else yet, and clearing it destroys them. The Windows app keeps its data separately, which is one reason to prefer it on a busy counter.",
+              "Waiting sales are only sent while a register tab is open. Closing the till at the end of the day with sales still waiting is fine - they go as soon as somebody opens the register again - but they will not go overnight on their own.",
+              "An item the till has never downloaded cannot be scanned while offline. The till keeps a copy of your catalogue and refreshes it whenever it is online, so this only affects something added very recently.",
+              "The till reserves receipt numbers in advance, a few hundred at a time. If it somehow runs out mid-outage it keeps selling, but the customer gets a slip marked as a reference rather than a receipt. You are warned in the top bar while still online, long before that happens.",
+              "The shop prices every sale when it arrives, not when it was rung up. If a price changed during the outage the recorded sale uses the real catalogue price, and the difference is visible to the owner.",
+              "A sale that cannot be sent at all - usually because the item was deleted from the catalogue while the till was offline - stops on the Held sales page and waits for a person, rather than being retried forever or quietly thrown away.",
+              "If the account loses the right to sell while sales are waiting, sending stops and says so. Signing in with an account that has the Staff role sends them through; the waiting sales belong to the till, not to whoever is signed in."
+            ]
+          },
+          {
             "id": "when-something-goes-wrong",
             "title": "When a sale will not go through",
             "audience": "staff",
@@ -1577,7 +1611,7 @@ const MANUAL = {
               "\"Product ... no longer exists\" means an item on the sale was deleted from the catalogue while the sale was open. The message names the product's internal id, not its name, so you will not be told which item it was in plain words. Clear the sale and scan the items again to find the one that will not go on.",
               "An amber warning about stock going negative is not a failure. The sale was recorded. It means you sold something the catalogue thought had run out, and the owner can tidy the stock figure up later.",
               "The scanner stops listening while the payment window is open and while the \"Sale complete\" screen is showing. That is deliberate, so that typing an amount cannot be read as a barcode. On the completed-sale screen you must press \"New sale\" before scanning the next customer's items.",
-              "If the till loses its internet connection the sale will not save, and there is no queue that holds it for later. Get the connection back and press \"Complete sale\" again.",
+              "If the till loses its internet connection the sale is still recorded — it is held on this computer and sent when the connection returns. The receipt prints as normal. You can see what is waiting under Held sales in the top bar.",
               "If the whole screen goes blank or the browser reloads mid-sale, the items on the ticket are gone and nothing was recorded. Scan them again.",
               "Nothing is charged, recorded or taken off stock until \"Complete sale\" succeeds. If you are unsure whether a sale went through, look for it in the recent-sales table on the Point of sale page in the admin panel, or ask the owner to."
             ]
@@ -1594,7 +1628,7 @@ const MANUAL = {
               "There is no way to attach a customer to a counter sale. Every sale is recorded as a walk-in, even for a regular you know by name.",
               "There is no way to look an item up by name. There is no search box and no browse list - only the one box for a code. If you cannot scan an item and do not know its code, you cannot get it onto the sale from the register.",
               "There is no reprint. Once you press \"New sale\" the receipt is gone, and no button anywhere brings it back. Print it before you move on.",
-              "The register does not work offline. There is no queue, no offline indicator and no way to keep selling through a network outage.",
+              "The register does keep selling offline, but it cannot do everything offline. An item it has never downloaded cannot be found, and if the till runs out of reserved receipt numbers the customer gets a reference slip rather than a receipt.",
               "The register does not talk to your card machine. Choosing Card records that a card was used; you still take the payment on the machine yourself.",
               "The register cannot open a cash drawer.",
               "There is no way to put a sale aside and come back to it. One sale at a time, and clearing it throws it away.",
@@ -2005,7 +2039,7 @@ const MANUAL = {
             "notes": [
               "Kassadan istifadə üçün lisenziya açarı lazım deyil. Lisenziya yalnız kimsə bu proqramı sizə məhsul kimi satırsa əhəmiyyət kəsb edən əlavə imkandır və əksər mağazalarda tamamilə sönülüdür.",
               "Ayrıca kassa proqramı, Windows quraşdırıcısı və ya mağazadan yüklənən kassa tətbiqi lazım deyil. Stolüstü tətbiq yoxdur. Kimsə sizə belə bir şey quraşdırmağı deyibsə, o başqa məhsuldan danışır.",
-              "Kassa internetə qoşulu qalmalıdır. Kassa oflayn işləmir və bağlantı kəsildiyi müddətdə edilən satışlar üçün növbə saxlamır.",
+              "İnternet kəsiləndə kassa satmağa davam edir. Satışlar kompüterdə saxlanılır və bağlantı qayıdanda avtomatik göndərilir. Günün ilk girişi və kataloq nüsxəsinin yenilənməsi üçün yenə də bağlantı lazımdır.",
               "Hər kassa üçün ayrıca hesab lazım deyil. Hesablar maşınlara yox, insanlara aiddir. Bir piştaxtanı bölüşən iki kassir bütün gün eyni kassada daxil olub çıxa bilər."
             ]
           },
@@ -2204,7 +2238,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Quraşdırmaq kassanı oflayn işlədən ETMİR. Məhsulu tapmaq və satışı tamamlamaq üçün yenə də internet lazımdır. Quraşdırmanın verdiyi şey daha sürətli başlanğıc, öz pəncərə və kassirin səhvən yaza biləcəyi ünvan sətrinin olmamasıdır.",
+              "Kassanın oflayn işləməsini quraşdırma təmin etmir - o, hər halda kəsinti zamanı satmağa davam edir. Quraşdırmanın verdiyi şey daha sürətli başlanğıc, öz pəncərə və kassirin səhvən yaza biləcəyi ünvan sətrinin olmamasıdır.",
               "Mağaza və kassa iki ayrı tətbiqdir. Hər ikisini quraşdıran mağazada iki ikon olur: biri onlayn mağazanı, biri piştaxtanı açır. Kassada yalnız kassanı quraşdırın.",
               "Masaüstü Safari və Firefox-da düymə ümumiyyətlə görünmür, çünki həmin brauzerlər veb tətbiqi bu yolla quraşdıra bilmir. Kassada Chrome və ya Edge işlədin.",
               "iPad-də Quraşdır düyməsi işi görmək əvəzinə təlimat göstərir. Apple səhifənin quraşdırmanı özü başlatmasına icazə vermir.",
@@ -2234,7 +2268,7 @@ const MANUAL = {
             "notes": [
               "Windows proqramı tanımadığını bildirən xəbərdarlıq göstərəcək, çünki quraşdırıcı hələ imzalanmayıb. Ətraflı məlumat, sonra Yenə də işə sal ilə davam etmək təhlükəsizdir. İmzalamaq üçün sertifikat almaq lazımdır və bu edilənə qədər hər kompüter ilk açılışda bu xəbərdarlığı göstərəcək.",
               "O, birbaşa kassa printerinə çap ETMİR. Qəbzlər brauzerdəki eyni çap pəncərəsindən keçir. Termal printerə birbaşa çap bu tətbiqi istəməyin əsas səbəbidir və bu ilk versiyada yoxdur.",
-              "O, brauzer kimi oflayn İŞLƏMİR. Məhsulu tapmaq və satışı tamamlamaq üçün yenə də internet lazımdır.",
+              "O da brauzer kimi kəsinti zamanı satmağa davam edir. Yeganə üstünlüyü saxladığı məlumatın Chrome-dan ayrı olmasıdır, ona görə brauzeri təmizləmək kassanın hələ göndərmədiyi satışları məhv edə bilmir.",
               "Yalnız Windows üçündür. Mac, iPad və ya Android planşetdə kassanı brauzerdən quraşdırın - Kassanı tətbiq kimi quraşdırmaq bölməsinə baxın.",
               "Bu, kassanın surəti deyil. O, canlı mağazanızı göstərir, ona görə mağazanız yeniləndikdə tətbiq növbəti açılışda onu izləyir. Proqram yeniləndikdə yenidən quraşdırılacaq heç nə yoxdur.",
               "Yalnız https:// ilə başlayan ünvanlar qəbul olunur. Kassa təhlükəsiz olmayan bağlantı üzərindən kassiri sistemə buraxa bilmir, ona görə http ünvan sizə düzgün görünən, amma hər girişi rədd edən pəncərə verərdi.",
@@ -2815,6 +2849,38 @@ const MANUAL = {
             ]
           },
           {
+            "id": "selling-when-the-internet-drops",
+            "title": "İnternet kəsiləndə satış",
+            "summary": "Kəsinti zamanı kassa işləməyə davam edir. Həmişəki kimi skan edir, ödənişi alır və qəbzi çap edirsiniz; satış mağazaya yox, bu kompüterə yazılır və bağlantı qayıdan kimi öz-özünə göndərilir. Müştəri üzərində əsl qəbz nömrəsi olan adi qəbz alır, çünki kassa hələ onlayn ikən qabaqcadan bir blok nömrə ayırır.",
+            "steps": [
+              "Adi qaydada davam edin. Skan və ödənişin alınmasında heç nə dəyişmir.",
+              "Yuxarı zolaqda internetin olmadığını və neçə satışın gözlədiyini bildirən sarı işarə çıxır.",
+              "Qəbzi həmişəki kimi çap edin. Onun üzərində əsl qəbz nömrəsi və oflayn satış olduğunu bildirən bir əlavə sətir olur.",
+              "Bağlantı qayıdanda gözləyən satışlar ən köhnədən başlayaraq öz-özünə göndərilir. İşarə yox olur.",
+              "Nəyin gözlədiyini görmək və ya əl ilə göndərmək üçün yuxarı zolaqdakı Gözləyən satışlar bölməsini açın."
+            ],
+            "fields": [
+              {
+                "name": "Gözləyən satışlar",
+                "what": "Yuxarı zolaqdakı keçid. Bu kassada edilmiş, amma mağazaya hələ çatmamış bütün satışları və insan müdaxiləsi tələb edənləri sadalayır."
+              },
+              {
+                "name": "İndi göndər",
+                "what": "Gözləyən satışlar səhifəsində. Növbəti avtomatik cəhdi gözləmək əvəzinə gözləyən satışları dərhal göndərməyə çalışır."
+              }
+            ],
+            "notes": [
+              "Satış kassa onu göndərməyə cəhd etməzdən ƏVVƏL bu kompüterə yazılır. Bu ardıcıllıq vacibdir: vaxtı keçmiş sorğu ilə rədd edilmiş sorğu kassadan eyni görünür, ona görə o, satışınızın qalıb-qalmadığını sonradan təxmin etmək məcburiyyətində qalmır.",
+              "Satışlar gözləyərkən bu brauzerin sayt məlumatlarını təmizləməyin. Onlar hələ başqa heç yerdə yoxdur və təmizləmək onları məhv edir. Windows tətbiqi məlumatını ayrıca saxlayır - məşğul piştaxtada onu üstün tutmağın səbəblərindən biri budur.",
+              "Gözləyən satışlar yalnız kassa vərəqi açıq olduqda göndərilir. Gün sonunda satışlar gözləyərkən kassanı bağlamaq normaldır - kimsə kassanı yenidən açan kimi gedirlər - amma gecə boyu öz-özünə getməyəcəklər.",
+              "Kassanın heç vaxt yükləmədiyi məhsul oflayn skan oluna bilməz. Kassa kataloqunuzun nüsxəsini saxlayır və onlayn olduqca yeniləyir, ona görə bu, yalnız çox yeni əlavə olunmuş məhsula aiddir.",
+              "Kassa qəbz nömrələrini qabaqcadan, hər dəfə bir neçə yüz ədəd ayırır. Əgər kəsintinin ortasında birtəhər qurtarsa, satmağa davam edir, amma müştəri qəbz yox, istinad kağızı alır. Bu baş verməzdən xeyli əvvəl, hələ onlayn ikən yuxarı zolaqda xəbərdarlıq alırsınız.",
+              "Mağaza hər satışı rəsmiləşdirildiyi vaxt yox, çatdığı vaxt qiymətləndirir. Kəsinti zamanı qiymət dəyişibsə, qeyd olunan satış əsl kataloq qiymətini işlədir və fərq sahibə görünür.",
+              "Ümumiyyətlə göndərilə bilməyən satış - adətən kassa oflayn ikən məhsul kataloqdan silindiyi üçün - Gözləyən satışlar səhifəsində dayanır və insanı gözləyir, sonsuz təkrar edilmir və sakitcə atılmır.",
+              "Satışlar gözləyərkən hesab satış hüququnu itirsə, göndərmə dayanır və bunu bildirir. İşçi rolu olan hesabla daxil olmaq onları göndərir; gözləyən satışlar daxil olan adama yox, kassaya aiddir."
+            ]
+          },
+          {
             "id": "when-something-goes-wrong",
             "title": "Satış keçmədikdə",
             "audience": "staff",
@@ -2832,7 +2898,7 @@ const MANUAL = {
               "Məhsul ... artıq mövcud deyil mesajı satış açıq ikən satışdakı məhsulun kataloqdan silindiyini bildirir. Mesaj məhsulun adını yox, daxili kodunu yazır, ona görə hansı məhsul olduğu sizə aydın sözlərlə deyilməyəcək. Satışı silin və hansının keçmədiyini tapmaq üçün məhsulları yenidən skan edin.",
               "Ehtiyatın mənfiyə düşməsi ilə bağlı sarı xəbərdarlıq uğursuzluq deyil. Satış qeyd olunub. O, kataloqun qurtardığını düşündüyü bir şeyi satdığınızı bildirir və sahib ehtiyat rəqəmini sonra səliqəyə sala bilər.",
               "Ödəniş pəncərəsi açıq ikən və Satış tamamlandı ekranı göstərilərkən skaner dinləməni dayandırır. Bu qəsdəndir ki, məbləğ yazmaq barkod kimi oxunmasın. Tamamlanmış satış ekranında növbəti müştərinin məhsullarını skan etməzdən əvvəl Yeni satış düyməsini basmalısınız.",
-              "Kassa internet bağlantısını itirərsə, satış yadda saxlanmayacaq və onu sonraya saxlayan növbə yoxdur. Bağlantını qaytarın və Satışı tamamla düyməsini yenidən basın.",
+              "Kassa internet bağlantısını itirsə də satış qeyd olunur - o, bu kompüterdə saxlanılır və bağlantı qayıdanda göndərilir. Qəbz adi qaydada çap olunur. Nəyin gözlədiyini yuxarı zolaqdakı Gözləyən satışlar bölməsində görə bilərsiniz.",
               "Bütün ekran qaralarsa və ya brauzer satışın ortasında yenidən yüklənərsə, siyahıdakı məhsullar itir və heç nə qeyd olunmur. Onları yenidən skan edin.",
               "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin."
             ]
@@ -2849,7 +2915,7 @@ const MANUAL = {
               "Piştaxta satışına müştəri bağlamağın yolu yoxdur. Adını bildiyiniz daimi müştəri üçün belə, hər satış gəlmə müştəri kimi qeyd olunur.",
               "Məhsulu ada görə axtarmağın yolu yoxdur. Axtarış qutusu və baxış siyahısı yoxdur - yalnız kod üçün bir qutu. Məhsulu skan edə bilmirsinizsə və kodunu bilmirsinizsə, onu kassadan satışa sala bilməzsiniz.",
               "Təkrar çap yoxdur. Yeni satış düyməsini basdıqdan sonra qəbz gedir və onu heç bir düymə geri gətirmir. Növbətiyə keçməzdən əvvəl çap edin.",
-              "Kassa oflayn işləmir. Növbə, oflayn göstəricisi və şəbəkə kəsintisi zamanı satmağa davam etməyin yolu yoxdur.",
+              "Kassa oflayn satmağa davam edir, amma oflayn hər şeyi edə bilmir. Heç vaxt yükləmədiyi məhsulu tapa bilmir və kassada ehtiyat qəbz nömrələri qurtararsa, müştəri qəbz yox, istinad kağızı alır.",
               "Kassa kart terminalınızla danışmır. Kart seçmək kartın istifadə olunduğunu qeyd edir; ödənişi yenə də terminalda özünüz alırsınız.",
               "Kassa pul çekmecesini aça bilmir.",
               "Satışı kənara qoyub sonra qayıtmağın yolu yoxdur. Bir dəfəyə bir satış və onu silmək atmaq deməkdir.",
@@ -3254,7 +3320,7 @@ const MANUAL = {
             "notes": [
               "Для работы с кассой лицензионный ключ не нужен. Лицензирование - это дополнительная возможность, которая имеет значение, только если кто-то продаёт вам эту программу как продукт, и в большинстве магазинов оно полностью выключено.",
               "Не нужна отдельная кассовая программа, установщик для Windows или кассовое приложение из магазина приложений. Настольного приложения не существует. Если вам сказали установить такое, речь идёт о другом продукте.",
-              "Касса должна оставаться подключённой к интернету. Она не работает офлайн и не хранит очередь продаж, сделанных во время обрыва связи.",
+              "Когда интернет пропадает, касса продолжает продавать. Продажи хранятся на компьютере и отправляются автоматически, когда связь вернётся. Связь всё же нужна для первого входа за день и чтобы обновлять копию вашего каталога.",
               "Отдельная учётная запись на каждую кассу не нужна. Учётные записи принадлежат людям, а не машинам. Два кассира, работающих за одним прилавком, могут весь день входить и выходить на одной и той же машине."
             ]
           },
@@ -3453,7 +3519,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Установка НЕ заставляет кассу работать офлайн. Для поиска товара и завершения продажи по-прежнему нужен интернет. Установка даёт более быстрый запуск, собственное окно и отсутствие адресной строки, в которую кассир может случайно что-то ввести.",
+              "Работать офлайн кассе позволяет не установка - она продолжает продавать при обрыве связи в любом случае. Установка даёт более быстрый запуск, собственное окно и отсутствие адресной строки, куда кассир может случайно что-то ввести.",
               "Магазин и касса - два разных приложения. Если установить оба, будет два значка: один открывает интернет-магазин, другой - прилавок. На кассе устанавливайте только кассу.",
               "В настольных Safari и Firefox кнопка не показывается вовсе, потому что эти браузеры не умеют так устанавливать веб-приложение. На кассе используйте Chrome или Edge.",
               "На iPad кнопка «Установить» показывает инструкцию, а не выполняет установку. Apple не позволяет странице запускать её самостоятельно.",
@@ -3483,7 +3549,7 @@ const MANUAL = {
             "notes": [
               "Windows предупредит, что не распознаёт программу, потому что установщик пока не подписан. Продолжить через «Подробнее» и «Выполнить в любом случае» безопасно. Для подписи нужно купить сертификат, и пока это не сделано, каждый компьютер будет показывать это предупреждение при первом запуске.",
               "Оно НЕ печатает напрямую на кассовый принтер. Чеки идут через то же окно печати, что и в браузере. Прямая печать на термопринтер - главная причина хотеть это приложение, и в этой первой версии её нет.",
-              "Оно НЕ работает офлайн, ровно как и браузер. И поиск товара, и завершение продажи по-прежнему требуют интернета.",
+              "Он продолжает продавать при обрыве связи, ровно как и браузер. Его единственное преимущество - хранимые данные отделены от Chrome, поэтому очистка браузера не может уничтожить продажи, которые касса ещё не отправила.",
               "Оно только для Windows. На Mac, iPad или планшете Android установите кассу из браузера - смотрите раздел «Установка кассы как приложения».",
               "Это не копия кассы. Оно показывает ваш живой магазин, поэтому когда магазин обновляется, приложение подхватывает это при следующем запуске. Переустанавливать при обновлении программы нечего.",
               "Принимаются только адреса, начинающиеся с https://. Касса не может впустить кассира по незащищённому соединению, поэтому адрес http дал бы окно, которое выглядит правильно и отказывает при каждом входе.",
@@ -4064,6 +4130,38 @@ const MANUAL = {
             ]
           },
           {
+            "id": "selling-when-the-internet-drops",
+            "title": "Продажи, когда пропадает интернет",
+            "summary": "Касса продолжает работать во время обрыва связи. Вы сканируете, принимаете оплату и печатаете чек ровно как всегда; продажа записывается на этот компьютер, а не в магазин, и отправляется сама, как только связь вернётся. Покупатель получает обычный чек с настоящим номером, потому что касса заранее резервирует блок номеров, пока ещё онлайн.",
+            "steps": [
+              "Продолжайте как обычно. В сканировании и приёме оплаты ничего не меняется.",
+              "В верхней панели появляется жёлтая отметка: нет интернета и сколько продаж ждёт отправки.",
+              "Печатайте чек как обычно. На нём настоящий номер чека и одна дополнительная строка о том, что продажа была офлайн.",
+              "Когда связь вернётся, ожидающие продажи отправятся сами, начиная с самых старых. Отметка исчезнет.",
+              "Чтобы посмотреть, что ждёт, или отправить вручную, откройте «Отложенные продажи» в верхней панели."
+            ],
+            "fields": [
+              {
+                "name": "Отложенные продажи",
+                "what": "Ссылка в верхней панели. Перечисляет все продажи с этой кассы, которые магазин ещё не получил, а также то, что требует внимания человека."
+              },
+              {
+                "name": "Отправить сейчас",
+                "what": "На странице отложенных продаж. Пробует отправить ожидающие продажи немедленно, не дожидаясь следующей автоматической попытки."
+              }
+            ],
+            "notes": [
+              "Продажа записывается на этот компьютер ДО того, как касса попытается её отправить. Этот порядок важен: запрос, который завис, и запрос, который отклонили, выглядят с кассы одинаково, поэтому ей не приходится потом гадать, уцелела ли ваша продажа.",
+              "Не очищайте данные сайта в этом браузере, пока есть ожидающие продажи. Больше их пока нигде нет, и очистка их уничтожит. Приложение для Windows хранит свои данные отдельно - это одна из причин предпочесть его на загруженном прилавке.",
+              "Ожидающие продажи отправляются только пока открыта вкладка кассы. Закрыть кассу в конце дня с ожидающими продажами не страшно - они уйдут, как только кассу снова откроют, - но сами за ночь они не отправятся.",
+              "Товар, который касса никогда не скачивала, офлайн отсканировать нельзя. Касса хранит копию вашего каталога и обновляет её всякий раз, когда есть связь, так что это касается только совсем недавно добавленного.",
+              "Касса резервирует номера чеков заранее, по несколько сотен за раз. Если они всё же закончатся посреди обрыва связи, она продолжит продавать, но покупатель получит талон-справку, а не чек. Предупреждение появляется в верхней панели ещё онлайн, задолго до этого.",
+              "Магазин считает цену каждой продажи в момент её поступления, а не в момент оформления. Если во время обрыва цена изменилась, записанная продажа использует настоящую каталожную цену, и разница видна владельцу.",
+              "Продажа, которую отправить вообще не удаётся - обычно потому, что товар удалили из каталога, пока касса была офлайн, - останавливается на странице отложенных продаж и ждёт человека, а не повторяется бесконечно и не выбрасывается тихо.",
+              "Если у учётной записи пропадёт право продавать, пока есть ожидающие продажи, отправка остановится и об этом будет сказано. Вход под учётной записью с ролью «Сотрудник» отправит их; ожидающие продажи принадлежат кассе, а не тому, кто вошёл."
+            ]
+          },
+          {
             "id": "when-something-goes-wrong",
             "title": "Когда продажа не проходит",
             "audience": "staff",
@@ -4081,7 +4179,7 @@ const MANUAL = {
               "«Товар ... больше не существует» означает, что товар из продажи удалили из каталога, пока продажа была открыта. В сообщении указан внутренний идентификатор товара, а не его название, поэтому понятными словами вам не скажут, какой это был товар. Очистите продажу и отсканируйте товары заново, чтобы найти тот, который не проходит.",
               "Жёлтое предупреждение об уходе остатка в минус - это не сбой. Продажа записана. Оно означает, что вы продали то, что каталог считал закончившимся, и владелец сможет позже поправить цифру остатка.",
               "Пока открыто окно оплаты и пока показан экран «Продажа завершена», сканер перестаёт слушать. Это сделано намеренно, чтобы ввод суммы не читался как штрихкод. На экране завершённой продажи нужно нажать «Новая продажа», прежде чем сканировать товары следующего покупателя.",
-              "Если касса потеряет связь с интернетом, продажа не сохранится, и очереди, которая придержала бы её на потом, нет. Восстановите связь и нажмите «Завершить продажу» снова.",
+              "Если касса потеряет связь с интернетом, продажа всё равно записывается - она хранится на этом компьютере и отправляется, когда связь вернётся. Чек печатается как обычно. Что именно ждёт отправки, видно в разделе «Отложенные продажи» в верхней панели.",
               "Если экран погас или браузер перезагрузился посреди продажи, товары из чека пропали и ничего не записано. Отсканируйте их заново.",
               "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца."
             ]
@@ -4098,7 +4196,7 @@ const MANUAL = {
               "К продаже за прилавком нельзя привязать покупателя. Каждая продажа записывается как случайный покупатель, даже для постоянного клиента, которого вы знаете по имени.",
               "Найти товар по названию нельзя. Нет ни поля поиска, ни списка для просмотра - только одно поле для кода. Если товар не сканируется и его код вам неизвестен, добавить его в продажу с кассы не получится.",
               "Повторной печати нет. После нажатия «Новая продажа» чек исчезает, и вернуть его не может ни одна кнопка. Печатайте до перехода к следующему покупателю.",
-              "Касса не работает офлайн. Нет ни очереди, ни индикатора офлайна, ни способа продолжать продавать во время обрыва связи.",
+              "Касса действительно продолжает продавать офлайн, но не всё умеет офлайн. Товар, который она никогда не скачивала, найти нельзя, а если на кассе закончатся зарезервированные номера чеков, покупатель получит справочный талон, а не чек.",
               "Касса не общается с вашим карточным терминалом. Выбор «Карта» лишь фиксирует, что платили картой; сам платёж вы по-прежнему проводите на терминале.",
               "Касса не может открыть денежный ящик.",
               "Отложить продажу и вернуться к ней позже нельзя. Одна продажа за раз, а очистка её выбрасывает.",
@@ -4503,7 +4601,7 @@ const MANUAL = {
             "notes": [
               "Kasayı kullanmak için lisans anahtarı gerekmez. Lisanslama, yalnızca birisi bu yazılımı size ürün olarak satıyorsa önem taşıyan isteğe bağlı bir eklentidir ve çoğu mağazada tamamen kapalıdır.",
               "Ayrı bir kasa programı, Windows kurulum dosyası veya uygulama mağazasından indirilen bir kasa uygulaması gerekmez. Masaüstü uygulaması yoktur. Biri size böyle bir şey kurmanızı söylediyse başka bir üründen bahsediyordur.",
-              "Kasanın internete bağlı kalması gerekir. Kasa çevrimdışı çalışmaz ve bağlantı kopukken yapılan satışlar için bir kuyruk tutmaz.",
+              "İnternet kesildiğinde kasa satmayı sürdürür. Satışlar bilgisayarda tutulur ve bağlantı döndüğünde kendiliğinden gönderilir. Günün ilk girişi ve katalog kopyasının güncel kalması için yine de bağlantı gerekir.",
               "Her kasa için ayrı hesap gerekmez. Hesaplar makinelere değil kişilere aittir. Aynı tezgâhı paylaşan iki kasiyer bütün gün aynı makinede girip çıkabilir."
             ]
           },
@@ -4702,7 +4800,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Yüklemek kasayı çevrimdışı çalışır hâle GETİRMEZ. Bir ürünü bulmak ve satışı tamamlamak için yine internet gerekir. Yüklemenin kazandırdığı şey daha hızlı bir açılış, kendi penceresi ve kasiyerin yanlışlıkla bir şey yazabileceği bir adres çubuğunun olmamasıdır.",
+              "Kasanın çevrimdışı çalışmasını sağlayan şey yükleme değildir - kesinti sırasında zaten satmayı sürdürür. Yüklemenin kazandırdığı şey daha hızlı bir açılış, kendi penceresi ve kasiyerin yanlışlıkla bir şey yazabileceği bir adres çubuğunun olmamasıdır.",
               "Mağaza ile kasa iki ayrı uygulamadır. İkisini de yükleyen bir mağazada iki simge olur: biri çevrimiçi mağazayı, diğeri tezgâhı açar. Kasaya yalnızca kasayı yükleyin.",
               "Masaüstü Safari ve Firefox’ta düğme hiç gösterilmez; çünkü o tarayıcılar bir web uygulamasını bu yolla yükleyemez. Kasada Chrome veya Edge kullanın.",
               "iPad üzerinde Yükle düğmesi yüklemeyi yapmak yerine yönergeleri gösterir. Apple, bir sayfanın yüklemeyi kendisinin başlatmasına izin vermez.",
@@ -4732,7 +4830,7 @@ const MANUAL = {
             "notes": [
               "Windows programı tanımadığı uyarısını verecek; çünkü kurulum dosyası henüz imzalanmadı. Daha fazla bilgi ve Yine de çalıştır ile devam etmek güvenlidir. İmzalamak için sertifika satın almak gerekir ve bu yapılana kadar her bilgisayar ilk açılışta bu uyarıyı gösterecek.",
               "Doğrudan bir kasa yazıcısına BASMAZ. Fişler tarayıcıdaki aynı yazdırma penceresinden geçer. Termal yazıcıya doğrudan baskı, bu uygulamayı istemenin başlıca nedenidir ve bu ilk sürümde yoktur.",
-              "Tarayıcı gibi çevrimdışı ÇALIŞMAZ. Bir ürünü aramak da satışı tamamlamak da hâlâ internet gerektirir.",
+              "Tarayıcıda olduğu gibi kesinti sırasında satmayı sürdürür. Tek üstünlüğü, sakladığı verilerin Chrome’dan ayrı olmasıdır; böylece bir tarayıcıyı temizlemek kasanın henüz göndermediği satışları yok edemez.",
               "Yalnızca Windows içindir. Mac, iPad veya Android tablette kasayı tarayıcıdan yükleyin - Kasayı bir uygulama olarak yüklemek bölümüne bakın.",
               "Kasanın bir kopyası değildir. Canlı mağazanızı gösterir; bu yüzden mağazanız güncellendiğinde uygulama bir sonraki açılışta onu izler. Yazılım güncellendiğinde yeniden kurulacak bir şey yoktur.",
               "Yalnızca https:// ile başlayan adresler kabul edilir. Kasa, güvenli olmayan bir bağlantı üzerinden kasiyeri içeri alamaz; bu yüzden http bir adres size doğru görünen ama her girişi reddeden bir pencere verirdi.",
@@ -5313,6 +5411,38 @@ const MANUAL = {
             ]
           },
           {
+            "id": "selling-when-the-internet-drops",
+            "title": "İnternet kesildiğinde satış",
+            "summary": "Kasa kesinti boyunca çalışmayı sürdürür. Her zamanki gibi okutur, ödemeyi alır ve fiş basarsınız; satış mağazaya değil bu bilgisayara yazılır ve bağlantı döner dönmez kendiliğinden gönderilir. Müşteri üzerinde gerçek bir fiş numarası olan olağan bir fiş alır; çünkü kasa daha çevrimiçiyken önceden bir numara bloğu ayırır.",
+            "steps": [
+              "Her zamanki gibi devam edin. Okutmada ve ödeme almada hiçbir şey değişmez.",
+              "Üst çubukta internet olmadığını ve kaç satışın beklediğini söyleyen sarı bir işaret çıkar.",
+              "Fişi her zamanki gibi bastırın. Üzerinde gerçek bir fiş numarası ve çevrimdışı bir satış olduğunu belirten fazladan bir satır bulunur.",
+              "Bağlantı döndüğünde bekleyen satışlar en eskiden başlayarak kendiliğinden gönderilir. İşaret kaybolur.",
+              "Neyin beklediğini görmek ya da elle göndermek için üst çubuktaki Bekleyen satışlar bölümünü açın."
+            ],
+            "fields": [
+              {
+                "name": "Bekleyen satışlar",
+                "what": "Üst çubuktaki bağlantı. Bu kasada yapılan ama mağazanın henüz almadığı bütün satışları ve bir kişinin bakması gerekenleri listeler."
+              },
+              {
+                "name": "Şimdi gönder",
+                "what": "Bekleyen satışlar sayfasında. Bir sonraki otomatik denemeyi beklemek yerine bekleyen satışları hemen göndermeyi dener."
+              }
+            ],
+            "notes": [
+              "Satış, kasa göndermeyi denemeden ÖNCE bu bilgisayara yazılır. Bu sıra önemlidir: zaman aşımına uğrayan bir istekle reddedilen bir istek kasadan aynı görünür; bu yüzden kasanın sonradan satışınızın kurtulup kurtulmadığını tahmin etmesi gerekmez.",
+              "Bekleyen satışlar varken bu tarayıcının site verilerini temizlemeyin. Henüz başka hiçbir yerde yoklar ve temizlemek onları yok eder. Windows uygulaması verilerini ayrı tutar; yoğun bir tezgâhta onu tercih etmenin nedenlerinden biri budur.",
+              "Bekleyen satışlar yalnızca bir kasa sekmesi açıkken gönderilir. Gün sonunda bekleyen satışlarla kasayı kapatmak sorun değildir - biri kasayı yeniden açar açmaz giderler - ama gece boyunca kendiliğinden gitmezler.",
+              "Kasanın hiç indirmediği bir ürün çevrimdışıyken okutulamaz. Kasa kataloğunuzun bir kopyasını tutar ve çevrimiçi oldukça tazeler; bu yüzden bu yalnızca çok yeni eklenmiş bir ürünü etkiler.",
+              "Kasa fiş numaralarını önceden, her seferinde birkaç yüz tane ayırır. Kesintinin ortasında bir şekilde biterse satmayı sürdürür ama müşteri fiş yerine referans niteliğinde bir belge alır. Bu olmadan çok önce, daha çevrimiçiyken üst çubukta uyarılırsınız.",
+              "Mağaza her satışı kaydedildiği anda değil, kendisine ulaştığı anda fiyatlandırır. Kesinti sırasında fiyat değiştiyse kaydedilen satış gerçek katalog fiyatını kullanır ve fark mağaza sahibine görünür.",
+              "Hiç gönderilemeyen bir satış - genellikle kasa çevrimdışıyken ürün katalogdan silindiği için - Bekleyen satışlar sayfasında durur ve bir kişiyi bekler; sonsuza dek yeniden denenmez ve sessizce atılmaz.",
+              "Bekleyen satışlar varken hesap satış hakkını kaybederse gönderim durur ve bunu söyler. Personel rolü olan bir hesapla giriş yapmak onları gönderir; bekleyen satışlar giriş yapan kişiye değil kasaya aittir."
+            ]
+          },
+          {
             "id": "when-something-goes-wrong",
             "title": "Bir satış geçmediğinde",
             "audience": "staff",
@@ -5330,7 +5460,7 @@ const MANUAL = {
               "Ürün ... artık mevcut değil mesajı, satış açıkken satıştaki bir ürünün katalogdan silindiğini gösterir. Mesaj ürünün adını değil iç kimliğini yazar; bu yüzden hangi ürün olduğu size açık sözcüklerle söylenmez. Satışı temizleyin ve geçmeyeni bulmak için ürünleri yeniden okutun.",
               "Stoğun eksiye düşmesiyle ilgili sarı uyarı bir hata değildir. Satış kaydedildi. Kataloğun tükendiğini sandığı bir şeyi sattığınızı gösterir ve mağaza sahibi stok rakamını sonra düzeltebilir.",
               "Ödeme penceresi açıkken ve Satış tamamlandı ekranı gösterilirken tarayıcı dinlemeyi bırakır. Bu bilerek yapılmıştır ki bir tutar yazmak barkod olarak okunmasın. Tamamlanan satış ekranında, bir sonraki müşterinin ürünlerini okutmadan önce Yeni satış düğmesine basmanız gerekir.",
-              "Kasa internet bağlantısını kaybederse satış kaydedilmez ve onu sonraya saklayacak bir kuyruk yoktur. Bağlantıyı geri getirin ve Satışı tamamla düğmesine yeniden basın.",
+              "Kasa internet bağlantısını kaybetse de satış yine kaydedilir - bu bilgisayarda tutulur ve bağlantı döndüğünde gönderilir. Fiş normal şekilde basılır. Neyin beklediğini üst çubuktaki Bekleyen satışlar bölümünde görebilirsiniz.",
               "Ekran tamamen kararırsa veya tarayıcı satışın ortasında yeniden yüklenirse fişteki ürünler gitmiştir ve hiçbir şey kaydedilmemiştir. Onları yeniden okutun.",
               "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin."
             ]
@@ -5347,7 +5477,7 @@ const MANUAL = {
               "Bir tezgâh satışına müşteri bağlamanın yolu yoktur. Adıyla tanıdığınız bir müdavim için bile her satış gelen müşteri olarak kaydedilir.",
               "Bir ürünü ada göre aramanın yolu yoktur. Arama kutusu ve göz atma listesi yoktur - yalnızca kod için tek bir kutu. Bir ürünü okutamıyorsanız ve kodunu bilmiyorsanız onu kasadan satışa ekleyemezsiniz.",
               "Yeniden basma yoktur. Yeni satış düğmesine bastığınızda fiş gider ve hiçbir düğme onu geri getirmez. Sonrakine geçmeden önce bastırın.",
-              "Kasa çevrimdışı çalışmaz. Kuyruk, çevrimdışı göstergesi ve bağlantı kesintisi sırasında satmayı sürdürmenin bir yolu yoktur.",
+              "Kasa çevrimdışı satmayı sürdürür ama çevrimdışı her şeyi yapamaz. Hiç indirmediği bir ürünü bulamaz ve kasada ayrılmış fiş numaraları biterse müşteri fiş yerine bir referans fişi alır.",
               "Kasa kart terminalinizle konuşmaz. Kart seçmek yalnızca kartla ödendiğini kaydeder; ödemeyi yine terminalde siz alırsınız.",
               "Kasa para çekmecesi açamaz.",
               "Bir satışı bekletip sonra dönmenin yolu yoktur. Bir seferde bir satış ve onu temizlemek atmak demektir.",

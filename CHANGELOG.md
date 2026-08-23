@@ -16,6 +16,78 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.5.0 — The register keeps selling when the internet drops
+
+A till no longer stops when the connection does. The cashier scans, takes payment and prints a receipt
+exactly as always; the sale is written to the computer instead of the shop and sent by itself when the
+connection returns. **The customer gets an ordinary receipt with a real receipt number on it**, because
+the till reserves a block of numbers in advance while it is still online — not a slip saying it is not
+a receipt.
+
+### Consumer action required on upgrade
+
+Redeploy the register's Cloud Functions if you have not already (v10.4.0 added the lease callable):
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v10.5.0
+firebase deploy --only functions:caspian-pos
+```
+
+Rules and indexes are unchanged since v10.4.0.
+
+### Added
+
+- **A hold-and-forward queue in IndexedDB.** Sales, leased receipt blocks, a projected catalogue, and
+  the open ticket. IndexedDB rather than localStorage because this holds money: localStorage has no
+  transactions, so "write the sale" and "spend the receipt number" could not be made atomic, and a
+  crash between them would either lose a sale or reuse a number.
+- **`PosQueuedCloudAdapter`**, which wraps the cloud adapter rather than replacing it, so the register
+  never learns whether the network is up. It writes the sale to disk and **awaits that commit before
+  attempting the network** — a request that timed out and a request that was refused are
+  indistinguishable from the client, so the queue decides before acting rather than guessing after.
+- **A local catalogue cache**, synced through the `getPosCatalogDelta` endpoint that has existed with
+  no callers since v10.0.0. Same lookup precedence offline as online: barcode, then SKU, then id.
+- **`/pos/queue` — Held sales.** A sale that cannot be sent is money in the drawer with no record a
+  cashier can see, so it gets a page, with a reason and a Try again button.
+- **A connection marker in the register's top bar**, silent when everything is normal. It warns that
+  receipt numbers are running low **while the till is still online** and can top up — discovering that
+  mid-outage in front of a customer is the wrong time.
+- **An error taxonomy** the register has never had. `pos-register.tsx` only ever read `error.message`,
+  which for any infrastructure failure is the literal string `INTERNAL`. The queue reads the callable
+  code instead: transient failures back off, an expired token refreshes without consuming an attempt,
+  a revoked role pauses the whole queue and says so, and a deleted product stops for a person.
+  `internal` is retried but **bounded**, because firebase-functions collapses a transient Firestore
+  abort and a permanent crash into the same opaque code.
+- 26 new strings in all four languages, and a register-manual section, **Selling when the internet
+  drops**.
+
+### Changed
+
+- **Five statements in the register manual were made false by this release and are rewritten in all
+  four languages** — every place that said the register does not work offline, has no queue, or that
+  a lost connection means a lost sale.
+- `PosStorageAdapter` gains an optional `queue`; `PosSaleDraft` gains `receipt`, `capturedTotal`,
+  `capturedSubtotal`, `capturedByUid` and `capturedByName`. Both additive — a consumer's own adapter
+  still compiles.
+- `PosCommittedSale.pending` is finally **set**. It has been declared since v10.0.0 and read by
+  nothing.
+
+### Notes
+
+Three limits, in the manual rather than left to be discovered:
+
+- **Clearing the browser's site data while sales are waiting destroys them.** They exist nowhere else
+  yet. The Windows app keeps its storage separately, which is a reason to prefer it on a busy counter.
+- **Waiting sales are only sent while a register tab is open.** They go as soon as somebody opens the
+  register again; they will not go overnight on their own.
+- **An item the till has never downloaded cannot be scanned offline.** The catalogue refreshes
+  whenever the till is online, so this only affects something added very recently.
+
+The commit fuse is 3 seconds rather than the SDK's default 70. Seventy seconds of a frozen till with a
+queue forming is not a thing anyone would choose, and leaving the call running costs nothing: the
+leased receipt number is identical on both paths, so a late landing reconciles through the idempotency
+gate with no visible consequence.
+
 ## v10.4.0 — Receipt-number leases, and the till stops emailing you
 
 Groundwork for offline selling, plus a bug that has been filling shop owners' inboxes.

@@ -46,6 +46,18 @@ export interface PosSaleDraft {
   customerId?: string | null;
   customerEmail?: string | null;
   capturedAtMillis?: number;
+  /**
+   * A receipt number this device already spent from a leased block, and already
+   * printed. Present only on a sale captured offline. The server derives the
+   * number from its own lease document; the client never sends the string.
+   */
+  receipt?: { leaseId: string; ordinal: number };
+  /** Who rang the sale, when somebody else is replaying it later. */
+  capturedByUid?: string;
+  capturedByName?: string;
+  /** What the till told the customer, so divergence can be recorded on replay. */
+  capturedTotal?: number;
+  capturedSubtotal?: number;
 }
 
 export interface PosCommittedSale {
@@ -104,4 +116,11 @@ export interface PosStorageAdapter {
    * answer could not be obtained — callers must treat those differently.
    */
   findCommittedSale(saleId: string): Promise<PosCommittedSale | null>;
+
+  /**
+   * Present only on an adapter that can hold sales on the device. Optional
+   * because this interface is publicly exported — requiring it would break
+   * every consumer that wrote their own adapter.
+   */
+  readonly queue?: unknown;
 }

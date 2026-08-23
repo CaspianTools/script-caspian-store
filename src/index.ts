@@ -391,6 +391,15 @@ export {
 
 // --- Point of sale (v10.0.0) ---
 export { PosInstallButton } from './pos/pos-install-button';
+export { PosQueuePage } from './pos/pos-queue-page';
+export { PosConnectionPill } from './pos/pos-connection-pill';
+export { PosQueuedCloudAdapter } from './pos/storage/queued-cloud-adapter';
+export { PosSaleQueue, LEASE_LOW_AT } from './pos/offline/pos-sale-queue';
+export { usePosQueue } from './pos/offline/use-pos-queue';
+export { syncPosCatalog, lookupCachedByCode, searchCachedProducts, catalogCount } from './pos/offline/pos-catalog-cache';
+export { classifyCommitError, backoffMillis } from './pos/offline/classify-commit-error';
+export { clearPosDb, posIdbAvailable } from './pos/offline/pos-queue-db';
+export type { QueuedSale, QueuedSaleState, ReceiptLease, CachedProduct, PosBootCache, QueueCounts } from './pos/offline/types';
 export { PosServiceWorker, type PosServiceWorkerProps } from './pos/pos-service-worker';
 export { AdminPosPage, type AdminPosPageProps } from './admin/admin-pos-page';
 export { AdminPosLicenses, type AdminPosLicensesProps } from './admin/admin-pos-licenses';

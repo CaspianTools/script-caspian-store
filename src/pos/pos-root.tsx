@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
@@ -8,6 +9,10 @@ import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
 import { PosInstallButton } from './pos-install-button';
+import { PosQueuePage } from './pos-queue-page';
+import { PosConnectionPill } from './pos-connection-pill';
+import { PosSaleQueue } from './offline/pos-sale-queue';
+import { getPosDeviceId } from './pos-device';
 import { PosServiceWorker } from './pos-service-worker';
 import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { PosRegister } from './pos-register';
@@ -29,9 +34,13 @@ export function PosShell({ children }: { children: ReactNode }) {
   const { functions } = useCaspianFirebase();
   const t = useT();
   const license = usePosLicense(functions);
+  // One queue instance for the chrome, so the pill reflects the same store the
+  // register writes to. Cheap: it holds no connection, only a device id.
+  const queue = useMemo(() => new PosSaleQueue(functions, getPosDeviceId()), [functions]);
 
   const items = [
     { href: '/pos', label: t('pos.nav.register') },
+    { href: '/pos/queue', label: t('pos.nav.queue') },
     { href: '/pos/settings', label: t('pos.nav.settings') },
   ];
 
@@ -71,6 +80,7 @@ export function PosShell({ children }: { children: ReactNode }) {
               {t('pos.nav.admin')}
             </Link>
           ) : null}
+          <PosConnectionPill queue={queue} />
           <PosInstallButton />
           <button type="button" onClick={() => void signOut()} style={exitButton}>
             {t('pos.nav.exit')}
@@ -131,6 +141,8 @@ export function PosRoot(): ReactNode {
   switch (head) {
     case 'settings':
       return <PosSettingsPage />;
+    case 'queue':
+      return <PosQueuePage />;
     default:
       return <PosRegister />;
   }

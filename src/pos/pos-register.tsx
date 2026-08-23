@@ -11,7 +11,7 @@ import { Input } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
 import { DEFAULT_POS_SETTINGS, type PosSettings, type Product } from '../types';
 import { useBarcodeScanner, DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-scanner';
-import { PosCloudAdapter } from './storage/cloud-adapter';
+import { PosQueuedCloudAdapter } from './storage/queued-cloud-adapter';
 import type { PosCommittedSale, PosTenderInput } from './storage/types';
 import { usePosTicket } from './use-pos-ticket';
 import { getPosDeviceId, getPosDeviceLabel, nextPosSaleId } from './pos-device';
@@ -54,7 +54,18 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const [commitError, setCommitError] = useState<string | null>(null);
   const [scanGapMs, setScanGapMs] = useState(DEFAULT_SCAN_GAP_MS);
 
-  const adapter = useMemo(() => new PosCloudAdapter(db, functions), [db, functions]);
+  // Identity is read at capture time rather than captured in the closure, so a
+  // sale held overnight and drained by a different person in the morning is
+  // still attributed to the cashier who actually rang it.
+  const identity = useRef({ uid: '', name: '' });
+  identity.current = {
+    uid: user?.uid ?? '',
+    name: userProfile?.displayName || user?.email || '',
+  };
+  const adapter = useMemo(
+    () => new PosQueuedCloudAdapter(db, functions, getPosDeviceId(), () => identity.current),
+    [db, functions],
+  );
   const deviceId = useMemo(() => getPosDeviceId(), []);
   // Held across retries of the SAME sale — see the note in `commit`.
   const saleIdRef = useRef<string | null>(null);
@@ -155,6 +166,8 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           lines: ticket.lines,
           tenders,
           capturedAtMillis: Date.now(),
+          capturedTotal: ticket.totals.total,
+          capturedSubtotal: ticket.totals.subtotal,
         });
         const receipt = buildReceiptModel({
           receiptNumber: sale.receiptNumber,
@@ -485,7 +498,9 @@ function PosSaleComplete({
 
   return (
     <div style={{ padding: 24, maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>{t('pos.done.title')}</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>
+        {sale.pending ? t('pos.done.heldTitle') : t('pos.done.title')}
+      </h1>
       <p style={{ color: '#666', marginTop: 4 }}>
         {t('pos.done.receiptNumber', { number: sale.receiptNumber })}
       </p>
