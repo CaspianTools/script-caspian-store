@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v10.3.0"
+      "version": "v10.3.1"
     },
     "parts": [
       {
@@ -944,6 +944,35 @@ const MANUAL = {
               "When a new version of the register is ready, a strip appears across the top offering to update. It never updates by itself in the middle of a sale - press it between customers, or just close and reopen the register at the end of the day.",
               "A register-only shop installs one app, not two, because there is no storefront to install.",
               "Removing the app is done the same way as any other program on that computer. Nothing about your shop or your sales is stored inside it."
+            ]
+          },
+          {
+            "id": "the-windows-register-app",
+            "title": "The Windows register app",
+            "audience": "owner",
+            "summary": "There is also a proper Windows installer, for shops that would rather run a setup file than install a web app from a browser prompt. It is the same register: the app is a plain window pointing at your own shop, with the address already filled in. What it adds is that a cashier never types a web address, there is no browser around it at all, and its stored data is separate from whatever anyone does to Chrome.",
+            "steps": [
+              "On a computer, open the Releases page of the software and download the file ending in setup.exe.",
+              "Run it. Windows will warn you that it does not recognise the program - see the note below. Choose More info, then Run anyway.",
+              "The first time it opens it asks for your shop address. Type it once, for example shop.example.com, and press \"Open the register\".",
+              "The register opens. That address is remembered on this computer and you will not be asked again.",
+              "Sign in with a staff or admin account exactly as you would in a browser."
+            ],
+            "fields": [
+              {
+                "name": "Shop address",
+                "what": "Asked once, on the first run. Type just the address of your shop - the register page is found automatically. Only addresses beginning https:// are accepted."
+              }
+            ],
+            "notes": [
+              "Windows will warn that it does not recognise the program, because the installer is not yet code-signed. It is safe to continue with More info, then Run anyway. Signing it requires buying a certificate, and until that is done every computer will show this warning on first run.",
+              "It does NOT print straight to a till printer. Receipts go through the same print window as in a browser. Direct printing to a thermal printer is the main reason to want this app and it is not in this first version.",
+              "It does NOT work offline, exactly like the browser. Looking up a product and completing a sale both still need the internet.",
+              "It is Windows only. On a Mac, an iPad or an Android tablet, install the register from the browser instead - see \"Installing the register as an app on a till\".",
+              "It is not a copy of the register. It shows your live shop, so when your shop is updated the app follows on its next launch. There is nothing to reinstall when the software is updated.",
+              "Only addresses beginning https:// are accepted. The register cannot sign a cashier in over an insecure connection, so an http address would give you a window that looks right and then refuses every login.",
+              "To point a till at a different address, delete the file store.json from the app folder under AppData, then start the app again and it will ask afresh.",
+              "The same installer is used by every shop. Your address is asked at first run rather than built into the file, so there is one file to hand out and one file to trust."
             ]
           },
           {
@@ -2186,6 +2215,34 @@ const MANUAL = {
             ]
           },
           {
+            "id": "the-windows-register-app",
+            "title": "Windows üçün kassa tətbiqi",
+            "summary": "Brauzerdən veb tətbiq quraşdırmaqdansa quraşdırma faylı işə salmağı üstün tutan mağazalar üçün əsl Windows quraşdırıcısı da var. Bu, eyni kassadır: tətbiq sizin mağazanıza yönəlmiş adi pəncərədir və ünvan artıq doldurulub. Əlavə etdiyi şey odur ki, kassir heç vaxt veb ünvan yazmır, ətrafında ümumiyyətlə brauzer yoxdur və saxladığı məlumat Chrome ilə edilənlərdən ayrıdır.",
+            "steps": [
+              "Kompüterdə proqramın Releases səhifəsini açın və setup.exe ilə bitən faylı yükləyin.",
+              "Onu işə salın. Windows proqramı tanımadığını bildirən xəbərdarlıq göstərəcək - aşağıdakı qeydə baxın. Ətraflı məlumat, sonra Yenə də işə sal seçin.",
+              "İlk açılışda mağaza ünvanınızı soruşur. Onu bir dəfə yazın, məsələn shop.example.com, və Kassanı aç düyməsini basın.",
+              "Kassa açılır. Həmin ünvan bu kompüterdə yadda saxlanılır və bir daha soruşulmayacaq.",
+              "Brauzerdə olduğu kimi işçi və ya admin hesabı ilə daxil olun."
+            ],
+            "fields": [
+              {
+                "name": "Mağaza ünvanı",
+                "what": "İlk açılışda bir dəfə soruşulur. Yalnız mağazanızın ünvanını yazın - kassa səhifəsi avtomatik tapılır. Yalnız https:// ilə başlayan ünvanlar qəbul olunur."
+              }
+            ],
+            "notes": [
+              "Windows proqramı tanımadığını bildirən xəbərdarlıq göstərəcək, çünki quraşdırıcı hələ imzalanmayıb. Ətraflı məlumat, sonra Yenə də işə sal ilə davam etmək təhlükəsizdir. İmzalamaq üçün sertifikat almaq lazımdır və bu edilənə qədər hər kompüter ilk açılışda bu xəbərdarlığı göstərəcək.",
+              "O, birbaşa kassa printerinə çap ETMİR. Qəbzlər brauzerdəki eyni çap pəncərəsindən keçir. Termal printerə birbaşa çap bu tətbiqi istəməyin əsas səbəbidir və bu ilk versiyada yoxdur.",
+              "O, brauzer kimi oflayn İŞLƏMİR. Məhsulu tapmaq və satışı tamamlamaq üçün yenə də internet lazımdır.",
+              "Yalnız Windows üçündür. Mac, iPad və ya Android planşetdə kassanı brauzerdən quraşdırın - Kassanı tətbiq kimi quraşdırmaq bölməsinə baxın.",
+              "Bu, kassanın surəti deyil. O, canlı mağazanızı göstərir, ona görə mağazanız yeniləndikdə tətbiq növbəti açılışda onu izləyir. Proqram yeniləndikdə yenidən quraşdırılacaq heç nə yoxdur.",
+              "Yalnız https:// ilə başlayan ünvanlar qəbul olunur. Kassa təhlükəsiz olmayan bağlantı üzərindən kassiri sistemə buraxa bilmir, ona görə http ünvan sizə düzgün görünən, amma hər girişi rədd edən pəncərə verərdi.",
+              "Kassanı başqa ünvana yönəltmək üçün AppData altındakı tətbiq qovluğundan store.json faylını silin, sonra tətbiqi yenidən başladın - o, yenidən soruşacaq.",
+              "Eyni quraşdırıcıdan bütün mağazalar istifadə edir. Ünvanınız fayla yazılmaq əvəzinə ilk açılışda soruşulur, ona görə paylanacaq bir fayl və etibar ediləcək bir fayl var."
+            ]
+          },
+          {
             "id": "prepare-your-catalogue",
             "title": "Kataloqu skana hazırlamaq",
             "audience": "owner",
@@ -3407,6 +3464,34 @@ const MANUAL = {
             ]
           },
           {
+            "id": "the-windows-register-app",
+            "title": "Приложение кассы для Windows",
+            "summary": "Есть и настоящий установщик для Windows - для магазинов, которым проще запустить файл установки, чем ставить веб-приложение по подсказке браузера. Это та же самая касса: приложение представляет собой обычное окно, направленное на ваш магазин, с уже заполненным адресом. Оно добавляет то, что кассир никогда не вводит веб-адрес, вокруг нет браузера вообще, а его данные хранятся отдельно от всего, что делают с Chrome.",
+            "steps": [
+              "На компьютере откройте страницу Releases программы и скачайте файл, оканчивающийся на setup.exe.",
+              "Запустите его. Windows предупредит, что не распознаёт программу - смотрите примечание ниже. Выберите «Подробнее», затем «Выполнить в любом случае».",
+              "При первом запуске он спросит адрес вашего магазина. Введите его один раз, например shop.example.com, и нажмите «Открыть кассу».",
+              "Касса откроется. Этот адрес запоминается на этом компьютере, и больше его не спросят.",
+              "Войдите под учётной записью сотрудника или администратора точно так же, как в браузере."
+            ],
+            "fields": [
+              {
+                "name": "Адрес магазина",
+                "what": "Спрашивается один раз, при первом запуске. Введите только адрес магазина - страница кассы находится автоматически. Принимаются только адреса, начинающиеся с https://."
+              }
+            ],
+            "notes": [
+              "Windows предупредит, что не распознаёт программу, потому что установщик пока не подписан. Продолжить через «Подробнее» и «Выполнить в любом случае» безопасно. Для подписи нужно купить сертификат, и пока это не сделано, каждый компьютер будет показывать это предупреждение при первом запуске.",
+              "Оно НЕ печатает напрямую на кассовый принтер. Чеки идут через то же окно печати, что и в браузере. Прямая печать на термопринтер - главная причина хотеть это приложение, и в этой первой версии её нет.",
+              "Оно НЕ работает офлайн, ровно как и браузер. И поиск товара, и завершение продажи по-прежнему требуют интернета.",
+              "Оно только для Windows. На Mac, iPad или планшете Android установите кассу из браузера - смотрите раздел «Установка кассы как приложения».",
+              "Это не копия кассы. Оно показывает ваш живой магазин, поэтому когда магазин обновляется, приложение подхватывает это при следующем запуске. Переустанавливать при обновлении программы нечего.",
+              "Принимаются только адреса, начинающиеся с https://. Касса не может впустить кассира по незащищённому соединению, поэтому адрес http дал бы окно, которое выглядит правильно и отказывает при каждом входе.",
+              "Чтобы направить кассу на другой адрес, удалите файл store.json из папки приложения в AppData, затем запустите приложение снова - оно спросит заново.",
+              "Один и тот же установщик используют все магазины. Ваш адрес спрашивается при первом запуске, а не встроен в файл, поэтому есть один файл для раздачи и один файл, которому нужно доверять."
+            ]
+          },
+          {
             "id": "prepare-your-catalogue",
             "title": "Подготовка каталога к сканированию",
             "audience": "owner",
@@ -4625,6 +4710,34 @@ const MANUAL = {
               "Kasanın yeni bir sürümü hazır olduğunda üstte güncellemeyi öneren bir şerit çıkar. Satışın ortasında kendi kendine asla güncellemez - müşteriler arasında basın ya da gün sonunda kasayı kapatıp yeniden açın.",
               "Yalnızca kasa mağazası iki değil tek bir uygulama yükler; çünkü yüklenecek bir vitrin yoktur.",
               "Uygulama, o bilgisayardaki herhangi bir program gibi kaldırılır. Mağazanıza ve satışlarınıza dair hiçbir şey onun içinde saklanmaz."
+            ]
+          },
+          {
+            "id": "the-windows-register-app",
+            "title": "Windows kasa uygulaması",
+            "summary": "Tarayıcıdan bir web uygulaması yüklemektense bir kurulum dosyası çalıştırmayı tercih eden mağazalar için gerçek bir Windows kurulum dosyası da var. Bu, aynı kasadır: uygulama, adresi zaten doldurulmuş, kendi mağazanıza bakan sade bir penceredir. Kattığı şey şu: kasiyer asla bir web adresi yazmaz, çevresinde hiç tarayıcı yoktur ve sakladığı veriler Chrome’a yapılan her şeyden ayrıdır.",
+            "steps": [
+              "Bir bilgisayarda yazılımın Releases sayfasını açın ve setup.exe ile biten dosyayı indirin.",
+              "Çalıştırın. Windows programı tanımadığı uyarısını verecek - aşağıdaki nota bakın. Daha fazla bilgi, ardından Yine de çalıştır seçin.",
+              "İlk açılışta mağaza adresinizi sorar. Bir kez yazın, örneğin shop.example.com, ve Kasayı aç düğmesine basın.",
+              "Kasa açılır. Bu adres bu bilgisayarda hatırlanır ve bir daha sorulmaz.",
+              "Tarayıcıda yapacağınız gibi personel veya yönetici hesabıyla giriş yapın."
+            ],
+            "fields": [
+              {
+                "name": "Mağaza adresi",
+                "what": "İlk çalıştırmada bir kez sorulur. Yalnızca mağazanızın adresini yazın - kasa sayfası kendiliğinden bulunur. Yalnızca https:// ile başlayan adresler kabul edilir."
+              }
+            ],
+            "notes": [
+              "Windows programı tanımadığı uyarısını verecek; çünkü kurulum dosyası henüz imzalanmadı. Daha fazla bilgi ve Yine de çalıştır ile devam etmek güvenlidir. İmzalamak için sertifika satın almak gerekir ve bu yapılana kadar her bilgisayar ilk açılışta bu uyarıyı gösterecek.",
+              "Doğrudan bir kasa yazıcısına BASMAZ. Fişler tarayıcıdaki aynı yazdırma penceresinden geçer. Termal yazıcıya doğrudan baskı, bu uygulamayı istemenin başlıca nedenidir ve bu ilk sürümde yoktur.",
+              "Tarayıcı gibi çevrimdışı ÇALIŞMAZ. Bir ürünü aramak da satışı tamamlamak da hâlâ internet gerektirir.",
+              "Yalnızca Windows içindir. Mac, iPad veya Android tablette kasayı tarayıcıdan yükleyin - Kasayı bir uygulama olarak yüklemek bölümüne bakın.",
+              "Kasanın bir kopyası değildir. Canlı mağazanızı gösterir; bu yüzden mağazanız güncellendiğinde uygulama bir sonraki açılışta onu izler. Yazılım güncellendiğinde yeniden kurulacak bir şey yoktur.",
+              "Yalnızca https:// ile başlayan adresler kabul edilir. Kasa, güvenli olmayan bir bağlantı üzerinden kasiyeri içeri alamaz; bu yüzden http bir adres size doğru görünen ama her girişi reddeden bir pencere verirdi.",
+              "Bir kasayı farklı bir adrese yöneltmek için AppData altındaki uygulama klasöründen store.json dosyasını silin, sonra uygulamayı yeniden başlatın; yeniden soracaktır.",
+              "Aynı kurulum dosyasını bütün mağazalar kullanır. Adresiniz dosyaya gömülmek yerine ilk açılışta sorulur; böylece dağıtılacak tek bir dosya ve güvenilecek tek bir dosya olur."
             ]
           },
           {

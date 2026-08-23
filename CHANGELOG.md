@@ -16,6 +16,47 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v10.3.1 — A Windows installer for the register
+
+The register can now be handed to a shop as a file. `desktop/` is a small Tauri shell — a native
+window pointing at the shop's own `/pos` page, using the WebView2 runtime already on Windows rather
+than shipping a browser, so the installer is about 1.5 MB. It releases on its own `desktop/v*` tag and
+is **not** part of the npm package.
+
+### No consumer action required
+
+Documentation and a new sibling project. Nothing in `dist/`, `firebase/` or `scaffold/` changed, and
+the library API is untouched. The installer is an optional extra for shops that would rather run a
+setup file than install a web app from a browser prompt.
+
+### Added
+
+- **`desktop/` — the Windows register shell**, released as
+  [`desktop/v0.1.0`](https://github.com/CaspianTools/script-caspian-store/releases/tag/desktop%2Fv0.1.0).
+  One binary for every shop: the store address is asked once on first run rather than compiled in,
+  because SmartScreen reputation accrues per signed binary and per-customer builds would leave every
+  customer staring at "Windows protected your PC" forever. Only `https://` addresses are accepted —
+  Firebase Auth will not sign a cashier in over plain http, so an http till would look correct and
+  then refuse every login.
+- **`.github/workflows/desktop-build.yml`** — builds the installer on `windows-latest`, derives the
+  icon set from a committed source PNG, and attaches the `.exe` to a `desktop/v*` release. CI is the
+  build path because the shell is Rust and most people maintaining this repo have no Rust toolchain.
+- The register manual gains **The Windows register app** in all four languages.
+
+### Notes
+
+Two limits, stated plainly in the manual rather than left to be discovered:
+
+- **The installer is unsigned**, so Windows warns on first run until a code-signing certificate is
+  bought. That is procurement, not a code change, so it is not wired up with placeholder secrets that
+  would fail every build.
+- **v0.1.0 does not print directly to a thermal printer.** Receipts go through the same print dialogue
+  as the browser. Direct ESC/POS printing over the Windows spooler is the main reason to want the
+  shell and needs a physical printer to validate, so it is next rather than now.
+
+The shell is not a bundled copy of the register — it points at the live origin, so a shop that
+updates its site gets the new register on the till's next launch with nothing to reinstall.
+
 ## v10.3.0 — The register installs as its own app
 
 A till can now install the register: its own icon, its own window, no address bar. It is still the same
