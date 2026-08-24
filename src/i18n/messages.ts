@@ -1540,7 +1540,6 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.title': 'Register',
   'pos.nav.register': 'Register',
   'pos.nav.returns': 'Returns',
-  'pos.nav.shift': 'Shift',
   'pos.nav.settings': 'Settings',
   'pos.nav.exit': 'Exit register',
   'pos.nav.user': 'User',
@@ -1723,7 +1722,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.store.adjustStock': 'Adjust stock',
   'pos.store.adjustBy': 'Adjust by',
   'pos.appAdmin.title': 'App admin',
-  'pos.appAdmin.subtitle': 'Manage roles for this shop. People get access based on the roles you enable.',
+  'pos.appAdmin.subtitle':
+    'Roles, licensing and the opening-cash check for this shop. Only a Support account can open this page.',
   'pos.appAdmin.predefinedTitle': 'Predefined roles',
   'pos.appAdmin.customTitle': 'Custom roles',
   'pos.appAdmin.role.staff': 'Cashier',
@@ -1754,6 +1754,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.appAdmin.capability.appAdmin.roles': 'Change roles',
   'pos.appAdmin.section.roles': 'Roles',
   'pos.appAdmin.section.licence': 'Licence',
+  'pos.appAdmin.section.openingCash': 'Opening cash',
   'pos.appAdmin.licence.parked':
     'Licensing is not switched on in this build, so there is nothing to enter here. A till without a licence key sells exactly as normal.',
   'pos.appAdmin.saveRole': 'Save role',
@@ -1761,6 +1762,17 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.appAdmin.noRoles': 'No custom roles yet.',
   'pos.appAdmin.roleSaved': 'Role saved',
   'pos.appAdmin.roleDeleted': 'Role deleted',
+  'pos.appAdmin.openingCash.title': 'Ask for the opening cash',
+  'pos.appAdmin.openingCash.help':
+    'When this is on, the sale screen asks the cashier what is in the drawer before their first sale, and writes the figure down with their name, the time and which till it came from. Nothing is ever compared against it: there is no closing count and no variance report. Only a Support account can change this switch — an owner cannot.',
+  'pos.appAdmin.openingCash.on': 'Ask for it',
+  'pos.appAdmin.openingCash.off': 'Do not ask',
+  'pos.appAdmin.openingCash.rule':
+    'A cashier is asked once when they sign in, and again on the first sale screen of a new day. Reloading the page does not ask again, and every other screen stays open while they are being asked.',
+  'pos.appAdmin.openingCash.turnedOn': 'Cashiers will be asked for the opening cash',
+  'pos.appAdmin.openingCash.turnedOff': 'Cashiers will not be asked for the opening cash',
+  'pos.appAdmin.openingCash.saveFailed': 'That could not be saved. Try again.',
+  'pos.appAdmin.openingCash.viewRecord': 'See what has been counted',
   'pos.storage.title': 'Where sales are stored',
   'pos.storage.cloud': 'Cloud',
   'pos.storage.cloudHelp':
@@ -1797,6 +1809,29 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.local.noAccessTitle': 'No access to the register',
   'pos.local.noAccessBody':
     'This account is not allowed to open the till. Ask whoever set up this computer to change it.',
+
+  'pos.openingCash.title': 'How much is in the drawer?',
+  'pos.openingCash.body':
+    'Before your first sale, count what is in the till and type it in. It is written down as it stands now, and nothing is checked against it later.',
+  'pos.openingCash.newDayBody':
+    'It is a new day. Count what is in the till and type it in before your first sale.',
+  'pos.openingCash.againBody':
+    'You have signed in again. The last count on this till today was {amount} — count what is there now and type it in.',
+  'pos.openingCash.otherDeviceBody':
+    'The last count came from a different till, so it does not describe this drawer. Count what is in this one and type it in.',
+  'pos.openingCash.amount': 'Cash in the drawer',
+  'pos.openingCash.amountHint': 'Notes and coins together, as one figure. Type 0 if the drawer is empty.',
+  'pos.openingCash.confirm': 'Start selling',
+  'pos.openingCash.confirming': 'Saving…',
+  'pos.openingCash.needAmount': 'Type what is in the drawer first.',
+  'pos.openingCash.emptyDrawer': 'Nothing in the drawer? Type 0 and carry on.',
+  'pos.openingCash.noDecimal': 'That has no small change in it. If you meant {suggestion}, type it that way.',
+  'pos.openingCash.notANumber': 'That is not a number. Use digits only, like 120.50.',
+  'pos.openingCash.tooLarge': 'That is more than a till drawer holds. Check the figure.',
+  'pos.openingCash.failed': 'The count could not be saved. Try again.',
+  'pos.openingCash.elsewhere':
+    'Everything else on this till is still open. Use the menu if you need settings or the back office before you count.',
+  'pos.openingCash.recorded': 'Opening cash recorded as {amount}',
 
   'pos.nav.sales': 'Sales',
   'pos.nav.people': 'People',
@@ -1889,6 +1924,15 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.admin.sales.items': 'Items',
   'pos.admin.sales.total': 'Total',
   'pos.admin.sales.truncated': 'Showing the newest {shown} of {total}. Export for the rest.',
+
+  'pos.admin.openingCash.title': 'Opening cash',
+  'pos.admin.openingCash.declared': 'Declared {count, plural, one {# time} other {# times}} in this period',
+  'pos.admin.openingCash.till': 'Till',
+  'pos.admin.openingCash.amount': 'In the drawer',
+  'pos.admin.openingCash.empty':
+    'Nobody has been asked to count the drawer on this till. Whether cashiers are asked is a switch in App admin.',
+  'pos.admin.openingCash.emptyToday': 'No opening cash counted in this period.',
+  'pos.admin.openingCash.export': 'Export the opening cash',
 
   'pos.admin.shop.detailsTitle': 'Your shop',
   'pos.admin.shop.name': 'Shop name',

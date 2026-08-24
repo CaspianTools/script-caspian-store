@@ -14,6 +14,7 @@
  */
 
 import {
+  listLocalOpeningCash,
   listLocalProducts,
   listLocalSales,
   listLocalUsers,
@@ -27,12 +28,14 @@ import {
 } from './local-db';
 import {
   STORE_LOCAL_COUNTERS,
+  STORE_LOCAL_OPENING_CASH,
   STORE_LOCAL_SALES,
   idbGet,
   idbPut,
   posTx,
 } from '../offline/pos-queue-db';
 import type {
+  LocalOpeningCash,
   LocalProduct,
   LocalSale,
   LocalShopSettings,
@@ -46,8 +49,14 @@ import type {
  * v2 added `roles`. A v1 file restores fine — it simply has no custom roles to
  * put back — but a v2 file is refused by a v1 reader, which is the right way
  * round: the alternative is an old build silently discarding a shop's roles.
+ *
+ * v3 added `openingCash`. A v2 file restores fine — it simply has no drawer
+ * counts to put back — but a v3 file is refused by a v2 reader, which is the
+ * right way round for the same reason: those declarations are the only record
+ * of what a cashier said was in the drawer, and an old build dropping them
+ * loses them for good.
  */
-export const LOCAL_BACKUP_VERSION = 2;
+export const LOCAL_BACKUP_VERSION = 3;
 
 export interface LocalBackup {
   format: 'caspian-standalone-till';
@@ -67,16 +76,25 @@ export interface LocalBackup {
    * copy of everything is this file, an omission is a silent loss.
    */
   roles?: RoleDefinition[];
+  /**
+   * What cashiers declared was in the drawer. Absent in a v1 or v2 file.
+   *
+   * Carried for the same reason `roles` is: these rows exist on this machine
+   * and nowhere else, and a shop that restores onto a replacement till and
+   * finds its drawer history gone has lost it silently.
+   */
+  openingCash?: LocalOpeningCash[];
 }
 
 export async function buildLocalBackup(): Promise<LocalBackup> {
-  const [shop, receiptCounter, products, users, sales, roles] = await Promise.all([
+  const [shop, receiptCounter, products, users, sales, roles, openingCash] = await Promise.all([
     readLocalShopSettings(),
     peekLocalReceiptCounter(),
     listLocalProducts(),
     listLocalUsers(),
     listLocalSales(),
     readLocalRoles(),
+    listLocalOpeningCash(),
   ]);
   return {
     format: 'caspian-standalone-till',
@@ -88,6 +106,7 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     users,
     sales,
     roles,
+    openingCash,
   };
 }
 
@@ -110,6 +129,7 @@ export function parseLocalBackup(text: string): LocalBackup | null {
     // string would have been walked character by character, a number thrown.
     if (parsed.sales != null && !Array.isArray(parsed.sales)) return null;
     if (parsed.roles != null && !Array.isArray(parsed.roles)) return null;
+    if (parsed.openingCash != null && !Array.isArray(parsed.openingCash)) return null;
     return parsed as LocalBackup;
   } catch {
     return null;
@@ -124,6 +144,8 @@ export interface RestoreResult {
   salesSkipped: number;
   /** Custom roles put back. Zero for a v1 file, which carried none. */
   roles: number;
+  /** Drawer declarations put back. Zero for a v1 or v2 file, which carried none. */
+  openingCash: number;
 }
 
 /**
@@ -132,8 +154,10 @@ export interface RestoreResult {
  * Additive by design, and sales are never overwritten: a sale already on this
  * till is the real one, and a restore that clobbered it with an older copy
  * would rewrite history that a receipt in a customer's hand still refers to.
- * The receipt counter only ever moves forward, for the same reason — winding it
- * back would reissue numbers that have already been printed.
+ * Drawer declarations follow the same rule for the same reason — both are
+ * append-only records of something a person did at a counter. The receipt
+ * counter only ever moves forward too: winding it back would reissue numbers
+ * that have already been printed.
  */
 export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreResult> {
   await saveLocalProducts(backup.products);
@@ -155,6 +179,18 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     else skipped++;
   }
 
+  let openingCashRestored = 0;
+  for (const row of backup.openingCash ?? []) {
+    // eslint-disable-next-line no-await-in-loop
+    const wrote = await posTx(STORE_LOCAL_OPENING_CASH, 'readwrite', async (tx) => {
+      const existing = await idbGet<LocalOpeningCash>(tx, STORE_LOCAL_OPENING_CASH, row.id);
+      if (existing) return false;
+      await idbPut(tx, STORE_LOCAL_OPENING_CASH, row);
+      return true;
+    });
+    if (wrote) openingCashRestored++;
+  }
+
   await posTx(STORE_LOCAL_COUNTERS, 'readwrite', async (tx) => {
     const current = await idbGet<{ key: string; value: number }>(tx, STORE_LOCAL_COUNTERS, 'receipt');
     const next = Math.max(current?.value ?? 0, backup.receiptCounter ?? 0);
@@ -167,6 +203,7 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     sales: restored,
     salesSkipped: skipped,
     roles: backup.roles?.length ?? 0,
+    openingCash: openingCashRestored,
   };
 }
 

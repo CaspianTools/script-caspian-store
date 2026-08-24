@@ -178,7 +178,7 @@ Local roles (`PosLocalRole = 'superadmin' | 'admin' | 'staff'`) are **deliberate
 
 The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/standalone/price-local-sale.ts) as a pure function, split out of the IndexedDB transaction so it can be checked in CI without a browser — `scripts/check-standalone.mjs` does exactly that. Anything that changes what a customer is charged goes there, with a matching assertion.
 
-**Standalone data is not rebuildable.** `clearPosDb` wipes only the five cloud stores (caches and outboxes whose truth is in Firestore). The `local*` stores hold a shop's only copy of its catalogue, staff and trading history; erasing them is `factoryResetLocalStore`, a separate call. Never widen `clearPosDb` to cover them.
+**Standalone data is not rebuildable.** `clearPosDb` wipes only the five cloud stores (caches and outboxes whose truth is in Firestore). The seven `local*` stores hold a shop's only copy of its catalogue, staff, trading history and drawer counts; erasing them is `factoryResetLocalStore`, a separate call. Never widen `clearPosDb` to cover them. A new `local*` store joins `factoryResetLocalStore` and the backup in the same change — `local-backup.ts` records what it cost the one time roles were left out of the backup.
 
 **Server Component boundary.** The library emits `"use client"` directives in client-heavy files (providers, contexts, interactive components, admin pages). Consumers mount the provider tree from a Server Component parent; the library *is* the client boundary. When adding a new component that uses React state/effects/refs, put `"use client"` at the top — match the surrounding files.
 

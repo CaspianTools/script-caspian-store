@@ -337,6 +337,65 @@ export interface LocalSale {
   stockShortfall: Array<{ productId: string; sizeKey: string; requested: number; available: number }>;
 }
 
+/**
+ * What a cashier declared was in the drawer before they started selling.
+ *
+ * Append-only, like `LocalSale`: a mis-keyed figure is corrected by confirming
+ * again, never by editing this row, so an owner sees both declarations and the
+ * order they arrived in. Nothing here is computed. This till has no closing
+ * count and no cash movements, so there is no expected figure to compare
+ * against and none is invented -- a variance derived from opening float plus
+ * cash tenders is wrong the first time anyone takes a note out to pay a
+ * delivery, and a wrong variance is what shops discipline staff on.
+ *
+ * Deliberately not named for the dormant cloud shift layer (`PosSession`,
+ * `PosCashMovement`, `Order.sessionId`). That layer is a server-written shift;
+ * this is a device-local declaration and nothing more.
+ */
+export interface LocalOpeningCash {
+  /**
+   * Random per confirmation, never composite.
+   *
+   * A `${day}-${cashier}-${device}` key would be idempotent against a
+   * double-click but would overwrite the legitimate second confirmation of a
+   * day -- drawer swapped at a handover, cashier signs back in, declares again.
+   * Overwriting the morning's declaration destroys the record this exists to
+   * keep. Guarding a double-click is the button's job.
+   */
+  id: string;
+  /** Major units. Zero is valid: a card-only counter opens with an empty drawer. */
+  amount: number;
+  cashierId: string;
+  /** Frozen at confirmation, so a renamed or disabled account still names who declared it. */
+  cashierName: string;
+  /** Whose drawer. A backup restored onto a replacement till carries the dead machine's id. */
+  deviceId: string;
+  /** This till's name at the time, so the back office reads "Front counter" and not a UUID. */
+  deviceLabel: string;
+  confirmedAtMillis: number;
+  /**
+   * Which sign-in this belongs to. Compared by equality, never by time, so the
+   * "confirm again after signing in" rule survives an NTP correction or a
+   * hand-set clock.
+   *
+   * Named `signInId` rather than `sessionId` because `Order.sessionId` already
+   * means a cloud shift.
+   */
+  signInId: string;
+  /**
+   * The calendar day at the counter, `YYYY-MM-DD`, local.
+   *
+   * Frozen at write time rather than derived from `confirmedAtMillis` later:
+   * deriving it needs a UTC offset, and the only honest offset is the one the
+   * machine had while the cashier stood in front of it. Freezing it is also
+   * what makes a daylight-saving change a non-event -- recomputing a 23:50
+   * confirmation with tomorrow's offset can flip the date by one.
+   */
+  businessDay: string;
+  /** `getTimezoneOffset()` at confirmation -- minutes local is BEHIND UTC. */
+  utcOffsetMinutes: number;
+}
+
 /** Shop-wide settings on a standalone till. The local twin of `SiteSettings.pos`. */
 export interface LocalShopSettings {
   shopName: string;
@@ -346,6 +405,21 @@ export interface LocalShopSettings {
   receiptPrefix: string;
   roundCashTo: number;
   showTaxOnReceipt: boolean;
+  /**
+   * Whether a cashier must declare the cash in the drawer before the register
+   * will open.
+   *
+   * Off by default, and off on every till that upgrades into this release:
+   * `readLocalShopSettings` merges over `DEFAULT_LOCAL_SHOP_SETTINGS`, so a
+   * settings row written before this field existed reads back false and no
+   * migration runs. A change of software must never be the reason a queue stops.
+   *
+   * Named for what it gates, not for the dormant cloud shift layer.
+   * `PosSettings.requireShift` means something larger -- an open/close session
+   * with movements and a variance, none of which is implemented -- and reusing
+   * that name would invite someone to wire the two together.
+   */
+  requireOpeningCash: boolean;
   /** Set once, by Technical Support, when the machine is commissioned. */
   commissionedAtMillis: number;
 }
@@ -358,5 +432,6 @@ export const DEFAULT_LOCAL_SHOP_SETTINGS: LocalShopSettings = {
   receiptPrefix: 'R',
   roundCashTo: 0,
   showTaxOnReceipt: false,
+  requireOpeningCash: false,
   commissionedAtMillis: 0,
 };

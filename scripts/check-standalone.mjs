@@ -45,6 +45,10 @@ const {
   normaliseUsername,
   priceLocalSale,
   MIN_LOCAL_PASSWORD_LENGTH,
+  evaluateOpeningCashGate,
+  localDayKey,
+  msUntilNextLocalDay,
+  latestOpeningCash,
 } = lib;
 
 let passed = 0;
@@ -418,6 +422,108 @@ check('accumulation stays in minor units across a long ticket', () => {
     lineTotal: 0.1,
   }));
   assert.equal(summariseSoldLines(lines).subtotal, 3);
+});
+
+// ------------------------------------------------------- opening cash
+// A gate that re-asks too often stops a queue; a gate that never re-asks is
+// theatre. The reset is a date-and-identity question and nothing else, which is
+// why it lives in a pure module rather than inside the screen that draws it.
+//
+// Every literal below is Date.UTC with an explicit offset, so these answers do
+// not move when CI runs in a different zone from this desk.
+
+const BAKU = -240; // UTC+4. getTimezoneOffset() reports minutes BEHIND UTC.
+const at = (y, m, d, h, mi = 0) => Date.UTC(y, m, d, h, mi);
+const countedRow = (over = {}) => ({
+  id: 'c1',
+  amount: 200,
+  cashierId: 'u1',
+  cashierName: 'Aysel',
+  deviceId: 'd1',
+  deviceLabel: 'Front counter',
+  signInId: 's1',
+  confirmedAtMillis: at(2026, 7, 24, 5, 0), // 09:00 in Baku
+  businessDay: '2026-08-24',
+  utcOffsetMinutes: BAKU,
+  ...over,
+});
+const gate = (over = {}) =>
+  evaluateOpeningCashGate({
+    required: true,
+    latest: countedRow(),
+    cashierId: 'u1',
+    signInId: 's1',
+    deviceId: 'd1',
+    nowMillis: at(2026, 7, 24, 8, 0), // 12:00 in Baku
+    timezoneOffsetMinutes: BAKU,
+    ...over,
+  });
+
+console.log('opening cash');
+check('a shop that never switched it on is never asked', () => {
+  assert.equal(gate({ required: false, latest: null, cashierId: null }).required, false);
+});
+check('a till switched on with nothing on record is stopped', () => {
+  const g = gate({ latest: null });
+  assert.equal(g.satisfied, false);
+  assert.equal(g.reason, 'never');
+});
+check('the same cashier, same sign-in, same day is admitted', () => {
+  const g = gate();
+  assert.equal(g.satisfied, true);
+  assert.equal(g.confirmation.amount, 200);
+});
+check('a fresh sign-in asks again on the same day', () => {
+  assert.equal(gate({ signInId: 's2' }).reason, 'new-sign-in');
+});
+check('blocked storage leaves no sign-in id, and that stops rather than admits', () => {
+  assert.equal(gate({ signInId: null }).reason, 'new-sign-in');
+});
+check("another cashier's count is not this cashier's", () => {
+  assert.equal(gate({ cashierId: 'u2' }).reason, 'never');
+});
+check('a count restored from another till does not open this drawer', () => {
+  assert.equal(gate({ latest: countedRow({ deviceId: 'd0' }) }).reason, 'other-device');
+});
+check('nobody signed in is stopped, because there is nobody to attribute it to', () => {
+  assert.equal(gate({ cashierId: null, latest: null }).reason, 'no-cashier');
+});
+// 20:00 UTC is midnight in Baku. These two are the whole point: the day rolls at
+// the shop's midnight, not at Greenwich's, and not 24 hours after the count.
+check('one minute before local midnight is still the same trading day', () => {
+  assert.equal(gate({ nowMillis: at(2026, 7, 24, 19, 59) }).satisfied, true);
+});
+check('one minute after local midnight is a new trading day', () => {
+  assert.equal(gate({ nowMillis: at(2026, 7, 24, 20, 1) }).reason, 'new-day');
+});
+check('the latest row wins, and only for this cashier on this till', () => {
+  const rows = [
+    countedRow({ id: 'a', confirmedAtMillis: at(2026, 7, 24, 5, 0) }),
+    countedRow({ id: 'b', confirmedAtMillis: at(2026, 7, 24, 9, 0) }),
+    countedRow({ id: 'c', confirmedAtMillis: at(2026, 7, 24, 11, 0), cashierId: 'u2' }),
+    countedRow({ id: 'd', confirmedAtMillis: at(2026, 7, 24, 12, 0), deviceId: 'd2' }),
+  ];
+  assert.equal(latestOpeningCash(rows, 'u1', 'd1').id, 'b');
+  assert.equal(latestOpeningCash([], 'u1', 'd1'), null);
+});
+
+console.log('opening cash - the local day');
+check('the day key follows the device offset, not UTC', () => {
+  const t = at(2026, 7, 24, 20, 30);
+  assert.equal(localDayKey(t, BAKU), '2026-08-25'); // 00:30, next day in Baku
+  assert.equal(localDayKey(t, 600), '2026-08-24'); // 10:30, same day in Honolulu
+});
+check('half-hour zones still land on a whole day', () => {
+  assert.equal(localDayKey(at(2026, 7, 24, 18, 30), -330), '2026-08-25'); // 00:00 IST
+  assert.equal(localDayKey(at(2026, 7, 24, 18, 29), -330), '2026-08-24'); // 23:59 IST
+});
+check('a daylight-saving change does not move the calendar date', () => {
+  assert.equal(localDayKey(Date.UTC(2026, 2, 28, 8, 0), -60), '2026-03-28'); // 09:00 CET
+  assert.equal(localDayKey(Date.UTC(2026, 2, 29, 7, 0), -120), '2026-03-29'); // 09:00 CEST
+});
+check('the time to the next local day is never zero', () => {
+  assert.equal(msUntilNextLocalDay(at(2026, 7, 24, 19, 0), BAKU), 60 * 60 * 1000);
+  assert.equal(msUntilNextLocalDay(at(2026, 7, 24, 20, 0), BAKU), 24 * 60 * 60 * 1000);
 });
 
 console.log('misc');

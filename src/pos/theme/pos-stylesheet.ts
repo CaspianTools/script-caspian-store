@@ -1164,6 +1164,76 @@ export const POS_STYLESHEET = String.raw`
 .cpos-signin__h { margin: 0; font-size: 20px; font-weight: 750; letter-spacing: -0.02em; }
 .cpos-signin__sub { margin: 0; font-size: 13.5px; color: var(--cpos-fg-muted); line-height: 1.55; }
 
+/* ---------------------------------------------------- opening cash */
+/* Content inside .cpos-main, and emphatically not a guard screen: the sidebar,
+   the top bar and every other route stay mounted and operable behind it, so it
+   carries no 100dvh canvas and no fixed positioning.
+
+   No dark block is needed -- every colour below is either overridden under
+   :root[data-cpos-theme='dark'] or derived from the brand -- and no prefers-reduced-motion
+   entry either: the '.cpos-shell *' rule in the a11y fence already covers
+   anything rendered inside .cpos-main. (.cpos-modal is named there only because
+   it is position: fixed and so sits outside the shell it was opened from.)
+   Both were checked rather than forgotten. */
+.cpos-opencash {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(460px, 100%);
+  margin: min(7vh, 64px) auto;
+  padding: 30px 28px;
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-xl);
+  background: var(--cpos-surface);
+  color: var(--cpos-fg);
+  box-shadow: var(--cpos-sh-lg);
+  animation: cpos-fade-up var(--cpos-dur-slow) var(--cpos-ease-out) both;
+}
+.cpos-opencash__head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.cpos-opencash__mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--cpos-r-lg);
+  background: var(--cpos-brand);
+  color: var(--cpos-brand-fg);
+  box-shadow: 0 8px 22px var(--cpos-brand-glow);
+}
+.cpos-opencash__h { margin: 0; font-size: 20px; font-weight: 750; letter-spacing: -0.02em; }
+.cpos-opencash__sub { margin: 0; font-size: 13.5px; color: var(--cpos-fg-muted); line-height: 1.55; }
+
+/* The figure is the whole screen, so it is sized like one. Tabular numerals and
+   end alignment mean a slipped extra zero pushes the whole run sideways, where
+   the eye catches it, instead of nudging one glyph inside a proportional run.
+   The max() keeps it clear of the --cpos-touch floor even if that token grows. */
+.cpos-opencash__amount {
+  min-height: max(var(--cpos-touch), 64px);
+  padding: 0 18px;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.cpos-opencash__echo {
+  align-self: flex-end;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--cpos-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* A typed zero is a real answer -- a card-only counter opens empty -- but it
+   reads quieter than a counted figure so it never looks like the default. */
+.cpos-opencash__echo--zero { color: var(--cpos-fg-subtle); }
+.cpos-opencash__foot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+
+@media (max-width: 640px) {
+  .cpos-opencash { margin: 12px auto; padding: 22px 18px; gap: 15px; border-radius: var(--cpos-r-lg); }
+  .cpos-opencash__mark { width: 46px; height: 46px; }
+  .cpos-opencash__amount { padding: 0 14px; font-size: 26px; }
+}
+
 /* ---------------------------------------------------- guard screens */
 /* These render above PosShell, so they carry their own full-height canvas. */
 .cpos-boot {

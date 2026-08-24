@@ -52,12 +52,32 @@ export {
 } from './standalone/local-session-context';
 export { PosLocalSignIn } from './standalone/pos-local-sign-in';
 export {
+  PosOpeningCashProvider,
+  usePosOpeningCash,
+  type PosOpeningCashValue,
+} from './standalone/opening-cash-context';
+export {
+  PosOpeningCashGate,
+  PosOpeningCashPanel,
+  type PosOpeningCashGateProps,
+  type PosOpeningCashPanelProps,
+  type PosOpeningCashReason,
+} from './standalone/pos-opening-cash-gate';
+export {
   priceLocalSale,
   toMinor,
   fromMinor,
   type PricedSale,
   type PricedLineInput,
 } from './standalone/price-local-sale';
+export {
+  evaluateOpeningCashGate,
+  localDayKey,
+  msUntilNextLocalDay,
+  latestOpeningCash,
+  type OpeningCashGate,
+  type OpeningCashGateInput,
+} from './standalone/opening-cash';
 export { LocalSalesPanel, LocalSalesPage } from './standalone/admin/local-sales-panel';
 export { LocalPeoplePanel, LocalPeoplePage } from './standalone/admin/local-people-panel';
 export {
@@ -98,6 +118,7 @@ export {
   type LocalSale,
   type LocalSaleLine,
   type LocalShopSettings,
+  type LocalOpeningCash,
 } from './standalone/types';
 export {
   localStoreAvailable,
@@ -124,6 +145,9 @@ export {
   peekLocalReceiptCounter,
   readLocalShopSettings,
   writeLocalShopSettings,
+  recordLocalOpeningCash,
+  latestLocalOpeningCash,
+  listLocalOpeningCash,
   factoryResetLocalStore,
   type LocalLookup,
   type LocalCommitInput,
@@ -138,6 +162,8 @@ export {
   isCommissioned,
   restoreLocalSession,
   clearLocalSession,
+  readLocalSignInId,
+  writeLocalSignInId,
   normaliseUsername,
   MIN_LOCAL_PASSWORD_LENGTH,
   type LocalCredentials,

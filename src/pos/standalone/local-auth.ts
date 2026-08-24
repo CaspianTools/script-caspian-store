@@ -25,6 +25,7 @@ import {
 import type { LocalUser, PosLocalRole } from './types';
 
 const SESSION_KEY = 'caspian:pos:localSession';
+const SIGN_IN_KEY = 'caspian:pos:localSignIn';
 
 /**
  * OWASP's current floor for PBKDF2-HMAC-SHA256. Costs a few hundred
@@ -206,10 +207,45 @@ export function writeLocalSessionId(userId: string): void {
   }
 }
 
+/**
+ * A fresh id minted each time somebody signs in.
+ *
+ * A nonce rather than a timestamp because the opening-cash gate asks "is this
+ * the same sign-in the drawer was declared for?", and equality cannot be fooled
+ * by a clock that moves — an NTP correction, a hand-set date or a laptop
+ * carried across a timezone all change what "since you signed in" means, none
+ * of them change whether two ids match. It also makes the record
+ * self-describing: two declarations on one day carrying different ids are
+ * visibly two sign-ins rather than a double-click.
+ *
+ * Named `signInId`, never `sessionId` — `Order.sessionId` already means a cloud
+ * shift, and one word doing two jobs is how the two get wired together by
+ * mistake.
+ */
+export function readLocalSignInId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(SIGN_IN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeLocalSignInId(id: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SIGN_IN_KEY, id);
+  } catch {
+    // Storage blocked. The id lives in React state for this tab only, so the
+    // drawer is declared once per tab rather than never.
+  }
+}
+
 export function clearLocalSession(): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.removeItem(SESSION_KEY);
+    window.localStorage.removeItem(SIGN_IN_KEY);
   } catch {
     /* nothing to clear */
   }

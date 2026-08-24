@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v13.0.0 firebase
-# v13.0.0 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v13.1.0 firebase
+# v13.1.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -60,7 +60,7 @@ Peer deps: React 18/19, `firebase` 10, 11, or 12. Next.js consumers: install `ne
 
 ```bash
 npm install react@^19 react-dom@^19 firebase@^12
-npm install github:CaspianTools/script-caspian-store#v13.0.0
+npm install github:CaspianTools/script-caspian-store#v13.1.0
 ```
 
 Newly scaffolded sites (`npm create caspian-store@latest`) get the new versions automatically.
@@ -1250,7 +1250,7 @@ deploy and no Cloud Functions codebase.
 | `/pos/sales` | Sales and takings, with a CSV export. |
 | `/pos/people` | The staff list: add someone, set their role, reset a password, disable or delete an account. |
 | `/pos/settings` | Appearance, language, this register's name and its scanner timing — plus a **Shop** section (shop details and receipt wording) and a **Backup** section, each shown only to a role that holds it. |
-| `/pos/app-admin` | Two panes: **Roles**, the role editor, and **Licence**. Of the built-in roles only Support reaches it. |
+| `/pos/app-admin` | Three panes: **Roles**, the role editor, **Opening cash**, the drawer-count switch, and **Licence**. Of the built-in roles only Support reaches it. |
 
 `/pos/store`, `/pos/sales`, `/pos/people` and `/pos/app-admin` exist only in this mode —
 on a cloud till those addresses fall back to `/pos`, because a mistyped URL should leave a
@@ -1309,7 +1309,7 @@ loses access on upgrade. One role gains a screen it never had: `accountant` held
 `reports`, which nothing enforced anywhere, so an Accountant reached nothing at all —
 it now reaches Sales.
 
-### Two things to be deliberate about
+### Three things to be deliberate about
 
 **Backups are the shop's own.** Nothing is copied off the machine — that is the
 whole point of the mode — so a failed disk takes the shop's entire trading
@@ -1323,6 +1323,21 @@ mount. Falling back would mean a real shop whose credentials broke came up as an
 empty local register and started taking sales into a database nobody knows
 about — a failure that looks exactly like a working till.
 
+**The opening-cash switch records, it does not reconcile.** `/pos/app-admin` →
+**Opening cash** is off on every till until somebody turns it on, and only a
+Support account can. With it on, the sale screen at `/pos` is replaced by a
+single field until whoever is signed in types what is in the drawer; the figure
+is stored with their name, this till and the moment, and listed on `/pos/sales`.
+Nothing is ever compared against it — there is no closing count, no expected
+figure and no variance anywhere in the product, and a wrong figure never blocks
+a sale. Every other screen stays reachable while the question is unanswered, on
+purpose: an owner must not be locked out by the switch they need to reach in
+order to turn it off. The figures travel in the backup, which goes to version 3
+because of it — a version 2 file still restores, and a version 3 file is refused
+by an older build, which is the right way round. If site data is blocked the
+shop record cannot be read, the switch reads as off and the till sells: this is
+a shrinkage control, not a security boundary.
+
 ### What it deliberately does not do
 
 - **No sync to a website.** Attaching a shop link later, and pushing local
@@ -1332,6 +1347,9 @@ about — a failure that looks exactly like a working till.
   there isn't one.
 - **Receipts still print through the browser's print dialogue.** Direct
   thermal printing is not in this version, in standalone or cloud mode.
+- **No cash-up and no shift.** The opening-cash switch above asks once, at the
+  start, and that is the whole of it. Nothing opens or closes a till session,
+  nothing counts the drawer at the end, and there is no Z-report.
 
 ### Mixing the two
 

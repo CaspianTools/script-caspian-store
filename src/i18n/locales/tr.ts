@@ -33,7 +33,6 @@ const tr: MessageDict = {
   'pos.title': 'Kasa',
   'pos.nav.register': 'Kasa',
   'pos.nav.returns': 'İadeler',
-  'pos.nav.shift': 'Vardiya',
   'pos.nav.settings': 'Ayarlar',
   'pos.nav.exit': 'Kasadan çık',
   'pos.nav.queue': 'Bekleyen satışlar',

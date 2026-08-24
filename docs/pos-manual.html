@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v13.0.0"
+      "version": "v13.1.0"
     },
     "parts": [
       {
@@ -775,11 +775,11 @@ const MANUAL = {
             "id": "no-cash-drawer",
             "title": "There is no cash drawer support",
             "audience": "owner",
-            "summary": "This is the question most shop owners ask first, so it gets its own page rather than a line buried in a list. The software cannot open a cash drawer. It does not send the pulse that pops a drawer, it has no drawer setting, and it has no cash-counting or end-of-day reconciliation screen anywhere in the product.",
+            "summary": "This is the question most shop owners ask first, so it gets its own page rather than a line buried in a list. The software cannot open a cash drawer. It does not send the pulse that pops a drawer, it has no drawer setting, and it has no end-of-day reconciliation screen anywhere in the product. There is exactly one cash figure it can be asked to record, the count at the start of a day, and even that is written down and never checked against anything.",
             "notes": [
               "The register cannot open a drawer. There is no kick pulse, no drawer command and no setting for one. Nothing you can configure will change this.",
               "If you want a drawer that opens by itself, buy one that plugs into your card terminal and let the terminal open it, or buy one the cashier opens by hand. Both are ordinary ways to run a counter, and neither needs anything from this software.",
-              "There is no cash-up, no shift, no opening float, no counted-cash box and no variance report. Nothing in the product opens or closes a till session, so there is no moment at which the software asks how much money is in the drawer.",
+              "There is no cash-up, no shift, no counted-cash box and no variance report, and nothing in the product opens or closes a till session. One thing did change: a till that runs on its own can be set to ask the cashier what is in the drawer at the start of a day - see \"Asking cashiers what is in the drawer\". It is off until somebody switches it on, it records the figure and nothing else, and nothing is ever compared against it.",
               "There is no Z-report and no end-of-day report of any kind. The closest things are the recent-sales table on the Point of sale page in the admin panel, which shows the last fifty counter sales, and the spreadsheet export, which gives you everything.",
               "Because there is no shift, a sale is never tied to a session. It is tied to the cashier's account and to the till's device id. Those are what you have to work with if you reconcile cash by hand.",
               "Do not confuse any of this with the register's own Settings page. That page is real and it does work, but it covers this till's name, its language, its scanner speed and its printer - not cash handling."
@@ -1157,7 +1157,7 @@ const MANUAL = {
             "route": "/pos/app-admin?section=licence",
             "summary": "Licensing is switched off in every copy of this software that was not deliberately built to sell licences, and that is the normal state. Where it is on, the key goes on the Licence page inside App admin - which exists only on a till that runs with no website behind it, and only for an account that can open App admin. A till with no key sells exactly as normal either way.",
             "steps": [
-              "Open App admin at the foot of the menu, then press Licence in the index down the left.",
+              "Open App admin at the foot of the menu, then press Licence, the last entry in the index down the left.",
               "If the page says licensing is not switched on in this build, that is the end of it. There is nothing to enter, nothing to buy and nothing to fix.",
               "If a Licence box is there, paste the key you were sent. It starts with \"cslic1.\" and is one long line with no spaces.",
               "Press Activate. A green label appears reading \"Licensed to\" and your shop name.",
@@ -1166,7 +1166,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Licence",
-                "what": "The second page of App admin. On an ordinary build it holds one line - licensing is not switched on in this build, and a till without a licence key sells exactly as normal - and nothing else."
+                "what": "The last page of App admin, after Roles and Opening cash. On an ordinary build it holds one line - licensing is not switched on in this build, and a till without a licence key sells exactly as normal - and nothing else."
               },
               {
                 "name": "Licence key",
@@ -1189,6 +1189,43 @@ const MANUAL = {
               "If the register cannot reach the internet when you activate, the key is still saved and a line tells you it will be confirmed next time you are online.",
               "Some older browsers cannot check the key themselves. If you see a message saying so, the key is still stored and is confirmed by the server the next time the register is online.",
               "Removing the key here does not cancel anything or refund anything. It only clears it from this machine."
+            ]
+          },
+          {
+            "id": "turning-the-opening-cash-check-on",
+            "title": "Asking cashiers what is in the drawer",
+            "audience": "owner",
+            "route": "/pos/app-admin",
+            "summary": "A till that runs on its own can be set to ask the cashier how much money is in the drawer before the first sale of the day. It is off in every shop until somebody switches it on, and the switch is the second page of App admin, between Roles and Licence. What it does is write the figure down. It never checks it, and there is still no closing count, no cash-up and no variance report.",
+            "steps": [
+              "Sign in as the Support account. Nobody else can open App admin, so nobody else can move this switch - not the shop owner, not a manager, not an account holding Admin.",
+              "Open App admin at the foot of the menu, then press Opening cash in the short index down the left. It sits between Roles and Licence.",
+              "Press \"Ask for it\" to switch the check on, or \"Do not ask\" to switch it off again. It saves the moment you press, and a message names which way it went. While it is on, a line underneath spells out when a cashier gets asked.",
+              "There is nothing else to set. No float to preset, no amount to approve, no tolerance to configure - the switch is the whole feature.",
+              "Press \"See what has been counted\" to jump to the Sales screen, where the figures cashiers have typed in are listed in a box of their own, above the sales."
+            ],
+            "fields": [
+              {
+                "name": "Opening cash",
+                "what": "The second page of App admin, between Roles and Licence. Two buttons - \"Ask for it\" and \"Do not ask\" - a paragraph saying what they do, and nothing else."
+              },
+              {
+                "name": "Ask for it / Do not ask",
+                "what": "The two choices. \"Do not ask\" is how every shop starts, so a shop that never opens this page has cashiers who go their whole working life without ever seeing the question."
+              },
+              {
+                "name": "See what has been counted",
+                "what": "A button at the foot of the page that jumps straight to the Opening cash box on the Sales screen. It is there only for a role that may see sales."
+              }
+            ],
+            "notes": [
+              "Only a Support account can move this switch. It sits behind \"Open app admin\", which out of the box only Support holds, so an owner signed in as Admin can neither switch the check on nor switch it off. If your shop wants it changed, that is a job for whoever set the till up.",
+              "It records, it does not reconcile. The figure is stored with the cashier's name, the time and which till it came from, and then nothing in the software ever reads it back to compare it with anything. There is no over and short, no variance, and no report that puts the figure next to the day's takings.",
+              "Switching it on does not add a shift. Nothing opens or closes a session, there is still no cash-up and no Z-report, and there are still no cash movements - no paid-in, no paid-out, no drop. Everything in \"There is no cash drawer support\" still holds except the one sentence saying the software never asks for a figure.",
+              "The check holds back the sale screen and nothing else. While a cashier is being asked, the menu still works and Store, Sales, People, Settings and App admin all open as normal. That is deliberate: it means nobody can be shut out of the page that turns the check off.",
+              "It exists only on a till that runs with no website behind it. App admin does not open on a till wired to a shop's website, so neither does this switch.",
+              "Switching it off later leaves what has already been counted alone. Those figures stay on the Sales screen; the till simply stops asking for new ones.",
+              "It is a check, not a lock. If the till cannot read its own storage - site data blocked in the browser settings, say - the shop record cannot be reached, the check reads as off and the till sells anyway. That is deliberate and it is the right way round: a morning with no drawer count on record is a far smaller problem than a shop that cannot trade because of a browser setting."
             ]
           },
           {
@@ -1339,18 +1376,18 @@ const MANUAL = {
             "title": "Roles on a till with no website",
             "audience": "owner",
             "route": "/pos/app-admin",
-            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has two pages: Roles, and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
+            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has three pages: Roles, Opening cash and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
             "steps": [
               "Sign in as the Support account - the first account created when the till was set up. App admin is at the foot of the menu, under the everyday screens and above the collapse button.",
-              "You arrive on Roles. The other page, Licence, is the second entry in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=licence opens it directly.",
+              "You arrive on Roles. The other two pages, Opening cash and Licence, are listed under it in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=licence opens that one directly.",
               "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Under each name is the list of everything that role may do, written out in full.",
               "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anybody still holding it can no longer open anything at all - move those people to another role first.",
               "To write your own, press \"Add custom role\", give it a name, tick the boxes it should hold, and press \"Save role\". Edit reopens a custom role; Delete removes it at once, with no confirmation step."
             ],
             "fields": [
               {
-                "name": "Roles / Licence",
-                "what": "The two pages of App admin, listed down the left. Roles is the editor described here. Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
+                "name": "Roles / Opening cash / Licence",
+                "what": "The three pages of App admin, listed down the left. Roles is the editor described here. Opening cash is a single switch, and it has a page of its own in \"Asking cashiers what is in the drawer\". Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
               },
               {
                 "name": "What this role can do",
@@ -1390,13 +1427,13 @@ const MANUAL = {
             "title": "Opening the till at the start of a shift",
             "audience": "staff",
             "route": "/pos",
-            "summary": "There is nothing to open and no shift to start. You sign in, and the register is ready. This page covers the first two minutes of a shift, and the two pieces of chrome the rest of the manual keeps referring to: the menu down the left and the bar across the top.",
+            "summary": "There is no shift to start. You sign in and the register is ready - unless your shop has asked for the drawer to be counted, in which case one box stands between you and the sale screen. This page covers the first two minutes of a shift, and the two pieces of chrome the rest of the manual keeps referring to: the menu down the left and the bar across the top.",
             "steps": [
               "Open /pos on the till.",
               "Sign in with your own account. Do not share an account with another cashier - the sale records who rang it up.",
               "Check the bar across the top names the screen you are on, and that your initials are in the round button at its right-hand end.",
               "If a coloured strip is showing under the top bar, read it. It is about the licence or a waiting update, and neither one stops you selling.",
-              "Scan your first item. There is nothing else to set up."
+              "Scan your first item. If instead the screen asks how much is in the drawer, answer it and carry on - see \"Confirming the cash in the drawer\"."
             ],
             "fields": [
               {
@@ -1421,7 +1458,7 @@ const MANUAL = {
               },
               {
                 "name": "App admin",
-                "what": "Pinned at the foot of the menu, below everything else, on a till that runs on its own. Roles, and the licence page. Almost nobody has it."
+                "what": "Pinned at the foot of the menu, below everything else, on a till that runs on its own. Roles, the licence page and the opening-cash switch. Almost nobody has it."
               },
               {
                 "name": "Collapse menu",
@@ -1441,13 +1478,53 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "There is no shift to open and no float to count in. The register has no session of any kind, so there is no start-of-day or end-of-day step to remember.",
+              "There is no shift to open and no end-of-day step to remember. The register has no session of any kind. The only start-of-day step that exists at all is the drawer count, and only in a shop that has switched it on - see \"Confirming the cash in the drawer\".",
               "What is in the menu depends on the till and on the account. A till with a website behind it shows Held sales; a till without one shows Store, Sales and People to whoever is allowed into them, and App admin to one account. Nobody sees all of it at once.",
               "Signing out is in the top right, not in the menu. Your name and an \"Exit register\" button used to sit at the foot of the menu as well; that copy has gone, the card under your initials is the one way out, and the foot of the menu now holds App admin and the collapse button.",
               "Sign out at the end of your shift. Sales record the account that rang them up, so leaving yourself signed in means the next person’s sales are recorded against you.",
               "On a narrow screen - a tablet held upright, or a phone - the menu is not there. A button at the top left opens it over the page, and it closes again as soon as you pick a screen.",
               "The register still fills the whole screen. There is no shop header and no footer, so that nothing on the screen is a distraction at the counter.",
               "If a yellow licence strip appears you can dismiss it, and it stays gone until the page is reloaded. It comes back next time the till is opened. It never blocks a sale."
+            ]
+          },
+          {
+            "id": "confirming-the-opening-cash",
+            "title": "Confirming the cash in the drawer",
+            "audience": "staff",
+            "route": "/pos",
+            "summary": "If your shop has switched this on, the sale screen is replaced by a single box asking how much money is in the drawer, and you cannot ring anything up until you have answered it. Most shops have not switched it on, and in those shops you will never see this screen at all.",
+            "steps": [
+              "Count the drawer before you sign in, so that you are not counting with the screen waiting on you.",
+              "Sign in. If the check is on, the sale screen is one box and one question instead of the usual scanning and ticket.",
+              "Read the first line. It says which rule asked you: your first time on this till, a new day, another sign-in on a day you have already counted, or a count that came from a different till.",
+              "Type the figure as one number, notes and coins together. If the drawer is empty, type 0 - leaving the box blank is not an answer.",
+              "Press \"Start selling\". The sale screen appears and the day runs exactly as it always does."
+            ],
+            "fields": [
+              {
+                "name": "Cash in the drawer",
+                "what": "The only box on the screen. One figure, notes and coins together, in the shop's currency. Nothing else is asked - no breakdown by note, no float, no second person to countersign."
+              },
+              {
+                "name": "Start selling",
+                "what": "Saves the figure and hands you the sale screen. It is greyed out until the box has something in it, and hovering it then says what it wants. Nothing is rung up until it goes through."
+              },
+              {
+                "name": "The menu",
+                "what": "Still there, and still works. Store, Sales, People, Settings and App admin all open while the question is waiting - only the sale screen is held back."
+              }
+            ],
+            "notes": [
+              "You are asked at most twice a day and usually once: once when you sign in, and once the first time you open the sale screen on a new calendar day. Two cashiers who each sign in are each asked.",
+              "Reloading the page does not ask again, and neither does walking off to Sales and coming back. Once you have answered, the answer stands for the rest of your session and the rest of the day.",
+              "When you are asked a second time on the same day, the screen names the figure counted earlier. That is on purpose - it is the same day and the same drawer, and hiding it would leave you wondering whether the first count had gone missing.",
+              "If the standing count came from a different till - a restored backup will do it - the screen says so and asks you to count this drawer instead. A figure counted at the front counter says nothing about the drawer in the back room.",
+              "The figure the till has read out of the box is echoed beside what you are typing, in your shop's currency. Glance at it: a slipped decimal shows up there before you press anything.",
+              "Two answers are refused outright, with a red line under the box: letters or symbols in the figure, and an amount larger than any drawer could hold. Two more are only flagged in orange and you can go ahead anyway - a typed 0, and a round number that looks like it has lost its small change. The second of those names the figure it thinks you meant, but it will not change it for you, because quietly dividing a real count by a hundred is worse than the slip it was guarding against.",
+              "Nothing is ever checked against what you type. There is no closing count, no cash-up and no report that sets your figure beside the day's takings, so nobody is going to come back at you with a difference. It is a record, not a test.",
+              "There is no way to correct a figure once it is saved. Like a sale, it is written once and never edited: no edit button, no delete, no second attempt. If you typed the wrong number, tell the owner, because the correction has to live outside the software.",
+              "If saving fails the screen says so and keeps what you typed. Press the button again. The sale screen does not appear until the figure is stored.",
+              "This is a shop-wide setting, not something you can turn off at the counter. Only a Support account can change it, on the Opening cash page inside App admin."
             ]
           },
           {
@@ -1676,10 +1753,10 @@ const MANUAL = {
             "id": "what-the-register-cannot-do",
             "title": "What the register cannot do",
             "audience": "staff",
-            "summary": "An honest list of the things this register does not have, so that you find out here rather than in front of a queue. None of these are settings that can be switched on: the screens simply do not exist in this version.",
+            "summary": "An honest list of the things this register does not have, so that you find out here rather than in front of a queue. With one exception, called out below, none of these are settings that can be switched on: the screens simply do not exist in this version.",
             "notes": [
               "There is no returns or refunds screen anywhere in this product. A refund has to be handled outside the register, by whatever means your shop already uses.",
-              "There is no shift, no cash-up and no Z-report. Nothing opens or closes a till session, and the software never asks how much money is in the drawer.",
+              "There is no shift, no cash-up and no Z-report, and nothing opens or closes a till session. The one exception on this page: a till that runs on its own can be set to ask you what is in the drawer at the start of a day. That figure is written down and never compared with anything - see \"Confirming the cash in the drawer\".",
               "There is no promo code box at the counter and no way to attach a customer to a sale. You can take a fixed amount off a single line with the tag button on it, and that is the only discount there is - no percentages, and nothing that comes off the sale as a whole.",
               "There is no way to attach a customer to a counter sale. Every sale is recorded as a walk-in, even for a regular you know by name.",
               "There is a search box in the bar across the top and it finds items by name. What there is not is a browse list: nothing shows you the whole catalogue to pick from, so an item you cannot scan, cannot name and whose code you do not know cannot be got onto the sale.",
@@ -1788,7 +1865,8 @@ const MANUAL = {
               "Pick a period from the menu at the top left: Today, Last 7 days, Last 30 days, or Everything.",
               "Read the takings on the right of that row - how many sales, and the money total under it.",
               "Read the table below: receipt number, when, who rang it up, how many items, and the total.",
-              "Press \"Export to a spreadsheet\" if you need the period as a file and your role may export."
+              "Press \"Export to a spreadsheet\" if you need the period as a file and your role may export.",
+              "If your shop asks cashiers to count the drawer, read the Opening cash box between the takings and the table."
             ],
             "fields": [
               {
@@ -1806,6 +1884,10 @@ const MANUAL = {
               {
                 "name": "The table",
                 "what": "Receipt, When, Who, Items and Total. It shows the newest 200 sales in the period; when there are more, a line under it says so, and the export still has all of them."
+              },
+              {
+                "name": "Opening cash",
+                "what": "A box between the takings and the sales table. It is there when the check is switched on, and it stays as long as there is anything to show, so a shop that used it and switched it off keeps its history. One row for each count: when, who, which till, and the figure. The newest sixty are listed, it has an export button of its own, and a money total appears only on Today - adding up a month of separate morning drawers would produce a number that never sat in a drawer."
               }
             ],
             "notes": [
@@ -1814,7 +1896,8 @@ const MANUAL = {
               "\"Who\" is the name the cashier’s account carried when the sale was rung up. Renaming or deleting that account later does not change what is written here.",
               "The money is shown in the currency on the shop record. If that box is empty the screen falls back to US dollars.",
               "The file lands wherever your browser puts downloads, as plain text. A spreadsheet opens it, and so does Notepad.",
-              "This screen is only on a till that runs on its own, and only for a role holding \"See sales\"."
+              "This screen is only on a till that runs on its own, and only for a role holding \"See sales\".",
+              "The opening-cash figures are a list of their own. They are never mixed into the sales table and never added into the takings total - a drawer float folded into a day's takings would overstate what the shop actually sold. The two boxes answer for the same period, they are read side by side, and nothing in the software joins them up."
             ]
           },
           {
@@ -2295,7 +2378,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v13.0.0"
+      "version": "v13.1.0"
     },
     "parts": [
       {
@@ -2399,20 +2482,6 @@ const MANUAL = {
               "Kodu əllə yazmaq həmişə işləyir, hər brauzerdə və hər cihazda. Bu, cırılmış etiket üçün ehtiyat yoldur və texniki səbəbdən heç vaxt uğursuz olmur.",
               "Skan ən azı dörd simvol uzunluğunda olmalıdır, yoxsa təsadüfi düymə basılışı kimi nəzərə alınmır. Bu qayda yalnız skana aiddir. Qutuya yazıb düymə ilə göndərdiyiniz kod istənilən uzunluqda qəbul olunur.",
               "İki kassa eyni məhsulu eyni anda heç bir toqquşma olmadan skan edə bilər. Ehtiyat serverdə, bir satış bir dəfə olmaqla hesablanır."
-            ]
-          },
-          {
-            "id": "no-cash-drawer",
-            "title": "Pul çekmecesi dəstəyi yoxdur",
-            "audience": "owner",
-            "summary": "Mağaza sahiblərinin ilk verdiyi sual budur, ona görə də siyahıda bir sətir yox, ayrıca səhifə ayrılıb. Proqram pul çekmecesini aça bilmir. O, çekmeceni açan siqnalı göndərmir, çekmece tənzimi yoxdur və məhsulun heç bir yerində pul sayma və gün sonu üzləşmə ekranı yoxdur.",
-            "notes": [
-              "Kassa çekmeceni aça bilmir. Açma siqnalı, çekmece əmri və bunun üçün tənzim yoxdur. Konfiqurasiya edə biləcəyiniz heç nə bunu dəyişməyəcək.",
-              "Öz-özünə açılan çekmece istəyirsinizsə, kart terminalınıza qoşulan birini alın və terminalın onu açmasına icazə verin, ya da kassirin əllə açdığı birini alın. Hər ikisi piştaxta işlətməyin adi yoludur və heç biri bu proqramdan bir şey tələb etmir.",
-              "Kassa yekunu, növbə, başlanğıc pulu, sayılmış nağd qutusu və fərq hesabatı yoxdur. Məhsulda heç nə kassa növbəsini açmır və bağlamır, ona görə də proqram heç vaxt çekmecedə nə qədər pul olduğunu soruşmur.",
-              "Z-hesabat və ümumiyyətlə heç bir gün sonu hesabatı yoxdur. Ən yaxın şeylər idarə panelindəki Kassa səhifəsində son əlli piştaxta satışını göstərən cədvəl və hər şeyi verən cədvəl ixracıdır.",
-              "Növbə olmadığı üçün satış heç vaxt sessiyaya bağlanmır. O, kassirin hesabına və kassanın cihaz koduna bağlanır. Nağd pulu əllə üzləşdirirsinizsə, işləyə biləcəyiniz şeylər bunlardır.",
-              "Bütün bunları kassanın öz Tənzimlər səhifəsi ilə qarışdırmayın. Həmin səhifə mövcuddur və işləyir, amma bu kassanın adını, dilini, skaner sürətini və printerini əhatə edir - pul idarəçiliyini yox."
             ]
           }
         ]
@@ -3137,25 +3206,6 @@ const MANUAL = {
               "Bütün ekran qaralarsa və ya brauzer satışın ortasında yenidən yüklənərsə, siyahıdakı məhsullar itir və heç nə qeyd olunmur. Onları yenidən skan edin.",
               "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin."
             ]
-          },
-          {
-            "id": "what-the-register-cannot-do",
-            "title": "Kassanın edə bilmədikləri",
-            "audience": "staff",
-            "summary": "Bu kassada olmayan şeylərin dürüst siyahısı - bunu növbənin qarşısında yox, burada öyrənəsiniz deyə. Bunların heç biri yandırıla bilən tənzim deyil: bu versiyada həmin ekranlar sadəcə mövcud deyil.",
-            "notes": [
-              "Məhsulun heç bir yerində qaytarma və ya geri ödəniş ekranı yoxdur. Geri ödəniş kassadan kənarda, mağazanızın onsuz da istifadə etdiyi üsulla həll olunmalıdır.",
-              "Növbə, kassa yekunu və Z-hesabat yoxdur. Heç nə kassa sessiyasını açmır və bağlamır, proqram isə heç vaxt çekmecedə nə qədər pul olduğunu soruşmur.",
-              "Piştaxtada promo kod qutusu yoxdur və satışa müştəri bağlamaq mümkün deyil. Sətrin üstündəki etiket düyməsi ilə bir sətirdən sabit məbləğ çıxa bilərsiniz - başqa endirim yoxdur: nə faiz, nə də bütün satışdan çıxan bir şey.",
-              "Piştaxta satışına müştəri bağlamağın yolu yoxdur. Adını bildiyiniz daimi müştəri üçün belə, hər satış gəlmə müştəri kimi qeyd olunur.",
-              "Yuxarı zolaqda axtarış qutusu var və o, məhsulları adına görə tapır. Olmayan şey baxış siyahısıdır: heç nə bütün kataloqu seçmək üçün göstərmir, ona görə skan edə bilmədiyiniz, adını bilmədiyiniz və kodunu bilmədiyiniz məhsulu satışa sala bilməzsiniz.",
-              "Təkrar çap yoxdur. Yeni satış düyməsini basdıqdan sonra qəbz gedir və onu heç bir düymə geri gətirmir. Növbətiyə keçməzdən əvvəl çap edin.",
-              "Kassa oflayn satmağa davam edir, amma oflayn hər şeyi edə bilmir. Heç vaxt yükləmədiyi məhsulu tapa bilmir və kassada ehtiyat qəbz nömrələri qurtararsa, müştəri qəbz yox, istinad kağızı alır.",
-              "Kassa kart terminalınızla danışmır. Kart seçmək kartın istifadə olunduğunu qeyd edir; ödənişi yenə də terminalda özünüz alırsınız.",
-              "Kassa pul çekmecesini aça bilmir.",
-              "Satışı kənara qoyub sonra qayıtmağın yolu yoxdur. Bir dəfəyə bir satış və onu silmək atmaq deməkdir.",
-              "Kassa heç vaxt ölçünü soruşmur. Məhsulun bir ölçüsü varsa, həmin ölçü istifadə olunur; bir neçəsi varsa, satış ümumiyyətlə ölçüsüz qeyd olunur."
-            ]
           }
         ]
       },
@@ -3486,7 +3536,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v13.0.0"
+      "version": "v13.1.0"
     },
     "parts": [
       {
@@ -3590,20 +3640,6 @@ const MANUAL = {
               "Ввод кода вручную работает всегда, в любом браузере и на любом устройстве. Это запасной вариант для потёртой этикетки, и по техническим причинам он не отказывает никогда.",
               "Сканирование должно быть длиной не менее четырёх символов, иначе оно игнорируется как случайное нажатие. Это правило действует только для сканирования. Код, введённый в поле и отправленный кнопкой, принимается любой длины.",
               "Две кассы могут отсканировать один и тот же товар в один момент без всякого конфликта. Остаток считается на сервере, по одной продаже за раз."
-            ]
-          },
-          {
-            "id": "no-cash-drawer",
-            "title": "Поддержки денежного ящика нет",
-            "audience": "owner",
-            "summary": "Это первый вопрос, который задаёт большинство владельцев магазинов, поэтому ему отведена отдельная страница, а не строка в списке. Программа не умеет открывать денежный ящик. Она не посылает импульс, открывающий ящик, у неё нет настройки ящика и нигде в продукте нет экрана пересчёта наличных или сверки в конце дня.",
-            "notes": [
-              "Касса не может открыть ящик. Нет импульса открытия, нет команды ящика и нет настройки для этого. Никакие настройки этого не изменят.",
-              "Если вам нужен ящик, который открывается сам, купите такой, который подключается к вашему карточному терминалу, и пусть его открывает терминал, либо такой, который кассир открывает вручную. И то и другое - обычный способ работы за прилавком, и ни то ни другое ничего не требует от этой программы.",
-              "Нет ни сверки наличных, ни смены, ни начального размена, ни ящика с пересчитанной наличностью, ни отчёта о расхождении. Ничто в продукте не открывает и не закрывает кассовую смену, поэтому программа никогда не спрашивает, сколько денег в ящике.",
-              "Нет Z-отчёта и вообще никакого отчёта за день. Ближе всего к этому - таблица последних продаж на странице Касса в панели администратора, которая показывает последние пятьдесят продаж за прилавком, и выгрузка в таблицу, которая даёт всё.",
-              "Поскольку смены нет, продажа никогда не привязана к сессии. Она привязана к учётной записи кассира и к коду устройства кассы. Именно с этим вам придётся работать, если вы сводите наличные вручную.",
-              "Не путайте всё это со страницей настроек самой кассы. Та страница существует и работает, но отвечает за имя этой кассы, её язык, скорость сканера и принтер - а не за обращение с наличными."
             ]
           }
         ]
@@ -4328,25 +4364,6 @@ const MANUAL = {
               "Если экран погас или браузер перезагрузился посреди продажи, товары из чека пропали и ничего не записано. Отсканируйте их заново.",
               "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца."
             ]
-          },
-          {
-            "id": "what-the-register-cannot-do",
-            "title": "Чего касса не умеет",
-            "audience": "staff",
-            "summary": "Честный список того, чего у этой кассы нет, - чтобы вы узнали об этом здесь, а не перед очередью. Ничего из этого не является настройкой, которую можно включить: в этой версии таких экранов просто не существует.",
-            "notes": [
-              "Нигде в этом продукте нет экрана возврата или возмещения. Возврат придётся оформлять вне кассы, тем способом, который ваш магазин уже использует.",
-              "Нет ни смены, ни сверки наличных, ни Z-отчёта. Ничто не открывает и не закрывает кассовую сессию, и программа никогда не спрашивает, сколько денег в ящике.",
-              "За прилавком нет поля промокода и нельзя привязать к продаже покупателя. Кнопкой с ярлыком на строке можно снять с неё фиксированную сумму - это единственная скидка: ни процентов, ни скидки на всю продажу.",
-              "К продаже за прилавком нельзя привязать покупателя. Каждая продажа записывается как случайный покупатель, даже для постоянного клиента, которого вы знаете по имени.",
-              "В верхней панели есть поле поиска, и оно находит товары по названию. Чего нет - так это списка для просмотра: весь каталог нигде не показывается, поэтому товар, который не сканируется, названия которого вы не знаете и код которого вам неизвестен, в продажу не добавить.",
-              "Повторной печати нет. После нажатия «Новая продажа» чек исчезает, и вернуть его не может ни одна кнопка. Печатайте до перехода к следующему покупателю.",
-              "Касса действительно продолжает продавать офлайн, но не всё умеет офлайн. Товар, который она никогда не скачивала, найти нельзя, а если на кассе закончатся зарезервированные номера чеков, покупатель получит справочный талон, а не чек.",
-              "Касса не общается с вашим карточным терминалом. Выбор «Карта» лишь фиксирует, что платили картой; сам платёж вы по-прежнему проводите на терминале.",
-              "Касса не может открыть денежный ящик.",
-              "Отложить продажу и вернуться к ней позже нельзя. Одна продажа за раз, а очистка её выбрасывает.",
-              "Касса никогда не спрашивает размер. Если у товара один размер, используется он; если несколько, продажа записывается вообще без размера."
-            ]
           }
         ]
       },
@@ -4677,7 +4694,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v13.0.0"
+      "version": "v13.1.0"
     },
     "parts": [
       {
@@ -4781,20 +4798,6 @@ const MANUAL = {
               "Kodu elle yazmak her zaman çalışır; her tarayıcıda ve her cihazda. Yıpranmış etiket için yedek yoldur ve teknik bir nedenle asla başarısız olmaz.",
               "Bir okutmanın en az dört karakter olması gerekir; yoksa rastgele bir tuş basımı sayılıp yok sayılır. Bu kural yalnızca okutma için geçerlidir. Kutuya yazıp düğmeyle gönderdiğiniz kod her uzunlukta kabul edilir.",
               "İki kasa aynı ürünü aynı anda hiçbir çakışma olmadan okutabilir. Stok sunucuda, bir seferde bir satış olacak şekilde hesaplanır."
-            ]
-          },
-          {
-            "id": "no-cash-drawer",
-            "title": "Para çekmecesi desteği yoktur",
-            "audience": "owner",
-            "summary": "Mağaza sahiplerinin çoğunun ilk sorduğu soru budur; bu yüzden bir listede tek satır değil, kendi sayfası vardır. Yazılım para çekmecesi açamaz. Çekmeceyi açan sinyali göndermez, çekmece ayarı yoktur ve üründe hiçbir yerde para sayma veya gün sonu mutabakat ekranı yoktur.",
-            "notes": [
-              "Kasa çekmece açamaz. Açma sinyali, çekmece komutu ve bunun için bir ayar yoktur. Yapılandırabileceğiniz hiçbir şey bunu değiştirmez.",
-              "Kendiliğinden açılan bir çekmece istiyorsanız, kart terminalinize takılan bir tane alın ve çekmeceyi terminal açsın; ya da kasiyerin elle açtığı bir tane alın. İkisi de tezgâh işletmenin olağan yoludur ve hiçbiri bu yazılımdan bir şey istemez.",
-              "Kasa mutabakatı, vardiya, açılış bozuk parası, sayılmış nakit kutusu ve fark raporu yoktur. Üründe hiçbir şey kasa vardiyası açmaz veya kapatmaz; bu yüzden yazılım çekmecede ne kadar para olduğunu hiçbir zaman sormaz.",
-              "Z-raporu ve herhangi bir gün sonu raporu yoktur. En yakın şeyler, yönetim panelindeki Kasa sayfasında son elli tezgâh satışını gösteren tablo ve her şeyi veren tablo dışa aktarımıdır.",
-              "Vardiya olmadığı için bir satış hiçbir zaman bir oturuma bağlanmaz. Kasiyerin hesabına ve kasanın cihaz koduna bağlanır. Nakdi elle mutabık kılıyorsanız çalışabileceğiniz şeyler bunlardır.",
-              "Bütün bunları kasanın kendi Ayarlar sayfasıyla karıştırmayın. O sayfa vardır ve çalışır ama bu kasanın adını, dilini, tarayıcı hızını ve yazıcısını kapsar - nakit yönetimini değil."
             ]
           }
         ]
@@ -5518,25 +5521,6 @@ const MANUAL = {
               "Kasa internet bağlantısını kaybetse de satış yine kaydedilir - bu bilgisayarda tutulur ve bağlantı döndüğünde gönderilir. Fiş normal şekilde basılır. Neyin beklediğini soldaki menüdeki Bekleyen satışlar bölümünde görebilirsiniz.",
               "Ekran tamamen kararırsa veya tarayıcı satışın ortasında yeniden yüklenirse fişteki ürünler gitmiştir ve hiçbir şey kaydedilmemiştir. Onları yeniden okutun.",
               "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin."
-            ]
-          },
-          {
-            "id": "what-the-register-cannot-do",
-            "title": "Kasanın yapamadıkları",
-            "audience": "staff",
-            "summary": "Bu kasada olmayan şeylerin dürüst bir listesi - bunu bir kuyruğun önünde değil burada öğrenesiniz diye. Bunların hiçbiri açılabilecek bir ayar değildir: bu sürümde o ekranlar basitçe yoktur.",
-            "notes": [
-              "Bu üründe hiçbir yerde iade veya geri ödeme ekranı yoktur. Bir iade, kasanın dışında, mağazanızın zaten kullandığı yolla halledilmelidir.",
-              "Vardiya, nakit sayımı ve Z-raporu yoktur. Hiçbir şey bir kasa oturumu açmaz veya kapatmaz ve yazılım çekmecede ne kadar para olduğunu asla sormaz.",
-              "Tezgâhta promosyon kodu kutusu yoktur ve satışa bir müşteri bağlanamaz. Satırın üzerindeki etiket düğmesiyle o satırdan sabit bir tutar düşebilirsiniz; başka indirim yoktur - ne yüzde, ne de satışın tamamından düşen bir indirim.",
-              "Bir tezgâh satışına müşteri bağlamanın yolu yoktur. Adıyla tanıdığınız bir müdavim için bile her satış gelen müşteri olarak kaydedilir.",
-              "Üst çubukta bir arama kutusu vardır ve ürünleri adına göre bulur. Olmayan şey göz atma listesidir: kataloğun tamamı hiçbir yerde seçilmek üzere gösterilmez; bu yüzden okutamadığınız, adını bilmediğiniz ve kodunu da bilmediğiniz bir ürünü satışa ekleyemezsiniz.",
-              "Yeniden basma yoktur. Yeni satış düğmesine bastığınızda fiş gider ve hiçbir düğme onu geri getirmez. Sonrakine geçmeden önce bastırın.",
-              "Kasa çevrimdışı satmayı sürdürür ama çevrimdışı her şeyi yapamaz. Hiç indirmediği bir ürünü bulamaz ve kasada ayrılmış fiş numaraları biterse müşteri fiş yerine bir referans fişi alır.",
-              "Kasa kart terminalinizle konuşmaz. Kart seçmek yalnızca kartla ödendiğini kaydeder; ödemeyi yine terminalde siz alırsınız.",
-              "Kasa para çekmecesi açamaz.",
-              "Bir satışı bekletip sonra dönmenin yolu yoktur. Bir seferde bir satış ve onu temizlemek atmak demektir.",
-              "Kasa asla beden sormaz. Bir ürünün tek bedeni varsa o kullanılır; birden çoksa satış hiç bedensiz kaydedilir."
             ]
           }
         ]

@@ -14,15 +14,24 @@ import {
   clearLocalSession,
   createLocalUser,
   isCommissioned,
+  readLocalSignInId,
   restoreLocalSession,
   signInLocal,
   writeLocalSessionId,
+  writeLocalSignInId,
 } from './local-auth';
+import { newLocalId } from './local-db';
 import type { LocalUser, PosLocalRole } from './types';
 
 export interface PosLocalSessionValue {
   /** The signed-in local account, or `null`. Always `null` outside standalone mode. */
   user: LocalUser | null;
+  /**
+   * Identifies the current sign-in, for records that must not carry over into
+   * the next one — the opening-cash gate compares it by equality. Null when
+   * nobody is signed in.
+   */
+  signInId: string | null;
   /** True until the stored session has been resolved against the account list. */
   loading: boolean;
   /**
@@ -47,6 +56,7 @@ const PosLocalSessionContext = createContext<PosLocalSessionValue | null>(null);
 
 const INERT: PosLocalSessionValue = {
   user: null,
+  signInId: null,
   loading: false,
   commissioned: false,
   standalone: false,
@@ -55,6 +65,26 @@ const INERT: PosLocalSessionValue = {
   commission: async () => ({ ok: false, reason: 'not-standalone' }),
   refresh: async () => undefined,
 };
+
+/**
+ * The sign-in id for a session that was restored rather than freshly entered.
+ *
+ * Load-bearing, not tidying. React state is the authority for this tab and
+ * localStorage only lets it survive a reload, so a till with blocked site data
+ * must still end up holding an id: without the minting branch it would stamp a
+ * confirmation with an id that `readLocalSignInId()` then reports as null, and
+ * the cashier could never satisfy the opening-cash gate — the drawer screen
+ * would come back after every confirmation. Minting and holding it regardless
+ * degrades that to "declare the drawer once per tab", which is the same bargain
+ * `writeLocalSessionId` already strikes when storage is blocked.
+ */
+function adoptSignInId(): string {
+  const stored = readLocalSignInId();
+  if (stored) return stored;
+  const minted = newLocalId();
+  writeLocalSignInId(minted);
+  return minted;
+}
 
 /**
  * Who is at the till, when there is no Firebase Auth to ask.
@@ -68,6 +98,7 @@ const INERT: PosLocalSessionValue = {
 export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   const standalone = useCaspianStandalone();
   const [user, setUser] = useState<LocalUser | null>(null);
+  const [signInId, setSignInId] = useState<string | null>(null);
   const [commissioned, setCommissioned] = useState(false);
   const [loading, setLoading] = useState(standalone);
 
@@ -75,6 +106,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
     if (!standalone) return;
     const [restored, hasAccounts] = await Promise.all([restoreLocalSession(), isCommissioned()]);
     setUser(restored);
+    setSignInId(restored ? adoptSignInId() : null);
     setCommissioned(hasAccounts);
     setLoading(false);
   }, [standalone]);
@@ -93,6 +125,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
         ]);
         if (!alive) return;
         setUser(restored);
+        setSignInId(restored ? adoptSignInId() : null);
         setCommissioned(hasAccounts);
       } catch {
         // Blocked or unavailable storage. Treat as "not commissioned" so the
@@ -100,6 +133,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
         // form that can never succeed.
         if (alive) {
           setUser(null);
+          setSignInId(null);
           setCommissioned(false);
         }
       } finally {
@@ -115,8 +149,11 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
     async (username: string, password: string) => {
       const found = await signInLocal(username, password);
       if (!found) return false;
+      const minted = newLocalId();
       writeLocalSessionId(found.id);
+      writeLocalSignInId(minted);
       setUser(found);
+      setSignInId(minted);
       return true;
     },
     [],
@@ -125,6 +162,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     clearLocalSession();
     setUser(null);
+    setSignInId(null);
   }, []);
 
   const commission = useCallback(
@@ -133,8 +171,11 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       const role: PosLocalRole = 'superadmin';
       const created = await createLocalUser({ ...input, role });
       if (!created.ok) return { ok: false as const, reason: created.reason };
+      const minted = newLocalId();
       writeLocalSessionId(created.user.id);
+      writeLocalSignInId(minted);
       setUser(created.user);
+      setSignInId(minted);
       setCommissioned(true);
       return { ok: true as const };
     },
@@ -144,9 +185,9 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PosLocalSessionValue>(
     () =>
       standalone
-        ? { user, loading, commissioned, standalone, signIn, signOut, commission, refresh }
+        ? { user, signInId, loading, commissioned, standalone, signIn, signOut, commission, refresh }
         : INERT,
-    [standalone, user, loading, commissioned, signIn, signOut, commission, refresh],
+    [standalone, user, signInId, loading, commissioned, signIn, signOut, commission, refresh],
   );
 
   return (

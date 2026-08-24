@@ -9,6 +9,7 @@ import { usePosLocalSession } from './standalone/local-session-context';
 import { usePosRoles } from './standalone/role-context';
 import type { PosLocalCapability } from './standalone/types';
 import { PosAppAdminPage } from './standalone/admin/pos-app-admin-page';
+import { PosOpeningCashGate } from './standalone/pos-opening-cash-gate';
 import { LocalStorePanel } from './standalone/admin/local-store-panel';
 import { LocalSalesPage } from './standalone/admin/local-sales-panel';
 import { LocalPeoplePage } from './standalone/admin/local-people-panel';
@@ -215,25 +216,38 @@ export function PosRoot(): ReactNode {
   // than on a screen with nothing in it.
   const opens = (capability: PosLocalCapability) => standalone && can(user?.role, capability);
 
+  // Bound once and spent six times, because every miss in this switch resolves
+  // to the register: a screen a role cannot open must not become a way past the
+  // drawer count. The element inside is only an object -- `PosRegister()` is not
+  // called until the gate returns it -- so a gated till never mounts the
+  // register's hooks and never installs the scanner's keyboard listener.
+  //
+  // A cloud till has no local shop record and no drawer log, so the gate is not
+  // merely inert there; it is meaningless, and skipping the wrapper keeps that
+  // path exactly as it was.
+  const register = standalone ? (
+    <PosOpeningCashGate>
+      <PosRegister />
+    </PosOpeningCashGate>
+  ) : (
+    <PosRegister />
+  );
+
   switch (head) {
     case 'settings':
       // Ungated on a cloud till, which has no role definitions to consult.
-      return !standalone || can(user?.role, 'settings.view') ? (
-        <PosSettingsPage />
-      ) : (
-        <PosRegister />
-      );
+      return !standalone || can(user?.role, 'settings.view') ? <PosSettingsPage /> : register;
     case 'queue':
       return <PosQueuePage />;
     case 'store':
-      return opens('store.view') ? <LocalStorePanel /> : <PosRegister />;
+      return opens('store.view') ? <LocalStorePanel /> : register;
     case 'sales':
-      return opens('sales.view') ? <LocalSalesPage /> : <PosRegister />;
+      return opens('sales.view') ? <LocalSalesPage /> : register;
     case 'people':
-      return opens('people.view') ? <LocalPeoplePage /> : <PosRegister />;
+      return opens('people.view') ? <LocalPeoplePage /> : register;
     case 'app-admin':
-      return opens('appAdmin.view') ? <PosAppAdminPage /> : <PosRegister />;
+      return opens('appAdmin.view') ? <PosAppAdminPage /> : register;
     default:
-      return <PosRegister />;
+      return register;
   }
 }

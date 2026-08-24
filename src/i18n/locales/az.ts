@@ -37,7 +37,6 @@ const az: MessageDict = {
   'pos.title': 'Kassa',
   'pos.nav.register': 'Kassa',
   'pos.nav.returns': 'Qaytarmalar',
-  'pos.nav.shift': 'Növbə',
   'pos.nav.settings': 'Tənzimləmələr',
   'pos.nav.sales': 'Satışlar',
   'pos.nav.people': 'İşçilər',
@@ -237,7 +236,8 @@ const az: MessageDict = {
   'pos.store.adjustStock': 'Stoku tənzimlə',
   'pos.store.adjustBy': 'Artır/Çıx',
   'pos.appAdmin.title': 'Tətbiq admini',
-  'pos.appAdmin.subtitle': 'Bu mağaza üçün rolları idarə edin. İşçilər aktiv etdiyiniz rollara əsasən giriş əldə edirlər.',
+  'pos.appAdmin.subtitle':
+    'Bu mağazanın rolları, lisenziyası və başlanğıc nağd pul yoxlaması. Bu səhifəni yalnız Dəstək hesabı aça bilər.',
   'pos.appAdmin.predefinedTitle': 'Təyin edilmiş rollar',
   'pos.appAdmin.customTitle': 'Xüsusi rollar',
   'pos.appAdmin.role.staff': 'Kassir',
@@ -268,6 +268,7 @@ const az: MessageDict = {
   'pos.appAdmin.capability.appAdmin.roles': 'Rolları dəyişmək',
   'pos.appAdmin.section.roles': 'Rollar',
   'pos.appAdmin.section.licence': 'Lisenziya',
+  'pos.appAdmin.section.openingCash': 'Başlanğıc nağd pul',
   'pos.appAdmin.licence.parked':
     'Bu quraşdırmada lisenziya sistemi aktiv deyil, ona görə burada doldurulacaq bir şey yoxdur. Lisenziyasız kassa da normal şəkildə satış edir.',
   'pos.appAdmin.saveRole': 'Rolu saxla',
@@ -275,6 +276,41 @@ const az: MessageDict = {
   'pos.appAdmin.noRoles': 'Hələ xüsusi rol yoxdur.',
   'pos.appAdmin.roleSaved': 'Rol saxlanıldı',
   'pos.appAdmin.roleDeleted': 'Rol silindi',
+  'pos.appAdmin.openingCash.title': 'Çekmecedəki nağd pulu soruş',
+  'pos.appAdmin.openingCash.help':
+    'Bu aktiv olanda satış ekranı ilk satışdan əvvəl kassirdən çekmecedə nə qədər pul olduğunu soruşur və məbləği onun adı, vaxtı və hansı kassadan gəldiyi ilə birlikdə yazır. Məbləğ heç vaxt heç nə ilə tutuşdurulmur: nə gün sonu sayımı var, nə də fərq hesabatı. Bu açarı yalnız Dəstək hesabı dəyişə bilər — sahib dəyişə bilməz.',
+  'pos.appAdmin.openingCash.on': 'Soruşulsun',
+  'pos.appAdmin.openingCash.off': 'Soruşulmasın',
+  'pos.appAdmin.openingCash.rule':
+    'Kassir daxil olanda bir dəfə, sonra da yeni günün ilk satış ekranında soruşulur. Səhifəni yeniləmək yenidən soruşmur və sual gözlədiyi müddətdə bütün digər ekranlar açıq qalır.',
+  'pos.appAdmin.openingCash.turnedOn': 'Kassirlərdən başlanğıc nağd pul soruşulacaq',
+  'pos.appAdmin.openingCash.turnedOff': 'Kassirlərdən başlanğıc nağd pul soruşulmayacaq',
+  'pos.appAdmin.openingCash.saveFailed': 'Yadda saxlanılmadı. Yenidən cəhd edin.',
+  'pos.appAdmin.openingCash.viewRecord': 'Sayılanlara bax',
+
+  // POS — opening cash
+  'pos.openingCash.title': 'Çekmecedə nə qədər pul var?',
+  'pos.openingCash.body':
+    'İlk satışdan əvvəl kassadakı pulu sayın və buraya yazın. Məbləğ olduğu kimi qeyd olunur, sonradan heç nə ilə tutuşdurulmur.',
+  'pos.openingCash.newDayBody':
+    'Yeni gündür. İlk satışdan əvvəl kassadakı pulu sayın və buraya yazın.',
+  'pos.openingCash.againBody':
+    'Yenidən daxil oldunuz. Bu gün bu kassada son sayım {amount} idi — indi orada nə varsa sayın və yazın.',
+  'pos.openingCash.otherDeviceBody':
+    'Son sayım başqa kassadan gəlib, ona görə bu çekmeceyə aid deyil. Bu kassadakı pulu sayın və yazın.',
+  'pos.openingCash.amount': 'Çekmecedəki nağd pul',
+  'pos.openingCash.amountHint': 'Kağız və dəmir pulu birlikdə, tək məbləğ kimi yazın. Çekmece boşdursa 0 yazın.',
+  'pos.openingCash.confirm': 'Satışa başla',
+  'pos.openingCash.confirming': 'Yadda saxlanılır…',
+  'pos.openingCash.needAmount': 'Əvvəlcə çekmecedə nə olduğunu yazın.',
+  'pos.openingCash.emptyDrawer': 'Çekmece boşdur? 0 yazın və davam edin.',
+  'pos.openingCash.noDecimal': 'Bu məbləğdə xırda pul yoxdur. {suggestion} nəzərdə tutmusunuzsa, elə yazın.',
+  'pos.openingCash.notANumber': 'Bu, rəqəm deyil. Yalnız rəqəm yazın, məsələn 120.50.',
+  'pos.openingCash.tooLarge': 'Bu, kassa çekmecesinin tutduğundan çoxdur. Məbləği yoxlayın.',
+  'pos.openingCash.failed': 'Sayım yadda saxlanılmadı. Yenidən cəhd edin.',
+  'pos.openingCash.elsewhere':
+    'Bu kassadakı bütün digər ekranlar açıqdır. Saymazdan əvvəl tənzimləmələr və ya arxa ofis lazımdırsa, menyudan istifadə edin.',
+  'pos.openingCash.recorded': 'Başlanğıc nağd pul {amount} kimi qeyd edildi',
 
   // POS — storage mode
   'pos.storage.title': 'Satışlar harada saxlanılır',

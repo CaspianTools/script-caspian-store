@@ -7,11 +7,11 @@ import { Select } from '../../../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import { ReceiptIcon } from '../../../ui/icons';
 import { toCsv, type CsvCell } from '../../../utils/csv';
-import { listLocalSales, readLocalShopSettings } from '../local-db';
+import { listLocalOpeningCash, listLocalSales, readLocalShopSettings } from '../local-db';
 import { saveTextFile } from '../local-backup';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
-import type { LocalSale } from '../types';
+import type { LocalOpeningCash, LocalSale } from '../types';
 import { actions, fieldLabel, muted, row, section } from './panel-styles';
 import { PosAdminPage } from './pos-admin-page';
 
@@ -27,11 +27,13 @@ function startOf(range: Range): number {
 }
 
 /**
- * What the till has taken.
+ * What the till started with and what it has taken.
  *
  * Read-only by design: a sale is written once and never edited, so there is
  * nothing here to change. A mistake is corrected by ringing another sale, which
- * is what keeps the paper in a customer's hand matching the record.
+ * is what keeps the paper in a customer's hand matching the record. The
+ * opening-cash declarations are read-only for the same reason and are kept
+ * apart from the takings -- see the comment on `takings`.
  */
 export function LocalSalesPanel() {
   const t = useT();
@@ -39,13 +41,21 @@ export function LocalSalesPanel() {
   const session = usePosLocalSession();
   const mayExport = can(session.user?.role, 'sales.export');
   const [sales, setSales] = useState<LocalSale[] | null>(null);
+  const [openingCash, setOpeningCash] = useState<LocalOpeningCash[] | null>(null);
+  const [requireOpeningCash, setRequireOpeningCash] = useState(false);
   const [currency, setCurrency] = useState('USD');
   const [range, setRange] = useState<Range>('today');
 
   const refresh = useCallback(async () => {
-    const [rows, shop] = await Promise.all([listLocalSales(), readLocalShopSettings()]);
+    const [rows, shop, floats] = await Promise.all([
+      listLocalSales(),
+      readLocalShopSettings(),
+      listLocalOpeningCash(),
+    ]);
     setSales(rows);
     setCurrency(shop.currency || 'USD');
+    setRequireOpeningCash(shop.requireOpeningCash);
+    setOpeningCash(floats);
   }, []);
 
   useEffect(() => {
@@ -67,6 +77,21 @@ export function LocalSalesPanel() {
     return (sales ?? []).filter((s) => s.committedAtMillis >= from);
   }, [sales, range]);
 
+  /**
+   * The same window the sales list uses, so the two halves of the day's story
+   * always answer for the same period and there is no second filter to keep in
+   * step with the first.
+   */
+  const visibleFloats = useMemo(() => {
+    const from = startOf(range);
+    return (openingCash ?? []).filter((r) => r.confirmedAtMillis >= from);
+  }, [openingCash, range]);
+
+  /**
+   * The opening float is never added here, and never appears in the sales
+   * table. Money the shop put in the drawer is not money the till took, and
+   * folding one into the other is an accounting bug that reconciles to nothing.
+   */
   const takings = visible.reduce((sum, s) => sum + s.total, 0);
 
   const exportCsv = () => {
@@ -87,6 +112,25 @@ export function LocalSalesPanel() {
     }
     saveTextFile(`caspian-sales-${range}.csv`, toCsv(rows), 'text/csv');
   };
+
+  const exportOpeningCashCsv = () => {
+    const rows: CsvCell[][] = [['dateTime', 'cashier', 'device', 'amount']];
+    for (const r of visibleFloats) {
+      rows.push([
+        new Date(r.confirmedAtMillis).toISOString(),
+        r.cashierName,
+        r.deviceLabel || r.deviceId,
+        r.amount,
+      ]);
+    }
+    saveTextFile(`caspian-opening-cash-${range}.csv`, toCsv(rows), 'text/csv');
+  };
+
+  /**
+   * A shop that has never used this feature gets no empty box, but a shop that
+   * used it and switched it off keeps the history it already produced.
+   */
+  const showOpeningCash = requireOpeningCash || visibleFloats.length > 0;
 
   return (
     <div>
@@ -117,6 +161,87 @@ export function LocalSalesPanel() {
           </div>
         ) : null}
       </section>
+
+      {/*
+        Between the summary and the sales list. The Monday-morning question is
+        "what did the till start with, and what did it take", in that order, so
+        the float belongs early in the day's story; sitting above the table also
+        means an owner reads it without scrolling past two hundred sales.
+      */}
+      {showOpeningCash ? (
+        <section id="pos-sales-opening-cash" className="cpos-section">
+          <div style={row}>
+            <span className="cpos-field__label">{t('pos.admin.openingCash.title')}</span>
+            <div style={{ marginInlineStart: 'auto', textAlign: 'end' }}>
+              <div className="cpos-muted">
+                {t('pos.admin.openingCash.declared', { count: visibleFloats.length })}
+              </div>
+              {/*
+                A total only for today. Adding up thirty separate morning floats
+                produces a number that describes nothing that ever sat in a
+                drawer, and printing it invites somebody to reconcile a month's
+                takings against it.
+              */}
+              {range === 'today' && visibleFloats.length > 0 ? (
+                <div style={{ fontSize: 22, fontWeight: 700 }}>
+                  {format(visibleFloats.reduce((sum, r) => sum + r.amount, 0))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {visibleFloats.length === 0 ? (
+            <div className="cpos-muted">
+              {t(
+                range === 'today'
+                  ? 'pos.admin.openingCash.emptyToday'
+                  : 'pos.admin.openingCash.empty',
+              )}
+            </div>
+          ) : (
+            <>
+              {mayExport ? (
+                <div style={actions}>
+                  <Button variant="outline" onClick={exportOpeningCashCsv}>
+                    {t('pos.admin.openingCash.export')}
+                  </Button>
+                </div>
+              ) : null}
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>{t('pos.admin.sales.when')}</TH>
+                    <TH>{t('pos.admin.sales.cashier')}</TH>
+                    <TH>{t('pos.admin.openingCash.till')}</TH>
+                    <TH>{t('pos.admin.openingCash.amount')}</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {/*
+                    Two counts on one day by one cashier are two rows and stay
+                    two rows. That pair is a drawer handover, and it is the
+                    exact signal this record exists to keep -- de-duplicating it
+                    would erase the thing worth looking at.
+                  */}
+                  {visibleFloats.slice(0, 60).map((r) => (
+                    <TR key={r.id}>
+                      <TD>{new Date(r.confirmedAtMillis).toLocaleString()}</TD>
+                      <TD>{r.cashierName || '—'}</TD>
+                      <TD>{r.deviceLabel || r.deviceId.slice(0, 8)}</TD>
+                      <TD>{format(r.amount)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+              {visibleFloats.length > 60 ? (
+                <div className="cpos-muted">
+                  {t('pos.admin.sales.truncated', { shown: 60, total: visibleFloats.length })}
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
+      ) : null}
 
       <section style={section}>
         <span style={fieldLabel}>{t('pos.admin.sales.listTitle')}</span>

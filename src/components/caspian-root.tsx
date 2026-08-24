@@ -39,6 +39,7 @@ import { PosGuard } from '../pos/pos-guard';
 import { PosRoot, PosShell } from '../pos/pos-root';
 import { PosLocalSessionProvider } from '../pos/standalone/local-session-context';
 import { PosRoleProvider } from '../pos/standalone/role-context';
+import { PosOpeningCashProvider } from '../pos/standalone/opening-cash-context';
 
 import { AdminGuard } from '../admin/admin-guard';
 import { AdminShell } from '../admin/admin-shell';
@@ -121,9 +122,18 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
       <PosLocalSessionProvider>
         <PosRoleProvider>
           <PosGuard>
-            <PosShell>
-              <PosRoot />
-            </PosShell>
+            {/*
+              Inside the guard, because the guard has just established that
+              somebody is signed in and holds `register` -- which is the only
+              circumstance in which a drawer count has anyone to belong to.
+              Above the shell, because the top bar is where a standing count
+              would be shown, and this saves moving the provider to do it.
+            */}
+            <PosOpeningCashProvider>
+              <PosShell>
+                <PosRoot />
+              </PosShell>
+            </PosOpeningCashProvider>
           </PosGuard>
         </PosRoleProvider>
       </PosLocalSessionProvider>

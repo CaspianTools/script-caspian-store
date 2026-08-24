@@ -33,7 +33,6 @@ const ru: MessageDict = {
   'pos.title': 'Касса',
   'pos.nav.register': 'Касса',
   'pos.nav.returns': 'Возвраты',
-  'pos.nav.shift': 'Смена',
   'pos.nav.settings': 'Настройки',
   'pos.nav.exit': 'Выйти из кассы',
   'pos.nav.queue': 'Отложенные продажи',

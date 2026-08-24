@@ -16,6 +16,101 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.1.0 — Count the drawer before you sell
+
+A standalone till can now be told to ask a cashier what is in the drawer before the sale
+screen will open, and to keep what each of them said. Off on every till until somebody
+turns it on, and off for every till that upgrades into this release.
+
+### No consumer action required
+
+Reinstall to pick it up. Nothing is removed and no provider prop changed, so existing
+code keeps compiling; no Firestore rules, indexes or Cloud Functions change, so there is
+nothing to redeploy. A till that upgrades sells exactly as it did the morning before —
+the switch is off until an owner turns it on at `/pos/app-admin`.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.1.0
+```
+
+Two mechanical notes for anyone running a standalone till:
+
+1. **The register's IndexedDB schema goes from version 3 to 4** to add one store. The
+   upgrade is additive and runs on the first page load; no existing record is read,
+   migrated or dropped. A till with a second tab open will see the older one close its
+   handle and reopen, which is the path versions 2 and 3 already used.
+2. **The standalone backup file goes to version 3.** A version 2 file still restores — it
+   simply has no drawer counts to put back — and a version 3 file is refused by an older
+   build, which is the right way round: the alternative is an old build silently
+   discarding a shop's records.
+
+### Added
+
+- **An opening-cash gate for the standalone register.** A new **Opening cash** pane at
+  `/pos/app-admin` carries one shop-wide switch. With it on, `/pos` is replaced by a
+  single-field form until whoever is signed in types what is in the drawer; the figure is
+  stored with their name, this till, and the moment. They are asked again on a fresh
+  sign-in and on the first visit to the sale screen on a new calendar day — not on a
+  reload, and not on navigation.
+- **The rest of the till stays reachable while the question is unanswered.** Store, Sales,
+  People, Settings and App admin all still open, and so does Sign out. That is deliberate:
+  an owner must not be locked out by the switch they need in order to turn it off.
+- **What each cashier declared is listed on `/pos/sales`**, in its own section under the
+  same date filter the takings use, with a CSV export for anyone holding `sales.export`.
+  It is kept out of the sales table and out of the takings total — money the shop put in
+  the drawer is not money the till took. Two counts on one day by one person stay two
+  rows, because that pair is a handover and it is the thing worth looking at.
+- **New public exports**: `PosOpeningCashProvider`, `usePosOpeningCash`,
+  `PosOpeningCashGate`, `PosOpeningCashPanel`, `evaluateOpeningCashGate`, `localDayKey`,
+  `msUntilNextLocalDay`, `latestOpeningCash`, `recordLocalOpeningCash`,
+  `latestLocalOpeningCash`, `listLocalOpeningCash`, `readLocalSignInId`,
+  `writeLocalSignInId`, and the types `LocalOpeningCash`, `OpeningCashGate`,
+  `OpeningCashGateInput`, `PosOpeningCashValue`, `PosOpeningCashGateProps`,
+  `PosOpeningCashPanelProps`, `PosOpeningCashReason`.
+- **`PosLocalSessionValue` gains `signInId`** — a fresh id minted each time somebody signs
+  in. It is what makes "ask again on a fresh sign-in" survive a clock that moves: an NTP
+  correction or a hand-set date changes what "since you signed in" means, but not whether
+  two ids match.
+- **Fifteen new checks in `scripts/check-standalone.mjs`** covering the reset rule and the
+  local-day boundary, including that the day rolls at the shop's midnight rather than
+  Greenwich's and rather than twenty-four hours after the count. The decision lives in a
+  pure module, `src/pos/standalone/opening-cash.ts`, for the same reason the pricing does:
+  so CI can check it without a browser.
+
+### Changed
+
+- **`/pos/app-admin` has three panes**, Roles, Opening cash and Licence. Only Support
+  reaches that page, so only Support can turn the drawer count on or off.
+- **The standalone backup carries the drawer counts**, restored additively so a restore
+  never overwrites a count already on the machine.
+- **`factoryResetLocalStore` erases them too.** `clearPosDb` does not, and must not — it
+  drops only rebuildable cloud caches, and these rows exist nowhere else.
+
+### Notes
+
+- **It records, it does not reconcile.** There is still no closing count, no expected
+  figure, no variance, no cash movements and no Z-report, and the register still has no
+  shift of any kind. A variance derived from an opening float plus cash tenders is wrong
+  the first time anyone takes a note out to pay a delivery, and a wrong variance is what
+  shops discipline staff on. The dormant cloud shift layer in `src/types.ts`
+  (`PosSettings.requireShift`, `PosSession`, `posSessions`) is untouched, and every name
+  here was chosen so the two never collide.
+- **A wrong figure never blocks a sale.** `commitLocalSale` does not know this feature
+  exists, in the same way `commitPosSale` does not consult licence state.
+- **If site data is blocked, the shop record cannot be read, the switch reads as off and
+  the till sells.** That is the right failure direction: this is a shrinkage control, not
+  a security boundary, and it should not be hardened into one.
+
+### Documentation
+
+- `docs/pos-manual.html` gains two sections — one for the owner who switches it on, one
+  for the cashier who answers it — and three existing sections that stated the software
+  never asks what is in the drawer are narrowed rather than deleted, because everything
+  else they claimed is still true. The Azerbaijani, Russian and Turkish overlays for the
+  two corrected sections are deleted rather than edited: their array lengths still match
+  English, so the parity check would not have caught them, and a stale translation that
+  reads as authoritative is worse than English with a "not translated yet" notice.
+
 ## v13.0.0 — The register's back office becomes the register
 
 The four-tab back office at `/pos/admin` is gone. Sales and People are screens of their own,

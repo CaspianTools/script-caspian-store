@@ -582,3 +582,25 @@ export function ShieldIcon(props: IconProps) {
     </svg>
   );
 }
+
+/**
+ * A cash drawer, front-on: the body, the drawer line and its pull handle, with
+ * the note/coin tray divided above it.
+ *
+ * Added rather than reused because every near neighbour already means something
+ * else on the register's own screens, and reusing one would have made two
+ * different things look identical in the same column: `CreditCardIcon` is the
+ * opposite tender, `ReceiptIcon` is the Sales screen, and `LockIcon` and
+ * `ShieldIcon` both already sit in the App Admin index this must appear beside.
+ */
+export function CashDrawerIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <rect x="2" y="6" width="20" height="13" rx="2" />
+      <path d="M2 12h20" />
+      <path d="M8.5 6v6" />
+      <path d="M15.5 6v6" />
+      <path d="M9.5 15.5h5" />
+    </svg>
+  );
+}

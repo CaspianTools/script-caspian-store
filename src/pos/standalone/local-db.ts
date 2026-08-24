@@ -11,6 +11,7 @@
 import type { Product } from '../../types';
 import {
   STORE_LOCAL_COUNTERS,
+  STORE_LOCAL_OPENING_CASH,
   STORE_LOCAL_PRODUCTS,
   STORE_LOCAL_ROLES,
   STORE_LOCAL_SALES,
@@ -27,13 +28,15 @@ import {
 import {
   BUILTIN_ROLES,
   DEFAULT_LOCAL_SHOP_SETTINGS,
+  type LocalOpeningCash,
   type LocalProduct,
   type LocalSale,
   type LocalShopSettings,
   type LocalUser,
   type RoleDefinition,
 } from './types';
-import { priceLocalSale, type PricedLineInput } from './price-local-sale';
+import { latestOpeningCash, localDayKey } from './opening-cash';
+import { fromMinor, priceLocalSale, toMinor, type PricedLineInput } from './price-local-sale';
 
 const RECEIPT_COUNTER_KEY = 'receipt';
 const SETTINGS_KEY = 'shop';
@@ -359,6 +362,83 @@ export async function peekLocalReceiptCounter(): Promise<number> {
   return row?.value ?? 0;
 }
 
+// --- Opening cash ---
+
+/**
+ * Record what a cashier says is in the drawer.
+ *
+ * `roundCashTo` is deliberately not applied. That setting rounds the change
+ * handed to a customer, so that the till never owes coins it does not stock; a
+ * count is a count, and rounding one would make the record disagree with the
+ * notes somebody actually held.
+ *
+ * Append-only: every confirmation is its own row, so a second declaration after
+ * a handover sits beside the morning's rather than replacing it.
+ */
+export async function recordLocalOpeningCash(input: {
+  amount: number;
+  cashierId: string;
+  cashierName: string;
+  deviceId: string;
+  deviceLabel: string;
+  signInId: string;
+}): Promise<LocalOpeningCash> {
+  const now = Date.now();
+  const utcOffsetMinutes = new Date(now).getTimezoneOffset();
+  const row: LocalOpeningCash = {
+    id: newLocalId(),
+    // Through minor units so a keyed figure lands on a whole cent rather than
+    // on a float the back office renders differently on every screen. A
+    // negative is a slipped minus key, never a drawer, so it clamps instead of
+    // refusing — the gate exists to get the counter open.
+    amount: fromMinor(Math.max(0, toMinor(input.amount))),
+    cashierId: input.cashierId,
+    cashierName: input.cashierName,
+    deviceId: input.deviceId,
+    deviceLabel: input.deviceLabel,
+    confirmedAtMillis: now,
+    signInId: input.signInId,
+    businessDay: localDayKey(now, utcOffsetMinutes),
+    utcOffsetMinutes,
+  };
+  await posTx(STORE_LOCAL_OPENING_CASH, 'readwrite', (tx) =>
+    idbPut(tx, STORE_LOCAL_OPENING_CASH, row),
+  );
+  return row;
+}
+
+/**
+ * This cashier's most recent confirmation on this device, or null.
+ *
+ * The index narrows to the cashier and `latestOpeningCash` does the choosing,
+ * so the rule the gate turns on stays checkable without an IndexedDB index
+ * behaving itself.
+ */
+export async function latestLocalOpeningCash(
+  cashierId: string,
+  deviceId: string,
+): Promise<LocalOpeningCash | null> {
+  if (!localStoreAvailable()) return null;
+  const rows = await posTx(STORE_LOCAL_OPENING_CASH, 'readonly', (tx) =>
+    idbGetAllByIndex<LocalOpeningCash>(tx, STORE_LOCAL_OPENING_CASH, 'by-cashier', cashierId),
+  );
+  return latestOpeningCash(rows, cashierId, deviceId);
+}
+
+/** Every declaration in a window, newest first. For the back office, never for the gate. */
+export async function listLocalOpeningCash(
+  fromMillis = 0,
+  toMillis = Number.MAX_SAFE_INTEGER,
+): Promise<LocalOpeningCash[]> {
+  if (!localStoreAvailable()) return [];
+  const all = await posTx(STORE_LOCAL_OPENING_CASH, 'readonly', (tx) =>
+    idbGetAll<LocalOpeningCash>(tx, STORE_LOCAL_OPENING_CASH),
+  );
+  return all
+    .filter((r) => r.confirmedAtMillis >= fromMillis && r.confirmedAtMillis <= toMillis)
+    .sort((a, b) => b.confirmedAtMillis - a.confirmedAtMillis);
+}
+
 // --- Roles ---
 
 const ROLES_KEY = 'roles';
@@ -399,8 +479,8 @@ export async function writeLocalShopSettings(
 }
 
 /**
- * Erase a standalone till completely — catalogue, staff, sales, counters,
- * settings.
+ * Erase a standalone till completely — catalogue, staff, sales, drawer counts,
+ * counters, settings.
  *
  * Kept separate from `clearPosDb`, which only drops rebuildable cloud caches.
  * This one destroys records that exist nowhere else, so it is never called on a
@@ -411,6 +491,7 @@ export async function factoryResetLocalStore(): Promise<void> {
     STORE_LOCAL_PRODUCTS,
     STORE_LOCAL_USERS,
     STORE_LOCAL_SALES,
+    STORE_LOCAL_OPENING_CASH,
     STORE_LOCAL_COUNTERS,
     STORE_LOCAL_SETTINGS,
     STORE_LOCAL_ROLES,

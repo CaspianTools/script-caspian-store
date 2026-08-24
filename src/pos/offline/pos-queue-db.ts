@@ -12,7 +12,7 @@
  */
 
 export const DB_NAME = 'caspian-pos';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
@@ -35,6 +35,14 @@ export const STORE_LOCAL_SALES = 'localSales';
 export const STORE_LOCAL_COUNTERS = 'localCounters';
 export const STORE_LOCAL_SETTINGS = 'localSettings';
 export const STORE_LOCAL_ROLES = 'localRoles';
+/**
+ * What each cashier declared was in the drawer before they started selling.
+ *
+ * Added at version 4. Belongs with the `local*` group above and not with the
+ * cloud five: it is a shop's only record of who counted what, so `clearPosDb`
+ * must never touch it.
+ */
+export const STORE_LOCAL_OPENING_CASH = 'localOpeningCash';
 
 export type StoreName =
   | typeof STORE_QUEUE
@@ -47,7 +55,8 @@ export type StoreName =
   | typeof STORE_LOCAL_SALES
   | typeof STORE_LOCAL_COUNTERS
   | typeof STORE_LOCAL_SETTINGS
-  | typeof STORE_LOCAL_ROLES;
+  | typeof STORE_LOCAL_ROLES
+  | typeof STORE_LOCAL_OPENING_CASH;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -113,6 +122,13 @@ export function openPosDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_LOCAL_ROLES)) {
         db.createObjectStore(STORE_LOCAL_ROLES, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_OPENING_CASH)) {
+        const opening = db.createObjectStore(STORE_LOCAL_OPENING_CASH, { keyPath: 'id' });
+        // By cashier because the gate asks about one person; by time because the
+        // back office lists everyone in date order.
+        opening.createIndex('by-cashier', 'cashierId');
+        opening.createIndex('by-confirmedAt', 'confirmedAtMillis');
       }
     };
     req.onsuccess = () => {

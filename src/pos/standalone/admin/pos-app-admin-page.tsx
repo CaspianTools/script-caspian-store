@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { LockIcon, ShieldIcon } from '../../../ui/icons';
+import { CashDrawerIcon, LockIcon, ShieldIcon } from '../../../ui/icons';
 import { Button } from '../../../ui/button';
+import { FieldDescription } from '../../../ui/field-description';
 import { Input } from '../../../ui/input';
 import { useToast } from '../../../ui/toast';
 import { cn } from '../../../utils/cn';
 import { useCaspianNavigation, useCaspianFirebaseOptional } from '../../../provider/caspian-store-provider';
+import { readLocalShopSettings, writeLocalShopSettings } from '../local-db';
+import { usePosLocalSession } from '../local-session-context';
+import { usePosOpeningCash } from '../opening-cash-context';
 import { usePosRoles } from '../role-context';
 import { usePosLicense } from '../../license/use-pos-license';
 import { PosLicenseSection } from '../../license/pos-license-section';
@@ -34,10 +38,20 @@ const LOCKED_IDS: readonly PosLocalRole[] = ['superadmin'];
 /** Roles kept only so accounts already holding them keep working. */
 const DUPLICATE_IDS: readonly PosLocalRole[] = ['cashier'];
 
-type Section = 'roles' | 'licence';
+type Section = 'roles' | 'openingCash' | 'licence';
 
+/**
+ * Opening cash sits above the licence because the licence pane is furniture:
+ * `PosLicenseSection` renders a parked message on every stock build, so putting
+ * a setting an owner actually changes underneath it would bury it.
+ */
 const NAV: { value: Section; labelKey: string; icon: (size: number) => React.ReactNode }[] = [
   { value: 'roles', labelKey: 'pos.appAdmin.section.roles', icon: (s) => <ShieldIcon size={s} /> },
+  {
+    value: 'openingCash',
+    labelKey: 'pos.appAdmin.section.openingCash',
+    icon: (s) => <CashDrawerIcon size={s} />,
+  },
   { value: 'licence', labelKey: 'pos.appAdmin.section.licence', icon: (s) => <LockIcon size={s} /> },
 ];
 
@@ -77,7 +91,13 @@ export function PosAppAdminPage() {
         </nav>
 
         <div className="cpos-settings__body cpos-fadein" key={current}>
-          {current === 'roles' ? <RolesSection /> : <LicenceSection />}
+          {current === 'roles' ? (
+            <RolesSection />
+          ) : current === 'openingCash' ? (
+            <OpeningCashSection />
+          ) : (
+            <LicenceSection />
+          )}
         </div>
       </div>
     </div>
@@ -106,6 +126,125 @@ function LicenceSection() {
   }
 
   return <PosLicenseSection license={license} />;
+}
+
+/**
+ * Whether a cashier declares the drawer before the sale screen opens.
+ *
+ * Shop-wide and off by default, so nothing changes for a till that upgrades
+ * into this release.
+ */
+function OpeningCashSection() {
+  const t = useT();
+  const { toast } = useToast();
+  const { can } = usePosRoles();
+  const session = usePosLocalSession();
+  const { push } = useCaspianNavigation();
+  const openingCash = usePosOpeningCash();
+
+  /** `null` until the stored setting has been read, so the pane never guesses. */
+  const [required, setRequired] = useState<boolean | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void readLocalShopSettings().then((shop) => {
+      if (alive) setRequired(shop.requireOpeningCash);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /**
+   * Saved on the click, with no Save button -- no pane on this page has one --
+   * but unlike `RolesSection` the write is awaited and a failure is shown. A
+   * till with site data blocked really does reject this write, and a silent
+   * revert would read as a switch that refuses to move.
+   */
+  const choose = async (next: boolean) => {
+    if (required === null || next === required) return;
+    const previous = required;
+    setRequired(next);
+    setSaveFailed(false);
+    try {
+      await writeLocalShopSettings({ requireOpeningCash: next });
+      // The provider sits above PosRoot and stays mounted while this page is
+      // open, so nothing it holds would notice this write on its own: there is
+      // no storage event for IndexedDB, and none fires in the writing tab even
+      // for localStorage. Without this the switch would appear to save and then
+      // do nothing until the next page load -- which reads as a broken switch,
+      // and on the way back off it reads as a till that will not let go.
+      await openingCash.refresh();
+      // Directional, not a generic "Saved": the effect lands on whoever opens
+      // the till tomorrow morning, so the person flipping it is told which way
+      // it went.
+      toast({
+        title: t(
+          next ? 'pos.appAdmin.openingCash.turnedOn' : 'pos.appAdmin.openingCash.turnedOff',
+        ),
+      });
+    } catch {
+      setRequired(previous);
+      setSaveFailed(true);
+    }
+  };
+
+  if (required === null) return <div className="cpos-muted">{t('common.loading')}</div>;
+
+  return (
+    <section className="cpos-section">
+      <h2 className="cpos-section__title">{t('pos.appAdmin.openingCash.title')}</h2>
+
+      <div className="cpos-field">
+        {/*
+          A two-button group rather than `<Switch>`. The switch is 38x22 -- half
+          the register's `--cpos-touch` 44px floor -- and it hardcodes
+          `rgba(0,0,0,0.22)` and `#fff`, neither of them a `--cpos-*` token, so
+          in the till's dark mode it is near-black on near-black. It gets away
+          with that at `/admin/pos` only because that surface is always light.
+          `.cpos-choices` already carries the touch floor, already resolves
+          through the tokens in both themes, and is already the register's idiom
+          for this pick at `/pos/settings`. It also names both states in words
+          instead of leaving the answer in a knob position.
+        */}
+        <div className="cpos-choices" role="group" aria-label={t('pos.appAdmin.openingCash.title')}>
+          {([false, true] as const).map((value) => (
+            <button
+              key={String(value)}
+              type="button"
+              className={cn('cpos-choice', required === value && 'cpos-choice--on')}
+              aria-pressed={required === value}
+              onClick={() => void choose(value)}
+            >
+              <span>
+                {t(value ? 'pos.appAdmin.openingCash.on' : 'pos.appAdmin.openingCash.off')}
+              </span>
+            </button>
+          ))}
+        </div>
+        <FieldDescription>{t('pos.appAdmin.openingCash.help')}</FieldDescription>
+      </div>
+
+      {saveFailed ? (
+        <div className="cpos-note cpos-note--danger" role="alert">
+          {t('pos.appAdmin.openingCash.saveFailed')}
+        </div>
+      ) : null}
+
+      {required ? (
+        <div className="cpos-note cpos-note--brand">{t('pos.appAdmin.openingCash.rule')}</div>
+      ) : null}
+
+      {can(session.user?.role, 'sales.view') ? (
+        <div className="cpos-actions">
+          <Button variant="outline" onClick={() => push('/pos/sales#pos-sales-opening-cash')}>
+            {t('pos.appAdmin.openingCash.viewRecord')}
+          </Button>
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 function RolesSection() {
