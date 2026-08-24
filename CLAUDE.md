@@ -180,30 +180,13 @@ The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/s
 - **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
-- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version, **and the POS installer links, every single time** (next rule).
-- **Every end-of-task report hands over the POS installer — TWO links, every time.** A local path and a GitHub URL. Not the release page, not "see the Releases tab". The GitHub URL is what gets sent to a shop; the local path is what gets tested on this machine before it is sent.
-
-  **This is unconditional.** It is *not* limited to tasks that compiled a new `.exe`. A report about a library release, a docs fix, a scaffolder tweak or a bug investigation still ends with the installer links, because "where do I get the thing I install on a till?" has one answer and the user should never have to ask for it twice.
-
-  - If this task built a new `.exe`, link that one.
-  - Otherwise link the **current newest `desktop/v*` release**. What a shop downloads does not change just because this task did not touch `desktop/`.
-
-  Read the URL back from the release rather than composing it by hand — a rename would otherwise make the link a lie — and pull a local copy in the same step:
-
-  ```bash
-  LATEST=$(gh release list --limit 100 --json tagName,createdAt \
-    --jq '[.[] | select(.tagName | startswith("desktop/"))] | sort_by(.createdAt) | reverse | .[0].tagName')
-  gh api "repos/CaspianTools/script-caspian-store/releases/tags/${LATEST/\//%2F}" \
-    --jq '.assets[].browser_download_url'
-  gh release download "$LATEST" --dir ~/Downloads --clobber
-  ```
-
-  Report the local one as a plain Windows path the user can paste into Explorer — `C:\Users\<you>\Downloads\Caspian.Register_X.Y.Z_x64-setup.exe`.
-
-  **If no `desktop/v*` release exists yet, say that plainly and say what it would take to cut one.** Never silently omit the links, and never substitute the Releases tab for them.
-
-  Say which version the link points at, and whether this task changed it. A shop that already installed `0.1.0` needs to know the link is the same file, not a new one.
-- **Every compiled `.exe` carries its version in the filename.** `Caspian.Register_0.1.0_x64-setup.exe`, never `setup.exe` or `Caspian.Register-setup.exe`. A shop keeps installers in a downloads folder for years and a support call starts with "which one are you running?" — an unversioned file makes that unanswerable. Tauri's NSIS bundler does this by default from `version` in `desktop/src-tauri/tauri.conf.json`; `.github/workflows/desktop-build.yml` asserts it rather than trusting it.
+- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
+- **The register ships as a PWA, and only as a PWA.** There is no desktop app and no `.exe`.
+  A shop installs the till from Chrome or Edge with the Install button in the register's own
+  header (`PosInstallButton`, backed by `buildPosWebManifest()`), which gives it its own icon,
+  its own window and its own service worker at scope `/pos`. A Tauri shell under `desktop/`
+  shipped between v0.1.0 and v1.0.1 and was removed in v12.0.0; do not reintroduce one without
+  the owner asking for it, and do not point a shop at the old `desktop/v*` releases.
 
 ---
 
@@ -416,87 +399,6 @@ Then tag the sibling release separately (e.g. `create-caspian-store/v0.1.1`) to 
 
 **This is the only `npm publish` allowed in this repo** — see "Never do without explicit user permission" for the main-package rule.
 
-### 14. Release the Windows register shell (only when `desktop/` changed)
-
-[desktop/](desktop/) is a Tauri app that **bundles the register** and runs it in the library's
-standalone mode — no address, no network, no Firebase project. It is **not** in the npm package —
-`files` is an allowlist and does not include it — so it versions and releases independently on a
-`desktop/v*` tag, exactly like `create-caspian-store/`. A library release does **not** imply a desktop
-release, and vice versa.
-
-Skip this step unless something under `desktop/` changed, and say so in the commit body
-(`"desktop/ unaffected"`).
-
-```bash
-# 1. Bump the version in desktop/src-tauri/tauri.conf.json, src-tauri/Cargo.toml and package.json
-#    (all three kept in sync; semver, independent of the library).
-# 2. Tag and push. The workflow builds on windows-latest and attaches the installer.
-git tag -a desktop/vX.Y.Z -m "Caspian Register X.Y.Z — <short summary>"
-git push origin desktop/vX.Y.Z
-# 3. Or, to get an artifact without cutting a release:
-gh workflow run desktop-build.yml
-```
-
-Two rules, both enforced in [desktop-build.yml](.github/workflows/desktop-build.yml) rather than left
-to discipline:
-
-- **The filename carries the version** — `Caspian.Register_X.Y.Z_x64-setup.exe`. The build fails if
-  the version in the filename does not match `tauri.conf.json`.
-- **Report the direct download URL**, read back from the release rather than composed by hand.
-
-There is no local build path on most maintainer machines — the shell is Rust and this repo's usual
-toolchain has no `cargo`. CI is the build, not a mirror of it. The **web half is checkable locally**
-though, and should be: `npm run build:web` inside `desktop/` plus `npx tsc --noEmit` catches everything
-except the Rust compile, and the bundle can be driven in a real browser with `npx vite preview`.
-
-**The library is built first, at the repo root.** `desktop/` depends on it as `file:..`, which npm
-**links rather than builds**, so a missing `dist/` fails the Vite build with an unresolved import. The
-workflow runs `npm install && npm run build` at the root before touching `desktop/`. Use `npm install`,
-never `npm ci` — this repo commits no lock file.
-
-**No library source change may be needed to serve the desktop app.** It is assembled entirely from the
-public API: `standalone`, `CaspianRoot`, `features.posOnly`, and the framework-adapter contract. If a
-desktop need seems to require reaching into `src/`, that is the signal to extend the adapter contract
-instead — the same rule that keeps `next/*` out of the library.
-
-**Routing is an in-memory adapter, and must stay one.** Tauri serves the bundle from a custom protocol
-with **no SPA fallback**, so the default `window.location` navigation would ask the protocol handler
-for `/pos/settings` and get nothing. [desktop/src/memory-navigation.tsx](desktop/src/memory-navigation.tsx)
-holds the route in module state and exposes it through `useSyncExternalStore`. Two things there are
-load-bearing: `searchParams` is supplied and reactive (omitting it re-introduces issue #43), and
-**every** link click is intercepted — external hrefs are inert, because an offline till has no address
-bar and no back button, so following one is a one-way trip out of the register.
-
-**The store address is gone, and must not come back.** v0.1.0 asked for it with no validation; v0.2.0
-added a `/pos` probe and a `Till → Change shop address` menu item, but deliberately never re-probed on
-launch, so a till that had already stored a wrong address kept opening that site's 404 across the
-upgrade. The fix was to delete the concept. Do not re-add a cloud mode or a per-device mode switch: the
-same reasoning as `resolvePosStorageMode` applies, the mode is a property of the deployment. A shop with
-a hosted store installs the register from Chrome or Edge as a PWA.
-
-**Standalone data on a till is the shop's only copy.** It lives in IndexedDB inside the app's WebView2
-profile. Uninstalling, wiping the Windows profile or a dead disk destroys it, and `factoryResetLocalStore`
-is a separate call from `clearPosDb` for the same reason. Anything that changes what the Backup panel
-writes or restores must keep the round-trip whole, and the manual must keep saying this out loud.
-
-**The installer is unsigned until a certificate exists.** Windows SmartScreen shows *"Windows protected
-your PC"* on first run. The workflow already does the signing — it imports a PFX, patches the
-thumbprint into `tauri.conf.json`, and lets Tauri sign both the app and the installer — and **skips
-that step cleanly when the secrets are absent**, so the build keeps working either way and starts
-producing signed installers the moment two repository secrets exist:
-
-| Secret | What |
-| --- | --- |
-| `WINDOWS_CERT_PFX_BASE64` | the `.pfx`, base64-encoded — see [desktop/README.md](desktop/README.md); not `certutil -encode`, whose PEM armor breaks the workflow decode |
-| `WINDOWS_CERT_PASSWORD` | its password |
-
-The build logs the signature status and warns loudly when a release ships unsigned, so it can never
-happen quietly. **No signing path has been chosen** — that is procurement, not a code change. Note that
-SmartScreen weighs the signature, the reputation of the certificate *and* the exact file hash, and the
-Mark of the Web; it is not a signature check alone, and [desktop/README.md](desktop/README.md) has the
-corrected options table. Azure Trusted Signing is not a PFX and would need a second signing step.
-
----
 
 ## Style guide
 

@@ -16,6 +16,104 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v12.0.0 — Register correctness pass, and the till is a PWA only
+
+A full review of `src/pos/` turned up sixteen defects, from a receipt printed with no
+number on it to a real sale that could sit invisible in the outbox forever. All of them
+are fixed here. Separately, the Tauri desktop shell is gone: the register ships as a PWA
+and only as a PWA.
+
+### Consumer action required on upgrade
+
+`commitPosSale` now returns the priced lines it already computes, and the register builds
+the customer's receipt from those. Redeploy the `caspian-pos` codebase or receipts keep
+falling back to the till's scanned prices:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v12.0.0
+cd firebase/functions-pos && npm install && npm run build && cd ../..
+firebase deploy --only functions:caspian-pos
+```
+
+Nothing else changes for a consumer site. If your code imported `readStorageMode`,
+`writeStorageMode`, `readPrinterTransport` or `writePrinterTransport`, delete those calls —
+see **Removed**.
+
+### Fixed
+
+- **An offline sale with no leased numbers left printed a blank receipt number.**
+  `PosSaleQueue.capture` returns a device-local reference for exactly this case and
+  `PosQueuedCloudAdapter` was discarding it, so the customer got a slip with no identifier
+  at all. The reference is now used and labelled as provisional, on screen and on the
+  printed receipt.
+- **A sale interrupted mid-send was never retried and never cleared.** `send()` marks a
+  sale `sending` before the call; a reload or a closed tab left it there permanently —
+  `drain()` only picks up `held`, `pruneSent()` only removes `sent`, and the held-sales
+  page offers Retry on `blocked` alone. The queue now sweeps `sending` back to `held` once
+  per session, before the online check so the count is right even offline.
+- **Receipt lines could disagree with the receipt total.** Lines and subtotal came from the
+  open ticket while the total came back from the commit, so a catalogue edit mid-sale
+  printed a slip whose own lines did not add up to its own total. `commitSale` now returns
+  what was charged and the receipt is built from that.
+- **An online sale burnt a leased receipt number the server never honoured.**
+  `PosCloudAdapter` was not forwarding the `receipt` claim (or `capturedByUid` /
+  `capturedByName`) to the callable, so the ordinal was spent locally while the server
+  allocated a different number from the counter. Leases drained at one number per sale and
+  numbering developed permanent gaps.
+- **Typing into the register's quick-add dialogs fired phantom barcode scans.** The
+  keyboard wedge was silenced only for the tender phase, which could not see the product
+  and person dialogs the POS header opens outside `PosRegister`. It now detects any open
+  dialog from the DOM, so consumer-added dialogs are covered too.
+- **`1,234.50` was read as `1.234` at the tender screen.** `String.replace` with a string
+  argument replaces only the first match, so a grouping separator produced two decimal
+  points and `parseFloat` stopped at the second. On the tendered field that is wrong change
+  handed to a customer.
+- **The register, the connection pill and the held-sales page each built their own
+  outbox.** They shared IndexedDB so no sale was lost, but `capture()` and `markSent()`
+  notified an instance nobody was subscribed to, so the held-sales badge only moved on a
+  30-second timer and `paused` — in-memory state — could never be observed by the pill.
+  There is now one adapter, provided by `PosShell`.
+- **Backups silently dropped custom roles.** `LOCAL_BACKUP_VERSION` is 2 and carries
+  `roles`; v1 files still restore. `parseLocalBackup` also validates `sales` is an array,
+  which it never did while `restoreLocalBackup` iterated it.
+- **"0 receipt numbers left" could never be cleared.** The low-numbers warning fired on
+  `leasedRemaining === 0`, which is also a healthy till before its first lease and a store
+  with no `functions-pos` deployment. Lease failure is now tracked separately and reported
+  as "Cannot reserve receipt numbers".
+- The `Math.random` fallback in `randomId()` had no length floor, and the server requires a
+  sale id of at least eight characters.
+
+### Added
+
+- **Line discounts have a control at last.** `usePosTicket.setLineDiscount` was plumbed
+  end to end — cloud payload, `priceLocalSale`, `commitPosSale` validation, receipt
+  renderer — with nothing calling it, so the ticket's discount row and the receipt's
+  per-line discount were unreachable. Each ticket line now has a markdown button.
+- `PosAdapterProvider` / `usePosAdapter`, the shared register storage seam.
+- `PosSoldLine` — a line as it was charged, distinct from the scanned `PosSaleLine`.
+- `summariseSoldLines` and `parseAmount` are exported, both pure and both checked by
+  `scripts/check-standalone.mjs`.
+
+### Removed
+
+- **`desktop/` and its build workflow.** The Tauri shell that bundled the register for
+  Windows is gone; the till is installed from Chrome or Edge with the register's own
+  Install button. Existing `desktop/v*` releases stay on GitHub but are no longer built or
+  documented, and the POS manual's Windows-installer section has been deleted. Standalone
+  mode itself (`<CaspianStoreProvider standalone>`, `PosLocalAdapter`, the local back
+  office) is untouched and still exported — it simply has no first-party packaged delivery.
+- `readStorageMode`, `writeStorageMode`, `readPrinterTransport`, `writePrinterTransport`
+  and `idbCountByIndex`. Nothing called any of them: the printer control is hard-coded to
+  the browser transport until the ESC/POS paths ship, and the storage mode is derived by
+  `resolvePosStorageMode` rather than stored.
+- `promoCode` from the standalone commit path. `priceLocalSale` never applied a promo, so
+  the field recorded a claim nothing honoured.
+
+### Changed
+
+- `PosQueuedCloudAdapter` takes its queue as a constructor argument instead of building one.
+- `PosCommittedSale` gains optional `lines` and `provisionalReceipt`.
+
 ## v11.0.2 — The Windows register becomes a till with no website
 
 The Windows register app was a thin window onto a shop's hosted `/pos` page, and it asked for that

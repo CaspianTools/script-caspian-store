@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v11.0.1 firebase
-# v11.0.2 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v12.0.0 firebase
+# v12.0.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -60,7 +60,7 @@ Peer deps: React 18/19, `firebase` 10, 11, or 12. Next.js consumers: install `ne
 
 ```bash
 npm install react@^19 react-dom@^19 firebase@^12
-npm install github:CaspianTools/script-caspian-store#v11.0.1
+npm install github:CaspianTools/script-caspian-store#v12.0.0
 ```
 
 Newly scaffolded sites (`npm create caspian-store@latest`) get the new versions automatically.
@@ -1281,10 +1281,6 @@ about — a failure that looks exactly like a working till.
   there isn't one.
 - **Receipts still print through the browser's print dialogue.** Direct
   thermal printing is not in this version, in standalone or cloud mode.
-- **The Windows installer still asks for a shop address.** The desktop shell in
-  [`desktop/`](desktop/README.md) is a window over a shop's own `/pos` page and
-  has not moved to standalone yet; packaging a standalone till as an `.exe` that
-  needs no website at all is the next desktop release.
 
 ### Mixing the two
 

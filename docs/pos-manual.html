@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v11.0.2"
+      "version": "v12.0.0"
     },
     "parts": [
       {
@@ -944,39 +944,6 @@ const MANUAL = {
               "When a new version of the register is ready, a strip appears across the top offering to update. It never updates by itself in the middle of a sale - press it between customers, or just close and reopen the register at the end of the day.",
               "A register-only shop installs one app, not two, because there is no storefront to install.",
               "Removing the app is done the same way as any other program on that computer. Nothing about your shop or your sales is stored inside it."
-            ]
-          },
-          {
-            "id": "the-windows-register-app",
-            "title": "The Windows register app — a till with no website",
-            "audience": "owner",
-            "summary": "There is a Windows installer for shops that want a till and nothing else: no website, no internet connection and no accounts. It is a different thing from the register described everywhere else in this manual. The whole shop lives inside the program, on that one computer. Your items, your staff and every sale you take are kept on that machine and are never sent anywhere.",
-            "steps": [
-              "On a computer, open the Releases page of the software and download the file ending in setup.exe.",
-              "Run it. Windows will warn you that it does not recognise the program - see the note below. Choose More info, then Run anyway.",
-              "The register opens by itself. There is no address to type and nothing to set up.",
-              "The first screen asks you to make the support account. Give it a name and a password, and keep that password somewhere safe: it is the only account on this till until it adds more.",
-              "Press Back office and put your items in, then add your cashiers under People. The till is ready."
-            ],
-            "fields": [
-              {
-                "name": "Support account",
-                "what": "The first and, at the start, only account on the till. It is made on the very first screen and it is the account that can add everyone else. Nobody can reset it for you - there is no email, no password reset and nobody holding a copy - so write the password down somewhere away from the till."
-              },
-              {
-                "name": "Back office",
-                "what": "Second item in the bar across the top, between Register and Settings. It holds Items, Sales, People, Shop and Backup - everything the online admin panel would do for a shop that had one. It is shown only to accounts allowed to open it, so a cashier signed in as staff does not see it at all."
-              }
-            ],
-            "notes": [
-              "Windows will warn that it does not recognise the program, because the installer is not signed yet. It is safe to continue with More info, then Run anyway. Signing means buying a certificate; until that is done, every computer shows this warning the first time it runs the file.",
-              "EVERYTHING IS ON THAT ONE COMPUTER AND NOWHERE ELSE. There is no copy in the cloud, because there is no cloud. If the machine is stolen or its disk fails, the shop's items, its staff and every sale it ever took go with it. Open Back office, then Backup, and save the file onto a USB stick or another computer. Do that weekly at the very least, and always before moving a till to a new machine.",
-              "It does not need the internet at all. Unplug the network cable and everything still works, because nothing was ever being sent.",
-              "Sales taken here do not appear in any online shop or admin panel. If you also run a Caspian storefront, that is a separate shop with separate stock and separate orders: this till knows nothing about it, and it knows nothing about this till.",
-              "It does NOT print straight to a till printer. Receipts go through the ordinary Windows print window. Direct printing to a thermal printer is the main reason to want this app and it is not in this version.",
-              "It is Windows only. On a Mac, an iPad or an Android tablet there is no offline app - see \"Installing the register as an app on a till\", which needs a shop website behind it.",
-              "Receipt numbers start at R-000001 and never go backwards, including after restoring a backup. A restored file adds what is missing and leaves the sales already on the till exactly as they are.",
-              "Versions before 1.0 were a different app: they asked for your shop's web address on first run and showed your shop's own register page. That version is gone. If you are upgrading from one, the old address is forgotten by itself, and any sales it took are in your online shop, not in this till."
             ]
           },
           {
@@ -1416,6 +1383,7 @@ const MANUAL = {
               "If you are on Chrome or Edge, you can press \"Use camera\", point the camera at the label, and it will read it. Press \"Stop camera\" when you are done.",
               "Watch the item appear on the right under \"Current sale\". Scan it again to make it two.",
               "Use the minus and plus buttons on a line to change how many, and the small x button to take a line off completely.",
+              "To take money off one line, press the tag button on it, type the amount to come off, and press \"Apply\". \"Clear\" puts the line back to full price.",
               "Press \"Take payment\" when the customer is ready. \"Clear sale\" throws the whole sale away after asking you to confirm."
             ],
             "fields": [
@@ -1446,6 +1414,10 @@ const MANUAL = {
               {
                 "name": "Take payment",
                 "what": "Opens the payment window. Greyed out while the sale is empty."
+              },
+              {
+                "name": "Line discount",
+                "what": "The tag button on each line of the sale. Opens a small box where you type an amount to come off that line - money off, not a percentage. The button turns solid while a line carries a discount, and the amount is shown under the line in green. A discount can bring a line down to nothing but never below: the register will not turn a sale into a partial refund."
               }
             ],
             "notes": [
@@ -1461,7 +1433,7 @@ const MANUAL = {
               "There is no way to look an item up by name on this screen. There is no search box and no browse list - only the one box for a code. If you cannot scan an item and do not know its code, you cannot get it onto the sale from the register.",
               "An item with no barcode and no SKU can still be rung up, as long as you know its id code. That id is the third thing the register tries. You can read a product's id off the web address of its editing page in the admin panel, in the part between /admin/products/ and /edit. It is a long jumble of letters and numbers, so this is a fallback, not a way of working.",
               "If the lookup itself fails - for example the till drops off the internet in the middle of a scan - the message under the box reads \"common.error\" in English. That is a raw internal label rather than a sentence, and it is a known rough edge. Read it as \"something went wrong, try again\". Nothing is added to the sale when it appears. In Azerbaijani, Russian and Turkish the same message shows a proper word.",
-              "There is no way to give a discount on a line, no promo code box, and no way to attach a customer account to the sale. Every counter sale is recorded as a walk-in.",
+              "You can take money off a single line, but there is still no promo code box and no way to attach a customer account to the sale. Every counter sale is recorded as a walk-in.",
               "The register never asks which size. If a product has exactly one size, that size is used. If it has several, the sale is recorded with no size, and stock comes off the product's general count rather than off a particular size.",
               "Scanning the same thing twice adds one to the existing line rather than creating a second line. The most you can put on one line is 10000, and dropping a line to zero removes it.",
               "The totals on the right are a guide for you and the customer. The real prices are read from your catalogue by the server at the moment you complete the sale, so if a price was changed in the admin panel while the sale was open, the sale records the new price.",
@@ -1588,7 +1560,7 @@ const MANUAL = {
             ],
             "notes": [
               "The sale is written to this computer BEFORE the till tries to send it. That order matters: a request that timed out and a request that was refused look identical from the till, so it never has to guess afterwards whether your sale survived.",
-              "Do not clear this browser’s site data while sales are waiting. They exist nowhere else yet, and clearing it destroys them. The Windows app keeps its data separately, which is one reason to prefer it on a busy counter.",
+              "Do not clear this browser’s site data while sales are waiting. They exist nowhere else yet, and clearing it destroys them. Installing the register as an app on the till, rather than running it in an ordinary tab, makes that much harder to do by accident.",
               "Waiting sales are only sent while a register tab is open. Closing the till at the end of the day with sales still waiting is fine - they go as soon as somebody opens the register again - but they will not go overnight on their own.",
               "An item the till has never downloaded cannot be scanned while offline. The till keeps a copy of your catalogue and refreshes it whenever it is online, so this only affects something added very recently.",
               "The till reserves receipt numbers in advance, a few hundred at a time. If it somehow runs out mid-outage it keeps selling, but the customer gets a slip marked as a reference rather than a receipt. You are warned in the top bar while still online, long before that happens.",
@@ -2678,6 +2650,7 @@ const MANUAL = {
               "Chrome və ya Edge istifadə edirsinizsə, \"Kameradan istifadə et\" (Use camera) düyməsini basıb kameranı etiketə tutun — kod oxunacaq. İşiniz bitəndə \"Kameranı dayandır\" (Stop camera) düyməsini basın.",
               "Məhsulun sağ tərəfdə \"Cari satış\" (Current sale) başlığı altında göründüyünü yoxlayın. Bir də skan etsəniz, sayı ikiyə qalxacaq.",
               "Sayı dəyişmək üçün sətirdəki minus və plyus düymələrindən, sətri tamamilə silmək üçün isə kiçik x düyməsindən istifadə edin.",
+              "Bir sətirdən pul çıxmaq üçün həmin sətirdəki etiket düyməsini basın, çıxılacaq məbləği yazın və \"Tətbiq et\" (Apply) düyməsini basın. \"Təmizlə\" (Clear) sətri tam qiymətə qaytarır.",
               "Müştəri hazır olanda \"Ödənişi qəbul et\" (Take payment) düyməsini basın. \"Satışı təmizlə\" (Clear sale) düyməsi isə təsdiq soruşduqdan sonra bütün satışı silir."
             ],
             "fields": [
@@ -2708,6 +2681,10 @@ const MANUAL = {
               {
                 "name": "Ödənişi qəbul et (Take payment)",
                 "what": "Ödəniş pəncərəsini açır. Satış boş olduğu müddətdə sönük qalır."
+              },
+              {
+                "name": "Sətir endirimi (Line discount)",
+                "what": "Satışdakı hər sətirdə olan etiket düyməsi. Həmin sətirdən çıxılacaq məbləği yazdığınız kiçik xana açır — faiz deyil, məbləğ. Sətirdə endirim olduğu müddətdə düymə dolu görünür, məbləğ isə sətrin altında yaşıl rəngdə yazılır. Endirim sətri sıfıra endirə bilər, amma mənfiyə yox: kassa satışı qismən qaytarmaya çevirməyəcək."
               }
             ],
             "notes": [
@@ -2723,7 +2700,7 @@ const MANUAL = {
               "Bu ekranda məhsulu adı ilə tapmaq mümkün deyil. Nə axtarış xanası var, nə də baxış siyahısı — yalnız kod üçün bir xana. Məhsulu skan edə bilmirsinizsə və kodunu da bilmirsinizsə, onu kassadan satışa sala bilməzsiniz.",
               "Barkodu və SKU-su olmayan məhsulu da satmaq olar, bir şərtlə ki, identifikator kodunu biləsiniz. Kassa üçüncü növbədə məhz ona baxır. Məhsulun identifikatorunu idarə panelində onun redaktə səhifəsinin veb ünvanından, /admin/products/ ilə /edit arasındakı hissədən oxuya bilərsiniz. Bu, hərf və rəqəmlərdən ibarət uzun bir yığındır, ona görə də belə üsul gündəlik iş qaydası yox, son çarədir.",
               "Axtarışın özü uğursuz olsa — məsələn, skan zamanı kassanın internet bağlantısı kəssə — xananın altındakı mesaj ingiliscə \"common.error\" kimi görünür. Bu, cümlə deyil, sadəcə daxili etiketdir və məlum qüsurdur. Onu \"nəsə səhv getdi, yenidən cəhd edin\" kimi qəbul edin. Bu mesaj çıxanda satışa heç nə əlavə olunmur. Azərbaycan, rus və türk dillərində eyni mesaj normal söz kimi görünür.",
-              "Sətrə endirim vermək, promo kod daxil etmək və satışa müştəri hesabı bağlamaq mümkün deyil. Hər piştaxta satışı adi müştəri satışı kimi qeyd olunur.",
+              "Ayrı-ayrı sətirlərdən pul çıxa bilərsiniz, amma promo kod qutusu və satışa müştəri hesabı bağlamaq imkanı hələ də yoxdur. Hər piştaxta satışı adi müştəri satışı kimi qeyd olunur.",
               "Kassa heç vaxt ölçünü soruşmur. Məhsulun cəmi bir ölçüsü varsa, həmin ölçü götürülür. Bir neçə ölçüsü varsa, satış ölçüsüz qeyd olunur və stok konkret ölçüdən yox, məhsulun ümumi qalığından çıxılır.",
               "Eyni məhsulu iki dəfə skan etmək ikinci sətir yaratmır, mövcud sətrin sayını bir vahid artırır. Bir sətrə maksimum 10000 ədəd qoymaq olar, sayı sıfıra endirsəniz isə sətir silinir.",
               "Sağdakı yekunlar sizin və müştəri üçün təxmini göstəricidir. Əsl qiymətləri server satışı tamamladığınız an kataloqunuzdan oxuyur, ona görə də satış açıq olarkən idarə panelində qiymət dəyişibsə, satışa yeni qiymət yazılır.",
@@ -2848,7 +2825,7 @@ const MANUAL = {
             ],
             "notes": [
               "Satış kassa onu göndərməyə cəhd etməzdən ƏVVƏL bu kompüterə yazılır. Bu ardıcıllıq vacibdir: vaxtı keçmiş sorğu ilə rədd edilmiş sorğu kassadan eyni görünür, ona görə o, satışınızın qalıb-qalmadığını sonradan təxmin etmək məcburiyyətində qalmır.",
-              "Satışlar gözləyərkən bu brauzerin sayt məlumatlarını təmizləməyin. Onlar hələ başqa heç yerdə yoxdur və təmizləmək onları məhv edir. Windows tətbiqi məlumatını ayrıca saxlayır - məşğul piştaxtada onu üstün tutmağın səbəblərindən biri budur.",
+              "Satışlar gözləyərkən bu brauzerin sayt məlumatlarını təmizləməyin. Onlar hələ başqa heç yerdə yoxdur və təmizləmək onları məhv edir. Kassanı adi tabda deyil, tətbiq kimi quraşdırsanız, bunu təsadüfən etmək xeyli çətinləşir.",
               "Gözləyən satışlar yalnız kassa vərəqi açıq olduqda göndərilir. Gün sonunda satışlar gözləyərkən kassanı bağlamaq normaldır - kimsə kassanı yenidən açan kimi gedirlər - amma gecə boyu öz-özünə getməyəcəklər.",
               "Kassanın heç vaxt yükləmədiyi məhsul oflayn skan oluna bilməz. Kassa kataloqunuzun nüsxəsini saxlayır və onlayn olduqca yeniləyir, ona görə bu, yalnız çox yeni əlavə olunmuş məhsula aiddir.",
               "Kassa qəbz nömrələrini qabaqcadan, hər dəfə bir neçə yüz ədəd ayırır. Əgər kəsintinin ortasında birtəhər qurtarsa, satmağa davam edir, amma müştəri qəbz yox, istinad kağızı alır. Bu baş verməzdən xeyli əvvəl, hələ onlayn ikən yuxarı zolaqda xəbərdarlıq alırsınız.",
@@ -3932,6 +3909,7 @@ const MANUAL = {
               "В Chrome и Edge можно нажать «Включить камеру» (Use camera) и навести камеру на этикетку — код считается. Закончив, нажмите «Выключить камеру» (Stop camera).",
               "Товар появится справа, в разделе «Текущая продажа» (Current sale). Отсканируйте его ещё раз — станет две штуки.",
               "Кнопками минус и плюс в строке меняйте количество, а маленькой кнопкой x убирайте строку целиком.",
+              "Чтобы сделать скидку на одну строку, нажмите на ней кнопку с ярлыком, введите сумму скидки и нажмите «Применить» (Apply). «Очистить» (Clear) возвращает строке полную цену.",
               "Когда покупатель готов, нажмите «Принять оплату» (Take payment). Кнопка «Очистить продажу» (Clear sale) удаляет всю продажу, предварительно спросив подтверждение."
             ],
             "fields": [
@@ -3962,6 +3940,10 @@ const MANUAL = {
               {
                 "name": "Принять оплату (Take payment)",
                 "what": "Открывает окно оплаты. Пока продажа пуста, кнопка неактивна."
+              },
+              {
+                "name": "Скидка на строку (Line discount)",
+                "what": "Кнопка с ярлыком на каждой строке продажи. Открывает небольшое поле, куда вводится сумма скидки на эту строку - именно сумма, а не процент. Пока на строке есть скидка, кнопка залита цветом, а сумма показана под строкой зелёным. Скидка может опустить строку до нуля, но не ниже: касса не превратит продажу в частичный возврат."
               }
             ],
             "notes": [
@@ -3977,7 +3959,7 @@ const MANUAL = {
               "Найти товар по названию на этом экране невозможно. Здесь нет ни поиска, ни списка для просмотра — только одно поле для кода. Если товар не сканируется и его кода вы не знаете, добавить его в продажу с кассы не получится.",
               "Товар без штрихкода и без SKU всё равно можно пробить, если знать его внутренний код (id). Именно его касса проверяет третьим. Код товара виден в адресе страницы его редактирования в админ-панели — в части между /admin/products/ и /edit. Это длинный набор букв и цифр, так что способ запасной, а не для повседневной работы.",
               "Если не сработал сам поиск — например, касса потеряла интернет прямо во время сканирования, — под полем появится сообщение «common.error» на английском. Это не фраза, а служебная метка, известная шероховатость. Читайте её как «что-то пошло не так, попробуйте ещё раз». В продажу при этом ничего не добавляется. На азербайджанском, русском и турецком вместо неё выводится нормальное слово.",
-              "Скидку на строку дать нельзя, поля для промокода нет, привязать продажу к учётной записи покупателя тоже нельзя. Каждая продажа за прилавком записывается как продажа случайному покупателю.",
+              "Скидку на отдельную строку сделать можно, но поля для промокода по-прежнему нет, и привязать продажу к учётной записи покупателя тоже нельзя. Каждая продажа за прилавком записывается как продажа случайному покупателю.",
               "Касса никогда не спрашивает размер. Если у товара ровно один размер, берётся он. Если размеров несколько, продажа записывается без размера, а остаток списывается с общего количества товара, а не с конкретного размера.",
               "Повторное сканирование того же товара увеличивает количество в существующей строке, а не создаёт вторую. Максимум в одной строке — 10000, а строка с нулевым количеством удаляется.",
               "Итоги справа — ориентир для вас и покупателя. Настоящие цены сервер берёт из вашего каталога в момент завершения продажи, поэтому если цену изменили в админ-панели, пока продажа была открыта, в продаже запишется новая цена.",
@@ -4102,7 +4084,7 @@ const MANUAL = {
             ],
             "notes": [
               "Продажа записывается на этот компьютер ДО того, как касса попытается её отправить. Этот порядок важен: запрос, который завис, и запрос, который отклонили, выглядят с кассы одинаково, поэтому ей не приходится потом гадать, уцелела ли ваша продажа.",
-              "Не очищайте данные сайта в этом браузере, пока есть ожидающие продажи. Больше их пока нигде нет, и очистка их уничтожит. Приложение для Windows хранит свои данные отдельно - это одна из причин предпочесть его на загруженном прилавке.",
+              "Не очищайте данные сайта в этом браузере, пока есть ожидающие продажи. Больше их пока нигде нет, и очистка их уничтожит. Если установить кассу как приложение, а не держать её в обычной вкладке, случайно сделать это станет заметно труднее.",
               "Ожидающие продажи отправляются только пока открыта вкладка кассы. Закрыть кассу в конце дня с ожидающими продажами не страшно - они уйдут, как только кассу снова откроют, - но сами за ночь они не отправятся.",
               "Товар, который касса никогда не скачивала, офлайн отсканировать нельзя. Касса хранит копию вашего каталога и обновляет её всякий раз, когда есть связь, так что это касается только совсем недавно добавленного.",
               "Касса резервирует номера чеков заранее, по несколько сотен за раз. Если они всё же закончатся посреди обрыва связи, она продолжит продавать, но покупатель получит талон-справку, а не чек. Предупреждение появляется в верхней панели ещё онлайн, задолго до этого.",
@@ -5186,6 +5168,7 @@ const MANUAL = {
               "Chrome veya Edge kullanıyorsanız \"Kamerayı kullan\" (Use camera) düğmesine basıp kamerayı etikete tutun; kod okunur. İşiniz bitince \"Kamerayı durdur\" (Stop camera) düğmesine basın.",
               "Ürünün sağda \"Mevcut satış\" (Current sale) başlığı altında belirdiğini görün. Aynı ürünü tekrar okutursanız adet ikiye çıkar.",
               "Adedi değiştirmek için satırdaki eksi ve artı düğmelerini, bir satırı tamamen kaldırmak için küçük x düğmesini kullanın.",
+              "Bir satıra indirim yapmak için o satırdaki etiket düğmesine basın, düşülecek tutarı yazın ve \"Uygula\" (Apply) düğmesine basın. \"Temizle\" (Clear) satırı tam fiyata döndürür.",
               "Müşteri hazır olduğunda \"Ödeme al\" (Take payment) düğmesine basın. \"Satışı temizle\" (Clear sale) ise onay istedikten sonra satışın tamamını siler."
             ],
             "fields": [
@@ -5216,6 +5199,10 @@ const MANUAL = {
               {
                 "name": "Ödeme al (Take payment)",
                 "what": "Ödeme penceresini açar. Satış boşken soluk görünür."
+              },
+              {
+                "name": "Satır indirimi (Line discount)",
+                "what": "Satıştaki her satırda bulunan etiket düğmesi. O satırdan düşülecek tutarı yazdığınız küçük bir kutu açar - yüzde değil, tutar. Satırda indirim varken düğme dolu görünür ve tutar satırın altında yeşil renkle yazar. İndirim satırı sıfıra indirebilir ama eksiye düşüremez: kasa satışı kısmi iadeye çevirmez."
               }
             ],
             "notes": [
@@ -5231,7 +5218,7 @@ const MANUAL = {
               "Bu ekranda bir ürünü adıyla aramanın yolu yoktur. Arama kutusu da, göz atılacak bir liste de yoktur; yalnızca kod için tek bir kutu vardır. Bir ürünü okutamıyor ve kodunu da bilmiyorsanız, o ürünü kasadan satışa ekleyemezsiniz.",
               "Barkodu ve SKU'su olmayan bir ürün de, kimlik kodunu biliyorsanız satılabilir. Kasanın denediği üçüncü şey bu kimliktir. Bir ürünün kimliğini, yönetim panelindeki düzenleme sayfasının web adresinde, /admin/products/ ile /edit arasındaki bölümden okuyabilirsiniz. Harf ve rakamlardan oluşan uzun bir karışımdır; yani bu, günlük çalışma yöntemi değil, son çare bir yoldur.",
               "Aramanın kendisi başarısız olursa - örneğin kasa okutma sırasında internet bağlantısını kaybederse - kutunun altındaki mesajda İngilizce olarak \"common.error\" yazar. Bu bir cümle değil, ham bir iç etikettir ve bilinen bir pürüzdür. Bunu \"bir şeyler ters gitti, tekrar deneyin\" diye okuyun. Bu mesaj çıktığında satışa hiçbir şey eklenmez. Azerbaycanca, Rusça ve Türkçede aynı mesaj düzgün bir kelimeyle görünür.",
-              "Bir satıra indirim uygulamanın yolu yoktur; promosyon kodu kutusu yoktur ve satışa bir müşteri hesabı bağlanamaz. Her kasa satışı, mağazadan gelen (walk-in) müşteri olarak kaydedilir.",
+              "Tek bir satıra indirim uygulayabilirsiniz; ancak promosyon kodu kutusu hâlâ yoktur ve satışa bir müşteri hesabı bağlanamaz. Her kasa satışı, mağazadan gelen (walk-in) müşteri olarak kaydedilir.",
               "Kasa hangi beden olduğunu hiç sormaz. Ürünün tek bedeni varsa o beden kullanılır. Birden çok bedeni varsa satış bedensiz kaydedilir ve stok, belirli bir bedenden değil, ürünün genel stok adedinden düşülür.",
               "Aynı ürünü ikinci kez okutmak yeni bir satır açmaz, mevcut satırın adedini bir artırır. Bir satıra en çok 10000 girilebilir; adedi sıfıra düşürmek satırı kaldırır.",
               "Sağdaki toplamlar, sizin ve müşteri için yol göstericidir. Gerçek fiyatlar, satışı tamamladığınız anda sunucu tarafından kataloğunuzdan okunur; yani satış açıkken yönetim panelinde bir fiyat değiştirildiyse satış yeni fiyatla kaydedilir.",
@@ -5356,7 +5343,7 @@ const MANUAL = {
             ],
             "notes": [
               "Satış, kasa göndermeyi denemeden ÖNCE bu bilgisayara yazılır. Bu sıra önemlidir: zaman aşımına uğrayan bir istekle reddedilen bir istek kasadan aynı görünür; bu yüzden kasanın sonradan satışınızın kurtulup kurtulmadığını tahmin etmesi gerekmez.",
-              "Bekleyen satışlar varken bu tarayıcının site verilerini temizlemeyin. Henüz başka hiçbir yerde yoklar ve temizlemek onları yok eder. Windows uygulaması verilerini ayrı tutar; yoğun bir tezgâhta onu tercih etmenin nedenlerinden biri budur.",
+              "Bekleyen satışlar varken bu tarayıcının site verilerini temizlemeyin. Henüz başka hiçbir yerde yoklar ve temizlemek onları yok eder. Kasayı sıradan bir sekmede tutmak yerine uygulama olarak kurarsanız bunu yanlışlıkla yapmak çok daha zorlaşır.",
               "Bekleyen satışlar yalnızca bir kasa sekmesi açıkken gönderilir. Gün sonunda bekleyen satışlarla kasayı kapatmak sorun değildir - biri kasayı yeniden açar açmaz giderler - ama gece boyunca kendiliğinden gitmezler.",
               "Kasanın hiç indirmediği bir ürün çevrimdışıyken okutulamaz. Kasa kataloğunuzun bir kopyasını tutar ve çevrimiçi oldukça tazeler; bu yüzden bu yalnızca çok yeni eklenmiş bir ürünü etkiler.",
               "Kasa fiş numaralarını önceden, her seferinde birkaç yüz tane ayırır. Kesintinin ortasında bir şekilde biterse satmayı sürdürür ama müşteri fiş yerine referans niteliğinde bir belge alır. Bu olmadan çok önce, daha çevrimiçiyken üst çubukta uyarılırsınız.",
