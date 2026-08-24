@@ -51,6 +51,22 @@ function useCaspianNextNavigation() {
   };
 }
 
+/**
+ * Run the register with no Firebase project at all.
+ *
+ * Explicit, and deliberately never inferred from a missing config. A shop whose
+ * credentials broke coming up as an empty local till would be a failure that
+ * looks exactly like a working one — so an absent or invalid `firebaseConfig`
+ * still throws at mount, as it always did.
+ *
+ *   NEXT_PUBLIC_CASPIAN_STANDALONE=1 npm run dev
+ *
+ * Everything then lives in this browser's IndexedDB: catalogue, staff, sales
+ * and receipt numbers. Nothing is sent anywhere, and /pos is the only screen
+ * with data behind it.
+ */
+const STANDALONE = process.env.NEXT_PUBLIC_CASPIAN_STANDALONE === '1';
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
@@ -60,16 +76,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
+const adapters = {
+  Link: CaspianNextLink,
+  Image: CaspianNextImage,
+  useNavigation: useCaspianNextNavigation,
+};
+
 export function Providers({ children }: { children: ReactNode }) {
+  if (STANDALONE) {
+    return (
+      <CaspianStoreProvider standalone adapters={adapters}>
+        {children}
+      </CaspianStoreProvider>
+    );
+  }
+
   return (
-    <CaspianStoreProvider
-      firebaseConfig={firebaseConfig}
-      adapters={{
-        Link: CaspianNextLink,
-        Image: CaspianNextImage,
-        useNavigation: useCaspianNextNavigation,
-      }}
-    >
+    <CaspianStoreProvider firebaseConfig={firebaseConfig} adapters={adapters}>
       {children}
     </CaspianStoreProvider>
   );
