@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../i18n/locale-context';
-import { Button } from '../ui/button';
-import { Badge, Skeleton } from '../ui/misc';
+import { InboxIcon, RefreshIcon, WifiOffIcon } from '../ui/icons';
 import { usePosAdapter } from './pos-adapter-context';
 import { usePosQueue } from './offline/use-pos-queue';
 import type { QueuedSale } from './offline/types';
@@ -59,9 +58,10 @@ export function PosQueuePage() {
 
   if (rows === null) {
     return (
-      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Skeleton style={{ height: 28, width: 220 }} />
-        <Skeleton style={{ height: 160 }} />
+      <div className="cpos-page">
+        <div className="cpos-skeleton" style={{ height: 34, width: 240, marginBottom: 12 }} />
+        <div className="cpos-skeleton" style={{ height: 18, width: 420, marginBottom: 22 }} />
+        <div className="cpos-skeleton" style={{ height: 180 }} />
       </div>
     );
   }
@@ -71,39 +71,83 @@ export function PosQueuePage() {
   const sent = rows.filter((r) => r.state === 'sent');
 
   return (
-    <div style={{ padding: 24, maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <header>
-        <h1 style={{ fontSize: 20, margin: 0 }}>{t('pos.queue.title')}</h1>
-        <p style={{ color: '#666', margin: '6px 0 0', fontSize: 14 }}>{t('pos.queue.subtitle')}</p>
-      </header>
+    <div className="cpos-page">
+      <div className="cpos-pagehead">
+        <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
+          <InboxIcon size={19} />
+        </span>
+        <span className="cpos-pagehead__text">
+          <h1 className="cpos-pagehead__h">{t('pos.queue.title')}</h1>
+          <p className="cpos-pagehead__sub">{t('pos.queue.subtitle')}</p>
+        </span>
+      </div>
 
-      {paused ? <div style={alert}>{t('pos.queue.pausedBody')}</div> : null}
+      <div className="cpos-stats" style={{ marginBottom: 18 }}>
+        <div className="cpos-stat">
+          <span className="cpos-stat__label">{t('pos.queue.stateHeld')}</span>
+          <span className="cpos-stat__value">{held.length}</span>
+        </div>
+        <div className="cpos-stat">
+          <span className="cpos-stat__label">{t('pos.queue.blockedTitle')}</span>
+          <span
+            className="cpos-stat__value"
+            style={blocked.length ? { color: 'var(--cpos-danger)' } : undefined}
+          >
+            {blocked.length}
+          </span>
+        </div>
+        <div className="cpos-stat">
+          <span className="cpos-stat__label">{t('pos.queue.stateSent')}</span>
+          <span className="cpos-stat__value">{sent.length}</span>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Button onClick={() => void sendNow()} loading={busy} disabled={!online || !held.length}>
+      {paused ? (
+        <div className="cpos-note cpos-note--danger" style={{ marginBottom: 16 }}>
+          {t('pos.queue.pausedBody')}
+        </div>
+      ) : null}
+
+      <div className="cpos-row" style={{ alignItems: 'center', marginBottom: 20 }}>
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--primary"
+          onClick={() => void sendNow()}
+          disabled={busy || !online || !held.length}
+        >
+          {busy ? <span className="cpos-spinner" aria-hidden="true" /> : <RefreshIcon size={16} />}
           {t('pos.queue.sendNow')}
-        </Button>
-        {!online ? <span style={{ fontSize: 13, color: '#8a5a00' }}>{t('pos.queue.offline')}</span> : null}
+        </button>
+        {!online ? (
+          <span className="cpos-badge cpos-badge--warning">
+            <WifiOffIcon size={13} />
+            {t('pos.queue.offline')}
+          </span>
+        ) : null}
       </div>
 
       <Section title={t('pos.queue.heldTitle')} empty={t('pos.queue.heldEmpty')} rows={held}>
-        {() => <Badge variant="outline">{t('pos.queue.stateHeld')}</Badge>}
+        {() => <span className="cpos-badge">{t('pos.queue.stateHeld')}</span>}
       </Section>
 
       <Section title={t('pos.queue.blockedTitle')} empty={t('pos.queue.blockedEmpty')} rows={blocked}>
         {(row) => (
           <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Badge variant="secondary">{row.lastErrorCode || 'error'}</Badge>
-            <Button size="sm" variant="outline" onClick={() => void queue?.retry(row.saleId).then(refresh)}>
+            <span className="cpos-badge cpos-badge--danger">{row.lastErrorCode || 'error'}</span>
+            <button
+              type="button"
+              className="cpos-btn cpos-btn--outline cpos-btn--sm"
+              onClick={() => void queue?.retry(row.saleId).then(refresh)}
+            >
               {t('pos.queue.retry')}
-            </Button>
+            </button>
           </span>
         )}
       </Section>
 
       {sent.length ? (
         <Section title={t('pos.queue.sentTitle')} empty="" rows={sent}>
-          {() => <Badge variant="outline">{t('pos.queue.stateSent')}</Badge>}
+          {() => <span className="cpos-badge cpos-badge--success">{t('pos.queue.stateSent')}</span>}
         </Section>
       ) : null}
     </div>
@@ -122,26 +166,29 @@ function Section({
   children: (row: QueuedSale) => React.ReactNode;
 }) {
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <h2 style={{ fontSize: 15, margin: 0 }}>
-        {title} {rows.length ? `(${rows.length})` : ''}
-      </h2>
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
+      <div className="cpos-cardhead">
+        <h2 className="cpos-section__title">{title}</h2>
+        {rows.length ? <span className="cpos-badge">{rows.length}</span> : null}
+      </div>
       {rows.length === 0 ? (
-        empty ? (
-          <p style={{ color: '#777', fontSize: 13, margin: 0 }}>{empty}</p>
-        ) : null
+        empty ? <p className="cpos-muted" style={{ margin: 0 }}>{empty}</p> : null
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {rows.map((row) => (
-            <li key={row.saleId} style={rowStyle}>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <strong style={{ fontSize: 14 }}>{row.receiptNumber || `#${row.localRef}`}</strong>
-                <div style={{ fontSize: 12.5, color: '#666' }}>
-                  {new Date(row.capturedAtMillis).toLocaleString()} · {row.capturedTotal.toFixed(2)}
-                  {row.capturedByName ? ` · ${row.capturedByName}` : ''}
-                </div>
-              </span>
-              {children(row)}
+            <li key={row.saleId} className="cpos-line">
+              <div className="cpos-line__row">
+                <span className="cpos-line__main">
+                  <span className="cpos-line__name">
+                    {row.receiptNumber || `#${row.localRef}`}
+                  </span>
+                  <span className="cpos-line__meta" style={{ display: 'block' }}>
+                    {new Date(row.capturedAtMillis).toLocaleString()} · {row.capturedTotal.toFixed(2)}
+                    {row.capturedByName ? ` · ${row.capturedByName}` : ''}
+                  </span>
+                </span>
+                {children(row)}
+              </div>
             </li>
           ))}
         </ul>
@@ -149,21 +196,3 @@ function Section({
     </section>
   );
 }
-
-const rowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  padding: '10px 12px',
-  border: '1px solid #e4e4e7',
-  borderRadius: 8,
-};
-
-const alert: React.CSSProperties = {
-  padding: '10px 12px',
-  borderRadius: 8,
-  background: '#fef3f2',
-  border: '1px solid #fda29b',
-  color: '#b42318',
-  fontSize: 13,
-};

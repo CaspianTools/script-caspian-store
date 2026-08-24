@@ -39,38 +39,18 @@ export function PosLicenseBanner({ license }: PosLicenseBannerProps) {
   })();
 
   return (
-    <div role="status" style={strip}>
-      <span style={{ flex: 1, minWidth: 0 }}>{message}</span>
-      <Link href="/pos/settings" style={link}>
+    <div role="status" className="cpos-strip">
+      <span className="cpos-strip__spacer">{message}</span>
+      <Link href="/pos/settings" className="cpos-strip__link">
         {t('pos.license.title')}
       </Link>
-      <button type="button" onClick={() => setDismissed(true)} style={dismiss}>
+      <button
+        type="button"
+        className="cpos-btn cpos-btn--ghost cpos-btn--sm"
+        onClick={() => setDismissed(true)}
+      >
         {t('pos.license.dismiss')}
       </button>
     </div>
   );
 }
-
-const strip: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  padding: '8px 16px',
-  background: '#fffbeb',
-  borderBottom: '1px solid #f2dda4',
-  color: '#8a5a00',
-  fontSize: 13,
-  flexWrap: 'wrap',
-};
-
-const link: React.CSSProperties = { color: 'inherit', fontWeight: 600, textDecoration: 'underline' };
-
-const dismiss: React.CSSProperties = {
-  border: '1px solid rgba(138, 90, 0, 0.3)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 6,
-  padding: '3px 10px',
-  fontSize: 12,
-  cursor: 'pointer',
-};

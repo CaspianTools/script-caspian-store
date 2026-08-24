@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
+import { StoreIcon } from '../../../ui/icons';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
@@ -63,7 +64,19 @@ export function LocalStorePanel() {
   };
 
   return (
-    <div>
+    <div className="cpos-page">
+      {/* Mounted straight as a route rather than inside a wrapper, so the page
+          title belongs to this component. */}
+      <div className="cpos-pagehead">
+        <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
+          <StoreIcon size={19} />
+        </span>
+        <span className="cpos-pagehead__text">
+          <h1 className="cpos-pagehead__h">{t('pos.store.title')}</h1>
+          <p className="cpos-pagehead__sub">{t('pos.store.subtitle')}</p>
+        </span>
+      </div>
+
       <section style={section}>
         <div style={row}>
           <span style={fieldLabel}>{t('pos.admin.products.listTitle', { count: products?.length ?? 0 })}</span>

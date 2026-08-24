@@ -15,6 +15,7 @@ export function DefaultCaspianLink({
   target,
   rel,
   'aria-label': ariaLabel,
+  'aria-current': ariaCurrent,
 }: CaspianLinkProps) {
   return (
     <a
@@ -25,6 +26,7 @@ export function DefaultCaspianLink({
       target={target}
       rel={rel}
       aria-label={ariaLabel}
+      aria-current={ariaCurrent}
     >
       {children}
     </a>

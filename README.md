@@ -18,7 +18,7 @@ npm run dev                  # http://localhost:3000
 ### Manual install (v7.0.0+ — one route file owns every page)
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v12.0.1 firebase
+npm install github:CaspianTools/script-caspian-store#v12.1.0 firebase
 ```
 
 Two files are all you ever need. **No per-page route files, ever, for any library version.** New library pages land automatically.
@@ -99,7 +99,7 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | **Order confirmation:** `<OrderConfirmationPage />` — polls Firestore for the webhook-created order | ✅ |
 | **Order history:** `<OrderHistoryList />` for signed-in customers; `<GuestOrderLookupPage />` at `/order-status` for guests (order # + email) | ✅ |
 | **Wishlist:** `useWishlist()` + `<WishlistButton />` + `<WishlistPanel />` (account page section) | ✅ |
-| **Point of sale:** `/pos` full-screen register — barcode scanning (USB/Bluetooth keyboard-wedge, camera, manual), cash / card / split tender with change due, 80 mm receipt, server-priced sales via the `caspian-pos` codebase; per-device language + scanner settings at `/pos/settings`; register-only mode disables the storefront; **installs as its own PWA** (own icon and window, separate from the storefront app) via `buildPosWebManifest()`. Owner + cashier documentation in [`docs/pos-manual.html`](docs/pos-manual.html) | ✅ (v10.0.0+) |
+| **Point of sale:** `/pos` full-screen register — barcode scanning (USB/Bluetooth keyboard-wedge, camera, manual), cash / card / split tender with change due, 80 mm receipt, server-priced sales via the `caspian-pos` codebase; per-device language, appearance and scanner settings at `/pos/settings`; a collapsible side menu that folds to an icon rail and to a drawer on a tablet, plus a **dark mode** that can follow the operating system; register-only mode disables the storefront; **installs as its own PWA** (own icon and window, separate from the storefront app) via `buildPosWebManifest()`. Owner + cashier documentation in [`docs/pos-manual.html`](docs/pos-manual.html) | ✅ (v10.0.0+) |
 | **Standalone till (no shop, no website, no Firebase):** mount the provider with `standalone` and the register runs entirely on one computer — catalogue, staff, sales and receipt numbers in IndexedDB, contacting nothing. Local sign-in with three tiers (Support → Owner → Cashier), a back office at `/pos/admin` (items + CSV import/export, sales and takings, people and roles, shop and receipt wording, backup and restore). Nothing syncs to a website; backups are files the shop keeps. See [Standalone till](INSTALL.md#13-standalone-till-no-website-no-firebase) | ✅ (v11.0.0+) |
 | **Staff role:** `staff` accounts reach the register and the catalog but no admin surface; three-role picker in `<AdminUsersPage />`, enforced in `firestore.rules` via `isStaff()` | ✅ (v10.0.0+) |
 | **Admin:** `<AdminGuard />`, `<AdminShell />`, `<AdminDashboard />`, product CRUD, orders (table + drag-and-drop Kanban board) + status, reviews moderation, `<AdminAboutPage />` (installed version + GitHub release feed + one-click self-update) | ✅ |

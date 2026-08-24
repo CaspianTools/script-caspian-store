@@ -6,10 +6,18 @@ import { useCaspianFirebaseOptional, useCaspianNavigation } from '../provider/ca
 import { useT } from '../i18n/locale-context';
 import { getSiteSettings } from '../services/site-settings-service';
 import { reportServiceError } from '../services/error-log-service';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Badge, Skeleton } from '../ui/misc';
-import { PackageIcon, SearchIcon, ShoppingCartIcon, TagIcon, UserIcon, XIcon } from '../ui/icons';
+import { cn } from '../utils/cn';
+import {
+  CheckIcon,
+  InboxIcon,
+  PackageIcon,
+  ReceiptIcon,
+  ScanIcon,
+  SearchIcon,
+  ShoppingCartIcon,
+  TagIcon,
+  XIcon,
+} from '../ui/icons';
 import { DEFAULT_POS_SETTINGS, type PosSettings, type Product } from '../types';
 import { useBarcodeScanner, DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-scanner';
 import { usePosAdapter } from './pos-adapter-context';
@@ -387,11 +395,20 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     setPhase({ kind: 'selling' });
   }, [ticket]);
 
+
   if (!posSettings) {
     return (
-      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Skeleton style={{ height: 28, width: 220 }} />
-        <Skeleton style={{ height: 200 }} />
+      <div className="cpos-register">
+        <div className="cpos-card cpos-card--pad">
+          <div className="cpos-skeleton" style={{ height: 38, width: 220 }} />
+          <div className="cpos-skeleton" style={{ height: 54 }} />
+          <div className="cpos-skeleton" style={{ flex: 1, minHeight: 200 }} />
+        </div>
+        <div className="cpos-card cpos-card--pad">
+          <div className="cpos-skeleton" style={{ height: 38, width: 180 }} />
+          <div className="cpos-skeleton" style={{ flex: 1, minHeight: 200 }} />
+          <div className="cpos-skeleton" style={{ height: 120 }} />
+        </div>
       </div>
     );
   }
@@ -408,112 +425,122 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   }
 
   return (
-    <div className={className} style={layout}>
+    <div className={cn('cpos-register', className)}>
       {/* --- Left: scan + browse --- */}
-      <section style={pane}>
-        <div style={paneHeader}>
-          <div style={paneIcon}>
-            <SearchIcon size={18} />
-          </div>
-          <h2 style={paneTitle}>{t('pos.title')}</h2>
+      <section className="cpos-card cpos-card--pad cpos-register__pane">
+        <div className="cpos-cardhead">
+          <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
+            <ScanIcon size={19} />
+          </span>
+          <span className="cpos-cardhead__text">
+            <h2 className="cpos-cardhead__title">{t('pos.scan.title')}</h2>
+            <span className="cpos-cardhead__sub">{t('pos.scan.hint')}</span>
+          </span>
         </div>
 
         <form
+          className="cpos-scanbar"
           onSubmit={(e) => {
             e.preventDefault();
             scanner.submitManual(manualCode);
           }}
-          style={scanForm}
         >
-          <span style={scanIcon}>
-            <PackageIcon size={18} />
+          <span className="cpos-scanbar__icon">
+            <PackageIcon size={19} />
           </span>
-          <Input
+          <input
+            className="cpos-input cpos-scanbar__input"
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             placeholder={t('pos.scan.placeholder')}
             aria-label={t('pos.scan.placeholder')}
-            style={scanInput}
           />
-          <Button type="submit" disabled={!manualCode.trim()} size="md">
+          <button type="submit" className="cpos-btn cpos-btn--primary" disabled={!manualCode.trim()}>
             {t('pos.scan.submit')}
-          </Button>
+          </button>
         </form>
 
-        <div style={scanActions}>
+        <div className="cpos-row" style={{ alignItems: 'center' }}>
           {scanner.cameraSupported ? (
-            <Button
+            <button
               type="button"
-              variant={scanner.cameraActive ? 'primary' : 'outline'}
-              size="sm"
+              className={cn('cpos-btn', 'cpos-btn--sm', scanner.cameraActive ? 'cpos-btn--primary' : 'cpos-btn--outline')}
               onClick={() => (scanner.cameraActive ? scanner.stopCamera() : void scanner.startCamera())}
             >
+              <ScanIcon size={15} />
               {scanner.cameraActive ? t('pos.scan.cameraStop') : t('pos.scan.camera')}
-            </Button>
+            </button>
           ) : (
-            <span style={{ fontSize: 12, color: '#666' }}>{t('pos.scan.cameraUnsupported')}</span>
+            <span className="cpos-muted">{t('pos.scan.cameraUnsupported')}</span>
           )}
           {scanner.cameraError === 'denied' ? (
-            <span style={{ fontSize: 12, color: '#b91c1c' }}>{t('pos.scan.cameraDenied')}</span>
+            <span className="cpos-badge cpos-badge--danger">{t('pos.scan.cameraDenied')}</span>
           ) : null}
         </div>
 
         {scanner.cameraActive ? (
           <video
             ref={scanner.videoRef}
-            style={{ width: '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 12, background: '#000' }}
+            style={{
+              width: '100%',
+              maxHeight: 260,
+              objectFit: 'cover',
+              borderRadius: 'var(--cpos-r-lg)',
+              background: '#000',
+            }}
           />
         ) : null}
 
         {searchQuery && !scanner.cameraActive ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <strong style={{ fontSize: 14, fontWeight: 600 }}>
+            <div className="cpos-cardhead">
+              <strong style={{ fontSize: 14, fontWeight: 650 }}>
                 {searching ? t('common.loading') : t('pos.search.results')}
               </strong>
-              <button
-                type="button"
-                onClick={() => replace('/pos')}
-                style={textButton}
-              >
+              {!searching ? (
+                <span className="cpos-badge">{searchResults.length}</span>
+              ) : (
+                <span className="cpos-spinner" aria-hidden="true" />
+              )}
+              <span className="cpos-cardhead__spacer" />
+              <button type="button" className="cpos-btn cpos-btn--ghost cpos-btn--sm" onClick={() => replace('/pos')}>
                 <XIcon size={14} /> {t('common.close')}
               </button>
             </div>
             {searchResults.length === 0 && !searching ? (
-              <p style={{ color: '#888', textAlign: 'center', margin: 'auto 0' }}>
-                {t('pos.search.empty')}
-              </p>
+              <div className="cpos-empty">
+                <span className="cpos-empty__icon cpos-empty__icon--neutral">
+                  <SearchIcon size={28} />
+                </span>
+                <p className="cpos-empty__text">{t('pos.search.empty')}</p>
+              </div>
             ) : (
-              <div style={productGrid}>
+              <div className="cpos-tiles cpos-scroll">
                 {searchResults.map((product) => (
                   <button
                     key={product.id}
                     type="button"
+                    className="cpos-tile"
                     onClick={() => addProductFromSearch(product)}
-                    style={productCard}
                   >
-                    <div style={productImage}>
+                    <span className="cpos-tile__media">
                       {product.images?.[0]?.url ? (
-                        <img
-                          src={product.images[0].url}
-                          alt=""
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                        <img src={product.images[0].url} alt="" />
                       ) : (
-                        <PackageIcon size={24} />
+                        <PackageIcon size={26} />
                       )}
-                    </div>
-                    <div style={{ padding: 10, textAlign: 'left' }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.3 }}>{product.name}</div>
-                      <div style={{ fontSize: 13, color: 'var(--caspian-primary, #1a73e8)', fontWeight: 700, marginTop: 4 }}>
-                        {formatPrice(product.price)}
-                      </div>
+                    </span>
+                    <span className="cpos-tile__body">
+                      <span className="cpos-tile__name">{product.name}</span>
+                      <span className="cpos-tile__price">{formatPrice(product.price)}</span>
                       {product.stock ? (
-                        <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
-                          {Object.values(product.stock).reduce((a, b) => a + b, 0)} in stock
-                        </div>
+                        <span className="cpos-tile__stock">
+                          {t('pos.search.inStock', {
+                            count: Object.values(product.stock).reduce((a, b) => a + b, 0),
+                          })}
+                        </span>
                       ) : null}
-                    </div>
+                    </span>
                   </button>
                 ))}
               </div>
@@ -522,7 +549,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
         ) : null}
 
         {scanMessage && !searchQuery ? (
-          <div style={scanMessageBox} role="status">
+          <div className="cpos-note" role="status">
             {scanMessage}
           </div>
         ) : null}
@@ -531,129 +558,132 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <strong style={{ fontSize: 14 }}>{t('pos.scan.chooseMatch')}</strong>
             {ambiguous.map((product) => (
-              <Button
+              <button
                 key={product.id}
                 type="button"
-                variant="outline"
+                className="cpos-btn cpos-btn--outline"
+                style={{ justifyContent: 'space-between' }}
                 onClick={() => {
                   ticket.addProduct(product);
                   setAmbiguous(null);
                   setScanMessage(null);
                 }}
-                style={{ justifyContent: 'space-between' }}
               >
                 <span>{product.name}</span>
                 <span>{formatPrice(product.price)}</span>
-              </Button>
+              </button>
             ))}
           </div>
         ) : null}
 
         {!searchQuery && !ambiguous && !scanner.cameraActive ? (
-          <div style={emptyState}>
-            <div style={emptyIcon}>
-              <ShoppingCartIcon size={32} />
-            </div>
-            <p style={{ margin: 0, color: '#888', fontSize: 14 }}>{t('pos.scan.hint')}</p>
+          <div className="cpos-empty">
+            <span className="cpos-empty__icon">
+              <ScanIcon size={30} />
+            </span>
+            <p className="cpos-empty__title">{t('pos.scan.readyTitle')}</p>
+            <p className="cpos-empty__text">{t('pos.scan.hint')}</p>
           </div>
         ) : null}
       </section>
 
       {/* --- Right: the open ticket --- */}
-      <section style={{ ...pane, background: '#fff' }}>
-        <div style={paneHeader}>
-          <div style={{ ...paneIcon, background: '#10b981', color: '#fff' }}>
-            <ShoppingCartIcon size={18} />
-          </div>
-          <h2 style={paneTitle}>{t('pos.ticket.title')}</h2>
-          <div style={{ flex: 1, minWidth: 8 }} />
-          <Badge>
+      <section className="cpos-card cpos-card--pad cpos-register__pane">
+        <div className="cpos-cardhead">
+          <span className="cpos-cardhead__icon cpos-cardhead__icon--success">
+            <ShoppingCartIcon size={19} />
+          </span>
+          <span className="cpos-cardhead__text">
+            <h2 className="cpos-cardhead__title">{t('pos.ticket.title')}</h2>
+            <span className="cpos-cardhead__sub">{cashierName || t('pos.nav.user')}</span>
+          </span>
+          <span className="cpos-cardhead__spacer" />
+          <span className={cn('cpos-badge', !ticket.isEmpty && 'cpos-badge--brand')}>
             {t('pos.ticket.itemCount', { count: ticket.totals.itemCount })}
-          </Badge>
+          </span>
         </div>
 
         {ticket.isEmpty ? (
-          <div style={emptyState}>
-            <div style={{ ...emptyIcon, background: 'rgba(0,0,0,0.03)', color: '#888' }}>
-              <UserIcon size={32} />
-            </div>
-            <p style={{ margin: 0, color: '#888', fontSize: 14 }}>{t('pos.ticket.empty')}</p>
+          <div className="cpos-empty">
+            <span className="cpos-empty__icon cpos-empty__icon--neutral">
+              <ShoppingCartIcon size={30} />
+            </span>
+            <p className="cpos-empty__text">{t('pos.ticket.empty')}</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          <div className="cpos-lines cpos-scroll">
             {ticket.lines.map((line, index) => (
-              <div key={`${line.productId}-${line.selectedSize ?? ''}`} style={lineCard}>
-                <div style={lineRow}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, overflowWrap: 'anywhere', fontSize: 14 }}>{line.name}</div>
-                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+              <div key={`${line.productId}-${line.selectedSize ?? ''}`} className="cpos-line">
+                <div className="cpos-line__row">
+                  <div className="cpos-line__main">
+                    <div className="cpos-line__name">{line.name}</div>
+                    <div className="cpos-line__meta">
                       {formatPrice(line.unitPrice)}
                       {line.selectedSize ? ` · ${line.selectedSize}` : ''}
                       {line.sku ? ` · ${line.sku}` : ''}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Button
+
+                  <div className="cpos-stepper">
+                    <button
                       type="button"
-                      size="icon"
-                      variant="outline"
+                      className="cpos-stepper__btn"
                       aria-label={t('pos.ticket.decrease')}
                       onClick={() => ticket.setQuantity(index, line.quantity - 1)}
-                      style={{ borderRadius: 8 }}
                     >
                       −
-                    </Button>
-                    <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 15 }}>
-                      {line.quantity}
-                    </span>
-                    <Button
+                    </button>
+                    <span className="cpos-stepper__value">{line.quantity}</span>
+                    <button
                       type="button"
-                      size="icon"
-                      variant="outline"
+                      className="cpos-stepper__btn"
                       aria-label={t('pos.ticket.increase')}
                       onClick={() => ticket.setQuantity(index, line.quantity + 1)}
-                      style={{ borderRadius: 8 }}
                     >
                       +
-                    </Button>
+                    </button>
                   </div>
-                  <div style={{ minWidth: 78, textAlign: 'end', fontWeight: 700, fontSize: 15 }}>
+
+                  <div className="cpos-line__amount">
                     {formatPrice(line.unitPrice * line.quantity - (line.lineDiscount ?? 0))}
                   </div>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant={line.lineDiscount ? 'primary' : 'ghost'}
-                    aria-label={t('pos.ticket.discount')}
-                    title={t('pos.ticket.discount')}
-                    onClick={() =>
-                      discountLine === index
-                        ? setDiscountLine(null)
-                        : openDiscount(index, line.lineDiscount)
-                    }
-                  >
-                    <TagIcon size={16} />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label={t('pos.ticket.remove')}
-                    onClick={() => ticket.removeLine(index)}
-                  >
-                    <XIcon size={16} />
-                  </Button>
+
+                  <div className="cpos-line__tools">
+                    <button
+                      type="button"
+                      className={cn('cpos-iconbtn', line.lineDiscount && 'cpos-iconbtn--bordered')}
+                      style={line.lineDiscount ? { color: 'var(--cpos-success)' } : undefined}
+                      aria-label={t('pos.ticket.discount')}
+                      title={t('pos.ticket.discount')}
+                      onClick={() =>
+                        discountLine === index
+                          ? setDiscountLine(null)
+                          : openDiscount(index, line.lineDiscount)
+                      }
+                    >
+                      <TagIcon size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      className="cpos-iconbtn"
+                      aria-label={t('pos.ticket.remove')}
+                      onClick={() => ticket.removeLine(index)}
+                    >
+                      <XIcon size={17} />
+                    </button>
+                  </div>
                 </div>
 
                 {line.lineDiscount ? (
-                  <div style={discountNote}>
+                  <div className="cpos-line__discount">
                     {t('pos.ticket.discount')} −{formatPrice(line.lineDiscount)}
                   </div>
                 ) : null}
 
                 {discountLine === index ? (
-                  <div style={discountEditor}>
-                    <Input
+                  <div className="cpos-line__editor">
+                    <input
+                      className="cpos-input"
                       inputMode="decimal"
                       autoFocus
                       value={discountDraft}
@@ -668,13 +698,12 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                       aria-label={t('pos.ticket.discount')}
                       style={{ flex: 1, textAlign: 'end' }}
                     />
-                    <Button type="button" size="sm" onClick={() => applyDiscount(index)}>
+                    <button type="button" className="cpos-btn cpos-btn--primary cpos-btn--sm" onClick={() => applyDiscount(index)}>
                       {t('pos.ticket.discountApply')}
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
-                      size="sm"
-                      variant="outline"
+                      className="cpos-btn cpos-btn--ghost cpos-btn--sm"
                       onClick={() => {
                         ticket.setLineDiscount(index, 0);
                         setDiscountLine(null);
@@ -682,7 +711,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                       }}
                     >
                       {t('pos.ticket.discountClear')}
-                    </Button>
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -690,45 +719,46 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           </div>
         )}
 
-        <div style={ticketFooter}>
-          <div style={totalRow}>
-            <span style={{ color: '#666' }}>{t('pos.ticket.subtotal')}</span>
-            <span style={{ fontWeight: 600 }}>{formatPrice(ticket.totals.subtotal)}</span>
+        <div className="cpos-totals">
+          <div className="cpos-totals__row">
+            <span className="cpos-totals__label">{t('pos.ticket.subtotal')}</span>
+            <span className="cpos-totals__value">{formatPrice(ticket.totals.subtotal)}</span>
           </div>
           {ticket.totals.lineDiscounts > 0 ? (
-            <div style={totalRow}>
-              <span style={{ color: '#666' }}>{t('pos.ticket.discountTotal')}</span>
-              <span style={{ fontWeight: 600, color: '#16a34a' }}>
+            <div className="cpos-totals__row">
+              <span className="cpos-totals__label">{t('pos.ticket.discountTotal')}</span>
+              <span className="cpos-totals__value cpos-totals__value--save">
                 -{formatPrice(ticket.totals.lineDiscounts)}
               </span>
             </div>
           ) : null}
-          <div style={{ ...totalRow, fontSize: 24, fontWeight: 800, marginTop: 4, paddingTop: 8, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
+          <div className="cpos-totals__grand">
             <span>{t('pos.ticket.total')}</span>
-            <span>{formatPrice(ticket.totals.total)}</span>
+            <span className="cpos-totals__grandvalue">{formatPrice(ticket.totals.total)}</span>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <Button
+          <div className="cpos-totals__actions">
+            <button
               type="button"
-              variant="outline"
+              className="cpos-btn cpos-btn--outline"
+              style={{ flex: 1 }}
               disabled={ticket.isEmpty}
               onClick={() => {
                 if (window.confirm(t('pos.ticket.clearConfirm'))) startNewSale();
               }}
-              style={{ flex: 1, borderRadius: 12, height: 52 }}
             >
               {t('pos.ticket.clear')}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              size="lg"
-              style={{ flex: 2, borderRadius: 12, height: 52, boxShadow: '0 4px 14px rgba(26,115,232,0.35)' }}
+              className="cpos-btn cpos-btn--primary cpos-btn--pay"
+              style={{ flex: 2 }}
               disabled={ticket.isEmpty}
               onClick={() => setPhase({ kind: 'tendering' })}
             >
-              {t('pos.tender.title')}
-            </Button>
+              <span>{t('pos.tender.title')}</span>
+              <span className="cpos-btn__paytotal">{formatPrice(ticket.totals.total)}</span>
+            </button>
           </div>
         </div>
       </section>
@@ -748,6 +778,14 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   );
 }
 
+/**
+ * What a cashier sees the instant the money is taken.
+ *
+ * Deliberately loud and deliberately short: the receipt number, the amount, and
+ * the change to hand back. Everything else on this screen is an exception --
+ * a sale held on the till, a provisional number, stock that went negative --
+ * and each one says so in its own words rather than in a colour alone.
+ */
 function PosSaleComplete({
   sale,
   receipt,
@@ -763,51 +801,43 @@ function PosSaleComplete({
   const [printing, setPrinting] = useState(false);
 
   return (
-    <div style={{ padding: 24, maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>
+    <div className="cpos-done">
+      <span className={cn('cpos-done__seal', sale.pending && 'cpos-done__seal--held')}>
+        {sale.pending ? <InboxIcon size={32} /> : <CheckIcon size={34} />}
+      </span>
+
+      <h1 className="cpos-done__h">
         {sale.pending ? t('pos.done.heldTitle') : t('pos.done.title')}
       </h1>
-      <p style={{ color: '#666', marginTop: 4 }}>
+      <p className="cpos-done__receipt">
         {t('pos.done.receiptNumber', { number: sale.receiptNumber })}
       </p>
       {sale.provisionalReceipt ? (
-        <p style={{ color: '#b45309', fontSize: 13, margin: '4px 0 0' }}>
-          {t('pos.done.provisionalReceipt')}
-        </p>
+        <span className="cpos-badge cpos-badge--warning">{t('pos.done.provisionalReceipt')}</span>
       ) : null}
 
-      <div style={{ fontSize: 34, fontWeight: 700, margin: '16px 0' }}>
-        {formatPrice(sale.total)}
-      </div>
+      <div className="cpos-done__total">{formatPrice(sale.total)}</div>
 
       {receipt.changeDue > 0 ? (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: 10,
-            background: '#ecfdf5',
-            color: '#065f46',
-            fontSize: 20,
-            fontWeight: 700,
-          }}
-        >
+        <div className="cpos-done__change">
           {t('pos.done.changeDue', { amount: formatPrice(receipt.changeDue) })}
         </div>
       ) : null}
 
       {sale.stockShortfall.length > 0 ? (
-        <p style={{ color: '#b45309', fontSize: 13, marginTop: 12 }}>
+        <div className="cpos-note cpos-note--warning" style={{ marginTop: 14 }}>
           {t('pos.done.stockWarning', { count: sale.stockShortfall.length })}
-        </p>
+        </div>
       ) : null}
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 20 }}>
-        <Button type="button" variant="outline" onClick={() => setPrinting(true)}>
+      <div className="cpos-done__actions">
+        <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => setPrinting(true)}>
+          <ReceiptIcon size={17} />
           {t('pos.done.print')}
-        </Button>
-        <Button type="button" size="lg" onClick={onNewSale} autoFocus>
+        </button>
+        <button type="button" className="cpos-btn cpos-btn--primary cpos-btn--lg" onClick={onNewSale} autoFocus>
           {t('pos.done.newSale')}
-        </Button>
+        </button>
       </div>
 
       {/* Kept out of the normal flow; the print stylesheet reveals only this. */}
@@ -822,199 +852,3 @@ function PosSaleComplete({
     </div>
   );
 }
-
-const layout: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(340px, 1fr)',
-  gap: 20,
-  padding: 20,
-  height: '100%',
-  minHeight: 0,
-  alignItems: 'stretch',
-};
-
-const pane: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 14,
-  padding: 20,
-  borderRadius: 20,
-  background: '#fff',
-  border: '1px solid rgba(0,0,0,0.06)',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)',
-  minHeight: 0,
-};
-
-const paneHeader: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  marginBottom: 2,
-};
-
-const paneIcon: React.CSSProperties = {
-  width: 36,
-  height: 36,
-  borderRadius: 12,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'var(--caspian-primary, #1a73e8)',
-  color: 'var(--caspian-primary-foreground, #fff)',
-  boxShadow: '0 2px 8px rgba(26,115,232,0.25)',
-};
-
-const paneTitle: React.CSSProperties = { margin: 0, fontSize: 18, fontWeight: 700 };
-
-const scanForm: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  position: 'relative',
-};
-
-const scanIcon: React.CSSProperties = {
-  position: 'absolute',
-  left: 14,
-  color: '#888',
-  pointerEvents: 'none',
-  display: 'inline-flex',
-};
-
-const scanInput: React.CSSProperties = {
-  flex: 1,
-  paddingLeft: 42,
-  paddingRight: 14,
-  height: 48,
-  borderRadius: 14,
-  fontSize: 15,
-  border: '1px solid rgba(0,0,0,0.08)',
-  background: '#f9fafb',
-  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)',
-};
-
-const scanActions: React.CSSProperties = {
-  display: 'flex',
-  gap: 10,
-  alignItems: 'center',
-  flexWrap: 'wrap',
-};
-
-const scanMessageBox: React.CSSProperties = {
-  padding: '12px 14px',
-  borderRadius: 12,
-  background: '#f3f4f6',
-  color: '#4b5563',
-  fontSize: 13,
-};
-
-const productGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-  gap: 12,
-  overflowY: 'auto',
-  padding: 4,
-};
-
-const productCard: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 14,
-  background: '#fff',
-  cursor: 'pointer',
-  overflow: 'hidden',
-  textAlign: 'left',
-  padding: 0,
-  transition: 'transform 0.1s, box-shadow 0.15s',
-  boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-};
-
-const productImage: React.CSSProperties = {
-  height: 90,
-  background: '#f3f4f6',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#9ca3af',
-};
-
-const emptyState: React.CSSProperties = {
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  textAlign: 'center',
-  gap: 12,
-  minHeight: 160,
-};
-
-const emptyIcon: React.CSSProperties = {
-  width: 64,
-  height: 64,
-  borderRadius: 20,
-  background: 'rgba(26,115,232,0.08)',
-  color: 'var(--caspian-primary, #1a73e8)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
-
-const textButton: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 4,
-  border: 0,
-  background: 'transparent',
-  color: '#666',
-  cursor: 'pointer',
-  fontSize: 13,
-  fontWeight: 500,
-};
-
-const lineCard: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-  padding: '10px 8px',
-  borderRadius: 12,
-  background: '#f9fafb',
-  border: '1px solid rgba(0,0,0,0.04)',
-};
-
-const lineRow: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-};
-
-const discountNote: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: '#16a34a',
-};
-
-const discountEditor: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-};
-
-const ticketFooter: React.CSSProperties = {
-  marginTop: 'auto',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  padding: 16,
-  borderRadius: 16,
-  background: '#f9fafb',
-  border: '1px solid rgba(0,0,0,0.04)',
-};
-
-const totalRow: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'baseline',
-  fontSize: 14,
-};

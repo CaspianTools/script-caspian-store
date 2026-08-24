@@ -12,7 +12,8 @@
          /pos.webmanifest by the build. It pins the register install identity,
          scope and launch handler so the till opens as its own app. -->
     <link rel="manifest" href="/pos.webmanifest" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1020" />
     <link rel="icon" href="/icons/192x192.png" />
     <link rel="apple-touch-icon" href="/icons/192x192.png" />
 
@@ -34,18 +35,22 @@
       #root {
         height: 100%;
       }
-      /* The register's own screens paint `--caspian-background`, but only once
-         they are inside PosShell -- the sign-in and loading gates render above
-         it and inherit whatever the page behind them is. In a browser that is
-         the site's white body, so a dark backdrop turned the sign-in form into
-         dark text on black. Match the library's surface instead of guessing
-         one, and keep these two in step with the manifest's
-         `background_color` / `theme_color` so the splash does not flash a
-         different colour than the page it hands over to. */
+      /* `--cpos-bg` is the register's canvas, but it only exists once the
+         library's stylesheet is in the tree. Until React mounts, the literals
+         below stand in -- and they have to match, or a cold start flashes white
+         before the till paints itself dark. These are the light and dark values
+         of `--cpos-bg` / `--cpos-fg` from src/pos/theme/pos-stylesheet.ts;
+         keep them in step with it and with the two theme-color tags above. */
       body {
         margin: 0;
-        background: var(--caspian-background, #ffffff);
-        color: var(--caspian-foreground, #111111);
+        background: var(--cpos-bg, #f6f7f9);
+        color: var(--cpos-fg, #0f172a);
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: var(--cpos-bg, #0b1020);
+          color: var(--cpos-fg, #eef2f8);
+        }
       }
       /* Shown until React mounts. A till that looks dead for a second on a cold
          start is a support call, so the page says something immediately. */
@@ -54,8 +59,28 @@
         height: 100%;
         align-items: center;
         justify-content: center;
-        color: #6a6a6a;
+        gap: 10px;
+        color: var(--cpos-fg-muted, #64748b);
         font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+      #boot::before {
+        content: '';
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 999px;
+        animation: boot-spin 640ms linear infinite;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot::before {
+          animation: none;
+        }
       }
     </style>
   </head>

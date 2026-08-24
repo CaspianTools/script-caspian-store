@@ -17,6 +17,12 @@ export interface CaspianLinkProps {
   target?: string;
   rel?: string;
   'aria-label'?: string;
+  /**
+   * Marks the link the reader is currently on. Optional so an adapter written
+   * against an older version of this contract still satisfies it; an adapter
+   * that does not forward it loses the announcement, not the link.
+   */
+  'aria-current'?: 'page' | 'step' | 'location' | 'true' | 'false';
 }
 
 export type CaspianLinkComponent = ComponentType<CaspianLinkProps>;

@@ -3,17 +3,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocaleControls, useT } from '../i18n/locale-context';
 import { BUILTIN_LOCALE_NAMES } from '../i18n/locales';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
 import { FieldDescription } from '../ui/field-description';
+import { cn } from '../utils/cn';
+import {
+  GlobeIcon,
+  LockIcon,
+  MonitorIcon,
+  MoonIcon,
+  PaletteIcon,
+  ScanIcon,
+  SlidersIcon,
+  SunIcon,
+} from '../ui/icons';
 import { getPosDeviceId, getPosDeviceLabel, setPosDeviceLabel } from './pos-device';
-import { readScannerGapMs, resolvePosStorageMode, writeScannerGapMs } from './pos-preferences';
+import {
+  readScannerGapMs,
+  resolvePosStorageMode,
+  writeScannerGapMs,
+  type PosThemeMode,
+} from './pos-preferences';
 import type { PosStorageMode } from './storage/types';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseSection } from './license/pos-license-section';
+import { usePosChrome } from './theme/pos-chrome-context';
 
 export interface PosSettingsPageProps {
   className?: string;
@@ -25,21 +40,41 @@ const POS_LOCALES = ['en', 'az'] as const;
 interface SectionConfig {
   id: string;
   labelKey: string;
+  icon: 'appearance' | 'language' | 'device' | 'license' | 'storage' | 'scanner';
 }
 
 const SECTIONS: SectionConfig[] = [
-  { id: 'language', labelKey: 'pos.settings.section.language' },
-  { id: 'device', labelKey: 'pos.settings.section.device' },
-  { id: 'license', labelKey: 'pos.settings.section.license' },
-  { id: 'storage', labelKey: 'pos.settings.section.storage' },
-  { id: 'scanner', labelKey: 'pos.settings.section.scanner' },
+  { id: 'appearance', labelKey: 'pos.theme.title', icon: 'appearance' },
+  { id: 'language', labelKey: 'pos.settings.section.language', icon: 'language' },
+  { id: 'device', labelKey: 'pos.settings.section.device', icon: 'device' },
+  { id: 'license', labelKey: 'pos.settings.section.license', icon: 'license' },
+  { id: 'storage', labelKey: 'pos.settings.section.storage', icon: 'storage' },
+  { id: 'scanner', labelKey: 'pos.settings.section.scanner', icon: 'scanner' },
+];
+
+const SECTION_ICON: Record<SectionConfig['icon'], (size: number) => React.ReactNode> = {
+  appearance: (size) => <PaletteIcon size={size} />,
+  language: (size) => <GlobeIcon size={size} />,
+  device: (size) => <MonitorIcon size={size} />,
+  license: (size) => <LockIcon size={size} />,
+  storage: (size) => <SlidersIcon size={size} />,
+  scanner: (size) => <ScanIcon size={size} />,
+};
+
+const THEME_CHOICES: { value: PosThemeMode; labelKey: string; icon: React.ReactNode }[] = [
+  { value: 'light', labelKey: 'pos.theme.light', icon: <SunIcon size={17} /> },
+  { value: 'dark', labelKey: 'pos.theme.dark', icon: <MoonIcon size={17} /> },
+  { value: 'system', labelKey: 'pos.theme.system', icon: <MonitorIcon size={17} /> },
 ];
 
 /**
- * Per-register settings — everything here applies to this computer only.
+ * Per-register settings -- everything here applies to this computer only.
  *
- * A sidebar lets cashiers jump between sections, and the language picker is
- * intentionally limited to English and Azerbaijani for now.
+ * The jump list on the left used to be a hand-rolled collapsible sidebar that
+ * abbreviated its own labels to a single letter when parked, which made Sales
+ * and Shop identical. Now that the shell owns navigation, this is just a sticky
+ * index of the sections below it, and the language picker is still deliberately
+ * limited to English and Azerbaijani.
  */
 export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const t = useT();
@@ -48,12 +83,12 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const firebase = useCaspianFirebaseOptional();
   const functions = firebase?.functions ?? null;
   const license = usePosLicense(functions);
+  const { themeMode, setThemeMode } = usePosChrome();
 
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
   const [gapMs, setGapMs] = useState(40);
-  const [collapsed, setCollapsed] = useState(false);
-  // Derived, not chosen — see `resolvePosStorageMode`.
+  // Derived, not chosen -- see `resolvePosStorageMode`.
   const storageMode: PosStorageMode = resolvePosStorageMode(Boolean(firebase));
 
   useEffect(() => {
@@ -83,203 +118,161 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   };
 
   return (
-    <div
-      className={className}
-      style={{
-        display: 'flex',
-        gap: 24,
-        padding: 24,
-        maxWidth: 960,
-        margin: '0 auto',
-        alignItems: 'flex-start',
-      }}
-    >
-      <aside
-        style={{
-          width: collapsed ? 44 : 200,
-          flexShrink: 0,
-          position: 'sticky',
-          top: 16,
-          border: '1px solid rgba(0,0,0,0.1)',
-          borderRadius: 'var(--caspian-radius, 12px)',
-          padding: 8,
-          background: 'var(--caspian-background, #fff)',
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? t('common.expand') : t('common.collapse')}
-          style={sidebarToggle}
-        >
-          {collapsed ? '›' : '‹'}
-        </button>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+    <div className={cn('cpos-page', className)}>
+      <div className="cpos-pagehead">
+        <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
+          <SlidersIcon size={19} />
+        </span>
+        <span className="cpos-pagehead__text">
+          <h1 className="cpos-pagehead__h">{t('pos.settings.title')}</h1>
+          <p className="cpos-pagehead__sub">{t('pos.settings.subtitle')}</p>
+        </span>
+      </div>
+
+      <div className="cpos-settings__grid">
+        <nav className="cpos-jump" aria-label={t('pos.settings.title')}>
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               type="button"
+              className="cpos-jump__item"
               onClick={() => scrollTo(s.id)}
-              style={{
-                ...sidebarLink,
-                justifyContent: collapsed ? 'center' : 'flex-start',
-              }}
-              title={t(s.labelKey)}
             >
-              {collapsed ? s.labelKey.split('.').pop()?.[0].toUpperCase() : t(s.labelKey)}
+              <span className="cpos-jump__icon">{SECTION_ICON[s.icon](17)}</span>
+              <span>{t(s.labelKey)}</span>
             </button>
           ))}
         </nav>
-      </aside>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <header style={{ marginBottom: 20 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('pos.settings.title')}</h1>
-          <p style={{ color: '#666', marginTop: 4 }}>{t('pos.settings.subtitle')}</p>
-        </header>
+        <div className="cpos-settings__body">
+          <section id="pos-settings-appearance" className="cpos-section">
+            <h2 className="cpos-section__title">{t('pos.theme.title')}</h2>
+            <div className="cpos-choices">
+              {THEME_CHOICES.map((choice) => (
+                <button
+                  key={choice.value}
+                  type="button"
+                  className={cn('cpos-choice', themeMode === choice.value && 'cpos-choice--on')}
+                  aria-pressed={themeMode === choice.value}
+                  onClick={() => setThemeMode(choice.value)}
+                >
+                  <span className="cpos-choice__icon">{choice.icon}</span>
+                  <span>{t(choice.labelKey)}</span>
+                </button>
+              ))}
+            </div>
+            <FieldDescription>{t('pos.theme.help')}</FieldDescription>
+          </section>
 
-        <section id="pos-settings-language" style={section}>
-          <label style={field}>
-            <span style={fieldLabel}>{t('pos.settings.language')}</span>
-            <Select
-              value={locale}
-              onChange={(e) => setLocale(e.target.value)}
-              options={languageOptions}
-            />
-            <FieldDescription>{t('pos.settings.languageHelp')}</FieldDescription>
-            {pinned ? <FieldDescription>{t('pos.settings.languagePinned')}</FieldDescription> : null}
-          </label>
-        </section>
+          <section id="pos-settings-language" className="cpos-section">
+            <label className="cpos-field">
+              <span className="cpos-field__label">{t('pos.settings.language')}</span>
+              <Select
+                value={locale}
+                onChange={(e) => setLocale(e.target.value)}
+                options={languageOptions}
+              />
+              <FieldDescription>{t('pos.settings.languageHelp')}</FieldDescription>
+              {pinned ? <FieldDescription>{t('pos.settings.languagePinned')}</FieldDescription> : null}
+            </label>
+          </section>
 
-        <section id="pos-settings-device" style={section}>
-          <label style={field}>
-            <span style={fieldLabel}>{t('pos.settings.deviceLabel')}</span>
-            <Input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder={t('pos.settings.deviceLabelPlaceholder')}
-            />
-            <FieldDescription>{t('pos.settings.deviceLabelHelp')}</FieldDescription>
-          </label>
+          <section id="pos-settings-device" className="cpos-section">
+            <label className="cpos-field">
+              <span className="cpos-field__label">{t('pos.settings.deviceLabel')}</span>
+              <input
+                className="cpos-input"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={t('pos.settings.deviceLabelPlaceholder')}
+              />
+              <FieldDescription>{t('pos.settings.deviceLabelHelp')}</FieldDescription>
+            </label>
 
-          <label style={field}>
-            <span style={fieldLabel}>{t('pos.settings.deviceId')}</span>
-            <Input value={deviceId} readOnly style={{ fontFamily: 'ui-monospace, monospace' }} />
-          </label>
-        </section>
+            <label className="cpos-field">
+              <span className="cpos-field__label">{t('pos.settings.deviceId')}</span>
+              <input
+                className="cpos-input"
+                value={deviceId}
+                readOnly
+                style={{ fontFamily: 'ui-monospace, monospace' }}
+              />
+            </label>
+          </section>
 
-        <div id="pos-settings-license">
-          <PosLicenseSection license={license} />
-        </div>
-
-        <section id="pos-settings-storage" style={section}>
-          <span style={fieldLabel}>{t('pos.storage.title')}</span>
-          <FieldDescription>{t('pos.storage.decidedAtSetup')}</FieldDescription>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-            {(['cloud', 'local'] as const).map((mode) => (
-              <label key={mode} style={radioRow}>
-                <input
-                  type="radio"
-                  name="pos-storage-mode"
-                  value={mode}
-                  checked={storageMode === mode}
-                  readOnly
-                  disabled
-                />
-                <span>
-                  <strong>{t(`pos.storage.${mode}`)}</strong>
-                  <div style={{ fontSize: 12, color: '#666' }}>{t(`pos.storage.${mode}Help`)}</div>
-                  {mode === 'local' && storageMode === 'local' ? (
-                    <div style={{ fontSize: 12, color: '#b45309' }}>
-                      {t('pos.storage.localWarning')}
-                    </div>
-                  ) : null}
-                </span>
-              </label>
-            ))}
+          <div id="pos-settings-license">
+            <PosLicenseSection license={license} />
           </div>
-        </section>
 
-        <section id="pos-settings-scanner" style={section}>
-          <label style={field}>
-            <span style={fieldLabel}>{t('pos.settings.scannerGap')}</span>
-            <Input
-              type="number"
-              min={10}
-              max={300}
-              value={gapMs}
-              onChange={(e) => setGapMs(Number.parseInt(e.target.value, 10) || 40)}
-            />
-            <FieldDescription>{t('pos.settings.scannerGapHelp')}</FieldDescription>
-          </label>
+          <section id="pos-settings-storage" className="cpos-section">
+            <h2 className="cpos-section__title">{t('pos.storage.title')}</h2>
+            <FieldDescription>{t('pos.storage.decidedAtSetup')}</FieldDescription>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(['cloud', 'local'] as const).map((mode) => (
+                <label
+                  key={mode}
+                  className={cn('cpos-radio', storageMode === mode && 'cpos-radio--on')}
+                >
+                  <input
+                    type="radio"
+                    name="pos-storage-mode"
+                    value={mode}
+                    checked={storageMode === mode}
+                    readOnly
+                    disabled
+                  />
+                  <span>
+                    <strong>{t(`pos.storage.${mode}`)}</strong>
+                    <span className="cpos-muted" style={{ display: 'block', marginTop: 2 }}>
+                      {t(`pos.storage.${mode}Help`)}
+                    </span>
+                    {mode === 'local' && storageMode === 'local' ? (
+                      <span
+                        className="cpos-muted"
+                        style={{ display: 'block', marginTop: 4, color: 'var(--cpos-warning)' }}
+                      >
+                        {t('pos.storage.localWarning')}
+                      </span>
+                    ) : null}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </section>
 
-          <label style={field}>
-            <span style={fieldLabel}>{t('pos.settings.printer')}</span>
-            <Select
-              value="browser"
-              disabled
-              onChange={() => undefined}
-              options={[{ value: 'browser', label: t('pos.settings.printerBrowser') }]}
-            />
-            <FieldDescription>{t('pos.settings.printerBrowserHelp')}</FieldDescription>
-          </label>
-        </section>
+          <section id="pos-settings-scanner" className="cpos-section">
+            <label className="cpos-field">
+              <span className="cpos-field__label">{t('pos.settings.scannerGap')}</span>
+              <input
+                className="cpos-input"
+                type="number"
+                min={10}
+                max={300}
+                value={gapMs}
+                onChange={(e) => setGapMs(Number.parseInt(e.target.value, 10) || 40)}
+              />
+              <FieldDescription>{t('pos.settings.scannerGapHelp')}</FieldDescription>
+            </label>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button onClick={save}>{t('pos.settings.save')}</Button>
+            <label className="cpos-field">
+              <span className="cpos-field__label">{t('pos.settings.printer')}</span>
+              <Select
+                value="browser"
+                disabled
+                onChange={() => undefined}
+                options={[{ value: 'browser', label: t('pos.settings.printerBrowser') }]}
+              />
+              <FieldDescription>{t('pos.settings.printerBrowserHelp')}</FieldDescription>
+            </label>
+          </section>
+
+          <div className="cpos-actions">
+            <button type="button" className="cpos-btn cpos-btn--primary" onClick={save}>
+              {t('pos.settings.save')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-const section: React.CSSProperties = {
-  border: '1px solid rgba(0,0,0,0.1)',
-  borderRadius: 'var(--caspian-radius, 12px)',
-  padding: 16,
-  marginBottom: 16,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 14,
-};
-
-const field: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 };
-
-const fieldLabel: React.CSSProperties = { fontSize: 13, fontWeight: 600 };
-
-const radioRow: React.CSSProperties = {
-  display: 'flex',
-  gap: 10,
-  alignItems: 'flex-start',
-  padding: 10,
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 'var(--caspian-radius, 8px)',
-  cursor: 'pointer',
-};
-
-const sidebarToggle: React.CSSProperties = {
-  width: '100%',
-  padding: '6px 0',
-  border: 0,
-  background: 'transparent',
-  cursor: 'pointer',
-  fontSize: 14,
-  fontWeight: 700,
-  color: '#666',
-  borderRadius: 'calc(var(--caspian-radius, 8px) - 4px)',
-};
-
-const sidebarLink: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  padding: '8px 10px',
-  border: 0,
-  background: 'transparent',
-  cursor: 'pointer',
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'inherit',
-  borderRadius: 'calc(var(--caspian-radius, 8px) - 4px)',
-  textAlign: 'left',
-  width: '100%',
-};

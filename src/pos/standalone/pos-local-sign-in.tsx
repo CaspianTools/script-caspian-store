@@ -2,28 +2,11 @@
 
 import { useState, type FormEvent } from 'react';
 import { useT } from '../../i18n/locale-context';
-import { Button } from '../../ui/button';
-import { Input } from '../../ui/input';
 import { FieldDescription } from '../../ui/field-description';
+import { ShoppingCartIcon } from '../../ui/icons';
 import { usePosLocalSession } from './local-session-context';
 import { MIN_LOCAL_PASSWORD_LENGTH } from './local-auth';
 
-const wrap: React.CSSProperties = {
-  maxWidth: 380,
-  margin: '0 auto',
-  padding: 40,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-};
-
-const field: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6 };
-const label: React.CSSProperties = { fontSize: 13, fontWeight: 600 };
-const errorStyle: React.CSSProperties = {
-  fontSize: 13,
-  color: 'var(--caspian-danger, #b3261e)',
-  minHeight: 18,
-};
 
 /**
  * Sign-in for a standalone till, and the one-time setup that precedes it.
@@ -34,7 +17,13 @@ const errorStyle: React.CSSProperties = {
  */
 export function PosLocalSignIn() {
   const { commissioned } = usePosLocalSession();
-  return commissioned ? <SignInForm /> : <CommissionForm />;
+  // Its own canvas: this renders above PosShell, so nothing else is painting
+  // the page behind it.
+  return (
+    <div className="cpos-signin-canvas">
+      {commissioned ? <SignInForm /> : <CommissionForm />}
+    </div>
+  );
 }
 
 function SignInForm() {
@@ -60,17 +49,21 @@ function SignInForm() {
   };
 
   return (
-    <form style={wrap} onSubmit={submit}>
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('pos.local.signInTitle')}</h1>
-        <p style={{ color: '#666', marginTop: 6, fontSize: 14 }}>{t('pos.local.signInBody')}</p>
+    <form className="cpos-signin" onSubmit={submit}>
+      <div className="cpos-signin__brand">
+        <span className="cpos-signin__mark">
+          <ShoppingCartIcon size={24} />
+        </span>
+        <h1 className="cpos-signin__h">{t('pos.local.signInTitle')}</h1>
+        <p className="cpos-signin__sub">{t('pos.local.signInBody')}</p>
       </div>
 
-      <div style={field}>
-        <label style={label} htmlFor="caspian-local-username">
+      <div className="cpos-field">
+        <label className="cpos-field__label" htmlFor="caspian-local-username">
           {t('pos.local.username')}
         </label>
-        <Input
+        <input
+          className="cpos-input"
           id="caspian-local-username"
           value={username}
           autoFocus
@@ -79,11 +72,12 @@ function SignInForm() {
         />
       </div>
 
-      <div style={field}>
-        <label style={label} htmlFor="caspian-local-password">
+      <div className="cpos-field">
+        <label className="cpos-field__label" htmlFor="caspian-local-password">
           {t('pos.local.password')}
         </label>
-        <Input
+        <input
+          className="cpos-input"
           id="caspian-local-password"
           type="password"
           value={password}
@@ -92,10 +86,19 @@ function SignInForm() {
         />
       </div>
 
-      <div style={errorStyle}>{error}</div>
-      <Button type="submit" disabled={busy || !username || !password}>
+      {error ? (
+        <div className="cpos-note cpos-note--danger" role="alert">
+          {error}
+        </div>
+      ) : null}
+      <button
+        type="submit"
+        className="cpos-btn cpos-btn--primary cpos-btn--lg cpos-btn--block"
+        disabled={busy || !username || !password}
+      >
+        {busy ? <span className="cpos-spinner" aria-hidden="true" /> : null}
         {busy ? t('pos.local.signingIn') : t('pos.local.signIn')}
-      </Button>
+      </button>
     </form>
   );
 }
@@ -144,21 +147,21 @@ function CommissionForm() {
   };
 
   return (
-    <form style={wrap} onSubmit={submit}>
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
-          {t('pos.local.commissionTitle')}
-        </h1>
-        <p style={{ color: '#666', marginTop: 6, fontSize: 14 }}>
-          {t('pos.local.commissionBody')}
-        </p>
+    <form className="cpos-signin" onSubmit={submit}>
+      <div className="cpos-signin__brand">
+        <span className="cpos-signin__mark">
+          <ShoppingCartIcon size={24} />
+        </span>
+        <h1 className="cpos-signin__h">{t('pos.local.commissionTitle')}</h1>
+        <p className="cpos-signin__sub">{t('pos.local.commissionBody')}</p>
       </div>
 
-      <div style={field}>
-        <label style={label} htmlFor="caspian-commission-username">
+      <div className="cpos-field">
+        <label className="cpos-field__label" htmlFor="caspian-commission-username">
           {t('pos.local.username')}
         </label>
-        <Input
+        <input
+          className="cpos-input"
           id="caspian-commission-username"
           value={username}
           autoFocus
@@ -167,11 +170,12 @@ function CommissionForm() {
         />
       </div>
 
-      <div style={field}>
-        <label style={label} htmlFor="caspian-commission-password">
+      <div className="cpos-field">
+        <label className="cpos-field__label" htmlFor="caspian-commission-password">
           {t('pos.local.password')}
         </label>
-        <Input
+        <input
+          className="cpos-input"
           id="caspian-commission-password"
           type="password"
           value={password}
@@ -183,11 +187,12 @@ function CommissionForm() {
         </FieldDescription>
       </div>
 
-      <div style={field}>
-        <label style={label} htmlFor="caspian-commission-confirm">
+      <div className="cpos-field">
+        <label className="cpos-field__label" htmlFor="caspian-commission-confirm">
           {t('pos.local.confirmPassword')}
         </label>
-        <Input
+        <input
+          className="cpos-input"
           id="caspian-commission-confirm"
           type="password"
           value={confirm}
@@ -196,10 +201,19 @@ function CommissionForm() {
         />
       </div>
 
-      <div style={errorStyle}>{error}</div>
-      <Button type="submit" disabled={busy || !username || !password || !confirm}>
+      {error ? (
+        <div className="cpos-note cpos-note--danger" role="alert">
+          {error}
+        </div>
+      ) : null}
+      <button
+        type="submit"
+        className="cpos-btn cpos-btn--primary cpos-btn--lg cpos-btn--block"
+        disabled={busy || !username || !password || !confirm}
+      >
+        {busy ? <span className="cpos-spinner" aria-hidden="true" /> : null}
         {busy ? t('pos.local.commissioning') : t('pos.local.commissionCta')}
-      </Button>
+      </button>
     </form>
   );
 }

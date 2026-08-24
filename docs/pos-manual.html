@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v12.0.1"
+      "version": "v12.1.0"
     },
     "parts": [
       {
@@ -932,7 +932,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Install",
-                "what": "Button in the register top bar, just before Exit register. It disappears once this till has the register installed, so an empty space there means the job is already done."
+                "what": "Button in the top bar, between the licence marker and the appearance button. It disappears once this till has the register installed, so an empty space there means the job is already done."
               }
             ],
             "notes": [
@@ -1009,9 +1009,9 @@ const MANUAL = {
             "title": "Settings for this till",
             "audience": "staff",
             "route": "/pos/settings",
-            "summary": "Everything on this page belongs to the one computer you are sitting at, not to your shop. A till at the front counter and a tablet in the stockroom each keep their own name, their own language and their own scanner setting. The page says so at the top: these apply to this computer only.",
+            "summary": "Everything on this page belongs to the one computer you are sitting at, not to your shop. A till at the front counter and a tablet in the stockroom each keep their own name, their own language, their own brightness and their own scanner setting. The page says so at the top: these apply to this computer only.",
             "steps": [
-              "From the register, press Settings in the top bar.",
+              "From the register, press Settings in the menu down the left.",
               "Pick your language from the Language menu. It changes straight away - you do not need to press Save for this one.",
               "Give this till a name in \"Register name\", such as Front counter. This name is printed on your receipts.",
               "If scans arrive broken in half, raise \"Scanner speed\". If your own typing is being mistaken for a scan, lower it. The normal value is 40.",
@@ -1021,6 +1021,10 @@ const MANUAL = {
               {
                 "name": "Language",
                 "what": "Menu offering English, Azərbaycan dili, Русский and Türkçe. Takes effect the moment you pick it."
+              },
+              {
+                "name": "Appearance",
+                "what": "Three choices: Light, Dark and \"Match this device\". Takes effect the moment you pick it, and is saved on this computer only - a counter by a window and one in a stockroom can differ. The same choice is on the small sun/moon/screen button in the top bar."
               },
               {
                 "name": "Register name",
@@ -1152,7 +1156,7 @@ const MANUAL = {
             "route": "/pos/settings",
             "summary": "If you bought this register, you were sent a licence key. Paste it into the Licence box on the register settings screen. The key belongs to one computer: activating it on a second machine tells you the licence is already in use elsewhere. If your copy did not come with licensing, this box is not on your screen at all and there is nothing to do.",
             "steps": [
-              "From the register, press Settings in the top bar.",
+              "From the register, press Settings in the menu down the left.",
               "Find the Licence box. If it is not there, your copy does not use licence keys and you can ignore this section.",
               "Paste the key you were sent. It starts with \"cslic1.\" and is one long line with no spaces.",
               "Press Activate. A green label appears reading \"Licensed to\" and your shop name.",
@@ -1330,7 +1334,7 @@ const MANUAL = {
             "route": "/pos/app-admin",
             "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you choose which of the seven built-in roles this shop uses, and where you can write your own. Only the Support account made when the till was commissioned can open it, and the page does not exist at all on a till that is backed by a website.",
             "steps": [
-              "Sign in as the Support account - the first account created when the till was set up. App admin appears in the header only for that account. On a till backed by a website the address quietly returns you to the counter instead.",
+              "Sign in as the Support account - the first account created when the till was set up. App admin appears in the menu, under System, only for that account. On a till backed by a website the address quietly returns you to the counter instead.",
               "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Each row lists the parts of the software that role opens.",
               "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anyone still holding it stops being able to open anything - move those people to another role first.",
               "To write your own, press Add custom role, give it a name, tick the areas it may open, and press Save role.",
@@ -1366,37 +1370,50 @@ const MANUAL = {
             "title": "Opening the till at the start of a shift",
             "audience": "staff",
             "route": "/pos",
-            "summary": "There is nothing to open and no shift to start. You sign in, and the register is ready. This page covers the first two minutes of a shift and what the bar across the top of the screen does, so that everything after it makes sense.",
+            "summary": "There is nothing to open and no shift to start. You sign in, and the register is ready. This page covers the first two minutes of a shift, and the two pieces of chrome the rest of the manual keeps referring to: the menu down the left and the bar across the top.",
             "steps": [
               "Open /pos on the till.",
               "Sign in with your own account. Do not share an account with another cashier - the sale records who rang it up.",
-              "Check the top bar reads the shop's name and shows your name on the right.",
-              "If a yellow strip is showing across the top, read it. It is about the licence and it never stops you selling, but the owner should know about it.",
+              "Check the bar across the top names the screen you are on, and that the foot of the menu on the left shows your name.",
+              "If a coloured strip is showing under the top bar, read it. It is about the licence or a waiting update, and neither one stops you selling.",
               "Scan your first item. There is nothing else to set up."
             ],
             "fields": [
               {
+                "name": "The menu",
+                "what": "The dark column down the left. It holds every screen this till has, grouped under Counter, Shop and System, and the one you are on is highlighted."
+              },
+              {
+                "name": "Collapse menu",
+                "what": "At the foot of the menu. Shrinks it to a strip of icons so the sale gets the width back; hovering an icon shows its name. The till remembers your choice on this computer."
+              },
+              {
                 "name": "Register",
-                "what": "Link in the top bar. The sale screen. This is where you spend the day."
+                "what": "First item under Counter. The sale screen. This is where you spend the day."
+              },
+              {
+                "name": "Held sales",
+                "what": "Under Counter, on a till that has a website behind it. A red number beside it is how many sales are waiting to be sent."
               },
               {
                 "name": "Settings",
-                "what": "Link in the top bar. This till's own settings: its language, its name, its scanner speed."
+                "what": "Under System. This till's own settings: its language, its name, how bright it looks, its scanner speed."
               },
               {
-                "name": "Admin panel",
-                "what": "Link in the top bar, shown only to admin accounts. Cashiers with the Staff role do not see it."
+                "name": "Appearance",
+                "what": "The small button in the top bar showing a sun, a moon or a screen. Presses cycle between light, dark and matching whatever the computer itself is set to."
               },
               {
                 "name": "Exit register",
-                "what": "Button at the right of the top bar. Signs you out. Use it at the end of a shift so the next person rings up under their own name."
+                "what": "At the foot of the menu, and also under your name in the top right. Signs you out. Use it at the end of a shift so the next person rings up under their own name."
               }
             ],
             "notes": [
               "There is no shift to open and no float to count in. The register has no session of any kind, so there is no start-of-day or end-of-day step to remember.",
-              "The top bar has only two places to go: Register and Settings. Admin accounts also see a link to the admin panel. That is the whole menu.",
+              "What is in the menu depends on the till and on the account. A till with a website behind it shows Held sales; a till without one shows Store and Back office to the people allowed into them. Nobody sees all of it at once.",
               "Sign out at the end of your shift. Sales record the account that rang them up, so leaving yourself signed in means the next person's sales are recorded against you.",
-              "The register fills the whole screen. There is no shop header, no footer and no admin sidebar - that is deliberate, so that nothing on the screen is a distraction at the counter.",
+              "On a narrow screen - a tablet held upright, or a phone - the menu is not there. A button at the top left opens it over the page, and it closes again as soon as you pick a screen.",
+              "The register still fills the whole screen. There is no shop header and no footer, so that nothing on the screen is a distraction at the counter.",
               "If a yellow licence strip appears you can dismiss it, and it stays gone until the page is reloaded. It comes back next time the till is opened. It never blocks a sale."
             ]
           },
@@ -1468,7 +1485,7 @@ const MANUAL = {
               "Scanning the same thing twice adds one to the existing line rather than creating a second line. The most you can put on one line is 10000, and dropping a line to zero removes it.",
               "The totals on the right are a guide for you and the customer. The real prices are read from your catalogue by the server at the moment you complete the sale, so if a price was changed in the admin panel while the sale was open, the sale records the new price.",
               "If a product is deleted from the catalogue while it is sitting on the sale, completing the sale fails. The message names the product's id code, not its name - it reads \"Product ... no longer exists\" with a long jumble of letters and numbers in place of the item. So you will not be told which item it was in plain words. If it happens, clear the sale and scan the items again to find the one that will not go on.",
-              "The top bar has only two places to go: Register and Settings. Admin accounts also see a link to the admin panel. \"Exit register\" signs you out.",
+              "Everywhere the register can take you is in the menu down the left, grouped under Counter, Shop and System. What is listed depends on the till and on your account, so two cashiers can see different menus. \"Exit register\" at the foot of it signs you out.",
               "If your account does not have the Staff role (Admin also works), the screen shows \"Not a register account\" along with your account id and a Copy id button - give that id to the owner so they can grant you access.",
               "If the owner has switched the register off, /pos shows \"Register is switched off\" instead."
             ]
@@ -1576,12 +1593,12 @@ const MANUAL = {
               "A yellow marker appears in the top bar saying there is no internet and how many sales are waiting.",
               "Print the receipt as usual. It carries a real receipt number and one extra line saying it was an offline sale.",
               "When the connection returns the waiting sales are sent by themselves, oldest first. The marker disappears.",
-              "To check what is waiting, or to push them through by hand, open Held sales in the top bar."
+              "To check what is waiting, or to push them through by hand, open Held sales in the menu down the left."
             ],
             "fields": [
               {
                 "name": "Held sales",
-                "what": "Link in the top bar. Lists every sale taken on this till that the shop has not received yet, plus anything that needs a person to look at it."
+                "what": "Item in the menu, under Counter. Lists every sale taken on this till that the shop has not received yet, plus anything that needs a person to look at it. A red number beside it counts what is waiting."
               },
               {
                 "name": "Send now",
@@ -1617,7 +1634,7 @@ const MANUAL = {
               "\"Product ... no longer exists\" means an item on the sale was deleted from the catalogue while the sale was open. The message names the product's internal id, not its name, so you will not be told which item it was in plain words. Clear the sale and scan the items again to find the one that will not go on.",
               "An amber warning about stock going negative is not a failure. The sale was recorded. It means you sold something the catalogue thought had run out, and the owner can tidy the stock figure up later.",
               "The scanner stops listening while the payment window is open and while the \"Sale complete\" screen is showing. That is deliberate, so that typing an amount cannot be read as a barcode. On the completed-sale screen you must press \"New sale\" before scanning the next customer's items.",
-              "If the till loses its internet connection the sale is still recorded — it is held on this computer and sent when the connection returns. The receipt prints as normal. You can see what is waiting under Held sales in the top bar.",
+              "If the till loses its internet connection the sale is still recorded — it is held on this computer and sent when the connection returns. The receipt prints as normal. You can see what is waiting under Held sales in the menu down the left.",
               "If the whole screen goes blank or the browser reloads mid-sale, the items on the ticket are gone and nothing was recorded. Scan them again.",
               "Nothing is charged, recorded or taken off stock until \"Complete sale\" succeeds. If you are unsure whether a sale went through, look for it in the recent-sales table on the Point of sale page in the admin panel, or ask the owner to."
             ]
@@ -1976,7 +1993,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v12.0.1"
+      "version": "v12.1.0"
     },
     "parts": [
       {
@@ -2240,7 +2257,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Quraşdır",
-                "what": "Kassanın yuxarı zolağında, Kassadan çıx düyməsindən bir az əvvəl. Bu kassada kassa artıq quraşdırılıbsa yox olur, ona görə orada boşluq varsa, iş artıq görülüb."
+                "what": "Yuxarı zolaqda, lisenziya nişanı ilə görünüş düyməsi arasında. Bu kassada kassa artıq quraşdırılıbsa yox olur, ona görə orada boşluq varsa, iş artıq görülüb."
               }
             ],
             "notes": [
@@ -2254,7 +2271,6 @@ const MANUAL = {
               "Tətbiqi silmək həmin kompüterdəki istənilən proqram kimi edilir. Mağazanız və satışlarınız haqqında heç nə onun içində saxlanılmır."
             ]
           },
-          
           {
             "id": "prepare-your-catalogue",
             "title": "Kataloqu skana hazırlamaq",
@@ -2315,9 +2331,9 @@ const MANUAL = {
           {
             "id": "till-settings",
             "title": "Bu kassanın tənzimləmələri",
-            "summary": "Bu səhifədəki hər şey mağazanıza deyil, arxasında oturduğunuz konkret kompüterə aiddir. Ön piştaxtadakı kassanın və anbardakı planşetin hərəsinin öz adı, öz dili və öz skaner tənzimləməsi olur. Səhifənin yuxarısında da bu yazılıb: bunlar yalnız bu kompüterə aiddir.",
+            "summary": "Bu səhifədəki hər şey qarşısında oturduğunuz kompüterə aiddir, mağazanıza yox. Ön piştaxtadakı kassa və anbardakı planşet hərəsi öz adını, öz dilini, öz işıqlılığını və öz skaner tənzimləməsini saxlayır. Səhifə bunu yuxarıda bildirir: bunlar yalnız bu kompüterə aiddir.",
             "steps": [
-              "Kassada yuxarı zolaqdakı Tənzimləmələr (Settings) düyməsini basın.",
+              "Kassada soldakı menyudan Tənzimləmələr (Settings) bölməsini açın.",
               "Dil (Language) menyusundan dilinizi seçin. Dil dərhal dəyişir — bunun üçün Yadda saxla (Save) düyməsini basmağa ehtiyac yoxdur.",
               "\"Kassa adı\" (Register name) xanasında bu kassaya ad verin, məsələn Ön piştaxta. Bu ad qəbzlərinizdə çap olunur.",
               "Skanlar yarıya bölünmüş şəkildə gəlirsə, \"Skaner sürəti\" (Scanner speed) dəyərini artırın. Öz yazdığınız skan kimi qəbul edilirsə, azaldın. Normal dəyər 40-dır.",
@@ -2327,6 +2343,10 @@ const MANUAL = {
               {
                 "name": "Dil (Language)",
                 "what": "English, Azərbaycan dili, Русский və Türkçe seçimləri olan menyu. Seçdiyiniz an qüvvəyə minir."
+              },
+              {
+                "name": "Görünüş",
+                "what": "Üç seçim: İşıqlı, Tünd və \"Bu cihaza uyğun\". Seçdiyiniz anda tətbiq olunur və yalnız bu kompüterdə saxlanılır — pəncərə yanındakı kassa ilə anbardakı kassa fərqli ola bilər. Eyni seçim yuxarı zolaqdakı kiçik günəş/ay/ekran düyməsindədir."
               },
               {
                 "name": "Kassa adı (Register name)",
@@ -2454,7 +2474,7 @@ const MANUAL = {
             "title": "Kassanın lisenziyası",
             "summary": "Bu kassanı almısınızsa, sizə lisenziya açarı göndərilib. Onu kassa tənzimləmələri ekranındakı Lisenziya (Licence) xanasına yapışdırın. Açar bir kompüterə bağlıdır: ikinci maşında aktivləşdirsəniz, lisenziyanın artıq başqa yerdə istifadə olunduğu bildirilir. Sizin nüsxənizdə lisenziya yoxdursa, bu xana ekranda ümumiyyətlə görünmür və etməli bir şey yoxdur.",
             "steps": [
-              "Kassada yuxarı paneldəki Tənzimləmələr (Settings) düyməsini basın.",
+              "Kassada soldakı menyudan Tənzimləmələr (Settings) bölməsini açın.",
               "Lisenziya (Licence) xanasını tapın. Yoxdursa, nüsxəniz lisenziya açarlarından istifadə etmir və bu bölməni nəzərə almaya bilərsiniz.",
               "Sizə göndərilən açarı yapışdırın. Açar \"cslic1.\" ilə başlayır və boşluqsuz bir uzun sətirdir.",
               "Aktivləşdir (Activate) düyməsini basın. Yaşıl etiket görünür: \"Licensed to\" və mağazanızın adı.",
@@ -2630,7 +2650,7 @@ const MANUAL = {
             "route": "/pos/app-admin",
             "summary": "Arxasında veb sayt olmadan işləyən kassa öz rol siyahısını elə həmin kompüterdə saxlayır. Tətbiq admini bu mağazanın yeddi hazır roldan hansılarını işlədəcəyini seçdiyiniz və öz rollarınızı yaratdığınız yerdir. Onu yalnız kassa quraşdırılarkən yaradılmış Dəstək hesabı aça bilər; veb sayta bağlı kassada isə bu səhifə ümumiyyətlə yoxdur.",
             "steps": [
-              "Dəstək hesabı ilə daxil olun — kassa qurulanda yaradılan ilk hesab. Tətbiq admini başlıqda yalnız o hesab üçün görünür. Veb sayta bağlı kassada bu ünvan sizi sakitcə kassaya qaytarır.",
+              "Dəstək hesabı ilə daxil olun — kassa qurulanda yaradılan ilk hesab. Tətbiq admini menyuda, Sistem başlığı altında, yalnız o hesab üçün görünür. Veb sayta bağlı kassada bu ünvan sizi sakitcə kassaya qaytarır.",
               "Təyin edilmiş rollar bölməsində ən az girişdən başlayaraq yeddi sətir var: Kassir, Kassir (təkrar), Anbarçı, Mühasib, Menecer, Admin və Dəstək. Hər sətir həmin rolun açdığı hissələri sadalayır.",
               "Rolu işlətmək üçün qeyd edin, dayandırmaq üçün qeydi götürün. Dayandırılmış rol işçi əlavə edərkən və ya redaktə edərkən təklif olunmur, həmin rolu daşıyanlar isə heç nə aça bilmir — əvvəlcə o adamları başqa rola keçirin.",
               "Öz rolunuzu yaratmaq üçün Xüsusi rol əlavə et düyməsini basın, ad verin, aça biləcəyi hissələri qeyd edin və Rolu saxla düyməsini basın.",
@@ -2665,38 +2685,51 @@ const MANUAL = {
             "title": "Növbənin əvvəlində kassanı açmaq",
             "audience": "staff",
             "route": "/pos",
-            "summary": "Açılacaq heç nə və başlanacaq növbə yoxdur. Daxil olursunuz və kassa hazırdır. Bu səhifə növbənin ilk iki dəqiqəsini və ekranın yuxarısındakı zolağın nə etdiyini əhatə edir ki, ondan sonrakı hər şey aydın olsun.",
+            "summary": "Açılacaq bir şey və başlanacaq növbə yoxdur. Daxil olursunuz və kassa hazırdır. Bu səhifə növbənin ilk iki dəqiqəsini, həm də təlimatın qalan hissəsində daim adı çəkilən iki hissəni izah edir: soldakı menyu və yuxarıdakı zolaq.",
             "steps": [
               "Kassada /pos ünvanını açın.",
-              "Öz hesabınızla daxil olun. Hesabı başqa kassirlə bölüşməyin - satış onu kimin rəsmiləşdirdiyini qeyd edir.",
-              "Yuxarı zolağın mağazanın adını yazdığını və sağda adınızı göstərdiyini yoxlayın.",
-              "Yuxarıda sarı zolaq varsa, onu oxuyun. O, lisenziya ilə bağlıdır və heç vaxt satışa mane olmur, amma sahib bundan xəbərdar olmalıdır.",
-              "İlk məhsulu skan edin. Qurulacaq başqa heç nə yoxdur."
+              "Öz hesabınızla daxil olun. Hesabı başqa kassirlə paylaşmayın — satış onu kimin etdiyini qeyd edir.",
+              "Yuxarı zolağın hansı ekranda olduğunuzu yazdığını və soldakı menyunun altında adınızın göründüyünü yoxlayın.",
+              "Yuxarı zolağın altında rəngli bir zolaq varsa, oxuyun. O, lisenziya və ya gözləyən yeniləmə haqqındadır və heç biri satışa mane olmur.",
+              "İlk malı skan edin. Qurulacaq başqa bir şey yoxdur."
             ],
             "fields": [
               {
+                "name": "Menyu",
+                "what": "Soldakı tünd sütun. Bu kassanın bütün ekranlarını saxlayır — Kassa, Mağaza və Sistem başlıqları altında qruplaşdırılıb — və hazırda olduğunuz ekran seçilmiş görünür."
+              },
+              {
+                "name": "Menyunu yığ",
+                "what": "Menyunun altında. Menyunu ikonalar zolağına yığır ki, en satışa qalsın; ikonanın üzərinə gələndə adı görünür. Kassa seçiminizi bu kompüterdə yadda saxlayır."
+              },
+              {
                 "name": "Kassa",
-                "what": "Yuxarı zolaqdakı keçid. Satış ekranı. Günü burada keçirirsiniz."
+                "what": "Kassa başlığı altındakı ilk bölmə. Satış ekranı. Günü burada keçirirsiniz."
               },
               {
-                "name": "Tənzimlər",
-                "what": "Yuxarı zolaqdakı keçid. Bu kassanın öz tənzimləri: dili, adı, skaner sürəti."
+                "name": "Gözləyən satışlar",
+                "what": "Arxasında veb sayt olan kassada, Kassa başlığı altında. Yanındakı qırmızı rəqəm göndərilməyi gözləyən satışların sayıdır."
               },
               {
-                "name": "İdarə paneli",
-                "what": "Yuxarı zolaqdakı keçid, yalnız admin hesablarına göstərilir. İşçi rolu olan kassirlər onu görmür."
+                "name": "Tənzimləmələr",
+                "what": "Sistem başlığı altında. Bu kassanın öz tənzimləmələri: dili, adı, nə qədər işıqlı göründüyü, skaner sürəti."
+              },
+              {
+                "name": "Görünüş",
+                "what": "Yuxarı zolaqda günəş, ay və ya ekran şəkli olan kiçik düymə. Basdıqca işıqlı, tünd və kompüterin özündəki ayara uyğun rejimlər arasında növbələşir."
               },
               {
                 "name": "Kassadan çıx",
-                "what": "Yuxarı zolağın sağındakı düymə. Sizi sistemdən çıxarır. Növbənin sonunda istifadə edin ki, növbəti adam öz adı ilə satış rəsmiləşdirsin."
+                "what": "Menyunun altında, həmçinin yuxarı sağda adınızın altında. Hesabdan çıxarır. Növbənin sonunda istifadə edin ki, növbəti adam öz adı ilə satsın."
               }
             ],
             "notes": [
-              "Açılacaq növbə və sayılacaq başlanğıc pulu yoxdur. Kassanın heç bir sessiyası yoxdur, ona görə yadda saxlanacaq gün başlanğıcı və ya gün sonu addımı yoxdur.",
-              "Yuxarı zolaqda getməli yalnız iki yer var: Kassa və Tənzimlər. Admin hesabları həm də idarə panelinə keçid görür. Menyunun hamısı budur.",
-              "Növbənizin sonunda çıxın. Satışlar onu rəsmiləşdirən hesabı qeyd edir, ona görə daxil olmuş qalmaq növbəti adamın satışlarının sizin adınıza yazılması deməkdir.",
-              "Kassa bütün ekranı tutur. Mağaza başlığı, alt hissə və idarə paneli yan menyusu yoxdur - bu qəsdəndir ki, ekranda heç nə piştaxtada diqqəti yayındırmasın.",
-              "Sarı lisenziya zolağı çıxarsa, onu bağlaya bilərsiniz və səhifə yenidən yüklənənə qədər gizli qalır. Kassa növbəti dəfə açıldıqda geri qayıdır. O, heç vaxt satışa mane olmur."
+              "Açılacaq növbə və sayılacaq kassa qalığı yoxdur. Kassanın heç bir sessiyası yoxdur, ona görə yadda saxlanacaq gün başlanğıcı və ya sonu addımı da yoxdur.",
+              "Menyuda nə olduğu kassadan və hesabdan asılıdır. Arxasında veb sayt olan kassa Gözləyən satışlar bölməsini göstərir; olmayan kassa isə icazəsi olanlara Mağaza və Arxa ofis bölmələrini göstərir. Heç kim hamısını birdən görmür.",
+              "Növbənin sonunda hesabdan çıxın. Satışlar onu edən hesabı qeyd edir, ona görə açıq qalsanız növbəti adamın satışları sizin adınıza yazılacaq.",
+              "Dar ekranda — dik tutulan planşet və ya telefon — menyu görünmür. Sol yuxarıdakı düymə onu səhifənin üstündə açır və ekran seçən kimi yenidən bağlanır.",
+              "Kassa yenə də bütün ekranı tutur. Mağaza başlığı və altlığı yoxdur ki, ekranda diqqəti yayındıran heç nə olmasın.",
+              "Sarı lisenziya zolağı çıxarsa, onu bağlaya bilərsiniz və səhifə yenilənənə qədər görünmür. Kassa növbəti dəfə açılanda qayıdır. Heç vaxt satışı dayandırmır."
             ]
           },
           {
@@ -2765,7 +2798,7 @@ const MANUAL = {
               "Eyni məhsulu iki dəfə skan etmək ikinci sətir yaratmır, mövcud sətrin sayını bir vahid artırır. Bir sətrə maksimum 10000 ədəd qoymaq olar, sayı sıfıra endirsəniz isə sətir silinir.",
               "Sağdakı yekunlar sizin və müştəri üçün təxmini göstəricidir. Əsl qiymətləri server satışı tamamladığınız an kataloqunuzdan oxuyur, ona görə də satış açıq olarkən idarə panelində qiymət dəyişibsə, satışa yeni qiymət yazılır.",
               "Məhsul satışın üzərində dayanarkən kataloqdan silinsə, satış tamamlanmır. Mesajda məhsulun adı yox, identifikator kodu göstərilir — \"Product ... no longer exists\" yazılır və məhsulun yerində hərf-rəqəmdən ibarət uzun yığın olur. Yəni hansı məhsul olduğu sizə adi sözlərlə deyilməyəcək. Belə hal olsa, satışı təmizləyin və məhsulları yenidən skan edərək keçməyəni tapın.",
-              "Yuxarı zolaqda cəmi iki keçid var: Kassa (Register) və Tənzimləmələr (Settings). Admin hesabları əlavə olaraq idarə panelinə keçid görür. \"Kassadan çıx\" (Exit register) düyməsi hesabdan çıxarır.",
+              "Kassanın apara biləcəyi hər yer soldakı menyudadır və Kassa, Mağaza, Sistem başlıqları altında qruplaşdırılıb. Siyahı kassadan və hesabınızdan asılıdır, ona görə iki kassir fərqli menyu görə bilər. Menyunun altındakı \"Kassadan çıx\" hesabdan çıxarır.",
               "Hesabınızda İşçi (Staff) rolu yoxdursa (Admin rolu da işə yarayır), ekranda \"Bu hesab kassa üçün deyil\" (Not a register account) yazısı, hesab identifikatorunuz və Kopyala (Copy id) düyməsi görünür — həmin identifikatoru mağaza sahibinə verin ki, sizə icazə versin.",
               "Mağaza sahibi kassanı söndürübsə, /pos ünvanında bunun əvəzinə \"Kassa söndürülüb\" (Register is switched off) yazısı çıxır."
             ]
@@ -2871,12 +2904,12 @@ const MANUAL = {
               "Yuxarı zolaqda internetin olmadığını və neçə satışın gözlədiyini bildirən sarı işarə çıxır.",
               "Qəbzi həmişəki kimi çap edin. Onun üzərində əsl qəbz nömrəsi və oflayn satış olduğunu bildirən bir əlavə sətir olur.",
               "Bağlantı qayıdanda gözləyən satışlar ən köhnədən başlayaraq öz-özünə göndərilir. İşarə yox olur.",
-              "Nəyin gözlədiyini görmək və ya əl ilə göndərmək üçün yuxarı zolaqdakı Gözləyən satışlar bölməsini açın."
+              "Nəyin gözlədiyini görmək və ya əl ilə göndərmək üçün soldakı menyuda Gözləyən satışlar bölməsini açın."
             ],
             "fields": [
               {
                 "name": "Gözləyən satışlar",
-                "what": "Yuxarı zolaqdakı keçid. Bu kassada edilmiş, amma mağazaya hələ çatmamış bütün satışları və insan müdaxiləsi tələb edənləri sadalayır."
+                "what": "Menyuda, Kassa başlığı altındakı bölmə. Bu kassada edilmiş, amma mağazaya hələ çatmamış bütün satışları və insan müdaxiləsi tələb edənləri sadalayır. Yanındakı qırmızı rəqəm gözləyənlərin sayıdır."
               },
               {
                 "name": "İndi göndər",
@@ -2912,7 +2945,7 @@ const MANUAL = {
               "Məhsul ... artıq mövcud deyil mesajı satış açıq ikən satışdakı məhsulun kataloqdan silindiyini bildirir. Mesaj məhsulun adını yox, daxili kodunu yazır, ona görə hansı məhsul olduğu sizə aydın sözlərlə deyilməyəcək. Satışı silin və hansının keçmədiyini tapmaq üçün məhsulları yenidən skan edin.",
               "Ehtiyatın mənfiyə düşməsi ilə bağlı sarı xəbərdarlıq uğursuzluq deyil. Satış qeyd olunub. O, kataloqun qurtardığını düşündüyü bir şeyi satdığınızı bildirir və sahib ehtiyat rəqəmini sonra səliqəyə sala bilər.",
               "Ödəniş pəncərəsi açıq ikən və Satış tamamlandı ekranı göstərilərkən skaner dinləməni dayandırır. Bu qəsdəndir ki, məbləğ yazmaq barkod kimi oxunmasın. Tamamlanmış satış ekranında növbəti müştərinin məhsullarını skan etməzdən əvvəl Yeni satış düyməsini basmalısınız.",
-              "Kassa internet bağlantısını itirsə də satış qeyd olunur - o, bu kompüterdə saxlanılır və bağlantı qayıdanda göndərilir. Qəbz adi qaydada çap olunur. Nəyin gözlədiyini yuxarı zolaqdakı Gözləyən satışlar bölməsində görə bilərsiniz.",
+              "Kassa internet bağlantısını itirsə də satış qeyd olunur - o, bu kompüterdə saxlanılır və bağlantı qayıdanda göndərilir. Qəbz adi qaydada çap olunur. Nəyin gözlədiyini soldakı menyudakı Gözləyən satışlar bölməsində görə bilərsiniz.",
               "Bütün ekran qaralarsa və ya brauzer satışın ortasında yenidən yüklənərsə, siyahıdakı məhsullar itir və heç nə qeyd olunmur. Onları yenidən skan edin.",
               "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin."
             ]
@@ -3265,7 +3298,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v12.0.1"
+      "version": "v12.1.0"
     },
     "parts": [
       {
@@ -3529,7 +3562,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Установить",
-                "what": "Кнопка в верхней полосе кассы, прямо перед «Выйти из кассы». Она исчезает, как только касса на этом компьютере установлена, так что пустое место означает, что дело уже сделано."
+                "what": "Кнопка в верхней панели, между значком лицензии и кнопкой оформления. Она исчезает, как только касса на этом компьютере установлена, так что пустое место означает, что дело уже сделано."
               }
             ],
             "notes": [
@@ -3543,7 +3576,6 @@ const MANUAL = {
               "Удаляется приложение так же, как любая другая программа на этом компьютере. Внутри него не хранится ничего о вашем магазине и ваших продажах."
             ]
           },
-          
           {
             "id": "prepare-your-catalogue",
             "title": "Подготовка каталога к сканированию",
@@ -3604,9 +3636,9 @@ const MANUAL = {
           {
             "id": "till-settings",
             "title": "Настройки этой кассы",
-            "summary": "Всё на этой странице относится к одному компьютеру, за которым вы сидите, а не к магазину в целом. Касса у входа и планшет на складе хранят каждый своё название, свой язык и свою настройку сканера. Об этом сказано вверху страницы: настройки действуют только на этом компьютере.",
+            "summary": "Всё на этой странице относится к тому компьютеру, за которым вы сидите, а не к магазину. Касса за передним прилавком и планшет в подсобке хранят каждый своё имя, свой язык, свою яркость и свою настройку сканера. Страница так и говорит сверху: это относится только к этому компьютеру.",
             "steps": [
-              "На кассе нажмите Settings (настройки) в верхней панели.",
+              "На кассе откройте «Настройки» (Settings) в меню слева.",
               "Выберите язык в меню Language (язык). Он меняется сразу — нажимать Save для этого не нужно.",
               "Дайте кассе название в поле «Название кассы» (Register name), например Front counter. Это название печатается на чеках.",
               "Если сканирования приходят разорванными пополам, увеличьте «Скорость сканера» (Scanner speed). Если за сканирование принимается ваш собственный набор с клавиатуры — уменьшите. Обычное значение — 40.",
@@ -3616,6 +3648,10 @@ const MANUAL = {
               {
                 "name": "Язык (Language)",
                 "what": "Меню с вариантами English, Azərbaycan dili, Русский и Türkçe. Действует сразу после выбора."
+              },
+              {
+                "name": "Оформление",
+                "what": "Три варианта: «Светлое», «Тёмное» и «Как на этом устройстве». Действует сразу и сохраняется только на этом компьютере — касса у окна и касса в подсобке могут отличаться. Тот же выбор есть на маленькой кнопке солнце/луна/экран в верхней полосе."
               },
               {
                 "name": "Название кассы (Register name)",
@@ -3743,7 +3779,7 @@ const MANUAL = {
             "title": "Лицензия для кассы",
             "summary": "Если вы купили эту кассу, вам прислали лицензионный ключ. Вставьте его в поле «Лицензия» (Licence) на экране настроек кассы. Ключ привязан к одному компьютеру: при активации на втором вам сообщат, что лицензия уже используется в другом месте. Если в вашей копии лицензирования нет, этого поля на экране просто не будет и делать ничего не нужно.",
             "steps": [
-              "В кассе нажмите «Настройки» (Settings) в верхней панели.",
+              "В кассе откройте «Настройки» (Settings) в меню слева.",
               "Найдите поле «Лицензия» (Licence). Если его нет, ваша копия не использует лицензионные ключи и этот раздел можно пропустить.",
               "Вставьте присланный ключ. Он начинается с «cslic1.» и представляет собой одну длинную строку без пробелов.",
               "Нажмите «Активировать» (Activate). Появится зелёная отметка «Licensed to» с названием вашего магазина.",
@@ -3919,7 +3955,7 @@ const MANUAL = {
             "route": "/pos/app-admin",
             "summary": "Касса, работающая без сайта, хранит собственный список ролей прямо на этом компьютере. На странице «Администратор приложения» вы решаете, какие из семи встроенных ролей нужны магазину, и можете завести свои. Открыть её может только учётная запись поддержки, созданная при вводе кассы в работу, а на кассе с сайтом этой страницы нет вовсе.",
             "steps": [
-              "Войдите под учётной записью поддержки — это первая запись, созданная при настройке кассы. Пункт «Администратор приложения» появляется в шапке только у неё. На кассе, связанной с сайтом, этот адрес просто возвращает вас к продаже.",
+              "Войдите под учётной записью поддержки — это первая запись, созданная при настройке кассы. Пункт «Администратор приложения» появляется в меню, в разделе «Система», только у неё. На кассе, связанной с сайтом, этот адрес просто возвращает вас к продаже.",
               "В разделе встроенных ролей семь строк, от наименьшего доступа: Кассир, Кассир (дубль), Кладовщик, Бухгалтер, Менеджер, Администратор и Поддержка. В каждой строке перечислено, что эта роль открывает.",
               "Отметьте роль, чтобы её использовать, снимите отметку, чтобы вывести из обращения. Отключённая роль перестаёт предлагаться при добавлении и изменении сотрудника, а те, у кого она осталась, перестают открывать что-либо — сначала переведите этих людей на другую роль.",
               "Чтобы завести свою роль, нажмите «Добавить свою роль», дайте ей название, отметьте разделы, которые она открывает, и нажмите «Сохранить роль».",
@@ -3954,38 +3990,51 @@ const MANUAL = {
             "title": "Открытие кассы в начале смены",
             "audience": "staff",
             "route": "/pos",
-            "summary": "Открывать нечего и смену начинать не нужно. Вы входите - и касса готова. Эта страница описывает первые две минуты смены и то, что делает полоса вверху экрана, чтобы всё дальнейшее было понятно.",
+            "summary": "Ничего открывать не нужно, и смены как таковой нет. Вы входите — и касса готова. Эта страница про первые две минуты смены и про две части оформления, на которые ссылается остальная часть руководства: меню слева и полосу сверху.",
             "steps": [
               "Откройте /pos на кассе.",
-              "Войдите под своей учётной записью. Не делите её с другим кассиром - продажа записывает, кто её оформил.",
-              "Проверьте, что вверху написано название магазина, а справа показано ваше имя.",
-              "Если вверху видна жёлтая полоса, прочитайте её. Она о лицензии и никогда не мешает продавать, но владельцу стоит о ней знать.",
-              "Отсканируйте первый товар. Настраивать больше нечего."
+              "Войдите под своей учётной записью. Не делите её с другим кассиром — продажа записывает, кто её провёл.",
+              "Проверьте, что верхняя полоса называет экран, на котором вы находитесь, а внизу меню слева видно ваше имя.",
+              "Если под верхней полосой видна цветная полоска, прочитайте её. Она про лицензию или про ожидающее обновление, и ни то ни другое не мешает продавать.",
+              "Отсканируйте первый товар. Больше настраивать нечего."
             ],
             "fields": [
               {
+                "name": "Меню",
+                "what": "Тёмный столбец слева. В нём все экраны этой кассы, сгруппированные под заголовками «Касса», «Магазин» и «Система», и тот, на котором вы сейчас, подсвечен."
+              },
+              {
+                "name": "Свернуть меню",
+                "what": "Внизу меню. Сжимает его до полоски значков, чтобы ширина осталась продаже; при наведении на значок видно его название. Касса запоминает ваш выбор на этом компьютере."
+              },
+              {
                 "name": "Касса",
-                "what": "Ссылка в верхней полосе. Экран продажи. Здесь вы проводите день."
+                "what": "Первый пункт в разделе «Касса». Экран продажи. Здесь вы проводите день."
+              },
+              {
+                "name": "Отложенные продажи",
+                "what": "В разделе «Касса», на кассе, за которой стоит сайт. Красное число рядом — сколько продаж ждёт отправки."
               },
               {
                 "name": "Настройки",
-                "what": "Ссылка в верхней полосе. Собственные настройки этой кассы: язык, имя, скорость сканера."
+                "what": "В разделе «Система». Собственные настройки этой кассы: язык, имя, насколько светло она выглядит, скорость сканера."
               },
               {
-                "name": "Панель администратора",
-                "what": "Ссылка в верхней полосе, показывается только администраторам. Кассиры с ролью Сотрудник её не видят."
+                "name": "Оформление",
+                "what": "Маленькая кнопка в верхней полосе со значком солнца, луны или экрана. Нажатия переключают светлый режим, тёмный и режим «как на самом компьютере»."
               },
               {
                 "name": "Выйти из кассы",
-                "what": "Кнопка справа в верхней полосе. Выполняет выход. Пользуйтесь ею в конце смены, чтобы следующий человек оформлял продажи под своим именем."
+                "what": "Внизу меню, а также под вашим именем справа вверху. Выполняет выход. Пользуйтесь этим в конце смены, чтобы следующий человек продавал под своим именем."
               }
             ],
             "notes": [
-              "Открывать смену и пересчитывать размен не нужно. У кассы вообще нет сессии, поэтому нет ни шага начала дня, ни шага конца дня, о которых нужно помнить.",
-              "В верхней полосе всего два места, куда можно перейти: Касса и Настройки. Учётные записи администраторов видят ещё ссылку на панель администратора. Это всё меню.",
-              "Выходите в конце смены. Продажи записывают учётную запись, которая их оформила, поэтому оставшись в системе, вы запишете на себя продажи следующего человека.",
-              "Касса занимает весь экран. Ни шапки магазина, ни низа страницы, ни боковой панели администратора - это сделано намеренно, чтобы на экране ничто не отвлекало за прилавком.",
-              "Если появилась жёлтая лицензионная полоса, её можно скрыть, и она останется скрытой до перезагрузки страницы. При следующем открытии кассы она вернётся. Продавать она не мешает никогда."
+              "Смену открывать не нужно, размен пересчитывать тоже. У кассы нет никакой сессии, поэтому нет ни шага в начале дня, ни шага в конце, которые нужно было бы помнить.",
+              "Что именно в меню, зависит от кассы и от учётной записи. Касса с сайтом показывает «Отложенные продажи»; касса без сайта показывает «Магазин» и «Бэк-офис» тем, кому туда можно. Целиком меню не видит никто.",
+              "В конце смены выходите из учётной записи. Продажи записывают того, кто их провёл, поэтому если остаться в системе, продажи следующего человека запишутся на вас.",
+              "На узком экране — планшет вертикально или телефон — меню не показано. Кнопка слева вверху открывает его поверх страницы, и оно закрывается, как только вы выберете экран.",
+              "Касса по-прежнему занимает весь экран. Ни шапки магазина, ни подвала нет — чтобы ничто на экране не отвлекало за прилавком.",
+              "Если появилась жёлтая полоска про лицензию, её можно закрыть, и она не вернётся до перезагрузки страницы. При следующем открытии кассы она появится снова. Продажу она не блокирует никогда."
             ]
           },
           {
@@ -4054,7 +4103,7 @@ const MANUAL = {
               "Повторное сканирование того же товара увеличивает количество в существующей строке, а не создаёт вторую. Максимум в одной строке — 10000, а строка с нулевым количеством удаляется.",
               "Итоги справа — ориентир для вас и покупателя. Настоящие цены сервер берёт из вашего каталога в момент завершения продажи, поэтому если цену изменили в админ-панели, пока продажа была открыта, в продаже запишется новая цена.",
               "Если товар удалят из каталога, пока он находится в открытой продаже, завершить её не удастся. В сообщении будет указан внутренний код товара (id), а не название: «Product ... no longer exists», где вместо товара стоит длинный набор букв и цифр. То есть словами вам не скажут, о каком товаре речь. Если такое случилось, очистите продажу и отсканируйте товары заново, чтобы найти тот, который не проходит.",
-              "В верхней панели всего два пункта: Register и Settings. Администраторы видят ещё и ссылку на админ-панель. «Exit register» выполняет выход из учётной записи.",
+              "Всё, куда можно перейти из кассы, находится в меню слева и сгруппировано под заголовками «Касса», «Магазин» и «Система». Состав зависит от кассы и от вашей учётной записи, поэтому два кассира могут видеть разные меню. «Выйти из кассы» внизу меню выполняет выход.",
               "Если у вашей учётной записи нет роли Staff (Admin тоже подходит), на экране появится «Not a register account» вместе с идентификатором вашей учётной записи и кнопкой Copy id — передайте этот идентификатор владельцу, чтобы он выдал вам доступ.",
               "Если владелец выключил кассу, по адресу /pos вместо неё показывается «Register is switched off»."
             ]
@@ -4160,12 +4209,12 @@ const MANUAL = {
               "В верхней панели появляется жёлтая отметка: нет интернета и сколько продаж ждёт отправки.",
               "Печатайте чек как обычно. На нём настоящий номер чека и одна дополнительная строка о том, что продажа была офлайн.",
               "Когда связь вернётся, ожидающие продажи отправятся сами, начиная с самых старых. Отметка исчезнет.",
-              "Чтобы посмотреть, что ждёт, или отправить вручную, откройте «Отложенные продажи» в верхней панели."
+              "Чтобы посмотреть, что ждёт, или отправить вручную, откройте «Отложенные продажи» в меню слева."
             ],
             "fields": [
               {
                 "name": "Отложенные продажи",
-                "what": "Ссылка в верхней панели. Перечисляет все продажи с этой кассы, которые магазин ещё не получил, а также то, что требует внимания человека."
+                "what": "Пункт меню в разделе «Касса». Перечисляет все продажи с этой кассы, которые магазин ещё не получил, а также то, что требует внимания человека. Красное число рядом показывает, сколько ждёт отправки."
               },
               {
                 "name": "Отправить сейчас",
@@ -4201,7 +4250,7 @@ const MANUAL = {
               "«Товар ... больше не существует» означает, что товар из продажи удалили из каталога, пока продажа была открыта. В сообщении указан внутренний идентификатор товара, а не его название, поэтому понятными словами вам не скажут, какой это был товар. Очистите продажу и отсканируйте товары заново, чтобы найти тот, который не проходит.",
               "Жёлтое предупреждение об уходе остатка в минус - это не сбой. Продажа записана. Оно означает, что вы продали то, что каталог считал закончившимся, и владелец сможет позже поправить цифру остатка.",
               "Пока открыто окно оплаты и пока показан экран «Продажа завершена», сканер перестаёт слушать. Это сделано намеренно, чтобы ввод суммы не читался как штрихкод. На экране завершённой продажи нужно нажать «Новая продажа», прежде чем сканировать товары следующего покупателя.",
-              "Если касса потеряет связь с интернетом, продажа всё равно записывается - она хранится на этом компьютере и отправляется, когда связь вернётся. Чек печатается как обычно. Что именно ждёт отправки, видно в разделе «Отложенные продажи» в верхней панели.",
+              "Если касса потеряет связь с интернетом, продажа всё равно записывается - она хранится на этом компьютере и отправляется, когда связь вернётся. Чек печатается как обычно. Что именно ждёт отправки, видно в разделе «Отложенные продажи» в меню слева.",
               "Если экран погас или браузер перезагрузился посреди продажи, товары из чека пропали и ничего не записано. Отсканируйте их заново.",
               "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца."
             ]
@@ -4554,7 +4603,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v12.0.1"
+      "version": "v12.1.0"
     },
     "parts": [
       {
@@ -4818,7 +4867,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Yükle",
-                "what": "Kasanın üst çubuğunda, Kasadan çık düğmesinden hemen önce. Bu kasada kasa zaten yüklüyse kaybolur; oradaki boşluk işin çoktan yapıldığı anlamına gelir."
+                "what": "Üst çubukta, lisans işareti ile görünüm düğmesi arasında. Bu kasada kasa zaten yüklüyse kaybolur; oradaki boşluk işin çoktan yapıldığı anlamına gelir."
               }
             ],
             "notes": [
@@ -4832,7 +4881,6 @@ const MANUAL = {
               "Uygulama, o bilgisayardaki herhangi bir program gibi kaldırılır. Mağazanıza ve satışlarınıza dair hiçbir şey onun içinde saklanmaz."
             ]
           },
-          
           {
             "id": "prepare-your-catalogue",
             "title": "Kataloğu okutmaya hazırlamak",
@@ -4893,9 +4941,9 @@ const MANUAL = {
           {
             "id": "till-settings",
             "title": "Bu kasaya ait ayarlar",
-            "summary": "Bu sayfadaki her şey mağazanıza değil, başında oturduğunuz tek bilgisayara aittir. Ön taraftaki kasa ile depodaki tablet; kendi adını, kendi dilini ve kendi okuyucu ayarını ayrı ayrı tutar. Sayfanın en üstünde de bu yazar: bu ayarlar yalnızca bu bilgisayar için geçerlidir.",
+            "summary": "Bu sayfadaki her şey karşısında oturduğunuz bilgisayara aittir, mağazanıza değil. Ön tezgâhtaki kasa ve depodaki tablet, her biri kendi adını, kendi dilini, kendi parlaklığını ve kendi tarayıcı ayarını tutar. Sayfa bunu en üstte söyler: bunlar yalnızca bu bilgisayar için geçerlidir.",
             "steps": [
-              "Kasa ekranında üst çubuktaki Ayarlar (Settings) düğmesine basın.",
+              "Kasa ekranında soldaki menüden Ayarlar (Settings) bölümünü açın.",
               "Dil (Language) menüsünden dilinizi seçin. Dil anında değişir; bunun için Kaydet (Save) düğmesine basmanız gerekmez.",
               "\"Kasa adı\" (Register name) kutusuna bu kasa için bir ad verin, örneğin Front counter. Bu ad fişlerinize basılır.",
               "Okutmalar ikiye bölünmüş geliyorsa \"Okuyucu hızı\" (Scanner speed) değerini artırın. Kendi yazdıklarınız okutma sanılıyorsa değeri düşürün. Normal değer 40'tır.",
@@ -4905,6 +4953,10 @@ const MANUAL = {
               {
                 "name": "Dil (Language)",
                 "what": "English, Azərbaycan dili, Русский ve Türkçe seçeneklerini sunan menü. Seçtiğiniz anda geçerli olur."
+              },
+              {
+                "name": "Görünüm",
+                "what": "Üç seçenek: Açık, Koyu ve \"Bu cihaza uy\". Seçtiğiniz anda uygulanır ve yalnızca bu bilgisayarda saklanır — pencere kenarındaki kasa ile depodaki kasa farklı olabilir. Aynı seçim üst çubuktaki küçük güneş/ay/ekran düğmesinde de vardır."
               },
               {
                 "name": "Kasa adı (Register name)",
@@ -5032,7 +5084,7 @@ const MANUAL = {
             "title": "Kasa lisansı",
             "summary": "Bu kasayı satın aldıysanız size bir lisans anahtarı gönderildi. Anahtarı kasa ayarları ekranındaki Lisans (Licence) kutusuna yapıştırın. Anahtar tek bir bilgisayara bağlıdır: ikinci bir makinede etkinleştirdiğinizde lisansın başka yerde kullanıldığı bildirilir. Kopyanızda lisans yoksa bu kutu ekranda hiç görünmez ve yapılacak bir şey yoktur.",
             "steps": [
-              "Kasada üst çubuktaki Ayarlar (Settings) düğmesine basın.",
+              "Kasada soldaki menüden Ayarlar (Settings) bölümünü açın.",
               "Lisans (Licence) kutusunu bulun. Yoksa kopyanız lisans anahtarı kullanmıyordur ve bu bölümü atlayabilirsiniz.",
               "Size gönderilen anahtarı yapıştırın. \"cslic1.\" ile başlar ve boşluksuz tek bir uzun satırdır.",
               "Etkinleştir (Activate) düğmesine basın. \"Licensed to\" ve mağaza adınızı gösteren yeşil bir etiket belirir.",
@@ -5208,7 +5260,7 @@ const MANUAL = {
             "route": "/pos/app-admin",
             "summary": "Arkasında web sitesi olmadan çalışan bir kasa, kendi rol listesini bu bilgisayarda tutar. Uygulama yöneticisi sayfası, mağazanın yerleşik yedi rolden hangilerini kullanacağına karar verdiğiniz ve kendi rollerinizi yazdığınız yerdir. Sayfayı yalnızca kasa devreye alınırken oluşturulan Destek hesabı açabilir; web sitesine bağlı bir kasada bu sayfa hiç yoktur.",
             "steps": [
-              "Destek hesabıyla oturum açın — kasa kurulurken oluşturulan ilk hesap. Uygulama yöneticisi başlıkta yalnızca o hesap için görünür. Web sitesine bağlı bir kasada bu adres sizi sessizce satış ekranına geri götürür.",
+              "Destek hesabıyla oturum açın — kasa kurulurken oluşturulan ilk hesap. Uygulama yöneticisi menüde, Sistem başlığı altında, yalnızca o hesap için görünür. Web sitesine bağlı bir kasada bu adres sizi sessizce satış ekranına geri götürür.",
               "Önceden tanımlı roller bölümünde, en az yetkiden başlayarak yedi satır vardır: Kasiyer, Kasiyer (kopya), Depocu, Muhasebeci, Müdür, Yönetici ve Destek. Her satır o rolün açtığı bölümleri listeler.",
               "Kullanmak için rolü işaretleyin, kaldırmak için işareti kaldırın. Kaldırılan rol, kişi eklerken veya düzenlerken artık önerilmez; o rolü taşıyanlar da hiçbir şeyi açamaz — önce bu kişileri başka bir role geçirin.",
               "Kendi rolünüzü yazmak için Özel rol ekle düğmesine basın, bir ad verin, açabileceği bölümleri işaretleyin ve Rolü kaydet düğmesine basın.",
@@ -5243,38 +5295,51 @@ const MANUAL = {
             "title": "Vardiyanın başında kasayı açmak",
             "audience": "staff",
             "route": "/pos",
-            "summary": "Açılacak bir şey ve başlatılacak bir vardiya yoktur. Giriş yaparsınız ve kasa hazırdır. Bu sayfa vardiyanın ilk iki dakikasını ve ekranın üstündeki şeridin ne yaptığını anlatır; böylece sonrasındaki her şey anlaşılır olur.",
+            "summary": "Açılacak bir şey ve başlatılacak bir vardiya yok. Oturum açarsınız ve kasa hazırdır. Bu sayfa vardiyanın ilk iki dakikasını ve kılavuzun geri kalanının sürekli andığı iki parçayı anlatır: soldaki menü ve üstteki çubuk.",
             "steps": [
               "Kasada /pos adresini açın.",
-              "Kendi hesabınızla giriş yapın. Hesabı başka bir kasiyerle paylaşmayın - satış, onu kimin kaydettiğini yazar.",
-              "Üst şeritte mağazanın adının yazdığını ve sağda adınızın göründüğünü kontrol edin.",
-              "Üstte sarı bir şerit varsa okuyun. Lisansla ilgilidir ve satışı asla engellemez ama mağaza sahibinin bundan haberi olmalıdır.",
-              "İlk ürünü okutun. Kurulacak başka bir şey yoktur."
+              "Kendi hesabınızla oturum açın. Hesabı başka bir kasiyerle paylaşmayın — satış, onu kimin yaptığını kaydeder.",
+              "Üst çubuğun hangi ekranda olduğunuzu yazdığını ve soldaki menünün altında adınızın göründüğünü kontrol edin.",
+              "Üst çubuğun altında renkli bir şerit varsa okuyun. Lisansla ya da bekleyen bir güncellemeyle ilgilidir; ikisi de satışı durdurmaz.",
+              "İlk ürünü okutun. Ayarlanacak başka bir şey yok."
             ],
             "fields": [
               {
+                "name": "Menü",
+                "what": "Soldaki koyu sütun. Bu kasanın bütün ekranlarını tutar — Kasa, Mağaza ve Sistem başlıkları altında gruplanmıştır — ve bulunduğunuz ekran vurgulanır."
+              },
+              {
+                "name": "Menüyü daralt",
+                "what": "Menünün altında. Menüyü bir simge şeridine indirir, böylece genişlik satışa kalır; simgenin üzerine gelince adı görünür. Kasa seçiminizi bu bilgisayarda hatırlar."
+              },
+              {
                 "name": "Kasa",
-                "what": "Üst şeritteki bağlantı. Satış ekranı. Günü burada geçirirsiniz."
+                "what": "Kasa başlığı altındaki ilk bölüm. Satış ekranı. Günü burada geçirirsiniz."
+              },
+              {
+                "name": "Bekleyen satışlar",
+                "what": "Arkasında bir web sitesi olan kasada, Kasa başlığı altında. Yanındaki kırmızı sayı, gönderilmeyi bekleyen satış adedidir."
               },
               {
                 "name": "Ayarlar",
-                "what": "Üst şeritteki bağlantı. Bu kasanın kendi ayarları: dili, adı, tarayıcı hızı."
+                "what": "Sistem başlığı altında. Bu kasanın kendi ayarları: dili, adı, ne kadar aydınlık göründüğü, tarayıcı hızı."
               },
               {
-                "name": "Yönetim paneli",
-                "what": "Üst şeritteki bağlantı, yalnızca yönetici hesaplarına gösterilir. Personel rolündeki kasiyerler bunu görmez."
+                "name": "Görünüm",
+                "what": "Üst çubukta güneş, ay ya da ekran simgesi taşıyan küçük düğme. Basıldıkça açık, koyu ve bilgisayarın kendi ayarına uyan mod arasında geçiş yapar."
               },
               {
                 "name": "Kasadan çık",
-                "what": "Üst şeridin sağındaki düğme. Çıkış yapar. Vardiyanın sonunda kullanın ki bir sonraki kişi kendi adıyla satış kaydetsin."
+                "what": "Menünün altında ve ayrıca sağ üstte adınızın altında. Oturumu kapatır. Vardiya sonunda kullanın ki sonraki kişi kendi adıyla satış yapsın."
               }
             ],
             "notes": [
-              "Açılacak vardiya ve sayılacak bozuk para yoktur. Kasanın hiçbir oturumu yoktur; bu yüzden hatırlanacak bir gün başı veya gün sonu adımı da yoktur.",
-              "Üst şeritte gidilecek yalnızca iki yer vardır: Kasa ve Ayarlar. Yönetici hesapları ayrıca yönetim paneline bir bağlantı görür. Menünün tamamı budur.",
-              "Vardiyanızın sonunda çıkış yapın. Satışlar onları kaydeden hesabı yazar; bu yüzden girişli kalmak, bir sonraki kişinin satışlarının size yazılması demektir.",
-              "Kasa bütün ekranı kaplar. Mağaza başlığı, sayfa altı ve yönetim yan menüsü yoktur - bu bilerek yapılmıştır ki tezgâhta ekranda dikkat dağıtan bir şey olmasın.",
-              "Sarı bir lisans şeridi çıkarsa kapatabilirsiniz ve sayfa yeniden yüklenene kadar kapalı kalır. Kasa bir dahaki açılışında geri gelir. Satışı asla engellemez."
+              "Açılacak vardiya ve sayılacak kasa parası yok. Kasanın hiçbir oturumu yoktur, bu yüzden hatırlanması gereken bir gün başı ya da gün sonu adımı da yoktur.",
+              "Menüde ne olduğu kasaya ve hesaba bağlıdır. Arkasında site olan kasa Bekleyen satışlar bölümünü gösterir; olmayan kasa ise izni olanlara Mağaza ve Arka ofis bölümlerini gösterir. Hepsini birden kimse görmez.",
+              "Vardiya sonunda oturumu kapatın. Satışlar onu yapan hesabı kaydeder; açık bırakırsanız sonraki kişinin satışları size yazılır.",
+              "Dar ekranda — dik tutulan tablet ya da telefon — menü görünmez. Sol üstteki düğme onu sayfanın üzerinde açar ve bir ekran seçer seçmez yeniden kapanır.",
+              "Kasa yine bütün ekranı kaplar. Mağaza başlığı ve alt bilgisi yoktur; böylece tezgâhta ekranda dikkat dağıtan hiçbir şey olmaz.",
+              "Sarı lisans şeridi çıkarsa kapatabilirsiniz ve sayfa yeniden yüklenene kadar geri gelmez. Kasa bir dahaki açılışta yine görünür. Satışı asla engellemez."
             ]
           },
           {
@@ -5343,7 +5408,7 @@ const MANUAL = {
               "Aynı ürünü ikinci kez okutmak yeni bir satır açmaz, mevcut satırın adedini bir artırır. Bir satıra en çok 10000 girilebilir; adedi sıfıra düşürmek satırı kaldırır.",
               "Sağdaki toplamlar, sizin ve müşteri için yol göstericidir. Gerçek fiyatlar, satışı tamamladığınız anda sunucu tarafından kataloğunuzdan okunur; yani satış açıkken yönetim panelinde bir fiyat değiştirildiyse satış yeni fiyatla kaydedilir.",
               "Satışta beklerken bir ürün katalogdan silinirse satışın tamamlanması başarısız olur. Mesajda ürünün adı değil kimlik kodu geçer: ürünün yerinde harf ve rakamlardan oluşan uzun bir karışımla \"Product ... no longer exists\" (Ürün ... artık yok) yazar. Yani hangi ürün olduğu size açık sözcüklerle söylenmez. Bu olursa satışı temizleyin ve hangisinin eklenmediğini bulmak için ürünleri yeniden okutun.",
-              "Üst çubukta yalnızca iki yer vardır: Kasa (Register) ve Ayarlar (Settings). Yönetici hesapları ayrıca yönetim paneline bir bağlantı görür. \"Kasadan çık\" (Exit register) oturumunuzu kapatır.",
+              "Kasanın gidebileceği her yer soldaki menüdedir ve Kasa, Mağaza, Sistem başlıkları altında gruplanmıştır. Listelenenler kasaya ve hesabınıza göre değişir, bu yüzden iki kasiyer farklı menü görebilir. Menünün altındaki \"Kasadan çık\" oturumunuzu kapatır.",
               "Hesabınızda Personel (Staff) rolü yoksa (Yönetici/Admin de olur), ekranda hesap kimliğinizle birlikte \"Not a register account\" (kasa hesabı değil) yazısı ve bir Kimliği kopyala (Copy id) düğmesi görünür; size erişim verebilmesi için o kimliği mağaza sahibine iletin.",
               "Mağaza sahibi kasayı kapattıysa /pos bunun yerine \"Register is switched off\" (Kasa kapalı) yazısını gösterir."
             ]
@@ -5449,12 +5514,12 @@ const MANUAL = {
               "Üst çubukta internet olmadığını ve kaç satışın beklediğini söyleyen sarı bir işaret çıkar.",
               "Fişi her zamanki gibi bastırın. Üzerinde gerçek bir fiş numarası ve çevrimdışı bir satış olduğunu belirten fazladan bir satır bulunur.",
               "Bağlantı döndüğünde bekleyen satışlar en eskiden başlayarak kendiliğinden gönderilir. İşaret kaybolur.",
-              "Neyin beklediğini görmek ya da elle göndermek için üst çubuktaki Bekleyen satışlar bölümünü açın."
+              "Neyin beklediğini görmek ya da elle göndermek için soldaki menüde Bekleyen satışlar bölümünü açın."
             ],
             "fields": [
               {
                 "name": "Bekleyen satışlar",
-                "what": "Üst çubuktaki bağlantı. Bu kasada yapılan ama mağazanın henüz almadığı bütün satışları ve bir kişinin bakması gerekenleri listeler."
+                "what": "Menüde, Kasa başlığı altındaki bölüm. Bu kasada yapılan ama mağazanın henüz almadığı bütün satışları ve bir kişinin bakması gerekenleri listeler. Yanındaki kırmızı sayı bekleyenlerin adedidir."
               },
               {
                 "name": "Şimdi gönder",
@@ -5490,7 +5555,7 @@ const MANUAL = {
               "Ürün ... artık mevcut değil mesajı, satış açıkken satıştaki bir ürünün katalogdan silindiğini gösterir. Mesaj ürünün adını değil iç kimliğini yazar; bu yüzden hangi ürün olduğu size açık sözcüklerle söylenmez. Satışı temizleyin ve geçmeyeni bulmak için ürünleri yeniden okutun.",
               "Stoğun eksiye düşmesiyle ilgili sarı uyarı bir hata değildir. Satış kaydedildi. Kataloğun tükendiğini sandığı bir şeyi sattığınızı gösterir ve mağaza sahibi stok rakamını sonra düzeltebilir.",
               "Ödeme penceresi açıkken ve Satış tamamlandı ekranı gösterilirken tarayıcı dinlemeyi bırakır. Bu bilerek yapılmıştır ki bir tutar yazmak barkod olarak okunmasın. Tamamlanan satış ekranında, bir sonraki müşterinin ürünlerini okutmadan önce Yeni satış düğmesine basmanız gerekir.",
-              "Kasa internet bağlantısını kaybetse de satış yine kaydedilir - bu bilgisayarda tutulur ve bağlantı döndüğünde gönderilir. Fiş normal şekilde basılır. Neyin beklediğini üst çubuktaki Bekleyen satışlar bölümünde görebilirsiniz.",
+              "Kasa internet bağlantısını kaybetse de satış yine kaydedilir - bu bilgisayarda tutulur ve bağlantı döndüğünde gönderilir. Fiş normal şekilde basılır. Neyin beklediğini soldaki menüdeki Bekleyen satışlar bölümünde görebilirsiniz.",
               "Ekran tamamen kararırsa veya tarayıcı satışın ortasında yeniden yüklenirse fişteki ürünler gitmiştir ve hiçbir şey kaydedilmemiştir. Onları yeniden okutun.",
               "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin."
             ]

@@ -55,7 +55,7 @@ Plus exports: `./styles.css` (side-effect CSS, imported once at app root), `./fi
 - [src/services/](src/services/) — Firestore/service-layer functions
 - [src/i18n/](src/i18n/) — LocaleProvider, message tables, formatters, switcher
 - [src/theme/](src/theme/) — theme presets + picker. Each preset lives in its own folder under [src/theme/themes/<id>/index.ts](src/theme/themes/) exporting a single `CatalogTheme` default; [src/theme/catalog.ts](src/theme/catalog.ts) is a barrel that imports each one and assembles `THEME_CATALOG`. To modify a preset, change only its folder — the per-theme `version: string` field combined with [`useThemeUpdateTracker`](src/theme/theme-update-tracker.ts) is what makes the admin Appearance page show an `Updated` pill on only the touched cards. Bumping a theme's version is the contract; if you change tokens/thumbnail/copy without bumping, admins won't see the badge
-- [src/pos/](src/pos/) — the register. `standalone/` inside it is the no-Firebase mode (see below); `storage/` holds the `PosStorageAdapter` seam and its implementations
+- [src/pos/](src/pos/) — the register. `standalone/` inside it is the no-Firebase mode (see below); `storage/` holds the `PosStorageAdapter` seam and its implementations; `theme/` holds the register’s own design system (see below)
 - [src/shipping/](src/shipping/) — shipping plugin catalog + per-plugin implementations
 - [src/payments/](src/payments/) — payment plugin catalog + per-plugin implementations (v2.0+)
 - [src/email/](src/email/) — email provider plugin catalog (metadata-only; server `send` impls live in `functions-email/`) (v3.0+)
@@ -135,6 +135,37 @@ Two hard constraints, both learned the expensive way:
 1. **Document only what the code renders.** Until v10.0.0 the in-admin help page described a `Settings → API keys` screen, a `Locations` page, and a separate desktop POS app. None existed. Before writing a step, open the component and confirm the control is there. A type definition, a Firestore field, or a code comment is *not* evidence that a user-facing screen exists.
 2. **Deliberate gaps must stay visible.** Where the UI ships a disabled control or a "coming in a later release" affordance (currently: the local-storage option and the non-browser printer transports at `/pos/settings`), the manual says so plainly. Never document a placeholder as if it works. The same applies to whole missing features — no returns screen, no shift, no cash drawer, no offline queue — and to enforcement that does not enforce: a POS licence problem never blocks a sale, because `commitPosSale` does not consult licence state at all.
 3. **Do not trust this repo's own docs as evidence either.** v10.2.0 found `scaffold/create.mjs` claiming `--pos-only` "seeds the storefront-off feature flag" (it does not — it only implies `--with-pos`), and `INSTALL.md`, the scaffolder's generated README and the in-admin help page all routing owners to a "POS → Shops → Edit" screen that has never existed in this package. Verify against `src/`, not against prose.
+
+**The register’s design system (v12.1.0).** The till is styled with classes, not inline styles, and
+the sheet is a string in [src/pos/theme/pos-stylesheet.ts](src/pos/theme/pos-stylesheet.ts) that
+`PosStyleScope` renders into the tree. Four things to know:
+
+1. **It is not in `globals.css`, and must not be moved there.** That file ships as a passthrough the
+   consumer imports once at their app root. Every other component is inline-styled, so a consumer who
+   never added that import still gets a working storefront — moving the register onto classes in that
+   file would have made the import load-bearing, and a shop upgrading would have opened the till to
+   unstyled HTML. Releases must never require a consumer hand-edit.
+2. **`PosStyleScope` dedupes through React context, not a module flag.** `PosGuard` and `PosShell` are
+   both public exports and either can be mounted alone, so both carry it; the normal arrangement nests
+   them. A module-level flag would leak between requests on a shared server.
+3. **Tokens are `--cpos-*` on `:root`, and brand hues are derived, never restated.** `--cpos-brand` is
+   whatever `--caspian-primary` resolves to, tinted with `color-mix()` behind an `@supports` fallback.
+   The old chrome hardcoded `rgba(26,115,232,0.25)` — the RGB of the default blue — in four places, and
+   those glows stayed blue on every other theme. Tokens live at the document root because `DropdownMenu`,
+   `Dialog` and the toast stack all portal into `document.body`.
+4. **Dark mode is `:root[data-cpos-theme="dark"]`**, written by `PosChromeProvider`. It is a device
+   preference in `pos-preferences.ts`, beside the scanner gap, for the same reason: one counter faces a
+   window and another is in a stockroom, and the shop has no opinion about either.
+
+The nav lives in [src/pos/pos-sidebar.tsx](src/pos/pos-sidebar.tsx), not the top bar. The old comment on
+`PosShell` argued a sidebar costs pixels the sale needs; that was true of the admin panel’s fixed column,
+but the bar it defended had grown to six links plus a search box, two dropdowns, a status pill and an
+install button, and `flexWrap` stacked all of it into two or three rows on a narrow till. Do not move nav
+back into `PosTopbar` — the bar’s job is to say which screen you are on.
+
+**There is no guard on the POS nav.** `check-scaffold-routes.mjs` protects the admin panel’s
+`DEFAULT_ADMIN_NAV` against its dispatcher; the register’s `items` array and the `switch (head)` in
+`PosRoot` can still drift silently. Keep them in step by hand.
 
 **Standalone mode (v11.0.0).** `<CaspianStoreProvider standalone>` boots the whole tree with **no Firebase project**: catalogue, staff, sales and receipt numbers live in IndexedDB and the till contacts nothing. Four rules hold it together:
 

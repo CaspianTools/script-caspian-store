@@ -71,3 +71,36 @@ export function writeScannerGapMs(value: number): void {
 export function resolvePosStorageMode(firebaseAvailable: boolean): PosStorageMode {
   return firebaseAvailable ? 'cloud' : 'local';
 }
+
+/* ------------------------------------------------------------ appearance */
+
+const THEME_KEY = 'caspian:pos:theme';
+const RAIL_KEY = 'caspian:pos:navRail';
+
+/**
+ * Light, dark, or whatever the operating system says.
+ *
+ * Belongs with the scanner gap rather than in Firestore for the same reason:
+ * one counter faces a window and another is in a stockroom, and the shop has
+ * no opinion about either. `system` is the default so a till inherits whatever
+ * the tablet already does at dusk.
+ */
+export type PosThemeMode = 'light' | 'dark' | 'system';
+
+export function readThemeMode(): PosThemeMode {
+  const raw = read(THEME_KEY);
+  return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system';
+}
+
+export function writeThemeMode(value: PosThemeMode): void {
+  write(THEME_KEY, value);
+}
+
+/** Whether the side menu is parked as an icon rail. Defaults to open. */
+export function readNavRail(): boolean {
+  return read(RAIL_KEY) === '1';
+}
+
+export function writeNavRail(value: boolean): void {
+  write(RAIL_KEY, value ? '1' : '0');
+}

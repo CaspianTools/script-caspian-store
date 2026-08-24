@@ -26,11 +26,11 @@ export function PosInstallButton() {
   if (isIOS && !canInstall) {
     return (
       <span style={{ position: 'relative' }}>
-        <button type="button" onClick={() => setShowIosHint((v) => !v)} style={button}>
+        <button type="button" onClick={() => setShowIosHint((v) => !v)} className="cpos-btn cpos-btn--outline cpos-btn--sm">
           {t('pos.install.action')}
         </button>
         {showIosHint ? (
-          <span role="status" style={popover}>
+          <span role="status" className="cpos-popover">
             {t('pos.install.iosHint')}
           </span>
         ) : null}
@@ -44,36 +44,10 @@ export function PosInstallButton() {
       onClick={() => {
         void promptInstall();
       }}
-      style={button}
+      className="cpos-btn cpos-btn--outline cpos-btn--sm"
       title={t('pos.install.help')}
     >
       {t('pos.install.action')}
     </button>
   );
 }
-
-const button: React.CSSProperties = {
-  border: '1px solid rgba(0,0,0,0.16)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 8,
-  padding: '5px 11px',
-  fontSize: 13,
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-};
-
-const popover: React.CSSProperties = {
-  position: 'absolute',
-  top: 'calc(100% + 8px)',
-  insetInlineEnd: 0,
-  width: 260,
-  padding: '10px 12px',
-  background: '#111',
-  color: '#fff',
-  borderRadius: 8,
-  fontSize: 12,
-  lineHeight: 1.5,
-  boxShadow: '0 12px 28px rgba(0,0,0,0.24)',
-  zIndex: 40,
-};

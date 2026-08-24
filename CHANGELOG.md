@@ -16,6 +16,79 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v12.1.0 — The register looks like a product
+
+The till has been redesigned. The nav moved out of the top bar into a proper side menu that
+collapses to an icon rail and folds into a drawer on a tablet; the whole register now runs
+on a design-token layer with real hover, focus and entrance states; and it has a dark mode.
+
+### No consumer action required
+
+Reinstall to pick it up. No public export changed (the exports snapshot is byte-identical at
+623 entries), no provider props changed, no Firestore rules, indexes or Cloud Functions
+change. The register carries its own stylesheet, so this works whether or not the consumer
+imports `styles.css`.
+
+### Added
+
+- **A side menu.** `PosSidebar` replaces the top-bar link row. Items are grouped under
+  Counter, Shop and System, the held-sales item carries a live count of what is waiting, and
+  the current screen is highlighted. It has three states the screen picks between: a full
+  column, a 72px icon rail with hover tooltips, and — below 1024px — an overlay drawer
+  behind a hamburger. The rail choice is remembered per device.
+- **Dark mode.** Light, dark, or follow the operating system, from a button in the top bar
+  or the new Appearance section at `/pos/settings`. It is a device preference, stored beside
+  the scanner gap, because one counter faces a window and another is in a stockroom.
+- **A design-token layer for the till.** `src/pos/theme/pos-stylesheet.ts` defines surfaces,
+  borders, text, semantic status colours, a radius scale, five elevations, motion durations
+  and easings, and a 44px touch floor. The brand hues are derived from `--caspian-primary`
+  via `color-mix()`, so theming the store themes the register.
+- **Motion.** Entrance animations on cards, ticket lines, tiles, dialogs and strips; hover
+  lift on tiles and stat tiles; a working spinner. All of it is behind
+  `prefers-reduced-motion`, and there is a `prefers-contrast: more` block.
+
+### Changed
+
+- **The top bar now says where you are** instead of carrying navigation. What is left is the
+  screen title, search, Quick add, the connection pill, Install, the appearance button and
+  the account menu. It no longer wraps: the old bar stacked into two or three rows on a
+  narrow till, costing about 120px of height out of 768.
+- **The register stacks below 1180px** instead of 980px, with the totals riding as a sticky
+  footer. Below 1180 the ticket pane was around 300px on a till with the menu still docked,
+  which crushed the product-name column until names set one letter per line.
+- **`/pos/settings` and `/pos/admin` lost their hand-rolled sidebars.** Both were near-copies
+  of each other, and when parked they abbreviated each label to its first letter, which made
+  Sales and Shop the same button. Settings now has a sticky section index; the back office
+  has a segmented control.
+- **`/pos/store` and `/pos/app-admin` have page headers.** The store page was mounted
+  straight as a route and rendered no heading at all.
+- **The PWA boot screen and splash follow the theme**, so a cold start no longer flashes
+  white before the till paints itself dark.
+
+### Fixed
+
+- **The outbox drain timer stopped when any one watcher unmounted.** `usePosQueue` calls
+  `queue.stop()` on cleanup, and the connection pill, the held-sales page and now the menu
+  badge all watch the same queue — so walking from Held sales back to the register left a
+  till that no longer retried on its own, and only looked healthy because the next scan
+  happened to drain it. `start()`/`stop()` are reference-counted.
+- **`@keyframes caspian-pulse` never existed.** Every `<Skeleton>` in the library referenced
+  it, so skeletons rendered as static grey blocks. Defined, along with a shimmer the register
+  uses directly.
+- **Buttons had no hover, active or focus feedback.** `<Button>` has always emitted
+  `caspian-btn` and declared a `transition`, but nothing ever defined the class. Activated
+  inside the register only, so the storefront and admin panel are unchanged.
+- **Hardcoded brand glows.** Four `rgba(26,115,232,0.25)` shadows — the RGB of the default
+  blue — stayed blue on every other theme.
+
+### Documentation
+
+- `docs/pos-manual.html`: `opening-the-till` rewritten. It taught the old chrome and was
+  already stale, claiming the bar had "only two places to go" and naming an "Admin panel"
+  link this package has never had. Nine further sections that pointed at the top bar for
+  something now in the menu were corrected, and Appearance was added to `till-settings`.
+  All three translation overlays were rewritten with the English, not left to fall back.
+
 ## v12.0.1 — The register's role page runs at all
 
 `/pos/app-admin` threw `Cannot read properties of undefined (reading 'map')` on every

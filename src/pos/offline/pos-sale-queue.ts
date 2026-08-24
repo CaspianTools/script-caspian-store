@@ -60,6 +60,7 @@ export class PosSaleQueue {
   private paused = false;
   private pauseReasonKey: string | undefined;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private watchers = 0;
   private leaseFailed = false;
   private recovered = false;
 
@@ -116,13 +117,26 @@ export class PosSaleQueue {
     };
   }
 
-  /** Drain on a timer while there is anything to send. Cheap when the queue is empty. */
+  /**
+   * Drain on a timer while there is anything to send. Cheap when the queue is
+   * empty.
+   *
+   * Reference-counted, because more than one screen watches the same queue: the
+   * status pill in the chrome, the badge on the held-sales menu item, and the
+   * held-sales page itself. Before this counter existed the last of those to
+   * unmount stopped the timer for all of them -- so walking from Held sales back
+   * to the register left a till that no longer retried on its own, and only
+   * looked fine because the next scan happened to drain it.
+   */
   start(): void {
+    this.watchers++;
     if (this.timer) return;
     this.timer = setInterval(() => void this.drain(), 30_000);
   }
 
   stop(): void {
+    this.watchers = Math.max(0, this.watchers - 1);
+    if (this.watchers > 0) return;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
   }

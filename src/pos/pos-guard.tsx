@@ -5,7 +5,8 @@ import { useAuth } from '../context/auth-context';
 import { useCaspianLink } from '../provider/caspian-store-provider';
 import { useScriptSettings } from '../context/script-settings-context';
 import { useT } from '../i18n/locale-context';
-import { Skeleton } from '../ui/misc';
+import { PosStyleScope } from './theme/pos-styles';
+import { LockIcon, ShoppingCartIcon } from '../ui/icons';
 import { POS_ROLES, type UserRole } from '../types';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { PosLocalSignIn } from './standalone/pos-local-sign-in';
@@ -48,7 +49,18 @@ function isPosRole(role: UserRole | undefined): boolean {
  * then opened nothing. The static map stays as the fallback for a consumer who
  * mounts this guard without `PosRoleProvider`.
  */
-export function PosGuard({ children, signInHref = '/login', fallback }: PosGuardProps) {
+export function PosGuard(props: PosGuardProps) {
+  // Wrapped rather than repeated: the guard has six early returns and each one
+  // renders chrome of its own, so the sheet has to be above all of them. The
+  // scope is a no-op when PosShell has already mounted it.
+  return (
+    <PosStyleScope>
+      <PosGuardBody {...props} />
+    </PosStyleScope>
+  );
+}
+
+function PosGuardBody({ children, signInHref = '/login', fallback }: PosGuardProps) {
   const { user, userProfile, loading } = useAuth();
   const { settings } = useScriptSettings();
   const local = usePosLocalSession();
@@ -106,9 +118,11 @@ export function PosGuard({ children, signInHref = '/login', fallback }: PosGuard
 
 function PosLoading() {
   return (
-    <div style={{ padding: 40, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <Skeleton style={{ height: 24, width: 200 }} />
-      <Skeleton style={{ height: 14, width: 320 }} />
+    <div className="cpos-boot">
+      <span className="cpos-boot__mark">
+        <ShoppingCartIcon size={26} />
+      </span>
+      <span className="cpos-spinner" aria-hidden="true" />
     </div>
   );
 }
@@ -123,10 +137,13 @@ function PosNotice({
   children?: ReactNode;
 }) {
   return (
-    <div style={{ padding: 40, textAlign: 'center', maxWidth: 520, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{title}</h1>
-      <p style={{ color: '#666', marginTop: 8 }}>{body}</p>
-      {children ? <div style={{ marginTop: 16 }}>{children}</div> : null}
+    <div className="cpos-notice">
+      <span className="cpos-empty__icon cpos-empty__icon--neutral">
+        <LockIcon size={28} />
+      </span>
+      <h1 className="cpos-notice__h">{title}</h1>
+      <p className="cpos-notice__body">{body}</p>
+      {children ? <div className="cpos-notice__foot">{children}</div> : null}
     </div>
   );
 }
@@ -151,32 +168,13 @@ function PosAccessDenied({ uid }: { uid: string }) {
 
   return (
     <PosNotice title={t('pos.guard.deniedTitle')} body={t('pos.guard.deniedBody')}>
-      <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>{t('pos.guard.deniedUid')}</div>
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '8px 12px',
-          border: '1px solid #ddd',
-          borderRadius: 6,
-          background: '#f7f7f7',
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-          fontSize: 13,
-        }}
-      >
-        <span>{uid}</span>
+      <div className="cpos-muted">{t('pos.guard.deniedUid')}</div>
+      <div className="cpos-uid">
+        <code className="cpos-uid__value">{uid}</code>
         <button
           type="button"
+          className={copied ? 'cpos-btn cpos-btn--success cpos-btn--sm' : 'cpos-btn cpos-btn--outline cpos-btn--sm'}
           onClick={copy}
-          style={{
-            padding: '4px 10px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            background: copied ? '#e6f4ea' : '#fff',
-            cursor: 'pointer',
-            fontSize: 12,
-          }}
         >
           {copied ? t('pos.guard.copied') : t('pos.guard.copyUid')}
         </button>

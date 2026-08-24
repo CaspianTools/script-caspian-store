@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useT } from '../i18n/locale-context';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { cn } from '../utils/cn';
+import { CheckIcon, PlusIcon, XIcon } from '../ui/icons';
 import type { PosTenderInput } from './storage/types';
 
 function toMinor(amount: number): number {
@@ -148,68 +148,75 @@ export function PosTenderDialog({
   };
 
   return (
-    <div style={overlay} role="dialog" aria-modal="true" aria-label={t('pos.tender.title')}>
-      <div style={panel}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{t('pos.tender.title')}</h2>
+    <div className="cpos-modal" role="dialog" aria-modal="true" aria-label={t('pos.tender.title')}>
+      <div className="cpos-modal__panel">
+        <h2 className="cpos-modal__title">{t('pos.tender.title')}</h2>
 
-        <div style={dueRow}>
-          <span style={{ color: '#666' }}>{t('pos.tender.due')}</span>
-          <span style={{ fontSize: 30, fontWeight: 700 }}>{formatPrice(total)}</span>
+        <div className="cpos-modal__due">
+          <span className="cpos-modal__duelabel">{t('pos.tender.due')}</span>
+          <span className="cpos-modal__duevalue">{formatPrice(total)}</span>
         </div>
 
         {tenders.map((tender, index) => (
-          <div key={index} style={tenderCard}>
-            <div style={{ display: 'flex', gap: 6 }}>
+          <div key={index} className="cpos-tender">
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {(['cash', 'card', 'other'] as const).map((kind) => (
-                <Button
+                <button
                   key={kind}
                   type="button"
-                  size="sm"
-                  variant={tender.kind === kind ? 'primary' : 'outline'}
+                  className={cn(
+                    'cpos-btn',
+                    'cpos-btn--sm',
+                    tender.kind === kind ? 'cpos-btn--primary' : 'cpos-btn--outline',
+                  )}
+                  aria-pressed={tender.kind === kind}
                   onClick={() => update(index, { kind, tendered: '' })}
                 >
                   {t(`pos.tender.${kind}`)}
-                </Button>
+                </button>
               ))}
               {tenders.length > 1 ? (
-                <Button
+                <button
                   type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => removeTender(index)}
+                  className="cpos-iconbtn"
                   style={{ marginInlineStart: 'auto' }}
+                  aria-label={t('pos.tender.removeTender')}
+                  onClick={() => removeTender(index)}
                 >
-                  {t('pos.tender.removeTender')}
-                </Button>
+                  <XIcon size={17} />
+                </button>
               ) : null}
             </div>
 
-            <label style={fieldLabel}>
-              {t('pos.tender.due')}
-              <Input
+            <label className="cpos-field">
+              <span className="cpos-field__label">{t('pos.tender.due')}</span>
+              <input
+                className="cpos-input"
                 inputMode="decimal"
                 value={tender.amount}
                 onChange={(e) => update(index, { amount: e.target.value })}
-                style={{ fontSize: 18, textAlign: 'end' }}
+                style={{ fontSize: 19, fontWeight: 650, textAlign: 'end' }}
               />
             </label>
 
             {tender.kind === 'cash' ? (
-              <label style={fieldLabel}>
-                {t('pos.tender.tendered')}
-                <Input
+              <label className="cpos-field">
+                <span className="cpos-field__label">{t('pos.tender.tendered')}</span>
+                <input
+                  className="cpos-input"
                   inputMode="decimal"
                   autoFocus={index === 0}
                   placeholder={tender.amount}
                   value={tender.tendered}
                   onChange={(e) => update(index, { tendered: e.target.value })}
-                  style={{ fontSize: 18, textAlign: 'end' }}
+                  style={{ fontSize: 19, fontWeight: 650, textAlign: 'end' }}
                 />
               </label>
             ) : (
-              <label style={fieldLabel}>
-                {t('pos.tender.reference')}
-                <Input
+              <label className="cpos-field">
+                <span className="cpos-field__label">{t('pos.tender.reference')}</span>
+                <input
+                  className="cpos-input"
                   value={tender.reference}
                   onChange={(e) => update(index, { reference: e.target.value })}
                   placeholder={t('pos.tender.referenceHint')}
@@ -218,103 +225,61 @@ export function PosTenderDialog({
             )}
 
             {tender.kind === 'card' ? (
-              <p style={{ margin: 0, fontSize: 12, color: '#666' }}>{t('pos.tender.cardPrompt')}</p>
+              <p className="cpos-muted" style={{ margin: 0 }}>
+                {t('pos.tender.cardPrompt')}
+              </p>
             ) : null}
           </div>
         ))}
 
-        <Button type="button" variant="outline" size="sm" onClick={addTender}>
+        <button type="button" className="cpos-btn cpos-btn--ghost cpos-btn--sm" onClick={addTender}>
+          <PlusIcon size={15} />
           {t('pos.tender.addTender')}
-        </Button>
+        </button>
 
         {!covered ? (
-          <div style={{ ...summaryRow, color: '#b45309' }}>
-            <span>{t('pos.tender.remaining')}</span>
-            <span style={{ fontWeight: 700 }}>{formatPrice(remaining)}</span>
+          <div className="cpos-note cpos-note--warning">
+            <span style={{ flex: 1 }}>{t('pos.tender.remaining')}</span>
+            <strong>{formatPrice(remaining)}</strong>
           </div>
         ) : null}
 
         {changeDue > 0 ? (
-          <div style={{ ...summaryRow, background: '#ecfdf5', color: '#065f46' }}>
-            <span>{t('pos.tender.change')}</span>
-            <span style={{ fontSize: 24, fontWeight: 700 }}>{formatPrice(changeDue)}</span>
+          <div className="cpos-note cpos-note--success" style={{ alignItems: 'baseline' }}>
+            <span style={{ flex: 1 }}>{t('pos.tender.change')}</span>
+            <strong style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>
+              {formatPrice(changeDue)}
+            </strong>
           </div>
         ) : null}
 
-        {error ? <p style={{ color: '#b91c1c', fontSize: 13, margin: 0 }}>{error}</p> : null}
+        {error ? (
+          <div className="cpos-note cpos-note--danger" role="alert">
+            {error}
+          </div>
+        ) : null}
 
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
-            {t('pos.tender.cancel')}
-          </Button>
-          <Button
+        <div className="cpos-actions" style={{ marginTop: 4 }}>
+          <button
             type="button"
-            size="lg"
+            className="cpos-btn cpos-btn--outline"
+            onClick={onCancel}
+            disabled={submitting}
+          >
+            {t('pos.tender.cancel')}
+          </button>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--success cpos-btn--lg"
             onClick={confirm}
-            loading={submitting}
             disabled={!covered || submitting}
             title={!covered ? t('pos.tender.shortfall') : undefined}
           >
+            {submitting ? <span className="cpos-spinner" aria-hidden="true" /> : <CheckIcon size={18} />}
             {t('pos.tender.confirm')}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.5)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 16,
-  zIndex: 60,
-};
-
-const panel: React.CSSProperties = {
-  background: 'var(--caspian-surface, #fff)',
-  color: 'inherit',
-  borderRadius: 'var(--caspian-radius, 12px)',
-  padding: 20,
-  width: 'min(460px, 100%)',
-  maxHeight: '90vh',
-  overflowY: 'auto',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-};
-
-const dueRow: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'baseline',
-  justifyContent: 'space-between',
-};
-
-const tenderCard: React.CSSProperties = {
-  border: '1px solid rgba(0,0,0,0.12)',
-  borderRadius: 'var(--caspian-radius, 8px)',
-  padding: 12,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-};
-
-const fieldLabel: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  fontSize: 12,
-  color: '#666',
-};
-
-const summaryRow: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '8px 12px',
-  borderRadius: 'var(--caspian-radius, 8px)',
-  background: '#fffbeb',
-};

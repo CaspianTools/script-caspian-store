@@ -121,8 +121,8 @@ export function PosServiceWorker({
   if (!waiting || dismissed) return null;
 
   return (
-    <div role="status" style={strip}>
-      <span style={{ flex: 1, minWidth: 0 }}>{t('pos.update.available')}</span>
+    <div role="status" className="cpos-strip cpos-strip--brand">
+      <span className="cpos-strip__spacer">{t('pos.update.available')}</span>
       <button
         type="button"
         onClick={() => {
@@ -133,46 +133,17 @@ export function PosServiceWorker({
             once: true,
           });
         }}
-        style={applyButton}
+        className="cpos-btn cpos-btn--primary cpos-btn--sm"
       >
         {t('pos.update.apply')}
       </button>
-      <button type="button" onClick={() => setDismissed(true)} style={laterButton}>
+      <button
+        type="button"
+        className="cpos-btn cpos-btn--ghost cpos-btn--sm"
+        onClick={() => setDismissed(true)}
+      >
         {t('pos.update.later')}
       </button>
     </div>
   );
 }
-
-const strip: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  padding: '8px 16px',
-  background: '#eef2ff',
-  borderBottom: '1px solid #c7d2fe',
-  color: '#3730a3',
-  fontSize: 13,
-  flexWrap: 'wrap',
-};
-
-const applyButton: React.CSSProperties = {
-  border: 0,
-  background: '#3730a3',
-  color: '#fff',
-  borderRadius: 6,
-  padding: '4px 12px',
-  fontSize: 12,
-  fontWeight: 600,
-  cursor: 'pointer',
-};
-
-const laterButton: React.CSSProperties = {
-  border: '1px solid rgba(55,48,163,0.3)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 6,
-  padding: '3px 10px',
-  fontSize: 12,
-  cursor: 'pointer',
-};

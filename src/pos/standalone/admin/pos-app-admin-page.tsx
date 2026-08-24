@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
+import { ShieldIcon } from '../../../ui/icons';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { useToast } from '../../../ui/toast';
@@ -81,10 +82,15 @@ export function PosAppAdminPage() {
   const custom = roles.filter((r) => !r.builtIn);
 
   return (
-    <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
-      <header style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('pos.appAdmin.title')}</h1>
-        <p style={{ color: '#666', marginTop: 4, fontSize: 14 }}>{t('pos.appAdmin.subtitle')}</p>
+    <div className="cpos-page">
+      <header className="cpos-pagehead">
+        <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
+          <ShieldIcon size={19} />
+        </span>
+        <span className="cpos-pagehead__text">
+          <h1 className="cpos-pagehead__h">{t('pos.appAdmin.title')}</h1>
+          <p className="cpos-pagehead__sub">{t('pos.appAdmin.subtitle')}</p>
+        </span>
       </header>
 
       {loading ? (

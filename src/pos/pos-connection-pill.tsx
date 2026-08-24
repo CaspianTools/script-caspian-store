@@ -1,6 +1,8 @@
 'use client';
 
 import { useT } from '../i18n/locale-context';
+import { cn } from '../utils/cn';
+import { WifiOffIcon } from '../ui/icons';
 import { LEASE_LOW_AT, type PosSaleQueue } from './offline/pos-sale-queue';
 import { usePosQueue } from './offline/use-pos-queue';
 
@@ -36,7 +38,7 @@ export function PosConnectionPill({ queue }: { queue: PosSaleQueue | null }) {
 
   if (online && !held && !blocked && !paused && !lowNumbers && !noNumbers) return null;
 
-  const tone = paused || blocked ? danger : !online || held || noNumbers ? warning : neutral;
+  const tone = paused || blocked ? 'cpos-badge--danger' : !online || held || noNumbers ? 'cpos-badge--warning' : '';
   const label = (() => {
     if (paused) return t(pauseReasonKey ?? 'pos.queue.paused');
     if (blocked) return t('pos.queue.blockedCount', { count: blocked });
@@ -48,23 +50,9 @@ export function PosConnectionPill({ queue }: { queue: PosSaleQueue | null }) {
   })();
 
   return (
-    <span role="status" style={{ ...pill, ...tone }}>
+    <span role="status" className={cn('cpos-badge', tone)}>
+      {online ? <span className="cpos-dot cpos-dot--live" aria-hidden="true" /> : <WifiOffIcon size={13} />}
       {label}
     </span>
   );
 }
-
-const pill: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '4px 10px',
-  borderRadius: 999,
-  fontSize: 12.5,
-  fontWeight: 600,
-  whiteSpace: 'nowrap',
-};
-
-const warning: React.CSSProperties = { background: '#fffbeb', color: '#8a5a00', border: '1px solid #f2dda4' };
-const danger: React.CSSProperties = { background: '#fef3f2', color: '#b42318', border: '1px solid #fda29b' };
-const neutral: React.CSSProperties = { background: '#f4f4f5', color: '#52525b', border: '1px solid #e4e4e7' };
