@@ -37,10 +37,10 @@ const KEY_BITS = 256;
 function subtle(): SubtleCrypto {
   const c = typeof crypto !== 'undefined' ? crypto : undefined;
   if (!c?.subtle) {
-    // Reached only on an insecure origin. The Tauri shell and any https site
-    // are both secure contexts, so this is a misconfiguration, not a runtime
-    // condition a shop can hit at the counter.
-    throw new Error('Secure crypto is unavailable. The register must be served over https or from the desktop app.');
+    // Reached only on an insecure origin. Any https site is a secure context,
+    // and so is an installed PWA, so this is a misconfiguration rather than a
+    // runtime condition a shop can hit at the counter.
+    throw new Error('Secure crypto is unavailable. The register must be served over https.');
   }
   return c.subtle;
 }

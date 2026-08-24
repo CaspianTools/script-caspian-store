@@ -34,7 +34,13 @@ export interface BarcodeScannerOptions {
   onScan: (code: string) => void;
   /** Maximum ms between keystrokes still counted as one scan. Default 40. */
   gapMs?: number;
-  /** Suspend the keyboard listener (e.g. while a modal owns the keyboard). */
+  /**
+   * Suspend the keyboard listener outright.
+   *
+   * Open dialogs do NOT need this — they are detected from the DOM, see the
+   * handler below. This is for a caller that wants the wedge off for a reason
+   * the DOM cannot show.
+   */
   disabled?: boolean;
 }
 
@@ -121,6 +127,21 @@ export function useBarcodeScanner({
       // A scanner never holds a modifier. Skipping these leaves Ctrl+C,
       // Cmd+V and every real shortcut working normally.
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      // A dialog owns the keyboard while it is open.
+      //
+      // Read from the DOM rather than signalled by the caller, because the
+      // register is not the only thing that opens one: the POS header's
+      // quick-add product and person forms are siblings of `PosRegister`, so a
+      // `disabled` flag driven by the register's own phase could never see
+      // them. Typing a price into one of those was being accumulated into the
+      // scan buffer, and Enter — which this handler calls `preventDefault()`
+      // on — fired a phantom scan instead of saving the form.
+      //
+      // Every dialog in the library sets role="dialog" (see `ui/dialog.tsx`
+      // and `PosTenderDialog`), so this covers consumer-added ones too.
+      const target = event.target;
+      if (target instanceof Element && target.closest('[role="dialog"]')) return;
 
       const now = Date.now();
       const gap = now - lastKeyAt;

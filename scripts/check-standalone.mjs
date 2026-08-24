@@ -5,8 +5,9 @@
  * Plain `node:assert` against the built ESM — no test runner and no new
  * dependency, matching the other `scripts/check-*.mjs` guards. It covers the
  * two things that would be expensive to get wrong and are invisible to the type
- * checker: what a customer is actually charged, and what a CSV round-trip does
- * to a shop's catalogue.
+ * checker: what a customer is actually charged, what a CSV round-trip does to
+ * a shop's catalogue, how a keyed amount is read at the tender screen, and
+ * whether a receipt's lines add up to its own total.
  *
  * The IndexedDB layer is deliberately not covered here — it needs a browser,
  * which is exactly why the arithmetic it wraps was extracted into
@@ -29,6 +30,8 @@ const lib = await import(pathToFileURL(entry).href);
 
 const {
   canAccess,
+  parseAmount,
+  summariseSoldLines,
   POS_LOCAL_ROLES,
   LOCAL_PRODUCT_COLUMNS,
   localProductsToCsv,
@@ -354,6 +357,67 @@ check('line fields are refreshed from the catalogue', () => {
   const out = priceLocalSale([line({ sku: 'stale', barcode: 'stale' })], catalogue(tshirt));
   assert.equal(out.lines[0].sku, 'TSH-001');
   assert.equal(out.lines[0].barcode, '590');
+});
+
+console.log('tender amounts');
+// `String.replace` with a string argument replaces only the FIRST match, so the
+// old reader turned `1,234.50` into `1.234.50` and parseFloat stopped at the
+// second dot — 1.234 against a 1234.50 total. On the tendered field that is
+// wrong change handed to a customer, so each convention gets an assertion.
+check('a plain decimal point reads as written', () => {
+  assert.equal(parseAmount('12.50'), 12.5);
+});
+check('a decimal comma reads the same way', () => {
+  assert.equal(parseAmount('12,50'), 12.5);
+});
+check('a comma grouping separator does not become a decimal point', () => {
+  assert.equal(parseAmount('1,234.50'), 1234.5);
+});
+check('a dot grouping separator does not become a decimal point', () => {
+  assert.equal(parseAmount('1.234,50'), 1234.5);
+});
+check('three trailing digits are grouping, not a third decimal place', () => {
+  assert.equal(parseAmount('1,234'), 1234);
+  assert.equal(parseAmount('1.234'), 1234);
+});
+check('spaces and empty input are tolerated', () => {
+  assert.equal(parseAmount(' 1 234,50 '), 1234.5);
+  assert.equal(parseAmount(''), 0);
+});
+check('nonsense and negatives read as zero rather than NaN', () => {
+  assert.equal(parseAmount('abc'), 0);
+  assert.equal(parseAmount('-5'), 0);
+});
+
+console.log('receipt figures');
+// The receipt used to take its lines and subtotal from the open ticket and its
+// total from the commit, so a catalogue edit mid-sale printed a slip whose own
+// lines did not add up to its own total. Deriving both from the priced lines is
+// what makes that impossible.
+check('subtotal and discount are derived from the priced lines', () => {
+  const out = summariseSoldLines([
+    { productId: 'a', name: 'A', unitPrice: 10.1, quantity: 3, selectedSize: null, selectedColor: null, lineDiscount: 0.3, lineTotal: 30 },
+    { productId: 'b', name: 'B', unitPrice: 2.05, quantity: 2, selectedSize: null, selectedColor: null, lineDiscount: 0, lineTotal: 4.1 },
+  ]);
+  assert.equal(out.subtotal, 34.4);
+  assert.equal(out.discount, 0.3);
+  assert.equal(out.subtotal - out.discount, 34.1);
+});
+check('an empty set of lines totals zero', () => {
+  assert.deepEqual(summariseSoldLines([]), { subtotal: 0, discount: 0 });
+});
+check('accumulation stays in minor units across a long ticket', () => {
+  const lines = Array.from({ length: 30 }, (_, i) => ({
+    productId: `p${i}`,
+    name: 'x',
+    unitPrice: 0.1,
+    quantity: 1,
+    selectedSize: null,
+    selectedColor: null,
+    lineDiscount: 0,
+    lineTotal: 0.1,
+  }));
+  assert.equal(summariseSoldLines(lines).subtotal, 3);
 });
 
 console.log('misc');

@@ -64,6 +64,7 @@ const az: MessageDict = {
   'pos.queue.sending': '{count} göndərilir',
   'pos.queue.blockedCount': '{count} diqqət tələb edir',
   'pos.queue.lowNumbers': '{count} qəbz nömrəsi qalıb',
+  'pos.queue.noNumbers': 'Qəbz nömrəsi ehtiyata alına bilmir',
   'pos.queue.paused': 'Göndərmə dayandırılıb',
   'pos.queue.pausedBody': 'Bu hesabın artıq satış qeyd etmək icazəsi yoxdur, ona görə heç nə göndərilmir. İşçi rolu olan hesabla daxil olun və gözləyən satışlar keçəcək.',
   'pos.queue.reason.network': 'Mağaza ilə bağlantı yoxdur',
@@ -121,6 +122,9 @@ const az: MessageDict = {
   'pos.ticket.increase': 'Bir əlavə et',
   'pos.ticket.decrease': 'Bir çıx',
   'pos.ticket.discount': 'Sətir endirimi',
+  'pos.ticket.discountPlaceholder': 'Endirim məbləği',
+  'pos.ticket.discountApply': 'Tətbiq et',
+  'pos.ticket.discountClear': 'Təmizlə',
   'pos.ticket.clear': 'Satışı təmizlə',
   'pos.ticket.clearConfirm': 'Bütün satış silinsin?',
   'pos.ticket.subtotal': 'Ara cəm',
@@ -167,6 +171,8 @@ const az: MessageDict = {
   // POS — completion
   'pos.done.title': 'Satış tamamlandı',
   'pos.done.receiptNumber': 'Qəbz {number}',
+  'pos.done.provisionalReceipt':
+    'Bu kassada qəbz nömrəsi qalmayıb, ona görə satışa bu kompüterdən istinad nömrəsi verilib. Satış mağazaya çatanda əsl qəbz nömrəsi alacaq.',
   'pos.done.changeDue': '{amount} qaytarın',
   'pos.done.print': 'Qəbzi çap et',
   'pos.done.newSale': 'Yeni satış',
@@ -183,6 +189,7 @@ const az: MessageDict = {
   // POS — receipt
   'pos.receipt.title': 'Qəbz',
   'pos.receipt.number': 'Qəbz nömrəsi',
+  'pos.receipt.provisional': 'Yalnız istinad — hələ mağaza qəbz nömrəsi deyil',
   'pos.receipt.date': 'Tarix',
   'pos.receipt.cashier': 'Xidmət göstərdi',
   'pos.receipt.register': 'Kassa',

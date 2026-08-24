@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
@@ -14,8 +13,7 @@ import { LocalStorePanel } from './standalone/admin/local-store-panel';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
 import { PosQueuePage } from './pos-queue-page';
-import { PosSaleQueue } from './offline/pos-sale-queue';
-import { getPosDeviceId } from './pos-device';
+import { PosAdapterProvider, usePosAdapter } from './pos-adapter-context';
 import { PosServiceWorker } from './pos-service-worker';
 import { PosHeader } from './pos-header';
 import { stripLocalePrefix } from '../utils/strip-locale-prefix';
@@ -30,6 +28,19 @@ import { PosSettingsPage } from './pos-settings-page';
  * showing the sale. The nav here is four items and nothing else.
  */
 export function PosShell({ children }: { children: ReactNode }) {
+  return (
+    <PosAdapterProvider>
+      <PosShellChrome>{children}</PosShellChrome>
+    </PosAdapterProvider>
+  );
+}
+
+/**
+ * Split from `PosShell` only so the chrome can read the adapter the shell
+ * provides. The register and the held-sales page read the same one, which is
+ * what makes the connection pill reflect the outbox they actually write to.
+ */
+function PosShellChrome({ children }: { children: ReactNode }) {
   const { pathname: rawPathname } = useCaspianNavigation();
   // A consumer that puts the locale in the URL hands us `/az/pos/settings`.
   const pathname = stripLocalePrefix(rawPathname);
@@ -39,9 +50,7 @@ export function PosShell({ children }: { children: ReactNode }) {
   const functions = useCaspianFirebaseOptional()?.functions ?? null;
   const t = useT();
   const license = usePosLicense(functions);
-  // One queue instance for the chrome, so the pill reflects the same store the
-  // register writes to. Cheap: it holds no connection, only a device id.
-  const queue = useMemo(() => new PosSaleQueue(functions, getPosDeviceId()), [functions]);
+  const { queue } = usePosAdapter();
 
   // A standalone till has no outbox — nothing is ever waiting to be sent — so
   // the queue tab would only ever show an empty page. In its place it gets the
@@ -74,7 +83,7 @@ export function PosShell({ children }: { children: ReactNode }) {
         whoIsHere={whoIsHere ?? ''}
         userProfile={userProfile}
         local={local.standalone}
-        queue={local.standalone ? null : queue}
+        queue={queue}
         onExit={exit}
       />
 

@@ -9,25 +9,23 @@ import { reportServiceError } from '../services/error-log-service';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
-import { PackageIcon, SearchIcon, ShoppingCartIcon, UserIcon, XIcon } from '../ui/icons';
+import { PackageIcon, SearchIcon, ShoppingCartIcon, TagIcon, UserIcon, XIcon } from '../ui/icons';
 import { DEFAULT_POS_SETTINGS, type PosSettings, type Product } from '../types';
 import { useBarcodeScanner, DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-scanner';
-import { PosQueuedCloudAdapter } from './storage/queued-cloud-adapter';
-import { PosLocalAdapter } from './storage/local-adapter';
-import type {
-  PosCommittedSale,
-  PosStorageAdapter,
-  PosStorageMode,
-  PosTenderInput,
-} from './storage/types';
+import { usePosAdapter } from './pos-adapter-context';
+import type { PosCommittedSale, PosSaleLine, PosTenderInput } from './storage/types';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { readLocalShopSettings } from './standalone/local-db';
 import { usePosTicket } from './use-pos-ticket';
 import { getPosDeviceId, getPosDeviceLabel, nextPosSaleId } from './pos-device';
-import { PosTenderDialog } from './pos-tender-dialog';
-import { buildReceiptModel, type PosReceiptModel } from './receipt/build-receipt-model';
+import { PosTenderDialog, parseAmount } from './pos-tender-dialog';
+import {
+  buildReceiptModel,
+  summariseSoldLines,
+  type PosReceiptModel,
+} from './receipt/build-receipt-model';
 import { PosReceipt } from './receipt/pos-receipt';
-import { readScannerGapMs, resolvePosStorageMode } from './pos-preferences';
+import { readScannerGapMs } from './pos-preferences';
 
 type Phase =
   | { kind: 'selling' }
@@ -40,6 +38,36 @@ export interface PosRegisterProps {
   formatPrice?: (amount: number) => string;
 }
 
+interface TicketFigures {
+  lines: PosSaleLine[];
+  totals: { subtotal: number; lineDiscounts: number };
+}
+
+/**
+ * What the receipt should say a customer was charged.
+ *
+ * Prefers the priced lines the commit came back with, and falls back to the
+ * open ticket only for a sale still held on this device, where nothing has
+ * priced it yet. The distinction matters: the ticket's prices are what the till
+ * believed while scanning, and if the catalogue moved mid-sale they are not
+ * what was charged. Mixing the two — ticket lines against a committed total —
+ * printed a slip whose own lines did not add up to its own total.
+ */
+function receiptFigures(
+  sale: PosCommittedSale,
+  ticket: TicketFigures,
+): { lines: PosSaleLine[]; subtotal: number; discount: number } {
+  if (sale.lines?.length) {
+    const { subtotal, discount } = summariseSoldLines(sale.lines);
+    return { lines: sale.lines, subtotal, discount };
+  }
+  return {
+    lines: ticket.lines,
+    subtotal: ticket.totals.subtotal,
+    discount: ticket.totals.lineDiscounts,
+  };
+}
+
 /**
  * The register.
  *
@@ -48,12 +76,14 @@ export interface PosRegisterProps {
  * never have to click into a field before the first scan of the day works.
  */
 export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegisterProps) {
-  const firebase = useCaspianFirebaseOptional();
-  const db = firebase?.db ?? null;
+  const db = useCaspianFirebaseOptional()?.db ?? null;
   const { user, userProfile } = useAuth();
   const local = usePosLocalSession();
   const t = useT();
   const ticket = usePosTicket();
+  // One adapter for the whole register, shared with the connection pill and the
+  // held-sales page so all three watch the same outbox.
+  const { adapter } = usePosAdapter();
 
   const { searchParams, replace } = useCaspianNavigation();
   const [posSettings, setPosSettings] = useState<PosSettings | null>(null);
@@ -67,36 +97,18 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const [scanGapMs, setScanGapMs] = useState(DEFAULT_SCAN_GAP_MS);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searching, setSearching] = useState(false);
+  // Which line is having a markdown keyed into it, and the raw text so far.
+  const [discountLine, setDiscountLine] = useState<number | null>(null);
+  const [discountDraft, setDiscountDraft] = useState('');
 
-  // Identity is read at capture time rather than captured in the closure, so a
-  // sale held overnight and drained by a different person in the morning is
-  // still attributed to the cashier who actually rang it.
-  const identity = useRef({ uid: '', name: '' });
-  identity.current = local.standalone
-    ? { uid: local.user?.id ?? '', name: local.user?.displayName ?? '' }
-    : { uid: user?.uid ?? '', name: userProfile?.displayName || user?.email || '' };
+  // Attribution for the sale record is the adapter's job — it reads identity at
+  // capture time, so a sale drained tomorrow still names tonight's cashier.
+  // This is only the name to print on the slip in front of us.
+  const cashierName = local.standalone
+    ? (local.user?.displayName ?? '')
+    : userProfile?.displayName || user?.email || '';
 
   const deviceId = useMemo(() => getPosDeviceId(), []);
-  const [storageMode, setStorageMode] = useState<PosStorageMode>(() =>
-    resolvePosStorageMode(Boolean(firebase)),
-  );
-  useEffect(() => {
-    // Re-read after mount: the preference lives in localStorage, which is not
-    // there during a server render, so the first value is a guess.
-    setStorageMode(resolvePosStorageMode(Boolean(firebase)));
-  }, [firebase]);
-
-  const adapter = useMemo<PosStorageAdapter>(() => {
-    if (storageMode === 'local' || !firebase) {
-      return new PosLocalAdapter(deviceId, () => identity.current);
-    }
-    return new PosQueuedCloudAdapter(
-      firebase.db,
-      firebase.functions,
-      deviceId,
-      () => identity.current,
-    );
-  }, [storageMode, firebase, deviceId]);
   // Held across retries of the SAME sale — see the note in `commit`.
   const saleIdRef = useRef<string | null>(null);
   // What was tendered on the last attempt, so a sale recovered on cancel can
@@ -229,10 +241,29 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const scanner = useBarcodeScanner({
     onScan: handleScan,
     gapMs: scanGapMs,
-    // Silence the wedge while a dialog owns the keyboard, so keying an amount
-    // into the tender field is never mistaken for a barcode.
-    disabled: phase.kind !== 'selling',
+    // Open dialogs silence the wedge on their own, detected from the DOM — the
+    // hook has to do that itself, because the POS header opens dialogs outside
+    // this component. The markdown editor below is NOT in a dialog, so it says
+    // so here: keying `10.00` into it must never be read as a barcode.
+    disabled: phase.kind !== 'selling' || discountLine !== null,
   });
+
+  // --- Line markdowns ---
+  const openDiscount = useCallback((index: number, current: number | undefined) => {
+    setDiscountLine(index);
+    setDiscountDraft(current ? String(current) : '');
+  }, []);
+
+  const applyDiscount = useCallback(
+    (index: number) => {
+      // Parsed with the tender screen's reader so `12,50` means the same thing
+      // in both places on the same keyboard.
+      ticket.setLineDiscount(index, parseAmount(discountDraft));
+      setDiscountLine(null);
+      setDiscountDraft('');
+    },
+    [discountDraft, ticket],
+  );
 
   // --- Commit ---
   const commit = useCallback(
@@ -256,15 +287,17 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           capturedTotal: ticket.totals.total,
           capturedSubtotal: ticket.totals.subtotal,
         });
+        const figures = receiptFigures(sale, ticket);
         const receipt = buildReceiptModel({
           receiptNumber: sale.receiptNumber,
+          provisionalReceipt: sale.provisionalReceipt,
           orderId: sale.orderId,
-          lines: ticket.lines,
+          lines: figures.lines,
           tenders,
-          subtotal: ticket.totals.subtotal,
-          discount: ticket.totals.lineDiscounts,
+          subtotal: figures.subtotal,
+          discount: figures.discount,
           total: sale.total,
-          cashierName: identity.current.name,
+          cashierName,
           deviceLabel: getPosDeviceLabel(),
           receiptHeader: posSettings?.receiptHeader,
           receiptFooter: posSettings?.receiptFooter,
@@ -281,7 +314,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
         setCommitting(false);
       }
     },
-    [adapter, db, deviceId, posSettings, t, ticket.lines, ticket.totals, user, userProfile],
+    [adapter, cashierName, db, deviceId, posSettings, t, ticket],
   );
 
   /**
@@ -308,15 +341,17 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
       if (landed) {
         // It succeeded and only the response was lost. The ticket has not been
         // touched since the attempt, so it still describes this sale exactly.
+        const figures = receiptFigures(landed, ticket);
         const receipt = buildReceiptModel({
           receiptNumber: landed.receiptNumber,
+          provisionalReceipt: landed.provisionalReceipt,
           orderId: landed.orderId,
-          lines: ticket.lines,
+          lines: figures.lines,
           tenders: lastTendersRef.current,
-          subtotal: ticket.totals.subtotal,
-          discount: ticket.totals.lineDiscounts,
+          subtotal: figures.subtotal,
+          discount: figures.discount,
           total: landed.total || ticket.totals.total,
-          cashierName: identity.current.name,
+          cashierName,
           deviceLabel: getPosDeviceLabel(),
           receiptHeader: posSettings?.receiptHeader,
           receiptFooter: posSettings?.receiptFooter,
@@ -340,13 +375,14 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     } finally {
       setCommitting(false);
     }
-  }, [adapter, db, posSettings, t, ticket.lines, ticket.totals, user, userProfile]);
+  }, [adapter, cashierName, db, posSettings, t, ticket]);
 
   const startNewSale = useCallback(() => {
     ticket.clear();
     setScanMessage(null);
     setAmbiguous(null);
     setCommitError(null);
+    setDiscountLine(null);
     saleIdRef.current = null;
     setPhase({ kind: 'selling' });
   }, [ticket]);
@@ -546,52 +582,109 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', flex: 1, minHeight: 0 }}>
             {ticket.lines.map((line, index) => (
-              <div key={`${line.productId}-${line.selectedSize ?? ''}`} style={lineRow}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, overflowWrap: 'anywhere', fontSize: 14 }}>{line.name}</div>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-                    {formatPrice(line.unitPrice)}
-                    {line.selectedSize ? ` · ${line.selectedSize}` : ''}
-                    {line.sku ? ` · ${line.sku}` : ''}
+              <div key={`${line.productId}-${line.selectedSize ?? ''}`} style={lineCard}>
+                <div style={lineRow}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, overflowWrap: 'anywhere', fontSize: 14 }}>{line.name}</div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                      {formatPrice(line.unitPrice)}
+                      {line.selectedSize ? ` · ${line.selectedSize}` : ''}
+                      {line.sku ? ` · ${line.sku}` : ''}
+                    </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      aria-label={t('pos.ticket.decrease')}
+                      onClick={() => ticket.setQuantity(index, line.quantity - 1)}
+                      style={{ borderRadius: 8 }}
+                    >
+                      −
+                    </Button>
+                    <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 15 }}>
+                      {line.quantity}
+                    </span>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      aria-label={t('pos.ticket.increase')}
+                      onClick={() => ticket.setQuantity(index, line.quantity + 1)}
+                      style={{ borderRadius: 8 }}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <div style={{ minWidth: 78, textAlign: 'end', fontWeight: 700, fontSize: 15 }}>
+                    {formatPrice(line.unitPrice * line.quantity - (line.lineDiscount ?? 0))}
+                  </div>
                   <Button
                     type="button"
                     size="icon"
-                    variant="outline"
-                    aria-label={t('pos.ticket.decrease')}
-                    onClick={() => ticket.setQuantity(index, line.quantity - 1)}
-                    style={{ borderRadius: 8 }}
+                    variant={line.lineDiscount ? 'primary' : 'ghost'}
+                    aria-label={t('pos.ticket.discount')}
+                    title={t('pos.ticket.discount')}
+                    onClick={() =>
+                      discountLine === index
+                        ? setDiscountLine(null)
+                        : openDiscount(index, line.lineDiscount)
+                    }
                   >
-                    −
+                    <TagIcon size={16} />
                   </Button>
-                  <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 15 }}>
-                    {line.quantity}
-                  </span>
                   <Button
                     type="button"
                     size="icon"
-                    variant="outline"
-                    aria-label={t('pos.ticket.increase')}
-                    onClick={() => ticket.setQuantity(index, line.quantity + 1)}
-                    style={{ borderRadius: 8 }}
+                    variant="ghost"
+                    aria-label={t('pos.ticket.remove')}
+                    onClick={() => ticket.removeLine(index)}
                   >
-                    +
+                    <XIcon size={16} />
                   </Button>
                 </div>
-                <div style={{ minWidth: 78, textAlign: 'end', fontWeight: 700, fontSize: 15 }}>
-                  {formatPrice(line.unitPrice * line.quantity - (line.lineDiscount ?? 0))}
-                </div>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  aria-label={t('pos.ticket.remove')}
-                  onClick={() => ticket.removeLine(index)}
-                >
-                  <XIcon size={16} />
-                </Button>
+
+                {line.lineDiscount ? (
+                  <div style={discountNote}>
+                    {t('pos.ticket.discount')} −{formatPrice(line.lineDiscount)}
+                  </div>
+                ) : null}
+
+                {discountLine === index ? (
+                  <div style={discountEditor}>
+                    <Input
+                      inputMode="decimal"
+                      autoFocus
+                      value={discountDraft}
+                      onChange={(e) => setDiscountDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          applyDiscount(index);
+                        }
+                      }}
+                      placeholder={t('pos.ticket.discountPlaceholder')}
+                      aria-label={t('pos.ticket.discount')}
+                      style={{ flex: 1, textAlign: 'end' }}
+                    />
+                    <Button type="button" size="sm" onClick={() => applyDiscount(index)}>
+                      {t('pos.ticket.discountApply')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        ticket.setLineDiscount(index, 0);
+                        setDiscountLine(null);
+                        setDiscountDraft('');
+                      }}
+                    >
+                      {t('pos.ticket.discountClear')}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -677,6 +770,11 @@ function PosSaleComplete({
       <p style={{ color: '#666', marginTop: 4 }}>
         {t('pos.done.receiptNumber', { number: sale.receiptNumber })}
       </p>
+      {sale.provisionalReceipt ? (
+        <p style={{ color: '#b45309', fontSize: 13, margin: '4px 0 0' }}>
+          {t('pos.done.provisionalReceipt')}
+        </p>
+      ) : null}
 
       <div style={{ fontSize: 34, fontWeight: 700, margin: '16px 0' }}>
         {formatPrice(sale.total)}
@@ -875,14 +973,32 @@ const textButton: React.CSSProperties = {
   fontWeight: 500,
 };
 
-const lineRow: React.CSSProperties = {
+const lineCard: React.CSSProperties = {
   display: 'flex',
-  alignItems: 'center',
-  gap: 10,
+  flexDirection: 'column',
+  gap: 6,
   padding: '10px 8px',
   borderRadius: 12,
   background: '#f9fafb',
   border: '1px solid rgba(0,0,0,0.04)',
+};
+
+const lineRow: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+};
+
+const discountNote: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: '#16a34a',
+};
+
+const discountEditor: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
 };
 
 const ticketFooter: React.CSSProperties = {

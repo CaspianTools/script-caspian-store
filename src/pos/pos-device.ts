@@ -55,7 +55,13 @@ function randomId(): string {
     const bytes = crypto.getRandomValues(new Uint8Array(10));
     return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   }
-  return Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
+  // Padded, because `toString(36)` has no length floor — `(0.5).toString(36)`
+  // is `'0.i'`, and slicing that yields one character. The sale id is
+  // `deviceId-counter` and the server requires at least eight url-safe
+  // characters, so a short id here is a sale rejected as `invalid-argument`.
+  let out = '';
+  while (out.length < 20) out += Math.random().toString(36).slice(2).padEnd(4, '0');
+  return out.slice(0, 20);
 }
 
 /** This computer's register id, minting one on first call. */

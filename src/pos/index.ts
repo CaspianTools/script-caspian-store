@@ -2,7 +2,7 @@ export { PosGuard, type PosGuardProps } from './pos-guard';
 export { PosRoot, PosShell } from './pos-root';
 export { PosRegister, type PosRegisterProps } from './pos-register';
 export { PosSettingsPage, type PosSettingsPageProps } from './pos-settings-page';
-export { PosTenderDialog, type PosTenderDialogProps } from './pos-tender-dialog';
+export { PosTenderDialog, parseAmount, type PosTenderDialogProps } from './pos-tender-dialog';
 export { usePosTicket, type PosTicket, type PosTicketTotals } from './use-pos-ticket';
 export {
   useBarcodeScanner,
@@ -17,27 +17,27 @@ export {
   setPosDeviceLabel,
   nextPosSaleId,
 } from './pos-device';
+export { readScannerGapMs, writeScannerGapMs, resolvePosStorageMode } from './pos-preferences';
 export {
-  readScannerGapMs,
-  writeScannerGapMs,
-  readPrinterTransport,
-  writePrinterTransport,
-  readStorageMode,
-  writeStorageMode,
-  resolvePosStorageMode,
-} from './pos-preferences';
+  PosAdapterProvider,
+  usePosAdapter,
+  type PosAdapterValue,
+} from './pos-adapter-context';
 export { PosCloudAdapter } from './storage/cloud-adapter';
 export { PosLocalAdapter } from './storage/local-adapter';
+export { PosQueuedCloudAdapter } from './storage/queued-cloud-adapter';
 export type {
   PosStorageAdapter,
   PosStorageMode,
   PosSaleDraft,
   PosSaleLine,
+  PosSoldLine,
   PosTenderInput,
   PosCommittedSale,
 } from './storage/types';
 export {
   buildReceiptModel,
+  summariseSoldLines,
   type PosReceiptModel,
   type PosReceiptLine,
   type PosReceiptTender,

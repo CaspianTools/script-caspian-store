@@ -161,6 +161,9 @@ export const commitPosSale = onCall({ cors: true }, async (request: CallableRequ
         total: (prior.total as number | undefined) ?? 0,
         duplicate: true,
         stockShortfall: (prior.stockShortfall as unknown[] | undefined) ?? [],
+        // The priced lines, so a replay reprints the same receipt as the
+        // original rather than falling back to the till's scanned prices.
+        items: (prior.items as unknown[] | undefined) ?? [],
       };
     }
 
@@ -412,6 +415,11 @@ export const commitPosSale = onCall({ cors: true }, async (request: CallableRequ
       total: fromMinor(totalMinor),
       duplicate: false,
       stockShortfall: shortfall,
+      // Returned as well as written, because the receipt in the customer's hand
+      // has to show what was CHARGED. The till only knows what it scanned, and
+      // a catalogue edit mid-sale makes those two different — printing scanned
+      // lines against this total produced a slip that did not add up.
+      items,
     };
   });
 

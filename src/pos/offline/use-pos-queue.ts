@@ -6,6 +6,7 @@ import type { PosSaleQueue, QueueSnapshot } from './pos-sale-queue';
 const EMPTY: QueueSnapshot = {
   counts: { held: 0, blocked: 0, sending: 0 },
   leasedRemaining: 0,
+  leaseUnavailable: false,
   paused: false,
 };
 

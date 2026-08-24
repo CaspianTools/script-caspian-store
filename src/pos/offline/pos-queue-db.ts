@@ -199,15 +199,6 @@ export function idbGetAllByIndex<T>(
   return wrap<T[]>(tx.objectStore(store).index(index).getAll(key) as IDBRequest<T[]>);
 }
 
-export function idbCountByIndex(
-  tx: IDBTransaction,
-  store: StoreName,
-  index: string,
-  key: IDBValidKey,
-): Promise<number> {
-  return wrap<number>(tx.objectStore(store).index(index).count(key));
-}
-
 /**
  * Wipe the cloud register's caches and outbox. An explicit operator action only.
  *

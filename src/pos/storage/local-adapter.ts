@@ -6,7 +6,24 @@ import {
   readLocalShopSettings,
   searchLocalProducts,
 } from '../standalone/local-db';
-import type { PosCommittedSale, PosSaleDraft, PosStorageAdapter } from './types';
+import type { LocalSale } from '../standalone/types';
+import type { PosCommittedSale, PosSaleDraft, PosSoldLine, PosStorageAdapter } from './types';
+
+/** `LocalSaleLine` is already the priced shape; only the optional fields differ. */
+function toSoldLines(sale: LocalSale): PosSoldLine[] {
+  return sale.lines.map((line) => ({
+    productId: line.productId,
+    name: line.name,
+    unitPrice: line.unitPrice,
+    quantity: line.quantity,
+    selectedSize: line.selectedSize,
+    selectedColor: line.selectedColor,
+    lineDiscount: line.lineDiscount,
+    lineTotal: line.lineTotal,
+    ...(line.sku ? { sku: line.sku } : {}),
+    ...(line.barcode ? { barcode: line.barcode } : {}),
+  }));
+}
 
 /**
  * The register when there is no shop behind it.
@@ -62,7 +79,6 @@ export class PosLocalAdapter implements PosStorageAdapter {
           lineDiscount: line.lineDiscount ?? 0,
         })),
         tenders: draft.tenders,
-        promoCode: draft.promoCode ?? null,
         cashierId: draft.capturedByUid || who.uid,
         cashierName: draft.capturedByName || who.name,
         committedAtMillis: draft.capturedAtMillis ?? Date.now(),
@@ -77,6 +93,7 @@ export class PosLocalAdapter implements PosStorageAdapter {
       duplicate,
       stockShortfall: sale.stockShortfall,
       pending: false,
+      lines: toSoldLines(sale),
     };
   }
 
@@ -95,6 +112,7 @@ export class PosLocalAdapter implements PosStorageAdapter {
       duplicate: true,
       stockShortfall: sale.stockShortfall,
       pending: false,
+      lines: toSoldLines(sale),
     };
   }
 }

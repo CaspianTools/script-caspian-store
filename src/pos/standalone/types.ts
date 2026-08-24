@@ -149,7 +149,6 @@ export interface LocalSale {
   subtotal: number;
   discount: number;
   total: number;
-  promoCode: string | null;
   committedAtMillis: number;
   cashierId: string;
   cashierName: string;

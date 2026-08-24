@@ -29,6 +29,16 @@ export interface QueueSnapshot {
   counts: QueueCounts;
   /** Numbers left across all open leases. */
   leasedRemaining: number;
+  /**
+   * True once a lease request has actually failed.
+   *
+   * Distinct from `leasedRemaining === 0`, which is also what a healthy till
+   * looks like in the moment before its first lease resolves. Without the
+   * distinction a store that never deployed `functions-pos` shows a
+   * "running low on receipt numbers" warning forever, with no way to clear it
+   * and no hint that the cause is a missing deployment.
+   */
+  leaseUnavailable: boolean;
   paused: boolean;
   pauseReasonKey?: string;
 }
@@ -50,6 +60,8 @@ export class PosSaleQueue {
   private paused = false;
   private pauseReasonKey: string | undefined;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private leaseFailed = false;
+  private recovered = false;
 
   constructor(
     /**
@@ -77,7 +89,12 @@ export class PosSaleQueue {
 
   async snapshot(): Promise<QueueSnapshot> {
     if (!posIdbAvailable()) {
-      return { counts: { held: 0, blocked: 0, sending: 0 }, leasedRemaining: 0, paused: false };
+      return {
+        counts: { held: 0, blocked: 0, sending: 0 },
+        leasedRemaining: 0,
+        leaseUnavailable: this.leaseFailed,
+        paused: false,
+      };
     }
     const [sales, leases] = await posTx([STORE_QUEUE, STORE_LEASES], 'readonly', async (tx) => [
       await idbGetAll<QueuedSale>(tx, STORE_QUEUE),
@@ -90,7 +107,13 @@ export class PosSaleQueue {
       else if (s.state === 'sending') counts.sending++;
     }
     const leasedRemaining = leases.reduce((n, l) => n + Math.max(0, l.size - l.nextOrdinal), 0);
-    return { counts, leasedRemaining, paused: this.paused, pauseReasonKey: this.pauseReasonKey };
+    return {
+      counts,
+      leasedRemaining,
+      leaseUnavailable: this.leaseFailed,
+      paused: this.paused,
+      pauseReasonKey: this.pauseReasonKey,
+    };
   }
 
   /** Drain on a timer while there is anything to send. Cheap when the queue is empty. */
@@ -140,7 +163,11 @@ export class PosSaleQueue {
     if (!posIdbAvailable() || typeof navigator === 'undefined' || !navigator.onLine) return;
     if (!this.functions) return;
     const { leasedRemaining } = await this.snapshot();
-    if (leasedRemaining > LEASE_TOPUP_AT) return;
+    if (leasedRemaining > LEASE_TOPUP_AT) {
+      // Numbers in hand is proof enough that leasing works.
+      this.leaseFailed = false;
+      return;
+    }
     try {
       const call = httpsCallable<{ deviceId: string }, ReceiptLease & { to: number }>(
         this.functions,
@@ -158,10 +185,15 @@ export class PosSaleQueue {
           expiresAtMillis: data.expiresAtMillis,
         }),
       );
+      this.leaseFailed = false;
       await this.emit();
     } catch {
       // Not fatal: the till keeps whatever it already holds. If it holds
       // nothing, offline sales get a reference instead of a receipt number.
+      // Recorded rather than swallowed, so the pill can say which of the two
+      // reasons it has no numbers.
+      this.leaseFailed = true;
+      await this.emit();
     }
   }
 
@@ -270,10 +302,15 @@ export class PosSaleQueue {
   async drain(): Promise<void> {
     if (this.draining || this.paused) return;
     if (!posIdbAvailable()) return;
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
     this.draining = true;
     try {
+      // Before the online check, deliberately: a sale stranded in `sending` is
+      // a real sale, and the count a cashier reads has to be right whether or
+      // not the network is back yet.
+      await this.recoverStranded();
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+
       const pending = (await this.list()).filter(
         (s) => s.state === 'held' && s.nextAttemptAtMillis <= Date.now(),
       );
@@ -287,6 +324,28 @@ export class PosSaleQueue {
       this.draining = false;
       await this.emit();
     }
+  }
+
+  /**
+   * Put sales stranded mid-flight back in the queue. Runs once per session.
+   *
+   * `send()` marks a sale `sending` before the callable, so a reload, a closed
+   * tab or a browser killed mid-call leaves it in that state forever: `drain()`
+   * only picks up `held`, `pruneSent()` only removes `sent`, and the queue page
+   * offers Retry on `blocked` alone. The sale is real and the money is in the
+   * drawer, so the only safe reading of `sending` at startup is "unknown" —
+   * and re-sending an unknown is free, because `commitPosSale` is idempotent on
+   * the sale id and returns the original order for anything that did land.
+   */
+  private async recoverStranded(): Promise<void> {
+    if (this.recovered) return;
+    this.recovered = true;
+    await posTx(STORE_QUEUE, 'readwrite', async (tx) => {
+      for (const sale of await idbGetAll<QueuedSale>(tx, STORE_QUEUE)) {
+        if (sale.state !== 'sending') continue;
+        await idbPut(tx, STORE_QUEUE, { ...sale, state: 'held', nextAttemptAtMillis: 0 });
+      }
+    });
   }
 
   private async send(sale: QueuedSale): Promise<boolean> {

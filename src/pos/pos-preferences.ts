@@ -1,7 +1,6 @@
 'use client';
 
 import { DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-scanner';
-import type { PosPrinterTransport } from '../types';
 import type { PosStorageMode } from './storage/types';
 
 /**
@@ -15,8 +14,6 @@ import type { PosStorageMode } from './storage/types';
  */
 
 const SCAN_GAP_KEY = 'caspian:pos:scanGapMs';
-const PRINTER_KEY = 'caspian:pos:printer';
-const STORAGE_MODE_KEY = 'caspian:pos:storageMode';
 
 function read(key: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -47,22 +44,14 @@ export function writeScannerGapMs(value: number): void {
   write(SCAN_GAP_KEY, String(Math.min(300, Math.max(10, Math.round(value)))));
 }
 
-export function readPrinterTransport(): PosPrinterTransport {
-  const raw = read(PRINTER_KEY);
-  return raw === 'webserial' || raw === 'webusb' ? raw : 'browser';
-}
-
-export function writePrinterTransport(value: PosPrinterTransport): void {
-  write(PRINTER_KEY, value);
-}
-
-export function readStorageMode(): PosStorageMode {
-  return read(STORAGE_MODE_KEY) === 'local' ? 'local' : 'cloud';
-}
-
-export function writeStorageMode(value: PosStorageMode): void {
-  write(STORAGE_MODE_KEY, value);
-}
+/*
+ * `readPrinterTransport` / `writePrinterTransport` and `readStorageMode` /
+ * `writeStorageMode` used to live here and were removed in v12.0.0. Nothing
+ * called any of them: the printer control at `/pos/settings` is hard-coded to
+ * the browser transport until the ESC/POS paths ship, and the storage mode is
+ * derived below rather than stored. A stored preference that nothing reads is
+ * worse than no preference at all — it looks settable.
+ */
 
 /**
  * What mode the register actually runs in.

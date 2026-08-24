@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
+import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Badge, Skeleton } from '../ui/misc';
-import { getPosDeviceId } from './pos-device';
-import { PosSaleQueue } from './offline/pos-sale-queue';
+import { usePosAdapter } from './pos-adapter-context';
 import { usePosQueue } from './offline/use-pos-queue';
 import type { QueuedSale } from './offline/types';
 
@@ -23,15 +21,20 @@ import type { QueuedSale } from './offline/types';
  * server has already accepted.
  */
 export function PosQueuePage() {
-  const functions = useCaspianFirebaseOptional()?.functions ?? null;
   const t = useT();
   const [rows, setRows] = useState<QueuedSale[] | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const queue = useMemo(() => new PosSaleQueue(functions, getPosDeviceId()), [functions]);
+  // The register's own outbox, not a second view of the same IndexedDB: a
+  // separate instance would not see this page's `retry()` in its own counts.
+  const { queue } = usePosAdapter();
   const { counts, online, paused } = usePosQueue(queue);
 
   const refresh = useCallback(async () => {
+    if (!queue) {
+      setRows([]);
+      return;
+    }
     try {
       setRows(await queue.list());
     } catch {
@@ -44,6 +47,7 @@ export function PosQueuePage() {
   }, [refresh, counts.held, counts.blocked, counts.sending]);
 
   const sendNow = async () => {
+    if (!queue) return;
     setBusy(true);
     try {
       await queue.drain();
@@ -90,7 +94,7 @@ export function PosQueuePage() {
         {(row) => (
           <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <Badge variant="secondary">{row.lastErrorCode || 'error'}</Badge>
-            <Button size="sm" variant="outline" onClick={() => void queue.retry(row.saleId).then(refresh)}>
+            <Button size="sm" variant="outline" onClick={() => void queue?.retry(row.saleId).then(refresh)}>
               {t('pos.queue.retry')}
             </Button>
           </span>

@@ -54,6 +54,7 @@ const ru: MessageDict = {
   'pos.queue.sending': 'Отправка: {count}',
   'pos.queue.blockedCount': '{count} требуют внимания',
   'pos.queue.lowNumbers': 'Осталось номеров чеков: {count}',
+  'pos.queue.noNumbers': 'Не удаётся зарезервировать номера чеков',
   'pos.queue.paused': 'Отправка приостановлена',
   'pos.queue.pausedBody': 'Этой учётной записи больше не разрешено записывать продажи, поэтому ничего не отправляется. Войдите под учётной записью с ролью «Сотрудник», и отложенные продажи пройдут.',
   'pos.queue.reason.network': 'Нет связи с магазином',
@@ -112,6 +113,9 @@ const ru: MessageDict = {
   'pos.ticket.increase': 'Добавить один',
   'pos.ticket.decrease': 'Убрать один',
   'pos.ticket.discount': 'Скидка на строку',
+  'pos.ticket.discountPlaceholder': 'Сумма скидки',
+  'pos.ticket.discountApply': 'Применить',
+  'pos.ticket.discountClear': 'Очистить',
   'pos.ticket.clear': 'Очистить продажу',
   'pos.ticket.clearConfirm': 'Очистить всю продажу?',
   'pos.ticket.subtotal': 'Промежуточный итог',
@@ -158,6 +162,8 @@ const ru: MessageDict = {
   // POS — completion
   'pos.done.title': 'Продажа завершена',
   'pos.done.receiptNumber': 'Чек {number}',
+  'pos.done.provisionalReceipt':
+    'На этой кассе закончились номера чеков, поэтому продаже присвоена ссылка с этого компьютера. Настоящий номер чека будет присвоен, когда продажа дойдёт до магазина.',
   'pos.done.changeDue': 'Выдайте сдачу {amount}',
   'pos.done.print': 'Печать чека',
   'pos.done.newSale': 'Новая продажа',
@@ -174,6 +180,7 @@ const ru: MessageDict = {
   // POS — receipt
   'pos.receipt.title': 'Чек',
   'pos.receipt.number': 'Номер чека',
+  'pos.receipt.provisional': 'Только ссылка — ещё не номер чека магазина',
   'pos.receipt.date': 'Дата',
   'pos.receipt.cashier': 'Обслужил',
   'pos.receipt.register': 'Касса',

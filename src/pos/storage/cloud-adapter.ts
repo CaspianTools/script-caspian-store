@@ -2,11 +2,15 @@ import { httpsCallable, type Functions } from 'firebase/functions';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
 import { caspianCollections } from '../../firebase/collections';
 import { findProductByCode, searchPosProducts } from '../../services/pos-catalog-service';
+import { toSoldLines } from './sold-lines';
 import type {
   PosCommittedSale,
   PosSaleDraft,
   PosStorageAdapter,
 } from './types';
+
+/** What `commitPosSale` resolves with. `items` is the priced ticket. */
+type CommitResponse = Omit<PosCommittedSale, 'lines'> & { items?: unknown };
 
 /**
  * Cloud-backed register: Firestore for catalog reads, the `caspian-pos`
@@ -18,6 +22,10 @@ import type {
  * browser (as the storefront's manual-payment plugins do) would let a tampered
  * client set its own totals; `commitPosSale` re-reads every price from
  * Firestore and ignores whatever the till claims a thing costs.
+ *
+ * The same asymmetry is why the priced lines come BACK from the server rather
+ * than being taken from the ticket: the receipt has to show what was charged,
+ * and only the server knows that.
  */
 export class PosCloudAdapter implements PosStorageAdapter {
   readonly mode = 'cloud' as const;
@@ -36,7 +44,7 @@ export class PosCloudAdapter implements PosStorageAdapter {
   }
 
   async commitSale(draft: PosSaleDraft): Promise<PosCommittedSale> {
-    const call = httpsCallable<Record<string, unknown>, PosCommittedSale>(
+    const call = httpsCallable<Record<string, unknown>, CommitResponse>(
       this.functions,
       'commitPosSale',
     );
@@ -58,8 +66,12 @@ export class PosCloudAdapter implements PosStorageAdapter {
       customerId: draft.customerId ?? null,
       customerEmail: draft.customerEmail ?? null,
       capturedAtMillis: draft.capturedAtMillis ?? Date.now(),
+      ...(draft.receipt ? { receipt: draft.receipt } : {}),
+      ...(draft.capturedByUid ? { capturedByUid: draft.capturedByUid } : {}),
+      ...(draft.capturedByName ? { capturedByName: draft.capturedByName } : {}),
     });
 
+    const lines = toSoldLines(data.items);
     return {
       orderId: data.orderId,
       receiptNumber: data.receiptNumber,
@@ -67,6 +79,7 @@ export class PosCloudAdapter implements PosStorageAdapter {
       duplicate: Boolean(data.duplicate),
       stockShortfall: data.stockShortfall ?? [],
       pending: false,
+      ...(lines ? { lines } : {}),
     };
   }
 
@@ -77,7 +90,8 @@ export class PosCloudAdapter implements PosStorageAdapter {
     // till that made the sale is exactly the client allowed to ask about it.
     const snap = await getDoc(doc(caspianCollections(this.db).orders, saleId));
     if (!snap.exists()) return null;
-    const data = snap.data() as { receiptNumber?: string; total?: number };
+    const data = snap.data() as { receiptNumber?: string; total?: number; items?: unknown };
+    const lines = toSoldLines(data.items);
     return {
       orderId: saleId,
       receiptNumber: typeof data.receiptNumber === 'string' ? data.receiptNumber : '',
@@ -85,6 +99,7 @@ export class PosCloudAdapter implements PosStorageAdapter {
       duplicate: true,
       stockShortfall: [],
       pending: false,
+      ...(lines ? { lines } : {}),
     };
   }
 }

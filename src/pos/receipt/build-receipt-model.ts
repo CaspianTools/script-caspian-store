@@ -1,4 +1,4 @@
-import type { PosSaleLine, PosTenderInput } from '../storage/types';
+import type { PosSaleLine, PosSoldLine, PosTenderInput } from '../storage/types';
 
 export interface PosReceiptLine {
   name: string;
@@ -21,6 +21,11 @@ export interface PosReceiptTender {
 
 export interface PosReceiptModel {
   receiptNumber: string;
+  /**
+   * True when `receiptNumber` is a device-local reference, not a number issued
+   * by the server. The renderer labels it rather than letting it pass for one.
+   */
+  provisionalReceipt?: boolean;
   orderId: string;
   /** Epoch millis. Rendered by the view with the active locale's date format. */
   at: number;
@@ -57,6 +62,28 @@ export interface BuildReceiptArgs {
    * as an unexplained drawer variance at close.
    */
   cashRounding?: number;
+  provisionalReceipt?: boolean;
+}
+
+/**
+ * Subtotal and discount for a set of lines that have already been priced.
+ *
+ * Exists so the receipt's three money figures come from ONE source. They used
+ * not to: `subtotal` and `discount` were taken from the open ticket while
+ * `total` came back from the commit, so a catalogue edit between the scan and
+ * the commit printed lines that did not add up to the total on the same slip.
+ * Given the priced lines, both are derivable, and derived beats carried.
+ *
+ * Integer minor units, like every other total in the register.
+ */
+export function summariseSoldLines(lines: PosSoldLine[]): { subtotal: number; discount: number } {
+  let grossMinor = 0;
+  let discountMinor = 0;
+  for (const line of lines) {
+    grossMinor += toMinor(line.unitPrice) * line.quantity;
+    discountMinor += toMinor(line.lineDiscount);
+  }
+  return { subtotal: fromMinor(grossMinor), discount: fromMinor(discountMinor) };
 }
 
 function toMinor(amount: number): number {
@@ -120,6 +147,7 @@ export function buildReceiptModel(args: BuildReceiptArgs): PosReceiptModel {
 
   return {
     receiptNumber: args.receiptNumber,
+    ...(args.provisionalReceipt ? { provisionalReceipt: true } : {}),
     orderId: args.orderId,
     at: args.at ?? Date.now(),
     storeHeader: splitLines(args.receiptHeader),

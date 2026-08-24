@@ -282,7 +282,6 @@ export interface LocalCommitInput {
   deviceId: string;
   lines: LocalCommitLine[];
   tenders: LocalSale['tenders'];
-  promoCode: string | null;
   cashierId: string;
   cashierName: string;
   committedAtMillis: number;
@@ -340,7 +339,6 @@ export async function commitLocalSale(
         subtotal: priced.subtotal,
         discount: priced.discount,
         total: priced.total,
-        promoCode: input.promoCode,
         committedAtMillis: input.committedAtMillis,
         cashierId: input.cashierId,
         cashierName: input.cashierName,

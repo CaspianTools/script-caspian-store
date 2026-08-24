@@ -3,7 +3,7 @@ import type { Functions } from 'firebase/functions';
 import type { Product } from '../../types';
 import { PosCloudAdapter } from './cloud-adapter';
 import type { PosCommittedSale, PosSaleDraft, PosStorageAdapter } from './types';
-import { PosSaleQueue } from '../offline/pos-sale-queue';
+import type { PosSaleQueue } from '../offline/pos-sale-queue';
 import { lookupCachedByCode, searchCachedProducts } from '../offline/pos-catalog-cache';
 
 /** How long to wait for a commit before deciding the network is not going to answer. */
@@ -19,7 +19,7 @@ function isOnline(): boolean {
  * Wraps `PosCloudAdapter` rather than replacing it, so `PosRegister` never
  * learns whether the network is up — it asks for a sale to be committed and
  * gets a `PosCommittedSale` back either way. The only difference the UI sees is
- * `pending: true`, a flag declared since v10.0.0 that until now nothing ever set.
+ * `pending: true`, which the sale-complete screen and the receipt both read.
  *
  * Order of operations in `commitSale` is the whole design:
  *
@@ -38,20 +38,26 @@ function isOnline(): boolean {
  * leaving the call running costs nothing, because the leased receipt number is
  * identical on both paths, so a late landing reconciles through the idempotency
  * gate with no visible consequence.
+ *
+ * The queue is INJECTED rather than constructed here. It used to be built in
+ * the constructor, which meant the register and the connection pill each held
+ * their own instance: they shared IndexedDB so no sale was lost, but `capture`
+ * and `markSent` emitted to an instance nobody was listening to, so the
+ * held-sales badge only moved on the other instance's 30-second timer, and the
+ * two could never agree about `paused` at all.
  */
 export class PosQueuedCloudAdapter implements PosStorageAdapter {
   readonly mode = 'cloud' as const;
-  readonly queue: PosSaleQueue;
   private readonly inner: PosCloudAdapter;
 
   constructor(
     db: Firestore,
     functions: Functions,
-    deviceId: string,
+    private readonly deviceId: string,
     private readonly identity: () => { uid: string; name: string },
+    readonly queue: PosSaleQueue,
   ) {
     this.inner = new PosCloudAdapter(db, functions);
-    this.queue = new PosSaleQueue(functions, deviceId);
   }
 
   async lookupByCode(code: string) {
@@ -89,7 +95,7 @@ export class PosQueuedCloudAdapter implements PosStorageAdapter {
     const captured = draft.capturedTotal ?? 0;
 
     const held = await this.queue.capture({
-      draft,
+      draft: { ...draft, deviceId: draft.deviceId || this.deviceId },
       capturedTotal: captured,
       capturedSubtotal: draft.capturedSubtotal ?? captured,
       capturedByUid: who.uid,
@@ -122,13 +128,22 @@ export class PosQueuedCloudAdapter implements PosStorageAdapter {
     }
 
     // Held on this device. The customer already has the receipt.
+    //
+    // `localRef` is the fallback when the leased block ran dry, and it has to be
+    // used: returning the empty string that `capture` hands back in that case
+    // printed a receipt with no identifier on it at all, which is worse than the
+    // slip the lease design was willing to settle for. Flagged as provisional so
+    // the receipt says what the number is rather than passing a device-local
+    // reference off as a server-issued one.
+    const provisional = !held.receiptNumber;
     return {
       orderId: draft.saleId,
-      receiptNumber: held.receiptNumber,
+      receiptNumber: held.receiptNumber || held.localRef,
       total: captured,
       duplicate: false,
       stockShortfall: [],
       pending: true,
+      ...(provisional ? { provisionalReceipt: true } : {}),
     };
   }
 }

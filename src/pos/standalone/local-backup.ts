@@ -18,9 +18,11 @@ import {
   listLocalSales,
   listLocalUsers,
   peekLocalReceiptCounter,
+  readLocalRoles,
   readLocalShopSettings,
   saveLocalProducts,
   saveLocalUser,
+  writeLocalRoles,
   writeLocalShopSettings,
 } from './local-db';
 import {
@@ -30,10 +32,22 @@ import {
   idbPut,
   posTx,
 } from '../offline/pos-queue-db';
-import type { LocalProduct, LocalSale, LocalShopSettings, LocalUser } from './types';
+import type {
+  LocalProduct,
+  LocalSale,
+  LocalShopSettings,
+  LocalUser,
+  RoleDefinition,
+} from './types';
 
-/** Bumped only when the shape changes in a way an older reader cannot handle. */
-export const LOCAL_BACKUP_VERSION = 1;
+/**
+ * Bumped only when the shape changes in a way an older reader cannot handle.
+ *
+ * v2 added `roles`. A v1 file restores fine — it simply has no custom roles to
+ * put back — but a v2 file is refused by a v1 reader, which is the right way
+ * round: the alternative is an old build silently discarding a shop's roles.
+ */
+export const LOCAL_BACKUP_VERSION = 2;
 
 export interface LocalBackup {
   format: 'caspian-standalone-till';
@@ -44,15 +58,25 @@ export interface LocalBackup {
   products: LocalProduct[];
   users: LocalUser[];
   sales: LocalSale[];
+  /**
+   * Custom role definitions. Absent in a v1 file.
+   *
+   * These were missing from the backup entirely until v12.0.0, which meant a
+   * shop that had customised who may open which screen got the built-in roles
+   * back on a replacement machine, with nothing saying so. On a till whose only
+   * copy of everything is this file, an omission is a silent loss.
+   */
+  roles?: RoleDefinition[];
 }
 
 export async function buildLocalBackup(): Promise<LocalBackup> {
-  const [shop, receiptCounter, products, users, sales] = await Promise.all([
+  const [shop, receiptCounter, products, users, sales, roles] = await Promise.all([
     readLocalShopSettings(),
     peekLocalReceiptCounter(),
     listLocalProducts(),
     listLocalUsers(),
     listLocalSales(),
+    readLocalRoles(),
   ]);
   return {
     format: 'caspian-standalone-till',
@@ -63,6 +87,7 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     products,
     users,
     sales,
+    roles,
   };
 }
 
@@ -81,6 +106,10 @@ export function parseLocalBackup(text: string): LocalBackup | null {
     if (parsed?.format !== 'caspian-standalone-till') return null;
     if (typeof parsed.version !== 'number' || parsed.version > LOCAL_BACKUP_VERSION) return null;
     if (!Array.isArray(parsed.products) || !Array.isArray(parsed.users)) return null;
+    // `sales` was validated nowhere, and `restoreLocalBackup` iterates it — a
+    // string would have been walked character by character, a number thrown.
+    if (parsed.sales != null && !Array.isArray(parsed.sales)) return null;
+    if (parsed.roles != null && !Array.isArray(parsed.roles)) return null;
     return parsed as LocalBackup;
   } catch {
     return null;
@@ -93,6 +122,8 @@ export interface RestoreResult {
   sales: number;
   /** Sales already on this till and therefore left alone. */
   salesSkipped: number;
+  /** Custom roles put back. Zero for a v1 file, which carried none. */
+  roles: number;
 }
 
 /**
@@ -108,6 +139,7 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
   await saveLocalProducts(backup.products);
   for (const user of backup.users) await saveLocalUser(user);
   await writeLocalShopSettings(backup.shop);
+  if (backup.roles?.length) await writeLocalRoles(backup.roles);
 
   let restored = 0;
   let skipped = 0;
@@ -134,6 +166,7 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     users: backup.users.length,
     sales: restored,
     salesSkipped: skipped,
+    roles: backup.roles?.length ?? 0,
   };
 }
 
@@ -142,9 +175,9 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
  *
  * Object-URL rather than a `data:` URI because a busy till's backup runs to
  * megabytes and long `data:` URLs are truncated by some browsers — silently,
- * which for a backup is the worst possible failure. The desktop shell replaces
- * this with a real filesystem write so a shop gets a file in a folder it chose
- * rather than one in Downloads.
+ * which for a backup is the worst possible failure. The browser decides where
+ * the file lands; a shop that wants it somewhere specific sets its download
+ * folder, or moves the file afterwards.
  */
 export function saveTextFile(filename: string, text: string, mime = 'application/json'): void {
   if (typeof document === 'undefined') return;

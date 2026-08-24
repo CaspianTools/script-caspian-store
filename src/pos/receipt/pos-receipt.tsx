@@ -57,6 +57,9 @@ export function PosReceipt({ model, formatPrice, autoPrint, onAfterPrint }: PosR
         <span>{t('pos.receipt.number')}</span>
         <span className="rc-strong">{model.receiptNumber}</span>
       </div>
+      {model.provisionalReceipt ? (
+        <div className="rc-small rc-muted">{t('pos.receipt.provisional')}</div>
+      ) : null}
       <div className="rc-row">
         <span>{t('pos.receipt.date')}</span>
         <span>{formatDate.format(new Date(model.at))}</span>

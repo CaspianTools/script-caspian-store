@@ -54,6 +54,7 @@ const tr: MessageDict = {
   'pos.queue.sending': '{count} gönderiliyor',
   'pos.queue.blockedCount': '{count} ilgi bekliyor',
   'pos.queue.lowNumbers': '{count} fiş numarası kaldı',
+  'pos.queue.noNumbers': 'Fiş numarası ayrılamıyor',
   'pos.queue.paused': 'Gönderim duraklatıldı',
   'pos.queue.pausedBody': 'Bu hesabın artık satış kaydetme izni yok, bu yüzden hiçbir şey gönderilmiyor. Personel rolü olan bir hesapla giriş yapın; bekleyen satışlar geçecektir.',
   'pos.queue.reason.network': 'Mağazayla bağlantı yok',
@@ -111,6 +112,9 @@ const tr: MessageDict = {
   'pos.ticket.increase': 'Bir ekle',
   'pos.ticket.decrease': 'Bir çıkar',
   'pos.ticket.discount': 'Satır indirimi',
+  'pos.ticket.discountPlaceholder': 'İndirim tutarı',
+  'pos.ticket.discountApply': 'Uygula',
+  'pos.ticket.discountClear': 'Temizle',
   'pos.ticket.clear': 'Satışı temizle',
   'pos.ticket.clearConfirm': 'Satışın tamamı silinsin mi?',
   'pos.ticket.subtotal': 'Ara toplam',
@@ -157,6 +161,8 @@ const tr: MessageDict = {
   // POS — completion
   'pos.done.title': 'Satış tamamlandı',
   'pos.done.receiptNumber': 'Fiş {number}',
+  'pos.done.provisionalReceipt':
+    'Bu kasada fiş numarası kalmadı, bu yüzden satışa bu bilgisayardan bir referans verildi. Satış mağazaya ulaştığında gerçek fiş numarasını alacak.',
   'pos.done.changeDue': '{amount} para üstü verin',
   'pos.done.print': 'Fişi yazdır',
   'pos.done.newSale': 'Yeni satış',
@@ -173,6 +179,7 @@ const tr: MessageDict = {
   // POS — receipt
   'pos.receipt.title': 'Fiş',
   'pos.receipt.number': 'Fiş no.',
+  'pos.receipt.provisional': 'Yalnızca referans — henüz mağaza fiş numarası değil',
   'pos.receipt.date': 'Tarih',
   'pos.receipt.cashier': 'Hizmet veren',
   'pos.receipt.register': 'Kasa',

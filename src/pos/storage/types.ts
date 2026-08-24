@@ -8,8 +8,10 @@ import type { Product } from '../../types';
  * contacts nothing — no Firebase project required, but nothing shows up in the
  * online admin either, and backups become the shop's responsibility.
  *
- * The choice is per-device, not per-store: one shop can legitimately run a
- * cloud till at the counter and a local one at a market stall.
+ * The mode is a property of the DEPLOYMENT, not a per-device toggle: a till
+ * wired to a Firebase project is a cloud till, one mounted `standalone` is a
+ * local till, and `resolvePosStorageMode` derives which rather than offering a
+ * choice. The per-device switch this replaced is described in `pos-preferences`.
  */
 export type PosStorageMode = 'cloud' | 'local';
 
@@ -27,6 +29,29 @@ export interface PosSaleLine {
   sku?: string;
   barcode?: string;
   imageUrl?: string;
+}
+
+/**
+ * A line as it was actually CHARGED, priced by whoever owns the prices.
+ *
+ * Distinct from `PosSaleLine`, and the distinction is the whole point: that one
+ * is what the till believed while scanning, this one is what the sale record
+ * says. They differ whenever the catalogue moved between the scan and the
+ * commit, and the customer's receipt must be built from this one — otherwise
+ * the printed lines do not add up to the printed total.
+ */
+export interface PosSoldLine {
+  productId: string;
+  name: string;
+  /** The price actually charged, resolved at commit and then frozen. */
+  unitPrice: number;
+  quantity: number;
+  selectedSize: string | null;
+  selectedColor: string | null;
+  lineDiscount: number;
+  lineTotal: number;
+  sku?: string;
+  barcode?: string;
 }
 
 export interface PosTenderInput {
@@ -79,15 +104,28 @@ export interface PosCommittedSale {
    * standing there — but the register shows a pending indicator.
    */
   pending?: boolean;
+  /**
+   * True when `receiptNumber` is a device-local reference rather than a number
+   * issued by the server. Happens only offline with a leased block exhausted;
+   * the receipt says so rather than printing a number that looks authoritative.
+   */
+  provisionalReceipt?: boolean;
+  /**
+   * What was charged, line by line. Absent only on a `pending` sale, where
+   * nothing has priced it yet and the ticket's own figures are all there is.
+   * Present everywhere else, so the receipt never mixes scanned prices with a
+   * committed total.
+   */
+  lines?: PosSoldLine[];
 }
 
 /**
  * The single seam between the register UI and wherever its data lives.
  *
  * Every screen is written against this interface and never against Firestore
- * directly, so a standalone local-storage mode would be an implementation of it
+ * directly, which is what lets standalone mode be an implementation of it
  * rather than a second copy of the register. Introduced in v10.0.0 with the
- * cloud implementation, which is still the only one that ships.
+ * cloud implementation; `PosLocalAdapter` joined it in v11.0.0.
  */
 export interface PosStorageAdapter {
   readonly mode: PosStorageMode;
