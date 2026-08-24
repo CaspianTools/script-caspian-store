@@ -56,10 +56,11 @@ export function writeScannerGapMs(value: number): void {
 /**
  * What mode the register actually runs in.
  *
- * Decided by the deployment, not by the stored preference — which is why
- * `readStorageMode` is not consulted here despite existing. A till wired to a
- * Firebase project is a cloud till; one mounted with `standalone` is a local
- * till, and there is nothing to choose between at the counter.
+ * Decided by the deployment, and nowhere else — which is why the stored
+ * preference this used to consult was deleted rather than merely ignored. A
+ * till wired to a Firebase project is a cloud till; one mounted with
+ * `standalone` is a local till, and there is nothing to choose between at the
+ * counter.
  *
  * The per-device switch this replaced was a trap. A cloud shop that picked
  * "this computer only" got a register backed by an empty local catalogue and no
