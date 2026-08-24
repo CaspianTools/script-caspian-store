@@ -9,7 +9,8 @@ import { Skeleton } from '../ui/misc';
 import { POS_ROLES, type UserRole } from '../types';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { PosLocalSignIn } from './standalone/pos-local-sign-in';
-import { canAccess } from './standalone/types';
+import { usePosRolesOptional } from './standalone/role-context';
+import { canAccess as canAccessBuiltIn } from './standalone/types';
 
 export interface PosGuardProps {
   children: ReactNode;
@@ -39,20 +40,33 @@ function isPosRole(role: UserRole | undefined): boolean {
  * no `users/{uid}` document to hold a role, and no remote flag to consult. That
  * path is checked first and returns before any of the cloud checks, because
  * every one of them would refuse a perfectly valid local cashier.
+ *
+ * The standalone gate asks the live role definitions rather than the static
+ * `AREAS_BY_ROLE` map. The map knows only the seven built-in ids, so it refused
+ * every custom role App Admin can create no matter which areas were ticked, and
+ * ignored the enabled flag entirely — People would hand someone a role that
+ * then opened nothing. The static map stays as the fallback for a consumer who
+ * mounts this guard without `PosRoleProvider`.
  */
 export function PosGuard({ children, signInHref = '/login', fallback }: PosGuardProps) {
   const { user, userProfile, loading } = useAuth();
   const { settings } = useScriptSettings();
   const local = usePosLocalSession();
+  const roles = usePosRolesOptional();
   const Link = useCaspianLink();
   const t = useT();
 
   const posEnabled = settings.features?.pos || settings.features?.posOnly;
 
   if (local.standalone) {
-    if (local.loading) return <PosLoading />;
+    // Waiting on the definitions too: refusing first and admitting a moment
+    // later would flash "no access" at a cashier holding a custom role.
+    if (local.loading || roles?.loading) return <PosLoading />;
     if (!local.user) return <PosLocalSignIn />;
-    if (!canAccess(local.user.role, 'register')) {
+    const permitted = roles
+      ? roles.canAccess(local.user.role, 'register')
+      : canAccessBuiltIn(local.user.role, 'register');
+    if (!permitted) {
       return (
         <PosNotice title={t('pos.local.noAccessTitle')} body={t('pos.local.noAccessBody')} />
       );

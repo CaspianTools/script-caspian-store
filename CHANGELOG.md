@@ -16,6 +16,54 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v12.0.1 — The register's role page runs at all
+
+`/pos/app-admin` threw `Cannot read properties of undefined (reading 'map')` on every
+render, so the one screen that configures who may open what on a standalone till has never
+worked. Fixing it exposed three more defects on the same page and one behind it, all fixed
+here.
+
+### No consumer action required
+
+Reinstall to pick it up. No Firestore rules, indexes or Cloud Functions change, and no
+till holds stored role definitions to migrate — the only code that could write them is the
+page that crashed, so every install falls through to the built-in list.
+
+### Fixed
+
+- **`/pos/app-admin` crashed on every render.** The page kept a list of role ids beside
+  `BUILTIN_ROLES` instead of reading it, and the two had drifted: the list named `support`,
+  while the Support role's id is `superadmin`. The lookup returned `undefined`, spreading it
+  produced a role with no `areas`, and mapping that threw. A non-null assertion on the
+  lookup is what let a guaranteed-`undefined` value past `tsc --strict`. The rows now come
+  from `BUILTIN_ROLES` itself, so the two cannot drift again.
+- **A custom role opened nothing.** `PosGuard` gates every `/pos` screen with the static
+  `AREAS_BY_ROLE` map, which knows only the seven built-in ids and ignores the enabled
+  flag. Anyone holding a role written in App Admin was refused at the counter no matter
+  which areas were ticked, while People happily handed that role out. The standalone branch
+  of the guard now asks the live definitions, falling back to the static map when mounted
+  without `PosRoleProvider`.
+- **Switching Support off would have bricked the till.** `superadmin` is the only role
+  carrying the `support` area, that area is the only key to this page, and the account made
+  at commissioning holds it — so one tick would have ended the owner's access to the
+  register, the store, the back office and the page that could undo it, with no
+  server-side override to recover from. The row is now locked.
+- **Built-in role names never translated.** The page rendered the English `name` from
+  `types.ts`, and the branch that called the message table could not be reached, leaving
+  ten Azerbaijani translations dead.
+- **Two rows both read "Cashier".** `staff` and `cashier` are separate ids with identical
+  access. Both are kept — people may already hold either, and dropping an id takes the
+  register away from everyone holding it — but the spare one is now labelled
+  "Cashier (duplicate)" and says what it is for.
+
+### Changed
+
+- `BUILTIN_ROLES` is ordered least-to-most privilege, which is the order App Admin renders
+  and the order that decides the default role for a new person.
+- `docs/pos-manual.html` gains **Roles on a till with no website**, covering the page in
+  all four languages, and `The three account roles` no longer tells owners that no fourth
+  role can exist — true of a store with a website, false of a standalone till.
+
 ## v12.0.0 — Register correctness pass, and the till is a PWA only
 
 A full review of `src/pos/` turned up sixteen defects, from a receipt printed with no

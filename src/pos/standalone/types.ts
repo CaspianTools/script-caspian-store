@@ -41,14 +41,26 @@ export interface RoleDefinition {
   builtIn?: boolean;
 }
 
+/**
+ * The roles every till ships with, in least-to-most privilege order.
+ *
+ * Order is load-bearing twice over: App Admin renders the list in this order,
+ * and `enabledRoles[0]` is the role a new person defaults to, so the least
+ * privileged entry must stay first.
+ *
+ * `cashier` duplicates `staff` exactly. Keeping both is deliberate — people can
+ * already have been given either one, and dropping an id from this list takes
+ * the register away from everyone holding it. App Admin labels the spare one so
+ * an owner is not choosing between two identical rows.
+ */
 export const BUILTIN_ROLES: RoleDefinition[] = [
   { id: 'staff', name: 'Cashier', enabled: true, areas: ['register'], builtIn: true },
-  { id: 'admin', name: 'Admin', enabled: true, areas: ['register', 'store', 'admin', 'reports', 'settings'], builtIn: true },
-  { id: 'superadmin', name: 'Support', enabled: true, areas: ['register', 'store', 'admin', 'reports', 'settings', 'support'], builtIn: true },
   { id: 'cashier', name: 'Cashier', enabled: true, areas: ['register'], builtIn: true },
   { id: 'storekeeper', name: 'Storekeeper', enabled: true, areas: ['store'], builtIn: true },
-  { id: 'manager', name: 'Manager', enabled: true, areas: ['register', 'store', 'admin', 'reports'], builtIn: true },
   { id: 'accountant', name: 'Accountant', enabled: true, areas: ['reports'], builtIn: true },
+  { id: 'manager', name: 'Manager', enabled: true, areas: ['register', 'store', 'admin', 'reports'], builtIn: true },
+  { id: 'admin', name: 'Admin', enabled: true, areas: ['register', 'store', 'admin', 'reports', 'settings'], builtIn: true },
+  { id: 'superadmin', name: 'Support', enabled: true, areas: ['register', 'store', 'admin', 'reports', 'settings', 'support'], builtIn: true },
 ];
 
 /** Fallback map used when no dynamic role definitions have been loaded yet. */

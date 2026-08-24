@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v12.0.0"
+      "version": "v12.0.1"
     },
     "parts": [
       {
@@ -1234,7 +1234,7 @@ const MANUAL = {
               "Staff accounts only get into the till if the point-of-sale feature is switched on for the store. If it is off, the till shows \"Register is switched off\" to everyone, staff included.",
               "A cashier who is refused at the till is shown their own account id with a Copy id button, so they can send it to you and you can find them on the Users screen.",
               "Changing someone's role does not always take effect on their device instantly. Their sign-in token can keep the old role for up to about an hour. After you demote someone, ask them to sign out and sign back in if you need it to bite immediately.",
-              "There is no fourth role and no way to invent one. There is no per-screen permission editor - Staff either reaches the till or it does not, and nothing about the admin panel can be opened up to Staff."
+              "On a store backed by a website these three are the whole system: there is no fourth role, no way to invent one, and no per-screen permission editor - Staff either reaches the till or it does not. A till running with no website behind it works differently and does let you define roles; see \"Roles on a till with no website\"."
             ]
           },
           {
@@ -1321,6 +1321,36 @@ const MANUAL = {
               "A person can delete their own account from their account page on the storefront. That removes their profile and their basket, but not the sales they rang up - those stay in your records, as they must.",
               "Sales they rang up before leaving keep their account id against them. That is deliberate: it is how you can still tell who took which payment months later.",
               "You cannot change your own role, so you cannot accidentally remove your own access while tidying up."
+            ]
+          },
+          {
+            "id": "roles-on-this-till",
+            "title": "Roles on a till with no website",
+            "audience": "owner",
+            "route": "/pos/app-admin",
+            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you choose which of the seven built-in roles this shop uses, and where you can write your own. Only the Support account made when the till was commissioned can open it, and the page does not exist at all on a till that is backed by a website.",
+            "steps": [
+              "Sign in as the Support account - the first account created when the till was set up. App admin appears in the header only for that account. On a till backed by a website the address quietly returns you to the counter instead.",
+              "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Each row lists the parts of the software that role opens.",
+              "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anyone still holding it stops being able to open anything - move those people to another role first.",
+              "To write your own, press Add custom role, give it a name, tick the areas it may open, and press Save role.",
+              "Edit reopens a custom role; Delete removes it. Deleting happens at once, with no confirmation step."
+            ],
+            "fields": [
+              {
+                "name": "Can access",
+                "what": "Six tick boxes on a custom role: Register, Store, Back office, Reports, Settings and Support. Register is the counter itself, Back office is the local admin at /pos/admin, and Support is this page."
+              },
+              {
+                "name": "Role name",
+                "what": "What the role is called when you give it to someone. Free text, and the only thing that identifies the role on the People screen."
+              }
+            ],
+            "notes": [
+              "Support cannot be switched off. It is the only role that opens this page, and a till with no website has no way to hand access back from somewhere else - if it could be unticked, one tick would end your access to the till for good.",
+              "\"Cashier (duplicate)\" opens exactly what Cashier opens. It is kept only so people already given it keep working. Give new cashiers plain Cashier.",
+              "These roles live on this machine and nowhere else. Another till, even in the same shop, keeps its own separate list, and nothing here shows up in an online admin panel.",
+              "The list of roles is part of the shop's own records, not a cache. Only a factory reset erases it, and there is no copy anywhere else."
             ]
           }
         ]
@@ -1946,7 +1976,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v11.0.1"
+      "version": "v12.0.1"
     },
     "parts": [
       {
@@ -2504,7 +2534,7 @@ const MANUAL = {
               "İşçi hesabları kassaya yalnız mağazada kassa (point-of-sale) funksiyası aktiv olanda girə bilir. Söndürülübsə, kassa hər kəsə — işçilərə də — «Kassa söndürülüb» (Register is switched off) yazısını göstərir.",
               "Kassada imtina edilən kassirə öz hesab identifikatoru və Identifikatoru kopyala (Copy id) düyməsi göstərilir; kassir onu sizə göndərir, siz də İstifadəçilər ekranında həmin adamı tapırsınız.",
               "Rolu dəyişdirmək o adamın cihazında həmişə dərhal işə düşmür. Giriş tokeni köhnə rolu təxminən bir saatadək saxlaya bilər. Kiminsə rolunu aşağı salandan sonra dəyişikliyin dərhal qüvvəyə minməsi lazımdırsa, ondan hesabdan çıxıb yenidən daxil olmağı xahiş edin.",
-              "Dördüncü rol yoxdur və yaratmaq da mümkün deyil. Ekran-ekran icazə redaktoru da yoxdur — İşçi ya kassaya çıxır, ya çıxmır; idarə panelinin heç bir hissəsini İşçi üçün açmaq olmur."
+              "Veb sayta bağlı mağazada bu üçü sistemin hamısıdır: dördüncü rol yoxdur, yaratmaq mümkün deyil, ekran-ekran icazə redaktoru da yoxdur — İşçi ya kassaya çıxır, ya çıxmır. Veb saytı olmayan kassa isə başqa cürdür və rol yaratmağa imkan verir; «Veb saytı olmayan kassada rollar» bölməsinə baxın."
             ]
           },
           {
@@ -2591,6 +2621,36 @@ const MANUAL = {
               "Adam öz hesabını mağazadakı hesab səhifəsindən silə bilər. Bu, onun profilini və səbətini silir, amma rəsmiləşdirdiyi satışları yox - onlar qeydlərinizdə qalır, qalmalı olduğu kimi.",
               "Ayrılmazdan əvvəl rəsmiləşdirdikləri satışlar onların hesab kodunu saxlayır. Bu qəsdəndir: aylar sonra hansı ödənişi kimin aldığını hələ də ayırd edə bilməyinizin yolu budur.",
               "Öz rolunuzu dəyişə bilmirsiniz, ona görə səliqə-sahman zamanı təsadüfən öz girişinizi silə bilməzsiniz."
+            ]
+          },
+          {
+            "id": "roles-on-this-till",
+            "title": "Veb saytı olmayan kassada rollar",
+            "audience": "owner",
+            "route": "/pos/app-admin",
+            "summary": "Arxasında veb sayt olmadan işləyən kassa öz rol siyahısını elə həmin kompüterdə saxlayır. Tətbiq admini bu mağazanın yeddi hazır roldan hansılarını işlədəcəyini seçdiyiniz və öz rollarınızı yaratdığınız yerdir. Onu yalnız kassa quraşdırılarkən yaradılmış Dəstək hesabı aça bilər; veb sayta bağlı kassada isə bu səhifə ümumiyyətlə yoxdur.",
+            "steps": [
+              "Dəstək hesabı ilə daxil olun — kassa qurulanda yaradılan ilk hesab. Tətbiq admini başlıqda yalnız o hesab üçün görünür. Veb sayta bağlı kassada bu ünvan sizi sakitcə kassaya qaytarır.",
+              "Təyin edilmiş rollar bölməsində ən az girişdən başlayaraq yeddi sətir var: Kassir, Kassir (təkrar), Anbarçı, Mühasib, Menecer, Admin və Dəstək. Hər sətir həmin rolun açdığı hissələri sadalayır.",
+              "Rolu işlətmək üçün qeyd edin, dayandırmaq üçün qeydi götürün. Dayandırılmış rol işçi əlavə edərkən və ya redaktə edərkən təklif olunmur, həmin rolu daşıyanlar isə heç nə aça bilmir — əvvəlcə o adamları başqa rola keçirin.",
+              "Öz rolunuzu yaratmaq üçün Xüsusi rol əlavə et düyməsini basın, ad verin, aça biləcəyi hissələri qeyd edin və Rolu saxla düyməsini basın.",
+              "Redaktə xüsusi rolu yenidən açır, Sil isə onu götürür. Silmə dərhal baş verir, təsdiq soruşulmur."
+            ],
+            "fields": [
+              {
+                "name": "Giriş icazəsi",
+                "what": "Xüsusi rolda altı qeyd xanası: Kassa, Anbar, Arxa ofis, Hesabatlar, Tənzimləmələr və Dəstək. Kassa — piştaxtanın özü, Arxa ofis — /pos/admin ünvanındakı yerli idarəetmə, Dəstək isə bu səhifədir."
+              },
+              {
+                "name": "Rolun adı",
+                "what": "Rolu kiməsə verərkən görünən ad. Sərbəst mətndir və İşçilər ekranında rolu tanıdan yeganə şeydir."
+              }
+            ],
+            "notes": [
+              "Dəstək rolunu söndürmək olmaz. Bu səhifəni açan yeganə roldur və veb saytı olmayan kassada girişi başqa yerdən qaytarmaq mümkün deyil — söndürülə bilsəydi, bir qeyd kassaya girişinizi həmişəlik bitirərdi.",
+              "«Kassir (təkrar)» tam olaraq Kassirin açdığını açır. Yalnız artıq bu rol verilmiş adamlar işləməyə davam etsin deyə saxlanılıb. Yeni kassirlərə adi Kassir verin.",
+              "Bu rollar yalnız bu kompüterdə yaşayır. Eyni mağazadakı başqa kassanın öz ayrıca siyahısı olur və buradakı heç nə onlayn idarə panelində görünmür.",
+              "Rol siyahısı mağazanın öz qeydlərinin bir hissəsidir, keş deyil. Onu yalnız zavod sıfırlaması silir və başqa heç yerdə surəti yoxdur."
             ]
           }
         ]
@@ -3205,7 +3265,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v11.0.1"
+      "version": "v12.0.1"
     },
     "parts": [
       {
@@ -3763,7 +3823,7 @@ const MANUAL = {
               "Сотрудники попадают на кассу, только если в магазине включена функция кассы (point-of-sale). Если она выключена, касса всем, включая сотрудников, показывает «Касса выключена» (Register is switched off).",
               "Кассиру, которого касса не пустила, показывают его собственный идентификатор учётной записи и кнопку «Копировать id» (Copy id) — он может прислать его вам, а вы найдёте человека на экране «Пользователи».",
               "Смена роли не всегда срабатывает на устройстве человека сразу. Его токен входа может держать старую роль примерно до часа. Если после понижения роли нужно, чтобы изменение подействовало немедленно, попросите человека выйти из учётной записи и войти заново.",
-              "Четвёртой роли нет, и придумать её нельзя. Настройки прав по отдельным экранам тоже нет: сотрудник либо попадает на кассу, либо нет, а открыть ему что-то в админ-панели невозможно."
+              "В магазине с сайтом эти три роли — вся система: четвёртой нет, придумать её нельзя, и настройки прав по отдельным экранам тоже нет — сотрудник либо попадает на кассу, либо нет. Касса, работающая без сайта, устроена иначе и позволяет заводить роли; см. «Роли на кассе без сайта»."
             ]
           },
           {
@@ -3850,6 +3910,36 @@ const MANUAL = {
               "Человек может удалить свою учётную запись сам, со страницы своей учётной записи в магазине. Это удаляет его профиль и корзину, но не продажи, которые он оформил: они остаются в ваших записях, как и должно быть.",
               "Продажи, оформленные им до ухода, сохраняют код его учётной записи. Это сделано намеренно: именно так вы и через месяцы сможете понять, кто принял тот или иной платёж.",
               "Свою собственную роль изменить нельзя, поэтому случайно лишить себя доступа во время наведения порядка невозможно."
+            ]
+          },
+          {
+            "id": "roles-on-this-till",
+            "title": "Роли на кассе без сайта",
+            "audience": "owner",
+            "route": "/pos/app-admin",
+            "summary": "Касса, работающая без сайта, хранит собственный список ролей прямо на этом компьютере. На странице «Администратор приложения» вы решаете, какие из семи встроенных ролей нужны магазину, и можете завести свои. Открыть её может только учётная запись поддержки, созданная при вводе кассы в работу, а на кассе с сайтом этой страницы нет вовсе.",
+            "steps": [
+              "Войдите под учётной записью поддержки — это первая запись, созданная при настройке кассы. Пункт «Администратор приложения» появляется в шапке только у неё. На кассе, связанной с сайтом, этот адрес просто возвращает вас к продаже.",
+              "В разделе встроенных ролей семь строк, от наименьшего доступа: Кассир, Кассир (дубль), Кладовщик, Бухгалтер, Менеджер, Администратор и Поддержка. В каждой строке перечислено, что эта роль открывает.",
+              "Отметьте роль, чтобы её использовать, снимите отметку, чтобы вывести из обращения. Отключённая роль перестаёт предлагаться при добавлении и изменении сотрудника, а те, у кого она осталась, перестают открывать что-либо — сначала переведите этих людей на другую роль.",
+              "Чтобы завести свою роль, нажмите «Добавить свою роль», дайте ей название, отметьте разделы, которые она открывает, и нажмите «Сохранить роль».",
+              "«Изменить» открывает свою роль заново, «Удалить» убирает её. Удаление происходит сразу, без подтверждения."
+            ],
+            "fields": [
+              {
+                "name": "Доступ",
+                "what": "Шесть флажков у своей роли: Касса, Склад, Бэк-офис, Отчёты, Настройки и Поддержка. Касса — сама продажа, Бэк-офис — локальная админка по адресу /pos/admin, Поддержка — эта страница."
+              },
+              {
+                "name": "Название роли",
+                "what": "То, как роль называется при назначении сотруднику. Произвольный текст и единственное, по чему её узнать на экране сотрудников."
+              }
+            ],
+            "notes": [
+              "Поддержку нельзя отключить. Это единственная роль, открывающая эту страницу, а на кассе без сайта вернуть доступ откуда-то ещё невозможно — если бы её можно было снять, один щелчок навсегда лишил бы вас кассы.",
+              "«Кассир (дубль)» открывает ровно то же, что и Кассир. Он оставлен только для тех, кому уже выдан. Новым кассирам давайте обычного Кассира.",
+              "Эти роли живут только на этом компьютере. У другой кассы, даже в том же магазине, свой отдельный список, и ничего отсюда не появляется в онлайн-панели.",
+              "Список ролей — часть собственных записей магазина, а не кэш. Его стирает только сброс к заводским настройкам, и копии больше нигде нет."
             ]
           }
         ]
@@ -4464,7 +4554,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v11.0.1"
+      "version": "v12.0.1"
     },
     "parts": [
       {
@@ -5022,7 +5112,7 @@ const MANUAL = {
               "Personel hesapları kasaya yalnızca mağazada satış noktası (point-of-sale) özelliği açıksa girebilir. Kapalıysa kasa, personel dahil herkese \"Register is switched off\" yazısını gösterir.",
               "Kasada reddedilen bir kasiyere kendi hesap kimliği ve bir Kimliği kopyala (Copy id) düğmesi gösterilir; böylece kimliği size gönderir, siz de kişiyi Kullanıcılar ekranında bulabilirsiniz.",
               "Birinin rolünü değiştirmek, o kişinin cihazında her zaman anında etkili olmaz. Oturum açma jetonu eski rolü yaklaşık bir saate kadar taşıyabilir. Birinin yetkisini düşürdükten sonra değişikliğin hemen geçerli olmasını istiyorsanız, oturumu kapatıp yeniden açmasını isteyin.",
-              "Dördüncü bir rol yoktur ve yeni bir rol oluşturulamaz. Ekran bazında yetki düzenleyici de yoktur; Personel ya kasaya erişir ya erişmez, yönetim panelinin hiçbir bölümü Personele açılamaz."
+              "Web sitesi olan bir mağazada bu üçü sistemin tamamıdır: dördüncü rol yoktur, yenisi oluşturulamaz ve ekran bazında yetki düzenleyici de yoktur; Personel ya kasaya erişir ya erişmez. Web sitesi olmadan çalışan bir kasa ise farklıdır ve rol tanımlamanıza izin verir; \"Web sitesi olmayan kasada roller\" bölümüne bakın."
             ]
           },
           {
@@ -5109,6 +5199,36 @@ const MANUAL = {
               "Bir kişi kendi hesabını mağazadaki hesap sayfasından silebilir. Bu, profilini ve sepetini kaldırır ama kaydettiği satışları değil: onlar, olması gerektiği gibi kayıtlarınızda kalır.",
               "Ayrılmadan önce kaydettiği satışlar onun hesap kodunu taşımayı sürdürür. Bu bilerek yapılmıştır: aylar sonra hangi ödemeyi kimin aldığını hâlâ böyle ayırt edebilirsiniz.",
               "Kendi rolünüzü değiştiremezsiniz; bu yüzden ortalığı toplarken yanlışlıkla kendi erişiminizi kaldıramazsınız."
+            ]
+          },
+          {
+            "id": "roles-on-this-till",
+            "title": "Web sitesi olmayan kasada roller",
+            "audience": "owner",
+            "route": "/pos/app-admin",
+            "summary": "Arkasında web sitesi olmadan çalışan bir kasa, kendi rol listesini bu bilgisayarda tutar. Uygulama yöneticisi sayfası, mağazanın yerleşik yedi rolden hangilerini kullanacağına karar verdiğiniz ve kendi rollerinizi yazdığınız yerdir. Sayfayı yalnızca kasa devreye alınırken oluşturulan Destek hesabı açabilir; web sitesine bağlı bir kasada bu sayfa hiç yoktur.",
+            "steps": [
+              "Destek hesabıyla oturum açın — kasa kurulurken oluşturulan ilk hesap. Uygulama yöneticisi başlıkta yalnızca o hesap için görünür. Web sitesine bağlı bir kasada bu adres sizi sessizce satış ekranına geri götürür.",
+              "Önceden tanımlı roller bölümünde, en az yetkiden başlayarak yedi satır vardır: Kasiyer, Kasiyer (kopya), Depocu, Muhasebeci, Müdür, Yönetici ve Destek. Her satır o rolün açtığı bölümleri listeler.",
+              "Kullanmak için rolü işaretleyin, kaldırmak için işareti kaldırın. Kaldırılan rol, kişi eklerken veya düzenlerken artık önerilmez; o rolü taşıyanlar da hiçbir şeyi açamaz — önce bu kişileri başka bir role geçirin.",
+              "Kendi rolünüzü yazmak için Özel rol ekle düğmesine basın, bir ad verin, açabileceği bölümleri işaretleyin ve Rolü kaydet düğmesine basın.",
+              "Düzenle özel rolü yeniden açar, Sil ise kaldırır. Silme onay sormadan hemen uygulanır."
+            ],
+            "fields": [
+              {
+                "name": "Erişebilecekleri",
+                "what": "Özel bir rolde altı kutu: Kasa, Depo, Arka ofis, Raporlar, Ayarlar ve Destek. Kasa satışın kendisi, Arka ofis /pos/admin adresindeki yerel yönetim, Destek ise bu sayfadır."
+              },
+              {
+                "name": "Rol adı",
+                "what": "Rolü birine verirken görünen ad. Serbest metindir ve Kişiler ekranında rolü tanıtan tek şeydir."
+              }
+            ],
+            "notes": [
+              "Destek kapatılamaz. Bu sayfayı açan tek roldür ve web sitesi olmayan bir kasada erişimi başka bir yerden geri vermenin yolu yoktur — kaldırılabilseydi, tek bir tık kasaya erişiminizi kalıcı olarak bitirirdi.",
+              "\"Kasiyer (kopya)\" tam olarak Kasiyerin açtığını açar. Yalnızca hâlihazırda bu rol verilmiş kişiler çalışmaya devam etsin diye durur. Yeni kasiyerlere düz Kasiyer verin.",
+              "Bu roller yalnızca bu bilgisayarda yaşar. Aynı mağazadaki başka bir kasanın kendi ayrı listesi olur ve buradaki hiçbir şey çevrimiçi yönetim panelinde görünmez.",
+              "Rol listesi mağazanın kendi kayıtlarının parçasıdır, önbellek değil. Yalnızca fabrika ayarlarına sıfırlama siler ve başka hiçbir yerde kopyası yoktur."
             ]
           }
         ]

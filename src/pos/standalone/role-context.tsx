@@ -89,3 +89,15 @@ export function usePosRoles(): PosRoleContextValue {
   if (!ctx) throw new Error('usePosRoles must be used inside PosRoleProvider');
   return ctx;
 }
+
+/**
+ * The same value, or null when no provider is above.
+ *
+ * `PosGuard` is exported on its own and a consumer may well have mounted it
+ * without the provider, so the gate on the register cannot be written against a
+ * hook that throws. Callers fall back to the static `canAccess`, which is what
+ * the guard did everywhere before role definitions existed.
+ */
+export function usePosRolesOptional(): PosRoleContextValue | null {
+  return useContext(PosRoleContext);
+}

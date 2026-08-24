@@ -14,7 +14,19 @@ import {
 } from '../types';
 import { actions, field, fieldLabel, muted, section } from './panel-styles';
 
-const PREDEFINED_IDS: PosLocalRole[] = ['staff', 'cashier', 'storekeeper', 'manager', 'accountant', 'admin', 'support'];
+/**
+ * Roles that cannot be switched off.
+ *
+ * `superadmin` is the only role carrying the `support` area, and that area is
+ * the only key to this page. Unticking it would take the register, the store,
+ * the back office and this screen away from the account that did it, and a
+ * standalone till has no server-side override to hand it back — a factory reset
+ * would be the only way out.
+ */
+const LOCKED_IDS: readonly PosLocalRole[] = ['superadmin'];
+
+/** Roles kept only so accounts already holding them keep working. */
+const DUPLICATE_IDS: readonly PosLocalRole[] = ['cashier'];
 
 export function PosAppAdminPage() {
   const t = useT();
@@ -23,6 +35,7 @@ export function PosAppAdminPage() {
   const [editing, setEditing] = useState<RoleDefinition | null>(null);
 
   const toggleBuiltIn = (id: PosLocalRole) => {
+    if (LOCKED_IDS.includes(id)) return;
     const next = roles.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r));
     void saveRoles(next).then(() => toast({ title: t('pos.settings.saved') }));
   };
@@ -54,8 +67,18 @@ export function PosAppAdminPage() {
     void saveRoles(next).then(() => toast({ title: t('pos.appAdmin.roleDeleted') }));
   };
 
-  const predefined = roles.filter((r) => PREDEFINED_IDS.includes(r.id));
-  const custom = roles.filter((r) => !r.builtIn && !PREDEFINED_IDS.includes(r.id));
+  /**
+   * `t` echoes an unknown key straight back, which would paint
+   * `pos.appAdmin.role.x` on the page. A built-in that outruns the message
+   * table falls back to its own English name instead.
+   */
+  const roleLabel = (role: RoleDefinition) => {
+    const key = `pos.appAdmin.role.${role.id}`;
+    const translated = t(key);
+    return translated === key ? role.name : translated;
+  };
+
+  const custom = roles.filter((r) => !r.builtIn);
 
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
@@ -71,25 +94,31 @@ export function PosAppAdminPage() {
           <section style={section}>
             <span style={fieldLabel}>{t('pos.appAdmin.predefinedTitle')}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {PREDEFINED_IDS.map((id) => {
-                const role = predefined.find((r) => r.id === id) ?? {
-                  ...BUILTIN_ROLES.find((r) => r.id === id)!,
-                  id,
-                  name: t(`pos.appAdmin.role.${id}`),
-                  enabled: false,
-                };
+              {/*
+                Driven by BUILTIN_ROLES rather than a second list of ids kept
+                beside it. Those two drifting apart is what made this page throw
+                on every render from the day it shipped.
+              */}
+              {BUILTIN_ROLES.map((builtIn) => {
+                const role = roles.find((r) => r.id === builtIn.id) ?? builtIn;
+                const locked = LOCKED_IDS.includes(role.id);
                 return (
-                  <label key={id} style={roleRow}>
+                  <label key={builtIn.id} style={roleRow}>
                     <input
                       type="checkbox"
                       checked={role.enabled}
-                      onChange={() => toggleBuiltIn(id)}
+                      disabled={locked}
+                      onChange={() => toggleBuiltIn(role.id)}
                     />
                     <span style={{ flex: 1 }}>
-                      <strong>{role.name}</strong>
+                      <strong>{roleLabel(role)}</strong>
                       <div style={{ fontSize: 12, color: '#666' }}>
-                        {role.areas.map((a) => t(`pos.appAdmin.area.${a}`)).join(' · ')}
+                        {(role.areas ?? []).map((a) => t(`pos.appAdmin.area.${a}`)).join(' · ')}
                       </div>
+                      {locked ? <div style={muted}>{t('pos.appAdmin.roleLocked')}</div> : null}
+                      {DUPLICATE_IDS.includes(role.id) ? (
+                        <div style={muted}>{t('pos.appAdmin.roleDuplicate')}</div>
+                      ) : null}
                     </span>
                     <span style={{ fontSize: 12, color: role.enabled ? '#15803d' : '#666' }}>
                       {role.enabled ? t('pos.appAdmin.enabled') : t('pos.appAdmin.disabled')}
@@ -155,7 +184,7 @@ export function PosAppAdminPage() {
                     <span style={{ flex: 1 }}>
                       <strong>{role.name}</strong>
                       <div style={{ fontSize: 12, color: '#666' }}>
-                        {role.areas.map((a) => t(`pos.appAdmin.area.${a}`)).join(' · ')}
+                        {(role.areas ?? []).map((a) => t(`pos.appAdmin.area.${a}`)).join(' · ')}
                       </div>
                     </span>
                     <div style={{ display: 'flex', gap: 6 }}>
