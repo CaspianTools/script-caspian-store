@@ -5,11 +5,15 @@ import { useT } from '../../../i18n/locale-context';
 import { Button } from '../../../ui/button';
 import { Select } from '../../../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
+import { ReceiptIcon } from '../../../ui/icons';
 import { toCsv, type CsvCell } from '../../../utils/csv';
 import { listLocalSales, readLocalShopSettings } from '../local-db';
 import { saveTextFile } from '../local-backup';
+import { usePosLocalSession } from '../local-session-context';
+import { usePosRoles } from '../role-context';
 import type { LocalSale } from '../types';
 import { actions, fieldLabel, muted, row, section } from './panel-styles';
+import { PosAdminPage } from './pos-admin-page';
 
 type Range = 'today' | 'week' | 'month' | 'all';
 
@@ -31,6 +35,9 @@ function startOf(range: Range): number {
  */
 export function LocalSalesPanel() {
   const t = useT();
+  const { can } = usePosRoles();
+  const session = usePosLocalSession();
+  const mayExport = can(session.user?.role, 'sales.export');
   const [sales, setSales] = useState<LocalSale[] | null>(null);
   const [currency, setCurrency] = useState('USD');
   const [range, setRange] = useState<Range>('today');
@@ -102,11 +109,13 @@ export function LocalSalesPanel() {
             <div style={{ fontSize: 22, fontWeight: 700 }}>{format(takings)}</div>
           </div>
         </div>
-        <div style={actions}>
-          <Button variant="outline" onClick={exportCsv} disabled={!visible.length}>
-            {t('pos.admin.sales.export')}
-          </Button>
-        </div>
+        {mayExport ? (
+          <div style={actions}>
+            <Button variant="outline" onClick={exportCsv} disabled={!visible.length}>
+              {t('pos.admin.sales.export')}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <section style={section}>
@@ -146,5 +155,19 @@ export function LocalSalesPanel() {
         ) : null}
       </section>
     </div>
+  );
+}
+
+/** The same panel as the screen it now has to itself. */
+export function LocalSalesPage() {
+  const t = useT();
+  return (
+    <PosAdminPage
+      icon={<ReceiptIcon size={19} />}
+      title={t('pos.admin.section.sales')}
+      subtitle={t('pos.sales.subtitle')}
+    >
+      <LocalSalesPanel />
+    </PosAdminPage>
   );
 }

@@ -11,7 +11,7 @@ import { POS_ROLES, type UserRole } from '../types';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { PosLocalSignIn } from './standalone/pos-local-sign-in';
 import { usePosRolesOptional } from './standalone/role-context';
-import { canAccess as canAccessBuiltIn } from './standalone/types';
+import { can as canBuiltIn } from './standalone/types';
 
 export interface PosGuardProps {
   children: ReactNode;
@@ -76,8 +76,8 @@ function PosGuardBody({ children, signInHref = '/login', fallback }: PosGuardPro
     if (local.loading || roles?.loading) return <PosLoading />;
     if (!local.user) return <PosLocalSignIn />;
     const permitted = roles
-      ? roles.canAccess(local.user.role, 'register')
-      : canAccessBuiltIn(local.user.role, 'register');
+      ? roles.can(local.user.role, 'register')
+      : canBuiltIn(local.user.role, 'register');
     if (!permitted) {
       return (
         <PosNotice title={t('pos.local.noAccessTitle')} body={t('pos.local.noAccessBody')} />

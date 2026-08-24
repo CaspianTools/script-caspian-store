@@ -58,10 +58,8 @@ export {
   type PricedSale,
   type PricedLineInput,
 } from './standalone/price-local-sale';
-export {
-  PosLocalAdminPage,
-  type PosLocalAdminPageProps,
-} from './standalone/admin/pos-local-admin-page';
+export { LocalSalesPanel, LocalSalesPage } from './standalone/admin/local-sales-panel';
+export { LocalPeoplePanel, LocalPeoplePage } from './standalone/admin/local-people-panel';
 export {
   LOCAL_PRODUCT_COLUMNS,
   localProductsToCsv,
@@ -82,11 +80,19 @@ export {
   type RestoreResult,
 } from './standalone/local-backup';
 export {
+  can,
   canAccess,
+  capabilitiesFromAreas,
   POS_LOCAL_ROLES,
+  POS_LOCAL_AREAS,
+  POS_LOCAL_CAPABILITIES,
+  CAPABILITY_GROUPS,
+  BUILTIN_ROLES,
   DEFAULT_LOCAL_SHOP_SETTINGS,
   type PosLocalRole,
   type PosLocalArea,
+  type PosLocalCapability,
+  type RoleDefinition,
   type LocalUser,
   type LocalProduct,
   type LocalSale,

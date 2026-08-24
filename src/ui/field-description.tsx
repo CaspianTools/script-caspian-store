@@ -18,7 +18,7 @@ export function FieldDescription({ children, style, className }: FieldDescriptio
     <p
       className={className}
       style={{
-        color: '#666',
+        color: 'var(--cpos-fg-muted, #666)',
         fontSize: 13,
         margin: '4px 0 0',
         lineHeight: 1.5,

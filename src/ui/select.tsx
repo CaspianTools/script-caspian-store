@@ -20,11 +20,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       className={cn('caspian-select', className)}
       style={{
         padding: '8px 28px 8px 12px',
-        border: '1px solid rgba(0,0,0,0.15)',
+        border: '1px solid var(--cpos-border-strong, rgba(0,0,0,0.15))',
         borderRadius: 'var(--caspian-radius, 6px)',
         fontSize: 14,
-        background: '#fff',
-        color: 'inherit',
+        background: 'var(--cpos-surface, #fff)',
+        color: 'var(--cpos-fg, inherit)',
         cursor: 'pointer',
         ...style,
       }}

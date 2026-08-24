@@ -1312,6 +1312,13 @@ export const POS_STYLESHEET = String.raw`
 }
 .cpos-jump__item:hover { background: var(--cpos-surface-3); color: var(--cpos-fg); }
 .cpos-jump__item:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+/* App Admin switches panes with this list rather than scrolling to them, so
+   unlike the settings jump list it has a current item to mark. */
+.cpos-jump__item--on,
+.cpos-jump__item--on:hover {
+  background: var(--cpos-brand-soft);
+  color: var(--cpos-brand-soft-fg);
+}
 .cpos-jump__icon { display: inline-grid; place-items: center; width: 18px; flex-shrink: 0; }
 
 /* A row of mutually exclusive picks -- appearance today, anything similar later. */

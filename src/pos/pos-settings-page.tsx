@@ -9,12 +9,14 @@ import { FieldDescription } from '../ui/field-description';
 import { cn } from '../utils/cn';
 import {
   GlobeIcon,
-  LockIcon,
+  InboxIcon,
   MonitorIcon,
+  LockIcon,
   MoonIcon,
   PaletteIcon,
   ScanIcon,
   SlidersIcon,
+  StoreIcon,
   SunIcon,
 } from '../ui/icons';
 import { getPosDeviceId, getPosDeviceLabel, setPosDeviceLabel } from './pos-device';
@@ -26,9 +28,13 @@ import {
 } from './pos-preferences';
 import type { PosStorageMode } from './storage/types';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
+import { usePosChrome } from './theme/pos-chrome-context';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseSection } from './license/pos-license-section';
-import { usePosChrome } from './theme/pos-chrome-context';
+import { usePosLocalSession } from './standalone/local-session-context';
+import { usePosRoles } from './standalone/role-context';
+import { LocalShopPanel } from './standalone/admin/local-shop-panel';
+import { LocalBackupPanel } from './standalone/admin/local-backup-panel';
 
 export interface PosSettingsPageProps {
   className?: string;
@@ -40,22 +46,15 @@ const POS_LOCALES = ['en', 'az'] as const;
 interface SectionConfig {
   id: string;
   labelKey: string;
-  icon: 'appearance' | 'language' | 'device' | 'license' | 'storage' | 'scanner';
+  icon: 'appearance' | 'language' | 'device' | 'shop' | 'backup' | 'license' | 'storage' | 'scanner';
 }
-
-const SECTIONS: SectionConfig[] = [
-  { id: 'appearance', labelKey: 'pos.theme.title', icon: 'appearance' },
-  { id: 'language', labelKey: 'pos.settings.section.language', icon: 'language' },
-  { id: 'device', labelKey: 'pos.settings.section.device', icon: 'device' },
-  { id: 'license', labelKey: 'pos.settings.section.license', icon: 'license' },
-  { id: 'storage', labelKey: 'pos.settings.section.storage', icon: 'storage' },
-  { id: 'scanner', labelKey: 'pos.settings.section.scanner', icon: 'scanner' },
-];
 
 const SECTION_ICON: Record<SectionConfig['icon'], (size: number) => React.ReactNode> = {
   appearance: (size) => <PaletteIcon size={size} />,
   language: (size) => <GlobeIcon size={size} />,
   device: (size) => <MonitorIcon size={size} />,
+  shop: (size) => <StoreIcon size={size} />,
+  backup: (size) => <InboxIcon size={size} />,
   license: (size) => <LockIcon size={size} />,
   storage: (size) => <SlidersIcon size={size} />,
   scanner: (size) => <ScanIcon size={size} />,
@@ -81,9 +80,40 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const { toast } = useToast();
   const { locale, setLocale, pinned } = useLocaleControls();
   const firebase = useCaspianFirebaseOptional();
-  const functions = firebase?.functions ?? null;
-  const license = usePosLicense(functions);
   const { themeMode, setThemeMode } = usePosChrome();
+  const local = usePosLocalSession();
+  const { can } = usePosRoles();
+
+  // The shop's own details and its backup used to be two tabs of a back office
+  // that no longer exists. They are standalone-only -- they read the till's own
+  // disk -- while this page also serves a cloud register, hence both gates.
+  const showShop = local.standalone && can(local.user?.role, 'settings.shop');
+  const showBackup = local.standalone && can(local.user?.role, 'settings.backup');
+
+  // A standalone till activates its licence from /pos/app-admin. A cloud till
+  // has no app admin to route to, so the key keeps the home it has always had
+  // here -- otherwise moving the pane would leave a cloud shop that bought a
+  // licence with nowhere at all to enter it.
+  const license = usePosLicense(firebase?.functions ?? null);
+  const showLicense = !local.standalone && license.configured;
+
+  const sections = useMemo<SectionConfig[]>(() => {
+    const list: SectionConfig[] = [
+      { id: 'appearance', labelKey: 'pos.theme.title', icon: 'appearance' },
+      { id: 'language', labelKey: 'pos.settings.section.language', icon: 'language' },
+      { id: 'device', labelKey: 'pos.settings.section.device', icon: 'device' },
+    ];
+    if (showShop) list.push({ id: 'shop', labelKey: 'pos.admin.section.shop', icon: 'shop' });
+    if (showLicense) {
+      list.push({ id: 'license', labelKey: 'pos.appAdmin.section.licence', icon: 'license' });
+    }
+    if (showBackup) {
+      list.push({ id: 'backup', labelKey: 'pos.admin.section.backup', icon: 'backup' });
+    }
+    list.push({ id: 'storage', labelKey: 'pos.settings.section.storage', icon: 'storage' });
+    list.push({ id: 'scanner', labelKey: 'pos.settings.section.scanner', icon: 'scanner' });
+    return list;
+  }, [showShop, showBackup, showLicense]);
 
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
@@ -131,7 +161,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
 
       <div className="cpos-settings__grid">
         <nav className="cpos-jump" aria-label={t('pos.settings.title')}>
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <button
               key={s.id}
               type="button"
@@ -200,9 +230,23 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
             </label>
           </section>
 
-          <div id="pos-settings-license">
-            <PosLicenseSection license={license} />
-          </div>
+          {showShop ? (
+            <div id="pos-settings-shop">
+              <LocalShopPanel />
+            </div>
+          ) : null}
+
+          {showBackup ? (
+            <div id="pos-settings-backup">
+              <LocalBackupPanel />
+            </div>
+          ) : null}
+
+          {showLicense ? (
+            <div id="pos-settings-license">
+              <PosLicenseSection license={license} />
+            </div>
+          ) : null}
 
           <section id="pos-settings-storage" className="cpos-section">
             <h2 className="cpos-section__title">{t('pos.storage.title')}</h2>

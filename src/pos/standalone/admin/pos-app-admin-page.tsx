@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { ShieldIcon } from '../../../ui/icons';
+import { LockIcon, ShieldIcon } from '../../../ui/icons';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { useToast } from '../../../ui/toast';
+import { cn } from '../../../utils/cn';
+import { useCaspianNavigation, useCaspianFirebaseOptional } from '../../../provider/caspian-store-provider';
 import { usePosRoles } from '../role-context';
+import { usePosLicense } from '../../license/use-pos-license';
+import { PosLicenseSection } from '../../license/pos-license-section';
 import {
   BUILTIN_ROLES,
-  POS_LOCAL_AREAS,
+  CAPABILITY_GROUPS,
+  type PosLocalCapability,
   type PosLocalRole,
   type RoleDefinition,
 } from '../types';
@@ -18,9 +23,9 @@ import { actions, field, fieldLabel, muted, section } from './panel-styles';
 /**
  * Roles that cannot be switched off.
  *
- * `superadmin` is the only role carrying the `support` area, and that area is
+ * `superadmin` is the only role carrying `appAdmin.view`, and that capability is
  * the only key to this page. Unticking it would take the register, the store,
- * the back office and this screen away from the account that did it, and a
+ * the shop screens and this one away from the account that did it, and a
  * standalone till has no server-side override to hand it back — a factory reset
  * would be the only way out.
  */
@@ -29,7 +34,81 @@ const LOCKED_IDS: readonly PosLocalRole[] = ['superadmin'];
 /** Roles kept only so accounts already holding them keep working. */
 const DUPLICATE_IDS: readonly PosLocalRole[] = ['cashier'];
 
+type Section = 'roles' | 'licence';
+
+const NAV: { value: Section; labelKey: string; icon: (size: number) => React.ReactNode }[] = [
+  { value: 'roles', labelKey: 'pos.appAdmin.section.roles', icon: (s) => <ShieldIcon size={s} /> },
+  { value: 'licence', labelKey: 'pos.appAdmin.section.licence', icon: (s) => <LockIcon size={s} /> },
+];
+
 export function PosAppAdminPage() {
+  const t = useT();
+  const { searchParams, replace } = useCaspianNavigation();
+
+  const param = searchParams?.get('section') as Section | null;
+  const current: Section = NAV.some((n) => n.value === param) ? param! : 'roles';
+
+  return (
+    <div className="cpos-page">
+      <header className="cpos-pagehead">
+        <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
+          <ShieldIcon size={19} />
+        </span>
+        <span className="cpos-pagehead__text">
+          <h1 className="cpos-pagehead__h">{t('pos.appAdmin.title')}</h1>
+          <p className="cpos-pagehead__sub">{t('pos.appAdmin.subtitle')}</p>
+        </span>
+      </header>
+
+      <div className="cpos-settings__grid">
+        <nav className="cpos-jump" aria-label={t('pos.appAdmin.title')}>
+          {NAV.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              className={cn('cpos-jump__item', current === item.value && 'cpos-jump__item--on')}
+              aria-current={current === item.value ? 'page' : undefined}
+              onClick={() => replace(`/pos/app-admin?section=${item.value}`)}
+            >
+              <span className="cpos-jump__icon">{item.icon(17)}</span>
+              <span>{t(item.labelKey)}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="cpos-settings__body cpos-fadein" key={current}>
+          {current === 'roles' ? <RolesSection /> : <LicenceSection />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The licence key this till is running under.
+ *
+ * `PosLicenseSection` renders nothing at all when the build carries no vendor
+ * public key, which is every stock build. An empty pane would read as a screen
+ * that failed to load, so the parked state says so in words instead.
+ */
+function LicenceSection() {
+  const t = useT();
+  const functions = useCaspianFirebaseOptional()?.functions ?? null;
+  const license = usePosLicense(functions);
+
+  if (!license.configured) {
+    return (
+      <section style={section}>
+        <span style={fieldLabel}>{t('pos.appAdmin.section.licence')}</span>
+        <div style={muted}>{t('pos.appAdmin.licence.parked')}</div>
+      </section>
+    );
+  }
+
+  return <PosLicenseSection license={license} />;
+}
+
+function RolesSection() {
   const t = useT();
   const { toast } = useToast();
   const { roles, saveRoles, loading } = usePosRoles();
@@ -46,7 +125,7 @@ export function PosAppAdminPage() {
       id: `custom-${Date.now()}`,
       name: '',
       enabled: true,
-      areas: ['register'],
+      capabilities: ['register', 'settings.view'],
       builtIn: false,
     });
   };
@@ -79,140 +158,160 @@ export function PosAppAdminPage() {
     return translated === key ? role.name : translated;
   };
 
+  const capabilityLabel = (capability: PosLocalCapability) => {
+    const key = `pos.appAdmin.capability.${capability}`;
+    const translated = t(key);
+    return translated === key ? capability : translated;
+  };
+
+  const summarise = (role: RoleDefinition) =>
+    (role.capabilities ?? []).map(capabilityLabel).join(' · ');
+
+  const toggleCapability = (capability: PosLocalCapability, on: boolean) => {
+    if (!editing) return;
+    const next = on
+      ? [...editing.capabilities, capability]
+      : editing.capabilities.filter((c) => c !== capability);
+    setEditing({ ...editing, capabilities: next });
+  };
+
   const custom = roles.filter((r) => !r.builtIn);
 
+  if (loading) return <div style={muted}>{t('common.loading')}</div>;
+
   return (
-    <div className="cpos-page">
-      <header className="cpos-pagehead">
-        <span className="cpos-cardhead__icon cpos-cardhead__icon--brand">
-          <ShieldIcon size={19} />
-        </span>
-        <span className="cpos-pagehead__text">
-          <h1 className="cpos-pagehead__h">{t('pos.appAdmin.title')}</h1>
-          <p className="cpos-pagehead__sub">{t('pos.appAdmin.subtitle')}</p>
-        </span>
-      </header>
+    <>
+      <section style={section}>
+        <span style={fieldLabel}>{t('pos.appAdmin.predefinedTitle')}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/*
+            Driven by BUILTIN_ROLES rather than a second list of ids kept beside
+            it. Those two drifting apart is what made this page throw on every
+            render from the day it shipped.
+          */}
+          {BUILTIN_ROLES.map((builtIn) => {
+            const role = roles.find((r) => r.id === builtIn.id) ?? builtIn;
+            const locked = LOCKED_IDS.includes(role.id);
+            return (
+              <label key={builtIn.id} style={roleRow}>
+                <input
+                  type="checkbox"
+                  checked={role.enabled}
+                  disabled={locked}
+                  onChange={() => toggleBuiltIn(role.id)}
+                />
+                <span style={{ flex: 1 }}>
+                  <strong>{roleLabel(role)}</strong>
+                  <div style={{ fontSize: 12, color: 'var(--cpos-fg-muted, #666)' }}>
+                    {summarise(role)}
+                  </div>
+                  {locked ? <div style={muted}>{t('pos.appAdmin.roleLocked')}</div> : null}
+                  {DUPLICATE_IDS.includes(role.id) ? (
+                    <div style={muted}>{t('pos.appAdmin.roleDuplicate')}</div>
+                  ) : null}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: role.enabled
+                      ? 'var(--cpos-success, #15803d)'
+                      : 'var(--cpos-fg-muted, #666)',
+                  }}
+                >
+                  {role.enabled ? t('pos.appAdmin.enabled') : t('pos.appAdmin.disabled')}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </section>
 
-      {loading ? (
-        <div style={muted}>{t('common.loading')}</div>
-      ) : (
-        <>
-          <section style={section}>
-            <span style={fieldLabel}>{t('pos.appAdmin.predefinedTitle')}</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <section style={section}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={fieldLabel}>{t('pos.appAdmin.customTitle')}</span>
+          <Button size="sm" onClick={startAdd}>
+            {t('pos.appAdmin.addRole')}
+          </Button>
+        </div>
+
+        {editing ? (
+          <div
+            style={{
+              border: '1px solid var(--cpos-border, rgba(0,0,0,0.1))',
+              borderRadius: 'var(--cpos-r-md, 12px)',
+              padding: 16,
+            }}
+          >
+            <div style={field}>
+              <label style={fieldLabel}>{t('pos.appAdmin.roleName')}</label>
+              <Input
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+              />
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <span style={fieldLabel}>{t('pos.appAdmin.capabilities')}</span>
               {/*
-                Driven by BUILTIN_ROLES rather than a second list of ids kept
-                beside it. Those two drifting apart is what made this page throw
-                on every render from the day it shipped.
+                Grouped the way the sidebar groups the screens these unlock, so
+                the two tiers of a page -- seeing it, and changing it -- sit next
+                to each other rather than twelve loose ticks in one run.
               */}
-              {BUILTIN_ROLES.map((builtIn) => {
-                const role = roles.find((r) => r.id === builtIn.id) ?? builtIn;
-                const locked = LOCKED_IDS.includes(role.id);
-                return (
-                  <label key={builtIn.id} style={roleRow}>
-                    <input
-                      type="checkbox"
-                      checked={role.enabled}
-                      disabled={locked}
-                      onChange={() => toggleBuiltIn(role.id)}
-                    />
-                    <span style={{ flex: 1 }}>
-                      <strong>{roleLabel(role)}</strong>
-                      <div style={{ fontSize: 12, color: '#666' }}>
-                        {(role.areas ?? []).map((a) => t(`pos.appAdmin.area.${a}`)).join(' · ')}
-                      </div>
-                      {locked ? <div style={muted}>{t('pos.appAdmin.roleLocked')}</div> : null}
-                      {DUPLICATE_IDS.includes(role.id) ? (
-                        <div style={muted}>{t('pos.appAdmin.roleDuplicate')}</div>
-                      ) : null}
-                    </span>
-                    <span style={{ fontSize: 12, color: role.enabled ? '#15803d' : '#666' }}>
-                      {role.enabled ? t('pos.appAdmin.enabled') : t('pos.appAdmin.disabled')}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </section>
-
-          <section style={section}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={fieldLabel}>{t('pos.appAdmin.customTitle')}</span>
-              <Button size="sm" onClick={startAdd}>
-                {t('pos.appAdmin.addRole')}
-              </Button>
-            </div>
-
-            {editing ? (
-              <div style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 16 }}>
-                <div style={field}>
-                  <label style={fieldLabel}>{t('pos.appAdmin.roleName')}</label>
-                  <Input
-                    value={editing.name}
-                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  />
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <span style={fieldLabel}>{t('pos.appAdmin.areas')}</span>
+              {CAPABILITY_GROUPS.map((group) => (
+                <div key={group.group} style={{ marginTop: 10 }}>
+                  <div style={muted}>{t(`pos.nav.group.${group.group}`)}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
-                    {POS_LOCAL_AREAS.map((area) => (
-                      <label key={area} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
+                    {group.capabilities.map((capability) => (
+                      <label
+                        key={capability}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}
+                      >
                         <input
                           type="checkbox"
-                          checked={editing.areas.includes(area)}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                              ? [...editing.areas, area]
-                              : editing.areas.filter((a) => a !== area);
-                            setEditing({ ...editing, areas: next });
-                          }}
+                          checked={editing.capabilities.includes(capability)}
+                          onChange={(e) => toggleCapability(capability, e.target.checked)}
                         />
-                        {t(`pos.appAdmin.area.${area}`)}
+                        {capabilityLabel(capability)}
                       </label>
                     ))}
                   </div>
                 </div>
-                <div style={{ ...actions, marginTop: 16 }}>
-                  <Button variant="outline" onClick={() => setEditing(null)}>
-                    {t('common.cancel')}
+              ))}
+            </div>
+            <div style={{ ...actions, marginTop: 16 }}>
+              <Button variant="outline" onClick={() => setEditing(null)}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={saveCustom}>{t('pos.appAdmin.saveRole')}</Button>
+            </div>
+          </div>
+        ) : null}
+
+        {custom.length === 0 ? (
+          <div style={muted}>{t('pos.appAdmin.noRoles')}</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+            {custom.map((role) => (
+              <div key={role.id} style={roleRow}>
+                <span style={{ flex: 1 }}>
+                  <strong>{role.name}</strong>
+                  <div style={{ fontSize: 12, color: 'var(--cpos-fg-muted, #666)' }}>
+                    {summarise(role)}
+                  </div>
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Button variant="outline" size="sm" onClick={() => setEditing(role)}>
+                    {t('common.edit')}
                   </Button>
-                  <Button onClick={saveCustom}>{t('pos.appAdmin.saveRole')}</Button>
+                  <Button variant="destructive" size="sm" onClick={() => removeCustom(role.id)}>
+                    {t('common.delete')}
+                  </Button>
                 </div>
               </div>
-            ) : null}
-
-            {custom.length === 0 ? (
-              <div style={muted}>{t('pos.appAdmin.noRoles')}</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                {custom.map((role) => (
-                  <div key={role.id} style={roleRow}>
-                    <span style={{ flex: 1 }}>
-                      <strong>{role.name}</strong>
-                      <div style={{ fontSize: 12, color: '#666' }}>
-                        {(role.areas ?? []).map((a) => t(`pos.appAdmin.area.${a}`)).join(' · ')}
-                      </div>
-                    </span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <Button variant="outline" size="sm" onClick={() => setEditing(role)}>
-                        {t('common.edit')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeCustom(role.id)}
-                      >
-                        {t('common.delete')}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -221,6 +320,6 @@ const roleRow: React.CSSProperties = {
   alignItems: 'center',
   gap: 12,
   padding: 12,
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 'var(--caspian-radius, 8px)',
+  border: '1px solid var(--cpos-border, rgba(0,0,0,0.08))',
+  borderRadius: 'var(--cpos-r-sm, 8px)',
 };

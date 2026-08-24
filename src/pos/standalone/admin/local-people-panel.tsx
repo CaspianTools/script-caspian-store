@@ -11,8 +11,10 @@ import { setLocalPassword, MIN_LOCAL_PASSWORD_LENGTH } from '../local-auth';
 import { deleteLocalUser, listLocalUsers, saveLocalUser } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
-import { canAccess, type LocalUser, type PosLocalRole } from '../types';
+import { can as canBuiltIn, type LocalUser, type PosLocalRole } from '../types';
 import { fieldLabel, muted, section } from './panel-styles';
+import { PosAdminPage } from './pos-admin-page';
+import { UsersIcon } from '../../../ui/icons';
 
 /**
  * Staff and their roles.
@@ -24,10 +26,14 @@ export function LocalPeoplePanel() {
   const t = useT();
   const { toast } = useToast();
   const session = usePosLocalSession();
-  const { enabledRoles } = usePosRoles();
+  const { enabledRoles, can } = usePosRoles();
   const [users, setUsers] = useState<LocalUser[] | null>(null);
 
-  const isSupport = canAccess(session.user?.role, 'support');
+  const isSupport = canBuiltIn(session.user?.role, 'appAdmin.view');
+  // Seeing the staff list and changing it are separate grants, so a role can be
+  // given the roster to check a rota against without also being handed the
+  // password resets.
+  const mayEdit = can(session.user?.role, 'people.edit');
   const assignable = isSupport
     ? enabledRoles
     : enabledRoles.filter((r) => r.id !== 'superadmin');
@@ -90,7 +96,7 @@ export function LocalPeoplePanel() {
             <TBody>
               {users.map((u) => {
                 const isSelf = u.id === session.user?.id;
-                const editable = isSupport || u.role !== 'superadmin';
+                const editable = mayEdit && (isSupport || u.role !== 'superadmin');
                 return (
                   <TR key={u.id}>
                     <TD style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
@@ -144,5 +150,19 @@ export function LocalPeoplePanel() {
         <FieldDescription>{t('pos.admin.people.deleteNote')}</FieldDescription>
       </section>
     </div>
+  );
+}
+
+/** The same panel as the screen it now has to itself. */
+export function LocalPeoplePage() {
+  const t = useT();
+  return (
+    <PosAdminPage
+      icon={<UsersIcon size={19} />}
+      title={t('pos.admin.section.people')}
+      subtitle={t('pos.people.subtitle')}
+    >
+      <LocalPeoplePanel />
+    </PosAdminPage>
   );
 }

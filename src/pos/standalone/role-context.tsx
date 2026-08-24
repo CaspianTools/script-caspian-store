@@ -10,13 +10,22 @@ import {
   type ReactNode,
 } from 'react';
 import { readLocalRoles, writeLocalRoles } from './local-db';
-import { BUILTIN_ROLES, type PosLocalArea, type PosLocalRole, type RoleDefinition } from './types';
+import {
+  BUILTIN_ROLES,
+  capabilitiesFromAreas,
+  type PosLocalArea,
+  type PosLocalCapability,
+  type PosLocalRole,
+  type RoleDefinition,
+} from './types';
 
 interface PosRoleContextValue {
   roles: RoleDefinition[];
   loading: boolean;
   refresh: () => Promise<void>;
   saveRoles: (roles: RoleDefinition[]) => Promise<void>;
+  can: (role: PosLocalRole | null | undefined, capability: PosLocalCapability) => boolean;
+  /** @deprecated Prefer `can`. Answers in terms of the old six areas. */
   canAccess: (role: PosLocalRole | null | undefined, area: PosLocalArea) => boolean;
   enabledRoles: RoleDefinition[];
 }
@@ -54,28 +63,56 @@ export function PosRoleProvider({ children }: { children: ReactNode }) {
     setRoles(merged);
   }, []);
 
-  const canAccess = useCallback(
-    (role: PosLocalRole | null | undefined, area: PosLocalArea): boolean => {
+  const can = useCallback(
+    (role: PosLocalRole | null | undefined, capability: PosLocalCapability): boolean => {
       if (!role) return false;
       const def = roles.find((r) => r.id === role);
       if (!def || !def.enabled) return false;
-      return def.areas.includes(area);
+      return def.capabilities.includes(capability);
     },
     [roles],
+  );
+
+  const canAccess = useCallback(
+    (role: PosLocalRole | null | undefined, area: PosLocalArea): boolean =>
+      can(role, AREA_VIEW_CAPABILITY[area]),
+    [can],
   );
 
   const enabledRoles = useMemo(() => roles.filter((r) => r.enabled), [roles]);
 
   const value = useMemo(
-    () => ({ roles, loading, refresh, saveRoles, canAccess, enabledRoles }),
-    [roles, loading, refresh, saveRoles, canAccess, enabledRoles],
+    () => ({ roles, loading, refresh, saveRoles, can, canAccess, enabledRoles }),
+    [roles, loading, refresh, saveRoles, can, canAccess, enabledRoles],
   );
 
   return <PosRoleContext.Provider value={value}>{children}</PosRoleContext.Provider>;
 }
 
+/** The capability that opens each old area, for the deprecated `canAccess`. */
+const AREA_VIEW_CAPABILITY: Record<PosLocalArea, PosLocalCapability> = {
+  register: 'register',
+  store: 'store.view',
+  admin: 'people.view',
+  reports: 'sales.view',
+  settings: 'settings.view',
+  support: 'appAdmin.view',
+};
+
+/**
+ * A definition written before capabilities existed, brought forward.
+ *
+ * Tills store their roles as one row on disk, so a shop that upgrades arrives
+ * here holding whatever it last saved. Upgrading on read (rather than asking
+ * the owner to re-tick twelve boxes) is what keeps the release a reinstall.
+ */
+function upgrade(role: RoleDefinition): RoleDefinition {
+  if (Array.isArray(role.capabilities)) return role;
+  return { ...role, capabilities: capabilitiesFromAreas(role.areas) };
+}
+
 function mergeWithBuiltins(stored: RoleDefinition[]): RoleDefinition[] {
-  const map = new Map(stored.map((r) => [r.id, r]));
+  const map = new Map(stored.map((r) => [r.id, upgrade(r)]));
   for (const builtIn of BUILTIN_ROLES) {
     if (!map.has(builtIn.id)) {
       map.set(builtIn.id, builtIn);

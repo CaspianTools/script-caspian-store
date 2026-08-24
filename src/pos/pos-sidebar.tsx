@@ -7,15 +7,14 @@ import { cn } from '../utils/cn';
 import {
   ChevronLeftIcon,
   InboxIcon,
-  LogOutIcon,
   PanelLeftIcon,
+  ReceiptIcon,
   ScanIcon,
   SettingsIcon,
   ShieldIcon,
   ShoppingCartIcon,
-  SlidersIcon,
   StoreIcon,
-  UserIcon,
+  UsersIcon,
 } from '../ui/icons';
 import { usePosChrome } from './theme/pos-chrome-context';
 
@@ -26,36 +25,36 @@ import { usePosChrome } from './theme/pos-chrome-context';
  * are rendered together in the order they were declared. `count` is the only
  * live number the menu shows — the outbox depth — because it is the one thing a
  * cashier needs to notice without opening the screen it belongs to.
+ *
+ * `bottom` is the exception: those items print no group label and sit in the
+ * foot, below the scroll, for the screens a shop opens once a year.
  */
 export interface PosNavItem {
   href: string;
   label: string;
-  icon: 'register' | 'queue' | 'store' | 'backoffice' | 'roles' | 'settings';
-  group: 'counter' | 'shop' | 'system';
+  icon: 'register' | 'queue' | 'store' | 'sales' | 'people' | 'roles' | 'settings';
+  group: 'counter' | 'shop' | 'system' | 'bottom';
   count?: number;
 }
 
 export interface PosSidebarProps {
   items: PosNavItem[];
   activeHref: string;
-  whoIsHere: string;
   roleLabel?: string;
-  initials: string;
-  avatarUrl?: string | null;
-  onExit: () => void;
 }
 
 const ICONS: Record<PosNavItem['icon'], (size: number) => ReactNode> = {
   register: (size) => <ScanIcon size={size} />,
   queue: (size) => <InboxIcon size={size} />,
   store: (size) => <StoreIcon size={size} />,
-  backoffice: (size) => <SlidersIcon size={size} />,
+  sales: (size) => <ReceiptIcon size={size} />,
+  people: (size) => <UsersIcon size={size} />,
   roles: (size) => <ShieldIcon size={size} />,
   settings: (size) => <SettingsIcon size={size} />,
 };
 
-const GROUP_ORDER: PosNavItem['group'][] = ['counter', 'shop', 'system'];
-const GROUP_LABEL: Record<PosNavItem['group'], string> = {
+const GROUP_ORDER = ['counter', 'shop', 'system'] as const;
+const GROUP_LABEL: Record<(typeof GROUP_ORDER)[number], string> = {
   counter: 'pos.nav.group.counter',
   shop: 'pos.nav.group.shop',
   system: 'pos.nav.group.system',
@@ -75,15 +74,7 @@ const GROUP_LABEL: Record<PosNavItem['group'], string> = {
  * Three states, and the screen picks between them rather than the operator:
  * a full column, an icon rail, and — under 1024px — an overlay drawer.
  */
-export function PosSidebar({
-  items,
-  activeHref,
-  whoIsHere,
-  roleLabel,
-  initials,
-  avatarUrl,
-  onExit,
-}: PosSidebarProps) {
+export function PosSidebar({ items, activeHref, roleLabel }: PosSidebarProps) {
   const Link = useCaspianLink();
   const t = useT();
   const { rail, toggleRail, compact, drawerOpen, closeDrawer } = usePosChrome();
@@ -97,6 +88,28 @@ export function PosSidebar({
     group,
     entries: items.filter((item) => item.group === group),
   })).filter((section) => section.entries.length > 0);
+
+  const pinned = items.filter((item) => item.group === 'bottom');
+
+  const renderItem = (item: PosNavItem) => {
+    const active = item.href === activeHref;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn('cpos-navitem', active && 'cpos-navitem--active')}
+        aria-current={active ? 'page' : undefined}
+        onClick={compact ? closeDrawer : undefined}
+      >
+        <span className="cpos-navitem__icon">{ICONS[item.icon](19)}</span>
+        {!asRail ? <span className="cpos-navitem__label">{item.label}</span> : null}
+        {item.count ? (
+          <span className="cpos-navitem__count">{item.count > 99 ? '99+' : item.count}</span>
+        ) : null}
+        {asRail ? <span className="cpos-navitem__tip">{item.label}</span> : null}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -133,49 +146,18 @@ export function PosSidebar({
           {groups.map((section) => (
             <Fragment key={section.group}>
               <div className="cpos-sidebar__grouplabel">{t(GROUP_LABEL[section.group])}</div>
-              {section.entries.map((item) => {
-                const active = item.href === activeHref;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn('cpos-navitem', active && 'cpos-navitem--active')}
-                    aria-current={active ? 'page' : undefined}
-                    onClick={compact ? closeDrawer : undefined}
-                  >
-                    <span className="cpos-navitem__icon">{ICONS[item.icon](19)}</span>
-                    {!asRail ? <span className="cpos-navitem__label">{item.label}</span> : null}
-                    {item.count ? (
-                      <span className="cpos-navitem__count">{item.count > 99 ? '99+' : item.count}</span>
-                    ) : null}
-                    {asRail ? <span className="cpos-navitem__tip">{item.label}</span> : null}
-                  </Link>
-                );
-              })}
+              {section.entries.map(renderItem)}
             </Fragment>
           ))}
         </nav>
 
+        {/*
+          Who is signed in, and the way out, both used to sit here. They are in
+          the top bar's avatar menu as well, and saying it twice cost the foot
+          the room the pinned items now use.
+        */}
         <div className="cpos-sidebar__foot">
-          <div className="cpos-sidebar__who">
-            <span className="cpos-avatar cpos-avatar--sm" aria-hidden="true">
-              {avatarUrl ? <img src={avatarUrl} alt="" /> : initials || <UserIcon size={14} />}
-            </span>
-            {!asRail ? (
-              <span className="cpos-sidebar__whotext">
-                <span className="cpos-sidebar__whoname">{whoIsHere || t('pos.nav.user')}</span>
-                {roleLabel ? <span className="cpos-sidebar__whorole">{roleLabel}</span> : null}
-              </span>
-            ) : null}
-          </div>
-
-          <button type="button" className="cpos-navitem" onClick={onExit}>
-            <span className="cpos-navitem__icon">
-              <LogOutIcon size={19} />
-            </span>
-            {!asRail ? <span className="cpos-navitem__label">{t('pos.nav.exit')}</span> : null}
-            {asRail ? <span className="cpos-navitem__tip">{t('pos.nav.exit')}</span> : null}
-          </button>
+          {pinned.map(renderItem)}
 
           {!compact ? (
             <button

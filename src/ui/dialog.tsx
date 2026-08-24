@@ -26,11 +26,13 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const panelStyle: React.CSSProperties = {
-  background: '#fff',
-  color: '#111',
+  background: 'var(--cpos-surface, #fff)',
+  color: 'var(--cpos-fg, #111)',
+  border: '1px solid var(--cpos-border, transparent)',
   borderRadius: 'var(--caspian-radius, 8px)',
   boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
   width: '100%',
+  boxSizing: 'border-box',
   maxHeight: '90vh',
   overflow: 'auto',
   padding: 24,
@@ -80,7 +82,7 @@ export function Dialog({
           <header style={{ marginBottom: 16 }}>
             {title && <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{title}</h2>}
             {description && (
-              <p style={{ color: '#666', fontSize: 14, marginTop: 4, marginBottom: 0 }}>
+              <p style={{ color: 'var(--cpos-fg-muted, #666)', fontSize: 14, marginTop: 4, marginBottom: 0 }}>
                 {description}
               </p>
             )}

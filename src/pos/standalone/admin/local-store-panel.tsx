@@ -7,6 +7,8 @@ import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import { deleteLocalProduct, listLocalProducts } from '../local-db';
+import { usePosLocalSession } from '../local-session-context';
+import { usePosRoles } from '../role-context';
 import type { LocalProduct } from '../types';
 import { LocalProductFormDialog } from './local-product-form-dialog';
 import { fieldLabel, muted, row, section } from './panel-styles';
@@ -19,6 +21,11 @@ import { fieldLabel, muted, row, section } from './panel-styles';
  */
 export function LocalStorePanel() {
   const t = useT();
+  const session = usePosLocalSession();
+  const { can } = usePosRoles();
+  // Seeing the shelf and restocking it are separate grants, so a role can be
+  // given the stock list to count against without also being able to rewrite it.
+  const mayEdit = can(session.user?.role, 'store.edit');
   const [products, setProducts] = useState<LocalProduct[] | null>(null);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -87,7 +94,7 @@ export function LocalStorePanel() {
               placeholder={t('pos.admin.products.search')}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Button onClick={startAdd}>{t('pos.store.addTitle')}</Button>
+            {mayEdit ? <Button onClick={startAdd}>{t('pos.store.addTitle')}</Button> : null}
           </div>
         </div>
 
@@ -118,12 +125,16 @@ export function LocalStorePanel() {
                   <TD>{totalStock(p)}</TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <Button variant="outline" onClick={() => startEdit(p)}>
-                        {t('common.edit')}
-                      </Button>
-                      <Button variant="destructive" onClick={() => void remove(p)}>
-                        {t('common.delete')}
-                      </Button>
+                      {mayEdit ? (
+                        <>
+                          <Button variant="outline" onClick={() => startEdit(p)}>
+                            {t('common.edit')}
+                          </Button>
+                          <Button variant="destructive" onClick={() => void remove(p)}>
+                            {t('common.delete')}
+                          </Button>
+                        </>
+                      ) : null}
                     </div>
                   </TD>
                 </TR>

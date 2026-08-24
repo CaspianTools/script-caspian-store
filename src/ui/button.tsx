@@ -32,7 +32,7 @@ function styleFor(variant: ButtonVariant, size: ButtonSize): React.CSSProperties
     outline: {
       background: 'transparent',
       color: 'inherit',
-      border: '1px solid rgba(0,0,0,0.15)',
+      border: '1px solid var(--cpos-border-strong, rgba(0,0,0,0.15))',
     },
     ghost: {
       background: 'transparent',

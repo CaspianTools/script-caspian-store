@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v12.0.0 firebase
-# v12.1.0 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v13.0.0 firebase
+# v13.0.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -60,7 +60,7 @@ Peer deps: React 18/19, `firebase` 10, 11, or 12. Next.js consumers: install `ne
 
 ```bash
 npm install react@^19 react-dom@^19 firebase@^12
-npm install github:CaspianTools/script-caspian-store#v12.0.0
+npm install github:CaspianTools/script-caspian-store#v13.0.0
 ```
 
 Newly scaffolded sites (`npm create caspian-store@latest`) get the new versions automatically.
@@ -391,8 +391,9 @@ interface language, and its scanner timing. One shop can run an English till at 
 another in a different language without touching the website.
 
 **Selling register licences (v10.1.0+, optional).** Only relevant if you *distribute* this product to
-other shops. An ordinary store ignores all of this — with no signing key configured, the licence
-surface does not render at all.
+other shops. An ordinary store ignores all of this. No stock build carries a signing key, so licensing
+is **parked**: the **Licence** pane at `/pos/app-admin` says so in as many words, the warning strip never
+appears, and a till with no key sells exactly as one with a key does.
 
 ```bash
 # Once, ever. Back the private key up somewhere that is not this repo.
@@ -406,9 +407,12 @@ node scripts/generate-pos-signing-key.mjs
 node scripts/mint-pos-license.mjs --name "Acme Shop" --expires 2027-01-01
 ```
 
-Send the printed `cslic1.…` key to the customer; they paste it at `/pos/settings`. Activation binds it
-to one computer, and `/admin/pos` lists what has been sold with a **Release** button for when a till is
-replaced or wiped — without that, a customer who paid you gets locked out by their own IT.
+Send the printed `cslic1.…` key to the customer. Where they paste it depends on the mode: a standalone
+till has it at `/pos/app-admin` → **Licence**, under a Support account, where it moved in v13.0.0; a cloud
+till has no app admin to route to, so it keeps the pane at `/pos/settings` where it has always been.
+Activation binds the key to one computer, and `/admin/pos` lists what has been sold with a **Release**
+button for when a till is replaced or wiped — without that, a customer who paid you gets locked out by
+their own IT.
 
 **Be clear-eyed about what this enforces.** This library is MIT-licensed with public source, so the
 browser-side check is a speed bump, not a lock — a fork can delete it. The half with teeth is
@@ -1242,27 +1246,74 @@ deploy and no Cloud Functions codebase.
 | --- | --- |
 | First run | Creates the **Support** account. Nothing else can happen until it exists. |
 | `/pos` | The register: scan, ticket, tender, receipt — the same screen as a cloud till. |
-| `/pos/admin` | The back office: items (with CSV import/export), sales and takings, people and roles, shop and receipt wording, backup and restore. |
-| `/pos/settings` | Per-device settings: language, register name, scanner speed. |
+| `/pos/store` | The catalogue: search the stock list, add, edit and delete items. |
+| `/pos/sales` | Sales and takings, with a CSV export. |
+| `/pos/people` | The staff list: add someone, set their role, reset a password, disable or delete an account. |
+| `/pos/settings` | Appearance, language, this register's name and its scanner timing — plus a **Shop** section (shop details and receipt wording) and a **Backup** section, each shown only to a role that holds it. |
+| `/pos/app-admin` | Two panes: **Roles**, the role editor, and **Licence**. Of the built-in roles only Support reaches it. |
 
-### The three tiers
+`/pos/store`, `/pos/sales`, `/pos/people` and `/pos/app-admin` exist only in this mode —
+on a cloud till those addresses fall back to `/pos`, because a mistyped URL should leave a
+cashier able to sell rather than sat on a screen with nothing behind it. `/pos` and
+`/pos/settings` render in both modes.
+
+`/pos/admin` was a back office holding four tabs until v13.0.0. Three of them became
+pages of their own and the fourth became two sections of the settings page, so the
+address is all that is left: it redirects to `/pos/sales`.
+
+### Roles and capabilities
 
 Commissioned by whoever installs the till, and separate from the cloud
 `UserRole` — these never reach Firestore and are not mirrored into any claim.
 
+A role is a set of **capabilities**, two tiers per screen: the `*.view` half decides
+whether the screen appears in the menu and resolves as a route, and the capability
+beside it decides whether that screen's controls are offered at all. The split is the
+point — it is what lets a shop show someone the takings without also handing them the
+export, or the staff list without the password resets.
+
+| Capability | Shown as |
+| --- | --- |
+| `register` | Sell at the till |
+| `store.view` / `store.edit` | See the store / Add and edit items |
+| `sales.view` / `sales.export` | See sales / Export sales to a spreadsheet |
+| `people.view` / `people.edit` | See people / Add and edit people |
+| `settings.view` | Open settings |
+| `settings.shop` | Change shop and receipt details |
+| `settings.backup` | Back up and restore |
+| `appAdmin.view` / `appAdmin.roles` | Open app admin / Change roles |
+
+Seven roles ship built in. `cashier` duplicates `staff` and `admin` duplicates
+`manager`, both deliberately: people can already have been given either id, and
+dropping one takes the register away from everyone holding it.
+
 | Role | Reaches |
 | --- | --- |
-| `superadmin` (Support) | Everything, including creating other Support accounts. |
-| `admin` (Owner) | The register and the back office. |
-| `staff` (Cashier) | The register only. |
+| `staff` / `cashier` (Cashier) | The register, and settings. |
+| `storekeeper` (Storekeeper) | The store, and settings. |
+| `accountant` (Accountant) | Sales, including the export, and settings. |
+| `manager` / `admin` (Manager / Admin) | Everything except app admin. |
+| `superadmin` (Support) | Everything, including roles, the licence pane and other Support accounts. |
 
-Access is cumulative: an owner can still work the counter without signing out.
+Access is cumulative: an owner can still work the counter without signing out. Edit any
+of these, or invent your own, at `/pos/app-admin` → **Roles**.
+
+Every role holds `settings.view`, because `/pos/settings` answered to nobody before
+capabilities existed — a cashier could always set the theme, the scanner gap and this
+device's name. Granting it to all keeps that true; an owner can now take it away, which
+they never could before.
+
+**Upgrading a till that predates v13.0.0.** Roles were stored as six coarse *areas*.
+They are migrated to capabilities on read, and the migration only ever adds, so nobody
+loses access on upgrade. One role gains a screen it never had: `accountant` held
+`reports`, which nothing enforced anywhere, so an Accountant reached nothing at all —
+it now reaches Sales.
 
 ### Two things to be deliberate about
 
 **Backups are the shop's own.** Nothing is copied off the machine — that is the
 whole point of the mode — so a failed disk takes the shop's entire trading
-history with it. `/pos/admin` → Backup writes a dated JSON file holding items,
+history with it. `/pos/settings` → **Backup** writes a dated JSON file holding items,
 people, sales, the receipt counter and the shop record. Tell the shop to put it
 somewhere that is not that computer, and to do it weekly.
 

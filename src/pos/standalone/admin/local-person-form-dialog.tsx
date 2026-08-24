@@ -11,7 +11,7 @@ import { FieldDescription } from '../../../ui/field-description';
 import { createLocalUser, MIN_LOCAL_PASSWORD_LENGTH } from '../local-auth';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
-import { canAccess, type PosLocalRole } from '../types';
+import { can as canBuiltIn, type PosLocalRole } from '../types';
 import { danger, field, fieldLabel, row } from './panel-styles';
 
 export interface LocalPersonFormDialogProps {
@@ -46,7 +46,19 @@ export function LocalPersonFormDialog({ open, onOpenChange, onSaved }: LocalPers
     setError('');
   }, [open, enabledRoles]);
 
-  const isSupport = canAccess(session.user?.role, 'support');
+  const isSupport = canBuiltIn(session.user?.role, 'appAdmin.view');
+
+  /**
+   * `t` echoes an unknown key rather than returning nullish, so the `??` this
+   * replaces could never fire: picking Storekeeper printed the literal string
+   * `pos.admin.people.roleHelp.storekeeper` under the picker. Only four roles
+   * have a help line, and custom roles never will.
+   */
+  const roleHelp = (() => {
+    const key = `pos.admin.people.roleHelp.${role}`;
+    const translated = t(key);
+    return translated === key ? t('pos.admin.people.roleHelp.default') : translated;
+  })();
   const assignable = isSupport
     ? enabledRoles
     : enabledRoles.filter((r) => r.id !== 'superadmin');
@@ -118,9 +130,7 @@ export function LocalPersonFormDialog({ open, onOpenChange, onSaved }: LocalPers
             />
           </div>
         </div>
-        <FieldDescription>
-          {t(`pos.admin.people.roleHelp.${role}`) ?? t('pos.admin.people.roleHelp.default')}
-        </FieldDescription>
+        <FieldDescription>{roleHelp}</FieldDescription>
         {error ? <div style={danger}>{error}</div> : null}
       </div>
     </Dialog>

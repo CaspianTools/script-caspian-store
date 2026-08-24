@@ -1,15 +1,17 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { usePosRoles } from './standalone/role-context';
-import { PosLocalAdminPage } from './standalone/admin/pos-local-admin-page';
+import type { PosLocalCapability } from './standalone/types';
 import { PosAppAdminPage } from './standalone/admin/pos-app-admin-page';
 import { LocalStorePanel } from './standalone/admin/local-store-panel';
+import { LocalSalesPage } from './standalone/admin/local-sales-panel';
+import { LocalPeoplePage } from './standalone/admin/local-people-panel';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
 import { PosQueuePage } from './pos-queue-page';
@@ -66,7 +68,7 @@ function PosShellChrome({ children }: { children: ReactNode }) {
   const pathname = stripLocalePrefix(rawPathname);
   const { userProfile, signOut } = useAuth();
   const local = usePosLocalSession();
-  const { canAccess, roles } = usePosRoles();
+  const { can, roles } = usePosRoles();
   const functions = useCaspianFirebaseOptional()?.functions ?? null;
   const t = useT();
   const license = usePosLicense(functions);
@@ -79,8 +81,14 @@ function PosShellChrome({ children }: { children: ReactNode }) {
 
   // A standalone till has no outbox -- nothing is ever waiting to be sent -- so
   // the queue item would only ever open an empty page. In its place it gets the
-  // local back office, for the people allowed to open it.
+  // shop screens, each shown to whoever holds the capability that opens it.
+  //
+  // This array and the switch in PosRoot are two halves of one thing and no
+  // guard checks that they agree: check-scaffold-routes.mjs covers the admin
+  // panel's nav, not the register's. Change them together.
   const items = useMemo<PosNavItem[]>(() => {
+    const role = local.user?.role;
+    const shows = (capability: PosLocalCapability) => local.standalone && can(role, capability);
     const list: PosNavItem[] = [
       { href: '/pos', label: t('pos.nav.register'), icon: 'register', group: 'counter' },
     ];
@@ -93,28 +101,39 @@ function PosShellChrome({ children }: { children: ReactNode }) {
         count: waiting,
       });
     }
-    if (local.standalone && canAccess(local.user?.role, 'store')) {
+    if (shows('store.view')) {
       list.push({ href: '/pos/store', label: t('pos.nav.store'), icon: 'store', group: 'shop' });
     }
-    if (local.standalone && canAccess(local.user?.role, 'admin')) {
+    if (shows('sales.view')) {
+      list.push({ href: '/pos/sales', label: t('pos.nav.sales'), icon: 'sales', group: 'shop' });
+    }
+    if (shows('people.view')) {
+      list.push({ href: '/pos/people', label: t('pos.nav.people'), icon: 'people', group: 'shop' });
+    }
+    // A cloud till has no role definitions to consult, and settings answered to
+    // nobody before capabilities existed, so it stays open there.
+    if (!local.standalone || can(role, 'settings.view')) {
       list.push({
-        href: '/pos/admin',
-        label: t('pos.nav.localAdmin'),
-        icon: 'backoffice',
-        group: 'shop',
+        href: '/pos/settings',
+        label: t('pos.nav.settings'),
+        icon: 'settings',
+        group: 'system',
       });
     }
-    if (local.standalone && canAccess(local.user?.role, 'support')) {
+    // Pinned to the foot rather than sorted into 'system': it is the one screen
+    // an ordinary shop never opens, and the sidebar has room for it there now
+    // that the avatar and sign-off have gone back to the top bar, where they
+    // already were.
+    if (shows('appAdmin.view')) {
       list.push({
         href: '/pos/app-admin',
         label: t('pos.nav.appAdmin'),
         icon: 'roles',
-        group: 'system',
+        group: 'bottom',
       });
     }
-    list.push({ href: '/pos/settings', label: t('pos.nav.settings'), icon: 'settings', group: 'system' });
     return list;
-  }, [t, local.standalone, local.user?.role, canAccess, waiting]);
+  }, [t, local.standalone, local.user?.role, can, waiting]);
 
   const activeHref = screenOf(pathname);
   const current = items.find((item) => item.href === activeHref);
@@ -144,15 +163,7 @@ function PosShellChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="cpos-shell">
-      <PosSidebar
-        items={items}
-        activeHref={activeHref}
-        whoIsHere={whoIsHere}
-        roleLabel={roleLabel}
-        initials={initials}
-        avatarUrl={userProfile?.photoURL}
-        onExit={exit}
-      />
+      <PosSidebar items={items} activeHref={activeHref} roleLabel={roleLabel} />
 
       <div className="cpos-column">
         <PosTopbar
@@ -184,26 +195,44 @@ function PosShellChrome({ children }: { children: ReactNode }) {
  * up able to sell, not stuck.
  */
 export function PosRoot(): ReactNode {
-  const { pathname } = useCaspianNavigation();
+  const { pathname, replace } = useCaspianNavigation();
   const { standalone, user } = usePosLocalSession();
-  const { canAccess } = usePosRoles();
+  const { can } = usePosRoles();
   const after = stripLocalePrefix(pathname).replace(/^\/pos\/?/, '');
   const [head] = after.split('/');
 
+  // The back office used to live at /pos/admin holding four tabs. Three are
+  // pages of their own now and the fourth is a settings section, so the address
+  // is all that is left of it -- and a till that bookmarked it, or a cashier
+  // typing it from memory, should still land somewhere useful.
+  useEffect(() => {
+    // A cloud till has no /pos/sales to land on, so it goes where it can sell.
+    if (head === 'admin') replace(standalone ? '/pos/sales' : '/pos');
+  }, [head, replace, standalone]);
+
+  // Only a standalone till has these screens. On a cloud till they are just a
+  // mistyped URL, and the rule above is that those land on the register rather
+  // than on a screen with nothing in it.
+  const opens = (capability: PosLocalCapability) => standalone && can(user?.role, capability);
+
   switch (head) {
     case 'settings':
-      return <PosSettingsPage />;
+      // Ungated on a cloud till, which has no role definitions to consult.
+      return !standalone || can(user?.role, 'settings.view') ? (
+        <PosSettingsPage />
+      ) : (
+        <PosRegister />
+      );
     case 'queue':
       return <PosQueuePage />;
-    // Only a standalone till has a local back office. On a cloud till this is
-    // just a mistyped URL, and the rule above is that those land on the
-    // register rather than on a screen with nothing in it.
-    case 'admin':
-      return standalone && canAccess(user?.role, 'admin') ? <PosLocalAdminPage /> : <PosRegister />;
     case 'store':
-      return standalone && canAccess(user?.role, 'store') ? <LocalStorePanel /> : <PosRegister />;
+      return opens('store.view') ? <LocalStorePanel /> : <PosRegister />;
+    case 'sales':
+      return opens('sales.view') ? <LocalSalesPage /> : <PosRegister />;
+    case 'people':
+      return opens('people.view') ? <LocalPeoplePage /> : <PosRegister />;
     case 'app-admin':
-      return standalone && canAccess(user?.role, 'support') ? <PosAppAdminPage /> : <PosRegister />;
+      return opens('appAdmin.view') ? <PosAppAdminPage /> : <PosRegister />;
     default:
       return <PosRegister />;
   }

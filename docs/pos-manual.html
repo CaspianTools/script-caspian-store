@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v12.1.0"
+      "version": "v13.0.0"
     },
     "parts": [
       {
@@ -932,7 +932,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Install",
-                "what": "Button in the top bar, between the licence marker and the appearance button. It disappears once this till has the register installed, so an empty space there means the job is already done."
+                "what": "Button in the top bar, to the left of the appearance button - the small sun or moon. It disappears once this till has the register installed, so an empty space there means the job is already done."
               }
             ],
             "notes": [
@@ -990,7 +990,7 @@ const MANUAL = {
               "Send the printed key, which starts with cslic1., to the customer. They paste it into the register's Settings page."
             ],
             "notes": [
-              "Licensing is switched off by default. The public key ships empty, and while it is empty the licence box on the register's Settings page, the warning strip and the licence table in the admin panel all render nothing at all. A customer on a stock build will never see any of it.",
+              "Licensing is switched off by default. The public key ships empty, and while it is empty the Licence page inside App admin says so in one line, and the warning strip and the licence table in the admin panel render nothing at all. A customer on a stock build never sees any of it.",
               "This is not copy protection and it is not designed to be. The library is open source under a permissive licence, so anyone determined to run it without a key can. What licensing gives you is a record of who bought what and which computer they activated it on.",
               "Enforcement is deliberately warning-only. Read \"What an expired licence actually does\" before you build a commercial process on top of this, because it does considerably less than most people assume.",
               "Activation ties a key to one computer. If that computer is replaced, somebody has to release the seat from the admin panel - the customer cannot do it themselves."
@@ -1009,7 +1009,7 @@ const MANUAL = {
             "title": "Settings for this till",
             "audience": "staff",
             "route": "/pos/settings",
-            "summary": "Everything on this page belongs to the one computer you are sitting at, not to your shop. A till at the front counter and a tablet in the stockroom each keep their own name, their own language, their own brightness and their own scanner setting. The page says so at the top: these apply to this computer only.",
+            "summary": "Everything on this page belongs to the one computer you are sitting at, not to your shop. A till at the front counter and a tablet in the stockroom each keep their own name, their own language, their own brightness and their own scanner setting. The page says so at the top: these apply to this computer only. On a till that runs with no website behind it two more sections join the list - the shop’s own details, and the backup - and those two do belong to the shop.",
             "steps": [
               "From the register, press Settings in the menu down the left.",
               "Pick your language from the Language menu. It changes straight away - you do not need to press Save for this one.",
@@ -1048,7 +1048,7 @@ const MANUAL = {
               },
               {
                 "name": "Save",
-                "what": "Saves the register name, the scanner speed and the storage choice."
+                "what": "Saves the register name and the scanner speed. The language and the appearance apply the moment you pick them, the two shop sections have a Save button of their own, and where sales are stored cannot be changed here at all."
               }
             ],
             "notes": [
@@ -1065,7 +1065,8 @@ const MANUAL = {
               "If your browser blocks site data, most of this page quietly stops working, and nothing on screen warns you. The language is the one exception: it keeps a copy in memory, so your choice still applies for as long as the tab stays open, though it will not survive a reload.",
               "With site data blocked, the register name, the scanner speed and the storage choice are not kept at all. Pressing Save still shows \"Settings saved\", but nothing is written down, and the old values come back the moment you leave this page - you do not have to reload to lose them. Treat that message as confirmation that you pressed the button, not as proof the setting was stored.",
               "With site data blocked the device id is unstable in a way that matters: a new one is invented every time it is needed, so the code shown on this page is not the one stamped on your sales. Do not read it out to support while the browser is in that state.",
-              "A register running on its own shows an orange line under \"This computer only\" warning that nothing is stored anywhere else. Take that literally: if that computer is lost or its disk fails, the sales on it are gone. There is no copy in the cloud, because there is no cloud."
+              "A register running on its own shows an orange line under \"This computer only\" warning that nothing is stored anywhere else. Take that literally: if that computer is lost or its disk fails, the sales on it are gone. There is no copy in the cloud, because there is no cloud.",
+              "On a till that runs with no website behind it, the index down the left of this page grows by two entries: Shop, for the shop name, the currency and the receipt wording, and Backup, for the only copy of everything the till knows. Each appears only for a role allowed into it, and each has a section of its own in this manual."
             ]
           },
           {
@@ -1152,20 +1153,24 @@ const MANUAL = {
           {
             "id": "activating-a-licence",
             "title": "Licensing a register",
-            "audience": "staff",
-            "route": "/pos/settings",
-            "summary": "If you bought this register, you were sent a licence key. Paste it into the Licence box on the register settings screen. The key belongs to one computer: activating it on a second machine tells you the licence is already in use elsewhere. If your copy did not come with licensing, this box is not on your screen at all and there is nothing to do.",
+            "audience": "owner",
+            "route": "/pos/app-admin?section=licence",
+            "summary": "Licensing is switched off in every copy of this software that was not deliberately built to sell licences, and that is the normal state. Where it is on, the key goes on the Licence page inside App admin - which exists only on a till that runs with no website behind it, and only for an account that can open App admin. A till with no key sells exactly as normal either way.",
             "steps": [
-              "From the register, press Settings in the menu down the left.",
-              "Find the Licence box. If it is not there, your copy does not use licence keys and you can ignore this section.",
-              "Paste the key you were sent. It starts with \"cslic1.\" and is one long line with no spaces.",
+              "Open App admin at the foot of the menu, then press Licence in the index down the left.",
+              "If the page says licensing is not switched on in this build, that is the end of it. There is nothing to enter, nothing to buy and nothing to fix.",
+              "If a Licence box is there, paste the key you were sent. It starts with \"cslic1.\" and is one long line with no spaces.",
               "Press Activate. A green label appears reading \"Licensed to\" and your shop name.",
               "If you replaced this computer, ask whoever sold you the licence to release it from the old machine first. Until they do, the new one reports that the licence is in use elsewhere."
             ],
             "fields": [
               {
+                "name": "Licence",
+                "what": "The second page of App admin. On an ordinary build it holds one line - licensing is not switched on in this build, and a till without a licence key sells exactly as normal - and nothing else."
+              },
+              {
                 "name": "Licence key",
-                "what": "The long line beginning \"cslic1.\" that you were sent when you bought the register."
+                "what": "The long line beginning \"cslic1.\" that you were sent when you bought the register. Only on a copy built to sell licences."
               },
               {
                 "name": "Activate",
@@ -1173,11 +1178,13 @@ const MANUAL = {
               },
               {
                 "name": "Remove key",
-                "what": "Forgets the key on this computer. It does not free the licence up for another machine — only the seller can do that."
+                "what": "Forgets the key on this computer. It appears only once a key is stored, and it does not free the licence up for another machine - only the seller can do that."
               }
             ],
             "notes": [
               "A licence problem never stops you selling. The worst that happens is a yellow strip across the top of the register. You can dismiss it, and it stays gone until the page is reloaded - it comes back on the next reload or when the till is reopened. Tills do not stop working over paperwork.",
+              "The licence moved. It used to be a box on the register’s Settings page; it is now a page inside App admin, and there is no licence box on Settings any more.",
+              "On a till wired to a website there is no licence screen at all. App admin does not open there - the address shows the sale screen instead - so in this release a key can only be entered on a till that runs on its own.",
               "The key is tied to this computer, not to you. Clearing your browser data, using a different browser, or switching to a private window makes this look like a new computer, and the licence will report itself as in use elsewhere.",
               "If the register cannot reach the internet when you activate, the key is still saved and a line tells you it will be confirmed next time you are online.",
               "Some older browsers cannot check the key themselves. If you see a message saying so, the key is still stored and is confirmed by the server the next time the register is online.",
@@ -1188,7 +1195,7 @@ const MANUAL = {
             "id": "settings-you-cannot-change",
             "title": "Four settings with no screen to change them",
             "audience": "owner",
-            "summary": "Four register settings exist in your shop's record, and the software reads all four, but nothing anywhere in the product edits them. They are stuck at their built-in values. They are listed here so that you do not spend an afternoon hunting for a screen that does not exist.",
+            "summary": "Four register settings exist in the record of a shop that has a website behind it, and the software reads all four, but nothing in the admin panel edits them. They are stuck at their built-in values, and they are listed here so that you do not spend an afternoon hunting for a screen that does not exist. A till that runs with no website is the exception: three of the four are on its own Settings page, in the Shop section.",
             "fields": [
               {
                 "name": "Receipt number prefix",
@@ -1209,7 +1216,7 @@ const MANUAL = {
             ],
             "notes": [
               "These are not hidden preferences waiting to be found. There is no advanced page, no configuration file a shop owner edits, and no support command. Nothing in the shipped product writes any of these four values.",
-              "Do not confuse this with the register's own Settings page. That page exists and works, and covers this till's name, its language, its scanner speed and its printer. These four are different settings entirely.",
+              "Do not confuse this with the register’s own Settings page. That page exists and works, and covers this till’s name, its language, its scanner speed and its printer. On a till that runs with no website it also carries a Shop section, and that section really does set the receipt prefix, the cash rounding and the tax tick - see \"Your shop’s details and receipt wording\".",
               "The Point of sale page in the admin panel edits exactly two things: the receipt header and the receipt footer. Everything else on that page is a switch, a figure or a table.",
               "If a future release adds screens for these, they will start behaving according to whatever you set. Until then the values above are what every till uses."
             ]
@@ -1332,29 +1339,42 @@ const MANUAL = {
             "title": "Roles on a till with no website",
             "audience": "owner",
             "route": "/pos/app-admin",
-            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you choose which of the seven built-in roles this shop uses, and where you can write your own. Only the Support account made when the till was commissioned can open it, and the page does not exist at all on a till that is backed by a website.",
+            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has two pages: Roles, and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
             "steps": [
-              "Sign in as the Support account - the first account created when the till was set up. App admin appears in the menu, under System, only for that account. On a till backed by a website the address quietly returns you to the counter instead.",
-              "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Each row lists the parts of the software that role opens.",
-              "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anyone still holding it stops being able to open anything - move those people to another role first.",
-              "To write your own, press Add custom role, give it a name, tick the areas it may open, and press Save role.",
-              "Edit reopens a custom role; Delete removes it. Deleting happens at once, with no confirmation step."
+              "Sign in as the Support account - the first account created when the till was set up. App admin is at the foot of the menu, under the everyday screens and above the collapse button.",
+              "You arrive on Roles. The other page, Licence, is the second entry in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=licence opens it directly.",
+              "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Under each name is the list of everything that role may do, written out in full.",
+              "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anybody still holding it can no longer open anything at all - move those people to another role first.",
+              "To write your own, press \"Add custom role\", give it a name, tick the boxes it should hold, and press \"Save role\". Edit reopens a custom role; Delete removes it at once, with no confirmation step."
             ],
             "fields": [
               {
-                "name": "Can access",
-                "what": "Six tick boxes on a custom role: Register, Store, Back office, Reports, Settings and Support. Register is the counter itself, Back office is the local admin at /pos/admin, and Support is this page."
+                "name": "Roles / Licence",
+                "what": "The two pages of App admin, listed down the left. Roles is the editor described here. Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
+              },
+              {
+                "name": "What this role can do",
+                "what": "Twelve tick boxes on a custom role, grouped the way the menu groups the screens they open. Counter: Sell at the till. Shop: See the store, Add and edit items, See sales, Export sales to a spreadsheet, See people, Add and edit people. System: Open settings, Change shop and receipt details, Back up and restore, Open app admin, Change roles."
               },
               {
                 "name": "Role name",
-                "what": "What the role is called when you give it to someone. Free text, and the only thing that identifies the role on the People screen."
+                "what": "What the role is called when you give it to somebody. Free text, and the only thing that identifies the role on the People screen. A role with no name is not saved."
+              },
+              {
+                "name": "Enabled / Disabled",
+                "what": "The word at the end of each predefined row, and the tick box that changes it. It is the only thing about a built-in role you can change - their twelve boxes are fixed and there is no Edit button on those rows."
               }
             ],
             "notes": [
-              "Support cannot be switched off. It is the only role that opens this page, and a till with no website has no way to hand access back from somewhere else - if it could be unticked, one tick would end your access to the till for good.",
-              "\"Cashier (duplicate)\" opens exactly what Cashier opens. It is kept only so people already given it keep working. Give new cashiers plain Cashier.",
+              "The twelve replace the six areas an older till used, and they come in pairs: one to see a screen, one to change what is on it. That is what lets you give somebody the takings without the export, or the staff list without the password resets.",
+              "Upgrading a till takes nothing away. Roles saved by an older version are brought forward the first time they are read, and that upgrade can only add - so nobody who could open a screen yesterday is shut out of it today. Every role also keeps \"Open settings\", because that screen answered to nobody before.",
+              "A role that cannot sell cannot get in at all. The gate on /pos asks for \"Sell at the till\" before any screen is drawn, so an account whose role lacks it is met with \"No access to the register\" and reaches nothing - not the Store screen, not Sales. As they ship, Storekeeper and Accountant are both in that position, and the twelve boxes of a built-in role cannot be edited. If you want somebody on those screens, make a custom role that holds \"Sell at the till\" as well.",
+              "Accountant did change. It used to hold an area that nothing in the software ever checked, so it opened nothing whatsoever; it now holds \"See sales\" and the export. The gate above is what still stops it being useful on its own - a custom role holding \"Sell at the till\" as well as those two gets a person in, with Sales waiting in the menu.",
+              "Support cannot be switched off. It is the only built-in role holding \"Open app admin\", and a till with no website has no way to hand access back from somewhere else - if it could be unticked, one tick would end your access for good.",
+              "\"Cashier (duplicate)\" opens exactly what Cashier opens, and Admin now opens exactly what Manager opens. Both duplicates are kept only so people already given them keep working. Give new people Cashier or Manager.",
+              "A capability a role does not hold is not greyed out - it is simply not there. The export button on Sales, the add, edit and delete buttons on Store, the role menu, password resets, Block and Delete on People, and most of the entries in Quick add are all absent for anybody without the matching tick.",
               "These roles live on this machine and nowhere else. Another till, even in the same shop, keeps its own separate list, and nothing here shows up in an online admin panel.",
-              "The list of roles is part of the shop's own records, not a cache. Only a factory reset erases it, and there is no copy anywhere else."
+              "The list of roles is part of the shop’s own records, not a cache. Only a factory reset erases it, it travels in the backup file, and there is no copy anywhere else."
             ]
           }
         ]
@@ -1374,18 +1394,14 @@ const MANUAL = {
             "steps": [
               "Open /pos on the till.",
               "Sign in with your own account. Do not share an account with another cashier - the sale records who rang it up.",
-              "Check the bar across the top names the screen you are on, and that the foot of the menu on the left shows your name.",
+              "Check the bar across the top names the screen you are on, and that your initials are in the round button at its right-hand end.",
               "If a coloured strip is showing under the top bar, read it. It is about the licence or a waiting update, and neither one stops you selling.",
               "Scan your first item. There is nothing else to set up."
             ],
             "fields": [
               {
                 "name": "The menu",
-                "what": "The dark column down the left. It holds every screen this till has, grouped under Counter, Shop and System, and the one you are on is highlighted."
-              },
-              {
-                "name": "Collapse menu",
-                "what": "At the foot of the menu. Shrinks it to a strip of icons so the sale gets the width back; hovering an icon shows its name. The till remembers your choice on this computer."
+                "what": "The column down the left. It holds every screen this till has, grouped under Counter, Shop and System, and the one you are on is highlighted."
               },
               {
                 "name": "Register",
@@ -1393,25 +1409,42 @@ const MANUAL = {
               },
               {
                 "name": "Held sales",
-                "what": "Under Counter, on a till that has a website behind it. A red number beside it is how many sales are waiting to be sent."
+                "what": "Under Counter, on a till that has a website behind it. A number beside it is how many sales are waiting to be sent. A till that runs on its own never has this item, because it never sends anything anywhere."
+              },
+              {
+                "name": "Store, Sales, People",
+                "what": "Under Shop, on a till that runs on its own: the catalogue, what the till has taken, and who may sign in. Each one appears only for a role allowed to see it, so your menu may be shorter than the next person’s."
               },
               {
                 "name": "Settings",
-                "what": "Under System. This till's own settings: its language, its name, how bright it looks, its scanner speed."
+                "what": "Under System. This till’s own settings - its language, its name, how bright it looks, its scanner speed - plus, on a till that runs on its own, the shop’s details and the backup."
+              },
+              {
+                "name": "App admin",
+                "what": "Pinned at the foot of the menu, below everything else, on a till that runs on its own. Roles, and the licence page. Almost nobody has it."
+              },
+              {
+                "name": "Collapse menu",
+                "what": "The last thing in the menu, under App admin. Shrinks it to a strip of icons so the sale gets the width back; hovering an icon shows its name. The till remembers your choice on this computer."
+              },
+              {
+                "name": "Quick add",
+                "what": "The button with a plus in the top bar. \"New sale\" is always there; adding an item, adding a person, and the jumps to Store and Settings appear only when your role can do them."
               },
               {
                 "name": "Appearance",
                 "what": "The small button in the top bar showing a sun, a moon or a screen. Presses cycle between light, dark and matching whatever the computer itself is set to."
               },
               {
-                "name": "Exit register",
-                "what": "At the foot of the menu, and also under your name in the top right. Signs you out. Use it at the end of a shift so the next person rings up under their own name."
+                "name": "Your initials",
+                "what": "The round button at the top right. It opens a card with your name on it, a link to Settings, and \"Exit register\", which signs you out. Use it at the end of a shift so the next person rings up under their own name."
               }
             ],
             "notes": [
               "There is no shift to open and no float to count in. The register has no session of any kind, so there is no start-of-day or end-of-day step to remember.",
-              "What is in the menu depends on the till and on the account. A till with a website behind it shows Held sales; a till without one shows Store and Back office to the people allowed into them. Nobody sees all of it at once.",
-              "Sign out at the end of your shift. Sales record the account that rang them up, so leaving yourself signed in means the next person's sales are recorded against you.",
+              "What is in the menu depends on the till and on the account. A till with a website behind it shows Held sales; a till without one shows Store, Sales and People to whoever is allowed into them, and App admin to one account. Nobody sees all of it at once.",
+              "Signing out is in the top right, not in the menu. Your name and an \"Exit register\" button used to sit at the foot of the menu as well; that copy has gone, the card under your initials is the one way out, and the foot of the menu now holds App admin and the collapse button.",
+              "Sign out at the end of your shift. Sales record the account that rang them up, so leaving yourself signed in means the next person’s sales are recorded against you.",
               "On a narrow screen - a tablet held upright, or a phone - the menu is not there. A button at the top left opens it over the page, and it closes again as soon as you pick a screen.",
               "The register still fills the whole screen. There is no shop header and no footer, so that nothing on the screen is a distraction at the counter.",
               "If a yellow licence strip appears you can dismiss it, and it stays gone until the page is reloaded. It comes back next time the till is opened. It never blocks a sale."
@@ -1477,7 +1510,7 @@ const MANUAL = {
               "The register looks for the code in three places, in this order: the product's Barcode, then its SKU, then the product's own id code. When it matches on the SKU it says \"Matched by SKU\" under the box, and when it matches on the id it says \"Matched by product id\".",
               "If two or more products share the code, the register lists them with their prices and asks \"Which one?\". Nothing goes on the sale until you pick one.",
               "If nothing matches you get \"Nothing matches ...\" and the sale is untouched.",
-              "There is no way to look an item up by name on this screen. There is no search box and no browse list - only the one box for a code. If you cannot scan an item and do not know its code, you cannot get it onto the sale from the register.",
+              "You can look an item up by name, from the search box in the bar across the top: type part of the name, press Enter, and the matches come back as pictures you press to add to the sale. What there is not is a browse list, so an item you cannot scan, cannot name and whose code you do not know still cannot be got onto the sale.",
               "An item with no barcode and no SKU can still be rung up, as long as you know its id code. That id is the third thing the register tries. You can read a product's id off the web address of its editing page in the admin panel, in the part between /admin/products/ and /edit. It is a long jumble of letters and numbers, so this is a fallback, not a way of working.",
               "If the lookup itself fails - for example the till drops off the internet in the middle of a scan - the message under the box reads \"common.error\" in English. That is a raw internal label rather than a sentence, and it is a known rough edge. Read it as \"something went wrong, try again\". Nothing is added to the sale when it appears. In Azerbaijani, Russian and Turkish the same message shows a proper word.",
               "You can take money off a single line, but there is still no promo code box and no way to attach a customer account to the sale. Every counter sale is recorded as a walk-in.",
@@ -1485,7 +1518,7 @@ const MANUAL = {
               "Scanning the same thing twice adds one to the existing line rather than creating a second line. The most you can put on one line is 10000, and dropping a line to zero removes it.",
               "The totals on the right are a guide for you and the customer. The real prices are read from your catalogue by the server at the moment you complete the sale, so if a price was changed in the admin panel while the sale was open, the sale records the new price.",
               "If a product is deleted from the catalogue while it is sitting on the sale, completing the sale fails. The message names the product's id code, not its name - it reads \"Product ... no longer exists\" with a long jumble of letters and numbers in place of the item. So you will not be told which item it was in plain words. If it happens, clear the sale and scan the items again to find the one that will not go on.",
-              "Everywhere the register can take you is in the menu down the left, grouped under Counter, Shop and System. What is listed depends on the till and on your account, so two cashiers can see different menus. \"Exit register\" at the foot of it signs you out.",
+              "Everywhere the register can take you is in the menu down the left, grouped under Counter, Shop and System. What is listed depends on the till and on your account, so two cashiers can see different menus. \"Exit register\" is not in the menu - it is in the card under your initials at the top right.",
               "If your account does not have the Staff role (Admin also works), the screen shows \"Not a register account\" along with your account id and a Copy id button - give that id to the owner so they can grant you access.",
               "If the owner has switched the register off, /pos shows \"Register is switched off\" instead."
             ]
@@ -1647,15 +1680,284 @@ const MANUAL = {
             "notes": [
               "There is no returns or refunds screen anywhere in this product. A refund has to be handled outside the register, by whatever means your shop already uses.",
               "There is no shift, no cash-up and no Z-report. Nothing opens or closes a till session, and the software never asks how much money is in the drawer.",
-              "There is no way to discount a line and no promo code box at the counter. Every counter sale is rung up at catalogue price.",
+              "There is no promo code box at the counter and no way to attach a customer to a sale. You can take a fixed amount off a single line with the tag button on it, and that is the only discount there is - no percentages, and nothing that comes off the sale as a whole.",
               "There is no way to attach a customer to a counter sale. Every sale is recorded as a walk-in, even for a regular you know by name.",
-              "There is no way to look an item up by name. There is no search box and no browse list - only the one box for a code. If you cannot scan an item and do not know its code, you cannot get it onto the sale from the register.",
+              "There is a search box in the bar across the top and it finds items by name. What there is not is a browse list: nothing shows you the whole catalogue to pick from, so an item you cannot scan, cannot name and whose code you do not know cannot be got onto the sale.",
               "There is no reprint. Once you press \"New sale\" the receipt is gone, and no button anywhere brings it back. Print it before you move on.",
               "The register does keep selling offline, but it cannot do everything offline. An item it has never downloaded cannot be found, and if the till runs out of reserved receipt numbers the customer gets a reference slip rather than a receipt.",
               "The register does not talk to your card machine. Choosing Card records that a card was used; you still take the payment on the machine yourself.",
               "The register cannot open a cash drawer.",
               "There is no way to put a sale aside and come back to it. One sale at a time, and clearing it throws it away.",
               "The register never asks which size. If a product has one size that size is used; if it has several, the sale is recorded with no size at all."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "standalone-till",
+        "icon": "i-store",
+        "title": "A till that runs on its own",
+        "blurb": "The screens a register keeps when there is no website behind it: the store, the sales, the people, the shop record and the backup.",
+        "sections": [
+          {
+            "id": "where-the-back-office-went",
+            "title": "Where the back office went",
+            "audience": "owner",
+            "route": "/pos/admin",
+            "summary": "A till with no website behind it used to keep a back office at /pos/admin: one page with tabs across it holding the sales, the people, the shop’s own details and the backup. That page is gone. Nothing in it was taken away - two of those became screens of their own in the menu, and two became sections of the register’s Settings page - and the old address now takes you to Sales.",
+            "steps": [
+              "Typing /pos/admin, or opening an old bookmark, lands you on Sales.",
+              "Sales is a screen of its own now, under Shop in the menu.",
+              "People is a screen of its own too, under Shop, below Sales.",
+              "The shop’s own details - its name, its currency and the receipt wording - are a section of Settings, listed in the index down the left of that page as Shop.",
+              "The backup is the section under it, listed as Backup."
+            ],
+            "notes": [
+              "The old address is a redirect, not a page. There is nothing left at /pos/admin to bookmark, so update any shortcut kept on a till.",
+              "Which of these you can see depends on your role. Store, Sales, People, Shop and Backup are each behind their own permission, so two people signed in to the same till see different menus - see \"Roles on a till with no website\".",
+              "All of this is for a till that runs on its own. On a register wired to a website these addresses are not screens at all: /pos/store, /pos/sales, /pos/people and /pos/app-admin quietly show the sale screen, because that work is done in the shop’s own admin panel.",
+              "A till that runs on its own has no Held sales screen and queues nothing, because nothing is ever sent anywhere. Everything it records is already in its final place, on that computer."
+            ]
+          },
+          {
+            "id": "store-on-this-till",
+            "title": "The Store screen: your catalogue on this computer",
+            "audience": "owner",
+            "route": "/pos/store",
+            "summary": "The catalogue this till scans from, kept on the machine itself. It is a searchable list of every item with its barcode, its price and how much stock it has, and a form for adding and correcting them. It is in the menu under Shop, for anybody whose role may see the store.",
+            "steps": [
+              "Press Store in the menu, under Shop.",
+              "Search with the box above the list. It matches the name, your own code and the barcode, and filters as you type.",
+              "Press \"Add item\" to put something new on the till. The form opens over the page.",
+              "Fill in at least a name and a price. Fill in the barcode, your own code, or both - those are what the counter matches when something is scanned or typed.",
+              "Write the stock as a count per size, like S:3;M:5. An item with no sizes takes _default:12.",
+              "Press \"Add it\". Edit reopens the same form on an existing item, and Delete asks before removing one."
+            ],
+            "fields": [
+              {
+                "name": "Search",
+                "what": "Box above the list. Matches the item name, your own code and the barcode. It filters as you type; there is no button to press."
+              },
+              {
+                "name": "Add item",
+                "what": "Opens the item form over the page. The same form is on the Quick add menu in the top bar, as \"Add product\"."
+              },
+              {
+                "name": "Name / Price",
+                "what": "The only two things an item must have. Saving without them shows \"An item needs a name and a price.\""
+              },
+              {
+                "name": "Barcode / Your code",
+                "what": "What the counter looks for when something is scanned or typed: the barcode first, then your own code, then the item’s internal id."
+              },
+              {
+                "name": "Group",
+                "what": "Free text, for your own sorting. Nothing at the counter uses it."
+              },
+              {
+                "name": "Sizes",
+                "what": "A list separated by semicolons, like S;M;L. Leave it empty for an item that comes in one size."
+              },
+              {
+                "name": "In stock",
+                "what": "A count per size, written size:count and separated by semicolons - S:3;M:5. For an item with no sizes write _default:12. The list shows the total of all sizes in its Stock column."
+              },
+              {
+                "name": "Edit / Delete",
+                "what": "At the end of each row, and only for a role that may add and edit items. Delete asks \"Remove ... from the till?\" first, and sales already taken keep their record."
+              }
+            ],
+            "notes": [
+              "The list shows every item and the heading counts them. There is no paging.",
+              "There is no way to import a spreadsheet on this screen. Items go on one at a time, or come back from a backup file - so filling a till for the first time is honest typing.",
+              "An item can be marked hidden, and the word appears beside its name in the list, but nothing on this screen sets it. It arrives that way from a backup. A hidden item cannot be scanned or found at the counter.",
+              "Prices are read from this list at the moment a sale is completed. Correcting a price here changes what the next sale charges and nothing that has already been rung up.",
+              "Stock is allowed to go negative. Selling more than the count says does not block the sale; the shortfall is recorded against it and the count goes below zero, which is your signal to come here and correct it.",
+              "Deleting an item does not touch the sales that included it. Those keep the name and the price they were rung up at.",
+              "This screen is only on a till that runs on its own, and only for a role holding \"See the store\". Adding, editing and deleting need the second tick, \"Add and edit items\"; without it those buttons are not on the screen at all."
+            ]
+          },
+          {
+            "id": "sales-on-this-till",
+            "title": "The Sales screen: what this till has taken",
+            "audience": "owner",
+            "route": "/pos/sales",
+            "summary": "Every sale this till has taken, newest first, with what it came to. It is read-only on purpose: a sale is written once and never edited, so a mistake is corrected by ringing another sale rather than by changing this list. It is in the menu under Shop, below Store.",
+            "steps": [
+              "Press Sales in the menu, under Shop.",
+              "Pick a period from the menu at the top left: Today, Last 7 days, Last 30 days, or Everything.",
+              "Read the takings on the right of that row - how many sales, and the money total under it.",
+              "Read the table below: receipt number, when, who rang it up, how many items, and the total.",
+              "Press \"Export to a spreadsheet\" if you need the period as a file and your role may export."
+            ],
+            "fields": [
+              {
+                "name": "Period",
+                "what": "Menu with four choices. Today means since midnight; Last 7 days and Last 30 days count back from midnight today; Everything is the whole history on this till."
+              },
+              {
+                "name": "Taken across N sales",
+                "what": "The count for the chosen period, with the money total under it. Both change with the period."
+              },
+              {
+                "name": "Export to a spreadsheet",
+                "what": "Saves the whole chosen period as a file called caspian-sales-today.csv - or -week, -month, -all. Greyed out when the period is empty, and not on the screen at all for a role without \"Export sales to a spreadsheet\"."
+              },
+              {
+                "name": "The table",
+                "what": "Receipt, When, Who, Items and Total. It shows the newest 200 sales in the period; when there are more, a line under it says so, and the export still has all of them."
+              }
+            ],
+            "notes": [
+              "Nothing here can be changed. There is no edit, no void, no refund and no delete, because the register has no returns screen anywhere.",
+              "The export has one row per sale, not per item: receiptNumber, dateTime, cashier, items, subtotal, discount, total and payment. What was actually sold is not in the file.",
+              "\"Who\" is the name the cashier’s account carried when the sale was rung up. Renaming or deleting that account later does not change what is written here.",
+              "The money is shown in the currency on the shop record. If that box is empty the screen falls back to US dollars.",
+              "The file lands wherever your browser puts downloads, as plain text. A spreadsheet opens it, and so does Notepad.",
+              "This screen is only on a till that runs on its own, and only for a role holding \"See sales\"."
+            ]
+          },
+          {
+            "id": "people-on-this-till",
+            "title": "The People screen: who may sign in",
+            "audience": "owner",
+            "route": "/pos/people",
+            "summary": "Who can sign in to this till, and what they may do. These accounts belong to the machine, not to a website: no email address, no password reset by email, and no way in from another computer. Adding somebody is done from Quick add in the top bar; this screen is for changing roles, resetting passwords, blocking and deleting.",
+            "steps": [
+              "Press People in the menu, under Shop.",
+              "To add somebody, open Quick add in the top bar and choose \"Add person\". Give them a name to sign in with, their full name, a password of at least six characters, and a role.",
+              "To change what somebody may do, pick a different role from the menu in their row. It saves as soon as you pick.",
+              "Press \"New password\" on a row and type the new one into the small box the browser puts up. It applies immediately.",
+              "Press Block to stop an account signing in without losing the sales it rang, or Delete to remove it altogether."
+            ],
+            "fields": [
+              {
+                "name": "Name",
+                "what": "What the person types to sign in. Stored in lower case, and never re-used."
+              },
+              {
+                "name": "Full name",
+                "what": "What prints on the receipt as \"Served by\", and what the Sales screen shows under Who."
+              },
+              {
+                "name": "Can use",
+                "what": "The role menu in each row. It offers every role switched on in App admin. Support is only offered to somebody who is already Support."
+              },
+              {
+                "name": "New password",
+                "what": "Asks for the new password in a small box from the browser. At least six characters; anything shorter is refused with a message."
+              },
+              {
+                "name": "Block / Allow in",
+                "what": "Stops the account signing in while keeping its name on the sales it rang. The word \"blocked\" appears beside the name, and the same button lets them back in."
+              },
+              {
+                "name": "Delete",
+                "what": "Removes the account after asking. The sales it rang keep the name they were rung up under."
+              }
+            ],
+            "notes": [
+              "You cannot change your own role, block yourself or delete yourself. Those controls are missing from your own row, which is marked \"you\". You can still set your own password.",
+              "Only a Support account may touch another Support account. To everybody else that row is plain text with no buttons.",
+              "Blocking is usually better than deleting. A blocked account can be let back in; a deleted one has to be made again from scratch, and neither changes the receipts that already carry the name.",
+              "Passwords are kept scrambled on this computer and cannot be read back. If somebody forgets theirs, set a new one here - that is the only route in.",
+              "The Add person window shows a line of help under the role menu. For Cashier, Admin and Support it is a sentence; for the others it currently prints its own internal label instead, such as pos.admin.people.roleHelp.storekeeper. That is a rough edge in the wording only - the role is applied as chosen.",
+              "The role menu can list two entries called Cashier. They are identical; App admin marks the second as a duplicate kept for accounts already holding it.",
+              "A role that does not hold \"Sell at the till\" cannot get into the register at all, whatever else you give it - so check \"Roles on a till with no website\" before handing somebody Storekeeper or Accountant.",
+              "This screen is only on a till that runs on its own. Seeing it needs \"See people\"; the role menu, the password reset, Block and Delete all need \"Add and edit people\" as well and are hidden without it."
+            ]
+          },
+          {
+            "id": "shop-details-on-this-till",
+            "title": "Your shop’s details and receipt wording",
+            "audience": "owner",
+            "route": "/pos/settings",
+            "summary": "A till that runs on its own has no admin panel to keep the shop’s name, its currency and its receipt wording in, so it keeps them on the machine, as a section of the register’s Settings page called Shop. It is the local twin of the Point of sale page in an online shop’s admin panel, and what you type here is what the receipt prints.",
+            "steps": [
+              "Press Settings in the menu, then Shop in the index down the left of the page.",
+              "Fill in the shop name and the currency. The currency is three letters, like USD, EUR or AZN.",
+              "Type what should print at the top of the receipt - your name, address and tax number if you show one - and what should print at the bottom.",
+              "Set the letter your receipt numbers start with, and how far cash should be rounded.",
+              "Press Save. \"Shop details saved\" appears."
+            ],
+            "fields": [
+              {
+                "name": "Shop name",
+                "what": "Saved, but nothing prints it or shows it anywhere yet. What appears at the top of a receipt is whatever you type into the receipt header box below."
+              },
+              {
+                "name": "Currency",
+                "what": "Three letters. It formats every price on the register, on the Sales screen and on the receipt. Left empty, everything falls back to US dollars."
+              },
+              {
+                "name": "Top of the receipt",
+                "what": "Free text, three lines tall. Prints at the top of every receipt."
+              },
+              {
+                "name": "Bottom of the receipt",
+                "what": "Free text, two lines tall. Prints under the total."
+              },
+              {
+                "name": "Receipt numbers start with",
+                "what": "A letter or a short word. R gives R-000001. Changing it changes the numbers issued from now on, not the ones already printed."
+              },
+              {
+                "name": "Round cash to",
+                "what": "The smallest coin you still handle. 0 turns rounding off, which is how a till starts. Set to 0.05, change is worked out to the nearest five."
+              },
+              {
+                "name": "Show tax on the receipt",
+                "what": "A tick box. It is saved and then ignored - see the note below."
+              },
+              {
+                "name": "Save",
+                "what": "Writes the whole section at once. Nothing here takes effect until you press it."
+              }
+            ],
+            "notes": [
+              "The tax tick does nothing. The receipt is built with no tax line at all, so the setting is stored and never read by anything that prints. Leave it alone until a release says otherwise.",
+              "Cash rounding is real. With a value set, the payment window rounds the change and the printed receipt shows the same rounded figure.",
+              "Receipt numbers never go backwards. They are counted on this computer, and restoring a backup can only move the counter forward, so a number already in a customer’s hand is never issued twice.",
+              "The shop name box being inert is worth knowing before you go looking for it on a receipt. Put the shop name in the top-of-the-receipt box instead.",
+              "This section is only on a till that runs on its own, and only for a role holding \"Change shop and receipt details\". A shop with a website keeps the same wording in its admin panel, on the Point of sale page."
+            ]
+          },
+          {
+            "id": "backing-up-this-till",
+            "title": "Backing this till up, and putting it back",
+            "audience": "owner",
+            "route": "/pos/settings",
+            "summary": "A till that runs on its own holds the only copy of everything it knows: the catalogue, the people, the roles and every sale it has ever taken. Nothing is copied anywhere else, because there is nowhere else. The Backup section of the Settings page writes all of it into one file, and reads one back.",
+            "steps": [
+              "Press Settings in the menu, then Backup in the index down the left.",
+              "Read the counts under the warning line - so many items, so many people, so many sales. That is what exists on this computer and nowhere else.",
+              "Press \"Save a backup now\". A file named for the date and time it was taken, such as caspian-till-2026-08-24-1830.json, goes wherever your browser puts downloads.",
+              "Move that file off this computer. A USB stick, another machine, anywhere else - a copy sitting in the same downloads folder is not a backup.",
+              "To put one back, press \"Choose a backup file\", pick the file, and confirm. A line then says how much was restored and how much was already here."
+            ],
+            "fields": [
+              {
+                "name": "Counts",
+                "what": "Items, people and sales currently on this till. They are shown rather than just a button, so you can see the size of what you would be losing."
+              },
+              {
+                "name": "Save a backup now",
+                "what": "Writes one file holding the shop record, the receipt counter, the catalogue, the people, the roles and every sale."
+              },
+              {
+                "name": "Choose a backup file",
+                "what": "Reads a file back in. It asks \"Add everything from this file onto this till?\" before it does anything."
+              }
+            ],
+            "notes": [
+              "Restoring adds, it does not replace. Sales already on this till are left exactly as they are and counted as already here in the message; items and people are overwritten by the file’s version of them; the shop record is replaced outright.",
+              "The receipt counter only ever moves forward. Restoring an old file cannot make the till reissue a number that is already on a customer’s receipt.",
+              "Custom roles travel in the file. Files written by versions before v12.0.0 do not carry them, and restoring one of those leaves the roles this till already has alone.",
+              "A file that is not a till backup is refused with \"That file is not a till backup.\" and nothing is changed.",
+              "The file is plain text, and it includes the scrambled passwords of everybody on the till. Keep it where you would keep the takings.",
+              "This is not the same thing as the export on the Sales screen. That is a record of sales for reading; this is the only thing that can put a till back.",
+              "Do it weekly, and always before moving the till to a new computer. There is no reminder, no schedule and no automatic copy - the software will never do this for you.",
+              "This section is only on a till that runs on its own, and only for a role holding \"Back up and restore\"."
             ]
           }
         ]
@@ -1763,12 +2065,12 @@ const MANUAL = {
             "audience": "owner",
             "summary": "Most shops do not. Licensing is an optional extra for people who sell this software on to other shops, and it is switched off unless somebody deliberately turned it on. If you cannot find any of the screens described in the next two sections, that is the expected result and there is nothing for you to fix.",
             "steps": [
-              "Open the register's Settings page and look for a Licence box.",
+              "On a till that runs with no website behind it, open App admin at the foot of the menu and press Licence.",
               "Open Sales, then Point of sale in the admin panel and look for a table of licences.",
               "If neither is there, your copy has licensing switched off. Skip the next two sections."
             ],
             "notes": [
-              "When licensing is switched off, the licence box on the register's Settings page, the yellow warning strip and the licence table in the admin panel all render nothing at all. They are not greyed out or hidden behind a setting - they are simply absent.",
+              "When licensing is switched off, the Licence page says so in one line - licensing is not switched on in this build - and the yellow warning strip and the licence table in the admin panel render nothing at all. They are not greyed out or hidden behind a setting: they are simply absent.",
               "This is the normal state for a shop running its own counter. You do not need a licence key to use the register, and nothing will ever ask you for one.",
               "If you bought this software from somebody and they sent you a key starting with cslic1., then licensing is on for your copy and the next section applies to you.",
               "Whether licensing is on is decided when the software is built, not by a setting in the admin panel. You cannot turn it on or off yourself."
@@ -1993,7 +2295,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v12.1.0"
+      "version": "v13.0.0"
     },
     "parts": [
       {
@@ -2257,7 +2559,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Quraşdır",
-                "what": "Yuxarı zolaqda, lisenziya nişanı ilə görünüş düyməsi arasında. Bu kassada kassa artıq quraşdırılıbsa yox olur, ona görə orada boşluq varsa, iş artıq görülüb."
+                "what": "Yuxarı zolaqda, görünüş düyməsinin (kiçik günəş və ya ay) solunda. Bu kassada kassa artıq quraşdırılıbsa yox olur, ona görə orada boşluq varsa, iş artıq görülüb."
               }
             ],
             "notes": [
@@ -2315,7 +2617,7 @@ const MANUAL = {
               "Çap olunan və cslic1. ilə başlayan açarı müştəriyə göndərin. Onlar onu kassanın Tənzimlər səhifəsinə yapışdırırlar."
             ],
             "notes": [
-              "Lisenziya standart olaraq sönülüdür. Açıq açar boş göndərilir və o boş olduğu müddətdə kassanın Tənzimlər səhifəsindəki lisenziya qutusu, xəbərdarlıq zolağı və idarə panelindəki lisenziya cədvəli ümumiyyətlə heç nə göstərmir. Standart quruluşdakı müştəri bunların heç birini görməyəcək.",
+              "Lisenziya standart olaraq sönülüdür. Açıq açar boş göndərilir və o boş olduğu müddətdə App admin içindəki Lisenziya səhifəsi bunu bir sətirlə bildirir, xəbərdarlıq zolağı və idarə panelindəki lisenziya cədvəli isə ümumiyyətlə heç nə göstərmir. Standart quruluşdakı müştəri bunların heç birini görmür.",
               "Bu, kopyalamadan qorunma deyil və belə nəzərdə tutulmayıb. Kitabxana açıq mənbəlidir və sərbəst lisenziya altındadır, ona görə açarsız işlətmək istəyən istənilən adam bunu edə bilər. Lisenziyanın verdiyi şey kimin nə aldığının və hansı kompüterdə aktivləşdirdiyinin qeydidir.",
               "Tətbiq qəsdən yalnız xəbərdarlıqdır. Bunun üzərində kommersiya prosesi qurmazdan əvvəl Vaxtı keçmiş lisenziya əslində nə edir bölməsini oxuyun, çünki o, əksər adamların düşündüyündən xeyli az iş görür.",
               "Aktivləşdirmə açarı bir kompüterə bağlayır. Həmin kompüter dəyişdirilərsə, kimsə idarə panelindən yeri boşaltmalıdır - müştəri bunu özü edə bilməz."
@@ -2331,7 +2633,7 @@ const MANUAL = {
           {
             "id": "till-settings",
             "title": "Bu kassanın tənzimləmələri",
-            "summary": "Bu səhifədəki hər şey qarşısında oturduğunuz kompüterə aiddir, mağazanıza yox. Ön piştaxtadakı kassa və anbardakı planşet hərəsi öz adını, öz dilini, öz işıqlılığını və öz skaner tənzimləməsini saxlayır. Səhifə bunu yuxarıda bildirir: bunlar yalnız bu kompüterə aiddir.",
+            "summary": "Bu səhifədəki hər şey qarşısında oturduğunuz kompüterə aiddir, mağazanıza yox. Ön piştaxtadakı kassa və anbardakı planşet hərəsi öz adını, öz dilini, öz işıqlılığını və öz skaner tənzimləməsini saxlayır. Səhifə bunu yuxarıda bildirir: bunlar yalnız bu kompüterə aiddir. Veb saytı olmayan kassada siyahıya daha iki bölmə əlavə olunur - mağazanın öz məlumatları və ehtiyat nüsxə - və bu ikisi mağazaya aiddir.",
             "steps": [
               "Kassada soldakı menyudan Tənzimləmələr (Settings) bölməsini açın.",
               "Dil (Language) menyusundan dilinizi seçin. Dil dərhal dəyişir — bunun üçün Yadda saxla (Save) düyməsini basmağa ehtiyac yoxdur.",
@@ -2370,7 +2672,7 @@ const MANUAL = {
               },
               {
                 "name": "Yadda saxla (Save)",
-                "what": "Kassa adını, skaner sürətini və saxlanma seçimini yadda saxlayır."
+                "what": "Kassa adını və skaner sürətini yadda saxlayır. Dil və görünüş seçdiyiniz an tətbiq olunur, iki mağaza bölməsinin öz yadda saxlama düyməsi var, satışların harada saxlanması isə burada ümumiyyətlə dəyişdirilə bilmir."
               }
             ],
             "notes": [
@@ -2387,7 +2689,8 @@ const MANUAL = {
               "Brauzeriniz sayt məlumatlarını bloklayırsa, bu səhifənin böyük hissəsi səssizcə işləməyi dayandırır və ekranda sizi xəbərdar edən heç nə olmur. Yeganə istisna dildir: onun nüsxəsi yaddaşda saxlanılır, ona görə seçiminiz tab açıq qaldığı müddətdə qüvvədə olur, səhifəni yeniləyəndə isə itir.",
               "Sayt məlumatları bloklananda kassa adı, skaner sürəti və saxlanma seçimi ümumiyyətlə yadda saxlanmır. Yadda saxla (Save) düyməsini basanda yenə \"Tənzimləmələr yadda saxlanıldı\" (Settings saved) yazısı çıxır, amma heç nə yazılmır və bu səhifədən çıxan kimi köhnə dəyərlər geri qayıdır — itirmək üçün səhifəni yeniləmək belə lazım deyil. Həmin mesajı tənzimləmənin saxlandığının sübutu yox, sadəcə düyməni basdığınızın təsdiqi kimi qəbul edin.",
               "Sayt məlumatları bloklananda cihaz identifikatoru ciddi şəkildə qeyri-sabit olur: hər dəfə lazım olanda yenisi yaradılır, ona görə bu səhifədə göstərilən kod satışlarınıza yazılan kod deyil. Brauzer bu vəziyyətdə olduğu müddətdə onu dəstək xidmətinə səsləndirməyin.",
-              "Təkbaşına işləyən kassada \"Yalnız bu kompüter\" sətrinin altında narıncı xəbərdarlıq görünür: heç nə başqa yerdə saxlanılmır. Bunu hərfi mənada qəbul edin — həmin kompüter itərsə və ya diski sıradan çıxarsa, oradakı satışlar da yox olur. Buludda nüsxə yoxdur, çünki bulud yoxdur."
+              "Təkbaşına işləyən kassada \"Yalnız bu kompüter\" sətrinin altında narıncı xəbərdarlıq görünür: heç nə başqa yerdə saxlanılmır. Bunu hərfi mənada qəbul edin — həmin kompüter itərsə və ya diski sıradan çıxarsa, oradakı satışlar da yox olur. Buludda nüsxə yoxdur, çünki bulud yoxdur.",
+              "Veb saytı olmayan kassada bu səhifənin solundakı siyahıya iki bənd əlavə olunur: mağazanın adı, valyutası və qəbz mətni üçün Mağaza, kassanın bildiyi hər şeyin yeganə nüsxəsi üçün isə Ehtiyat nüsxə. Hər biri yalnız icazəsi olan rola görünür və hər birinin bu təlimatda öz bölməsi var."
             ]
           },
           {
@@ -2470,43 +2773,10 @@ const MANUAL = {
             ]
           },
           {
-            "id": "activating-a-licence",
-            "title": "Kassanın lisenziyası",
-            "summary": "Bu kassanı almısınızsa, sizə lisenziya açarı göndərilib. Onu kassa tənzimləmələri ekranındakı Lisenziya (Licence) xanasına yapışdırın. Açar bir kompüterə bağlıdır: ikinci maşında aktivləşdirsəniz, lisenziyanın artıq başqa yerdə istifadə olunduğu bildirilir. Sizin nüsxənizdə lisenziya yoxdursa, bu xana ekranda ümumiyyətlə görünmür və etməli bir şey yoxdur.",
-            "steps": [
-              "Kassada soldakı menyudan Tənzimləmələr (Settings) bölməsini açın.",
-              "Lisenziya (Licence) xanasını tapın. Yoxdursa, nüsxəniz lisenziya açarlarından istifadə etmir və bu bölməni nəzərə almaya bilərsiniz.",
-              "Sizə göndərilən açarı yapışdırın. Açar \"cslic1.\" ilə başlayır və boşluqsuz bir uzun sətirdir.",
-              "Aktivləşdir (Activate) düyməsini basın. Yaşıl etiket görünür: \"Licensed to\" və mağazanızın adı.",
-              "Bu kompüteri dəyişmisinizsə, lisenziyanı sizə satan şəxsdən əvvəlcə onu köhnə maşından azad etməsini xahiş edin. O bunu etməyincə, yeni kompüter lisenziyanın başqa yerdə istifadə olunduğunu bildirəcək."
-            ],
-            "fields": [
-              {
-                "name": "Lisenziya açarı (Licence key)",
-                "what": "Kassanı alanda sizə göndərilən, \"cslic1.\" ilə başlayan uzun sətir."
-              },
-              {
-                "name": "Aktivləşdir (Activate)",
-                "what": "Açarı yoxlayır və bu kompüterə bağlayır. Nə isə yapışdırmayınca qeyri-aktivdir."
-              },
-              {
-                "name": "Açarı sil (Remove key)",
-                "what": "Açarı bu kompüterdən silir. Lisenziyanı başqa maşın üçün azad etmir - bunu yalnız satıcı edə bilər."
-              }
-            ],
-            "notes": [
-              "Lisenziya problemi heç vaxt satışa mane olmur. Ən pis halda kassanın yuxarısında sarı zolaq görünür. Onu bağlaya bilərsiniz və səhifə yenidən yüklənənə qədər gizli qalır - növbəti yükləmədə və ya kassa yenidən açıldıqda geri qayıdır. Kassalar sənəd ucbatından dayanmır.",
-              "Açar sizə yox, bu kompüterə bağlıdır. Brauzer məlumatlarını təmizləmək, başqa brauzerdən və ya gizli pəncərədən istifadə etmək yeni kompüter kimi görünür və lisenziya başqa yerdə istifadə olunur kimi bildiriləcək.",
-              "Aktivləşdirmə zamanı internet yoxdursa, açar yenə də saxlanılır və növbəti dəfə onlayn olanda təsdiqlənəcəyi barədə sətir görünür.",
-              "Bəzi köhnə brauzerlər açarı özləri yoxlaya bilmir. Bu barədə mesaj görsəniz, açar yenə saxlanılır və kassa növbəti dəfə onlayn olanda server tərəfindən təsdiqlənir.",
-              "Açarı buradan silmək heç nəyi ləğv etmir və pulu qaytarmır. Sadəcə bu maşından təmizləyir."
-            ]
-          },
-          {
             "id": "settings-you-cannot-change",
             "title": "Dəyişmək üçün ekranı olmayan dörd tənzim",
             "audience": "owner",
-            "summary": "Mağazanızın qeydində dörd kassa tənzimi var və proqram hər dördünü oxuyur, amma məhsulun heç bir yerində onları redaktə edən şey yoxdur. Onlar öz daxili dəyərlərində ilişib qalıb. Burada ona görə sadalanır ki, mövcud olmayan ekranı axtarmağa bir günortanı sərf etməyəsiniz.",
+            "summary": "Veb saytı olan mağazanın qeydində dörd kassa tənzimi var və proqram hər dördünü oxuyur, amma idarə panelində onları redaktə edən heç nə yoxdur. Onlar öz daxili dəyərlərində ilişib qalıb və burada ona görə sadalanır ki, mövcud olmayan ekranı axtarmağa bir günortanı sərf etməyəsiniz. Veb saytı olmayan kassa istisnadır: dördün üçü onun öz Tənzimlər səhifəsində, Mağaza bölməsindədir.",
             "fields": [
               {
                 "name": "Qəbz nömrəsi ön şəkilçisi",
@@ -2527,7 +2797,7 @@ const MANUAL = {
             ],
             "notes": [
               "Bunlar tapılmağı gözləyən gizli seçimlər deyil. Qabaqcıl səhifə, mağaza sahibinin redaktə etdiyi konfiqurasiya faylı və dəstək əmri yoxdur. Göndərilən məhsulda heç nə bu dörd dəyəri yazmır.",
-              "Bunu kassanın öz Tənzimlər səhifəsi ilə qarışdırmayın. Həmin səhifə mövcuddur, işləyir və bu kassanın adını, dilini, skaner sürətini və printerini əhatə edir. Bu dördü tamamilə fərqli tənzimlərdir.",
+              "Bunu kassanın öz Tənzimlər səhifəsi ilə qarışdırmayın. Həmin səhifə mövcuddur, işləyir və bu kassanın adını, dilini, skaner sürətini və printerini əhatə edir. Veb saytı olmayan kassada orada bir də Mağaza bölməsi var və məhz o bölmə qəbz prefiksini, nağdın yuvarlaqlaşdırılmasını və vergi qeydini təyin edir.",
               "İdarə panelindəki Kassa səhifəsi dəqiq iki şeyi redaktə edir: qəbzin yuxarı və aşağı mətnini. Həmin səhifədəki qalan hər şey açar, rəqəm və ya cədvəldir.",
               "Gələcək buraxılış bunlar üçün ekran əlavə edərsə, onlar təyin etdiyiniz kimi davranmağa başlayacaq. O vaxta qədər yuxarıdakı dəyərlər bütün kassaların işlətdiyi dəyərlərdir."
             ]
@@ -2642,36 +2912,6 @@ const MANUAL = {
               "Ayrılmazdan əvvəl rəsmiləşdirdikləri satışlar onların hesab kodunu saxlayır. Bu qəsdəndir: aylar sonra hansı ödənişi kimin aldığını hələ də ayırd edə bilməyinizin yolu budur.",
               "Öz rolunuzu dəyişə bilmirsiniz, ona görə səliqə-sahman zamanı təsadüfən öz girişinizi silə bilməzsiniz."
             ]
-          },
-          {
-            "id": "roles-on-this-till",
-            "title": "Veb saytı olmayan kassada rollar",
-            "audience": "owner",
-            "route": "/pos/app-admin",
-            "summary": "Arxasında veb sayt olmadan işləyən kassa öz rol siyahısını elə həmin kompüterdə saxlayır. Tətbiq admini bu mağazanın yeddi hazır roldan hansılarını işlədəcəyini seçdiyiniz və öz rollarınızı yaratdığınız yerdir. Onu yalnız kassa quraşdırılarkən yaradılmış Dəstək hesabı aça bilər; veb sayta bağlı kassada isə bu səhifə ümumiyyətlə yoxdur.",
-            "steps": [
-              "Dəstək hesabı ilə daxil olun — kassa qurulanda yaradılan ilk hesab. Tətbiq admini menyuda, Sistem başlığı altında, yalnız o hesab üçün görünür. Veb sayta bağlı kassada bu ünvan sizi sakitcə kassaya qaytarır.",
-              "Təyin edilmiş rollar bölməsində ən az girişdən başlayaraq yeddi sətir var: Kassir, Kassir (təkrar), Anbarçı, Mühasib, Menecer, Admin və Dəstək. Hər sətir həmin rolun açdığı hissələri sadalayır.",
-              "Rolu işlətmək üçün qeyd edin, dayandırmaq üçün qeydi götürün. Dayandırılmış rol işçi əlavə edərkən və ya redaktə edərkən təklif olunmur, həmin rolu daşıyanlar isə heç nə aça bilmir — əvvəlcə o adamları başqa rola keçirin.",
-              "Öz rolunuzu yaratmaq üçün Xüsusi rol əlavə et düyməsini basın, ad verin, aça biləcəyi hissələri qeyd edin və Rolu saxla düyməsini basın.",
-              "Redaktə xüsusi rolu yenidən açır, Sil isə onu götürür. Silmə dərhal baş verir, təsdiq soruşulmur."
-            ],
-            "fields": [
-              {
-                "name": "Giriş icazəsi",
-                "what": "Xüsusi rolda altı qeyd xanası: Kassa, Anbar, Arxa ofis, Hesabatlar, Tənzimləmələr və Dəstək. Kassa — piştaxtanın özü, Arxa ofis — /pos/admin ünvanındakı yerli idarəetmə, Dəstək isə bu səhifədir."
-              },
-              {
-                "name": "Rolun adı",
-                "what": "Rolu kiməsə verərkən görünən ad. Sərbəst mətndir və İşçilər ekranında rolu tanıdan yeganə şeydir."
-              }
-            ],
-            "notes": [
-              "Dəstək rolunu söndürmək olmaz. Bu səhifəni açan yeganə roldur və veb saytı olmayan kassada girişi başqa yerdən qaytarmaq mümkün deyil — söndürülə bilsəydi, bir qeyd kassaya girişinizi həmişəlik bitirərdi.",
-              "«Kassir (təkrar)» tam olaraq Kassirin açdığını açır. Yalnız artıq bu rol verilmiş adamlar işləməyə davam etsin deyə saxlanılıb. Yeni kassirlərə adi Kassir verin.",
-              "Bu rollar yalnız bu kompüterdə yaşayır. Eyni mağazadakı başqa kassanın öz ayrıca siyahısı olur və buradakı heç nə onlayn idarə panelində görünmür.",
-              "Rol siyahısı mağazanın öz qeydlərinin bir hissəsidir, keş deyil. Onu yalnız zavod sıfırlaması silir və başqa heç yerdə surəti yoxdur."
-            ]
           }
         ]
       },
@@ -2680,58 +2920,6 @@ const MANUAL = {
         "title": "Piştaxtada bir gün",
         "blurb": "Kassanı açmaq, satışı rəsmiləşdirmək, pulu almaq, çap etmək və satış keçmədikdə nə etmək.",
         "sections": [
-          {
-            "id": "opening-the-till",
-            "title": "Növbənin əvvəlində kassanı açmaq",
-            "audience": "staff",
-            "route": "/pos",
-            "summary": "Açılacaq bir şey və başlanacaq növbə yoxdur. Daxil olursunuz və kassa hazırdır. Bu səhifə növbənin ilk iki dəqiqəsini, həm də təlimatın qalan hissəsində daim adı çəkilən iki hissəni izah edir: soldakı menyu və yuxarıdakı zolaq.",
-            "steps": [
-              "Kassada /pos ünvanını açın.",
-              "Öz hesabınızla daxil olun. Hesabı başqa kassirlə paylaşmayın — satış onu kimin etdiyini qeyd edir.",
-              "Yuxarı zolağın hansı ekranda olduğunuzu yazdığını və soldakı menyunun altında adınızın göründüyünü yoxlayın.",
-              "Yuxarı zolağın altında rəngli bir zolaq varsa, oxuyun. O, lisenziya və ya gözləyən yeniləmə haqqındadır və heç biri satışa mane olmur.",
-              "İlk malı skan edin. Qurulacaq başqa bir şey yoxdur."
-            ],
-            "fields": [
-              {
-                "name": "Menyu",
-                "what": "Soldakı tünd sütun. Bu kassanın bütün ekranlarını saxlayır — Kassa, Mağaza və Sistem başlıqları altında qruplaşdırılıb — və hazırda olduğunuz ekran seçilmiş görünür."
-              },
-              {
-                "name": "Menyunu yığ",
-                "what": "Menyunun altında. Menyunu ikonalar zolağına yığır ki, en satışa qalsın; ikonanın üzərinə gələndə adı görünür. Kassa seçiminizi bu kompüterdə yadda saxlayır."
-              },
-              {
-                "name": "Kassa",
-                "what": "Kassa başlığı altındakı ilk bölmə. Satış ekranı. Günü burada keçirirsiniz."
-              },
-              {
-                "name": "Gözləyən satışlar",
-                "what": "Arxasında veb sayt olan kassada, Kassa başlığı altında. Yanındakı qırmızı rəqəm göndərilməyi gözləyən satışların sayıdır."
-              },
-              {
-                "name": "Tənzimləmələr",
-                "what": "Sistem başlığı altında. Bu kassanın öz tənzimləmələri: dili, adı, nə qədər işıqlı göründüyü, skaner sürəti."
-              },
-              {
-                "name": "Görünüş",
-                "what": "Yuxarı zolaqda günəş, ay və ya ekran şəkli olan kiçik düymə. Basdıqca işıqlı, tünd və kompüterin özündəki ayara uyğun rejimlər arasında növbələşir."
-              },
-              {
-                "name": "Kassadan çıx",
-                "what": "Menyunun altında, həmçinin yuxarı sağda adınızın altında. Hesabdan çıxarır. Növbənin sonunda istifadə edin ki, növbəti adam öz adı ilə satsın."
-              }
-            ],
-            "notes": [
-              "Açılacaq növbə və sayılacaq kassa qalığı yoxdur. Kassanın heç bir sessiyası yoxdur, ona görə yadda saxlanacaq gün başlanğıcı və ya sonu addımı da yoxdur.",
-              "Menyuda nə olduğu kassadan və hesabdan asılıdır. Arxasında veb sayt olan kassa Gözləyən satışlar bölməsini göstərir; olmayan kassa isə icazəsi olanlara Mağaza və Arxa ofis bölmələrini göstərir. Heç kim hamısını birdən görmür.",
-              "Növbənin sonunda hesabdan çıxın. Satışlar onu edən hesabı qeyd edir, ona görə açıq qalsanız növbəti adamın satışları sizin adınıza yazılacaq.",
-              "Dar ekranda — dik tutulan planşet və ya telefon — menyu görünmür. Sol yuxarıdakı düymə onu səhifənin üstündə açır və ekran seçən kimi yenidən bağlanır.",
-              "Kassa yenə də bütün ekranı tutur. Mağaza başlığı və altlığı yoxdur ki, ekranda diqqəti yayındıran heç nə olmasın.",
-              "Sarı lisenziya zolağı çıxarsa, onu bağlaya bilərsiniz və səhifə yenilənənə qədər görünmür. Kassa növbəti dəfə açılanda qayıdır. Heç vaxt satışı dayandırmır."
-            ]
-          },
           {
             "id": "ringing-up-a-sale",
             "title": "Satışın keçirilməsi: skan və satış siyahısı",
@@ -2790,7 +2978,7 @@ const MANUAL = {
               "Kassa kodu üç yerdə, bu ardıcıllıqla axtarır: əvvəlcə məhsulun Barkod (Barcode) sahəsində, sonra SKU-da, sonra isə məhsulun öz identifikator kodunda. SKU üzrə tapılanda xananın altında \"SKU üzrə tapıldı\" (Matched by SKU), identifikator üzrə tapılanda isə \"Məhsul identifikatoru üzrə tapıldı\" (Matched by product id) yazısı çıxır.",
               "İki və ya daha çox məhsulun kodu eynidirsə, kassa onları qiymətləri ilə birlikdə sadalayır və \"Hansı?\" (Which one?) deyə soruşur. Siz birini seçənə qədər satışa heç nə düşmür.",
               "Heç nə uyğun gəlmirsə, \"... üzrə heç nə tapılmadı\" (Nothing matches ...) yazısı çıxır və satış olduğu kimi qalır.",
-              "Bu ekranda məhsulu adı ilə tapmaq mümkün deyil. Nə axtarış xanası var, nə də baxış siyahısı — yalnız kod üçün bir xana. Məhsulu skan edə bilmirsinizsə və kodunu da bilmirsinizsə, onu kassadan satışa sala bilməzsiniz.",
+              "Məhsulu adı ilə tapmaq olar: yuxarı zolaqdakı axtarış xanasına adın bir hissəsini yazın, Enter basın, uyğun gələnlər şəkil kimi qayıdır və üstünə basdıqda satışa düşür. Olmayan şey baxış siyahısıdır, ona görə skan edə bilmədiyiniz, adını bilmədiyiniz və kodunu da bilmədiyiniz məhsulu yenə də satışa sala bilməzsiniz.",
               "Barkodu və SKU-su olmayan məhsulu da satmaq olar, bir şərtlə ki, identifikator kodunu biləsiniz. Kassa üçüncü növbədə məhz ona baxır. Məhsulun identifikatorunu idarə panelində onun redaktə səhifəsinin veb ünvanından, /admin/products/ ilə /edit arasındakı hissədən oxuya bilərsiniz. Bu, hərf və rəqəmlərdən ibarət uzun bir yığındır, ona görə də belə üsul gündəlik iş qaydası yox, son çarədir.",
               "Axtarışın özü uğursuz olsa — məsələn, skan zamanı kassanın internet bağlantısı kəssə — xananın altındakı mesaj ingiliscə \"common.error\" kimi görünür. Bu, cümlə deyil, sadəcə daxili etiketdir və məlum qüsurdur. Onu \"nəsə səhv getdi, yenidən cəhd edin\" kimi qəbul edin. Bu mesaj çıxanda satışa heç nə əlavə olunmur. Azərbaycan, rus və türk dillərində eyni mesaj normal söz kimi görünür.",
               "Ayrı-ayrı sətirlərdən pul çıxa bilərsiniz, amma promo kod qutusu və satışa müştəri hesabı bağlamaq imkanı hələ də yoxdur. Hər piştaxta satışı adi müştəri satışı kimi qeyd olunur.",
@@ -2798,7 +2986,7 @@ const MANUAL = {
               "Eyni məhsulu iki dəfə skan etmək ikinci sətir yaratmır, mövcud sətrin sayını bir vahid artırır. Bir sətrə maksimum 10000 ədəd qoymaq olar, sayı sıfıra endirsəniz isə sətir silinir.",
               "Sağdakı yekunlar sizin və müştəri üçün təxmini göstəricidir. Əsl qiymətləri server satışı tamamladığınız an kataloqunuzdan oxuyur, ona görə də satış açıq olarkən idarə panelində qiymət dəyişibsə, satışa yeni qiymət yazılır.",
               "Məhsul satışın üzərində dayanarkən kataloqdan silinsə, satış tamamlanmır. Mesajda məhsulun adı yox, identifikator kodu göstərilir — \"Product ... no longer exists\" yazılır və məhsulun yerində hərf-rəqəmdən ibarət uzun yığın olur. Yəni hansı məhsul olduğu sizə adi sözlərlə deyilməyəcək. Belə hal olsa, satışı təmizləyin və məhsulları yenidən skan edərək keçməyəni tapın.",
-              "Kassanın apara biləcəyi hər yer soldakı menyudadır və Kassa, Mağaza, Sistem başlıqları altında qruplaşdırılıb. Siyahı kassadan və hesabınızdan asılıdır, ona görə iki kassir fərqli menyu görə bilər. Menyunun altındakı \"Kassadan çıx\" hesabdan çıxarır.",
+              "Kassanın apara biləcəyi hər yer soldakı menyudadır və Kassa, Mağaza, Sistem başlıqları altında qruplaşdırılıb. Siyahı kassadan və hesabınızdan asılıdır, ona görə iki kassir fərqli menyu görə bilər. \"Kassadan çıx\" menyuda deyil - sağ yuxarıda, baş hərflərinizin altındakı kartdadır.",
               "Hesabınızda İşçi (Staff) rolu yoxdursa (Admin rolu da işə yarayır), ekranda \"Bu hesab kassa üçün deyil\" (Not a register account) yazısı, hesab identifikatorunuz və Kopyala (Copy id) düyməsi görünür — həmin identifikatoru mağaza sahibinə verin ki, sizə icazə versin.",
               "Mağaza sahibi kassanı söndürübsə, /pos ünvanında bunun əvəzinə \"Kassa söndürülüb\" (Register is switched off) yazısı çıxır."
             ]
@@ -2958,9 +3146,9 @@ const MANUAL = {
             "notes": [
               "Məhsulun heç bir yerində qaytarma və ya geri ödəniş ekranı yoxdur. Geri ödəniş kassadan kənarda, mağazanızın onsuz da istifadə etdiyi üsulla həll olunmalıdır.",
               "Növbə, kassa yekunu və Z-hesabat yoxdur. Heç nə kassa sessiyasını açmır və bağlamır, proqram isə heç vaxt çekmecedə nə qədər pul olduğunu soruşmur.",
-              "Piştaxtada sətrə endirim etməyin yolu və promo kod qutusu yoxdur. Hər piştaxta satışı kataloq qiyməti ilə rəsmiləşdirilir.",
+              "Piştaxtada promo kod qutusu yoxdur və satışa müştəri bağlamaq mümkün deyil. Sətrin üstündəki etiket düyməsi ilə bir sətirdən sabit məbləğ çıxa bilərsiniz - başqa endirim yoxdur: nə faiz, nə də bütün satışdan çıxan bir şey.",
               "Piştaxta satışına müştəri bağlamağın yolu yoxdur. Adını bildiyiniz daimi müştəri üçün belə, hər satış gəlmə müştəri kimi qeyd olunur.",
-              "Məhsulu ada görə axtarmağın yolu yoxdur. Axtarış qutusu və baxış siyahısı yoxdur - yalnız kod üçün bir qutu. Məhsulu skan edə bilmirsinizsə və kodunu bilmirsinizsə, onu kassadan satışa sala bilməzsiniz.",
+              "Yuxarı zolaqda axtarış qutusu var və o, məhsulları adına görə tapır. Olmayan şey baxış siyahısıdır: heç nə bütün kataloqu seçmək üçün göstərmir, ona görə skan edə bilmədiyiniz, adını bilmədiyiniz və kodunu bilmədiyiniz məhsulu satışa sala bilməzsiniz.",
               "Təkrar çap yoxdur. Yeni satış düyməsini basdıqdan sonra qəbz gedir və onu heç bir düymə geri gətirmir. Növbətiyə keçməzdən əvvəl çap edin.",
               "Kassa oflayn satmağa davam edir, amma oflayn hər şeyi edə bilmir. Heç vaxt yükləmədiyi məhsulu tapa bilmir və kassada ehtiyat qəbz nömrələri qurtararsa, müştəri qəbz yox, istinad kağızı alır.",
               "Kassa kart terminalınızla danışmır. Kart seçmək kartın istifadə olunduğunu qeyd edir; ödənişi yenə də terminalda özünüz alırsınız.",
@@ -3071,12 +3259,12 @@ const MANUAL = {
             "audience": "owner",
             "summary": "Əksər mağazalarda yoxdur. Lisenziya bu proqramı başqa mağazalara satanlar üçün əlavə imkandır və kimsə qəsdən yandırmayıbsa, sönülüdür. Növbəti iki bölmədə təsvir olunan ekranların heç birini tapa bilmirsinizsə, bu gözlənilən nəticədir və düzəltməli olduğunuz heç nə yoxdur.",
             "steps": [
-              "Kassanın Tənzimlər səhifəsini açın və Lisenziya qutusunu axtarın.",
+              "Veb saytı olmayan kassada menyunun altındakı App admin bölməsini açın və Lisenziya düyməsinə basın.",
               "İdarə panelində Satış, sonra Kassa bölməsini açın və lisenziya cədvəlini axtarın.",
               "Heç biri yoxdursa, sizin nüsxənizdə lisenziya sönülüdür. Növbəti iki bölməni atlayın."
             ],
             "notes": [
-              "Lisenziya sönülü olduqda kassanın Tənzimlər səhifəsindəki lisenziya qutusu, sarı xəbərdarlıq zolağı və idarə panelindəki lisenziya cədvəli ümumiyyətlə heç nə göstərmir. Onlar sönük göstərilmir və tənzim arxasında gizlədilmir - sadəcə yoxdurlar.",
+              "Lisenziya sönülü olduqda Lisenziya səhifəsi bunu bir sətirlə bildirir - bu quruluşda lisenziya işə salınmayıb - sarı xəbərdarlıq zolağı və idarə panelindəki lisenziya cədvəli isə ümumiyyətlə heç nə göstərmir. Onlar sönük göstərilmir və tənzim arxasında gizlədilmir: sadəcə yoxdurlar.",
               "Öz piştaxtasını işlədən mağaza üçün normal vəziyyət budur. Kassadan istifadə üçün lisenziya açarı lazım deyil və heç nə sizdən onu istəməyəcək.",
               "Bu proqramı kimdənsə almısınızsa və o sizə cslic1. ilə başlayan açar göndəribsə, deməli nüsxənizdə lisenziya yandırılıb və növbəti bölmə sizə aiddir.",
               "Lisenziyanın yandırılı olub-olmaması proqram qurularkən həll olunur, idarə panelindəki tənzimlə yox. Onu özünüz yandırıb-söndürə bilməzsiniz."
@@ -3298,7 +3486,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v12.1.0"
+      "version": "v13.0.0"
     },
     "parts": [
       {
@@ -3562,7 +3750,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Установить",
-                "what": "Кнопка в верхней панели, между значком лицензии и кнопкой оформления. Она исчезает, как только касса на этом компьютере установлена, так что пустое место означает, что дело уже сделано."
+                "what": "Кнопка в верхней панели, слева от кнопки оформления - маленького солнца или луны. Она исчезает, как только касса на этом компьютере установлена, так что пустое место означает, что дело уже сделано."
               }
             ],
             "notes": [
@@ -3620,7 +3808,7 @@ const MANUAL = {
               "Отправьте напечатанный ключ, начинающийся с cslic1., покупателю. Он вставляет его на странице настроек кассы."
             ],
             "notes": [
-              "Лицензирование по умолчанию выключено. Открытый ключ поставляется пустым, и пока он пуст, поле лицензии на странице настроек кассы, предупреждающая полоса и таблица лицензий в панели администратора не отображают вообще ничего. Покупатель на стандартной сборке никогда этого не увидит.",
+              "Лицензирование по умолчанию выключено. Открытый ключ поставляется пустым, и пока он пуст, страница «Лицензия» внутри App admin говорит об этом одной строкой, а предупреждающая полоса и таблица лицензий в панели администратора не отображают вообще ничего. Покупатель на стандартной сборке этого никогда не видит.",
               "Это не защита от копирования и не задумывалась ею. Библиотека открыта и распространяется под свободной лицензией, поэтому любой, кто твёрдо намерен работать без ключа, сможет это сделать. Лицензирование даёт вам запись о том, кто что купил и на каком компьютере активировал.",
               "Принуждение намеренно сводится к предупреждению. Прежде чем строить на этом коммерческий процесс, прочитайте раздел Что на самом деле делает просроченная лицензия, потому что он делает существенно меньше, чем принято думать.",
               "Активация привязывает ключ к одному компьютеру. Если компьютер заменяют, кто-то должен освободить место из панели администратора - покупатель сам этого сделать не может."
@@ -3636,7 +3824,7 @@ const MANUAL = {
           {
             "id": "till-settings",
             "title": "Настройки этой кассы",
-            "summary": "Всё на этой странице относится к тому компьютеру, за которым вы сидите, а не к магазину. Касса за передним прилавком и планшет в подсобке хранят каждый своё имя, свой язык, свою яркость и свою настройку сканера. Страница так и говорит сверху: это относится только к этому компьютеру.",
+            "summary": "Всё на этой странице относится к тому компьютеру, за которым вы сидите, а не к магазину. Касса за передним прилавком и планшет в подсобке хранят каждый своё имя, свой язык, свою яркость и свою настройку сканера. Страница так и говорит сверху: это относится только к этому компьютеру. На кассе, за которой нет сайта, к списку добавляются ещё два раздела - сведения о самом магазине и резервная копия - и эти два относятся уже к магазину.",
             "steps": [
               "На кассе откройте «Настройки» (Settings) в меню слева.",
               "Выберите язык в меню Language (язык). Он меняется сразу — нажимать Save для этого не нужно.",
@@ -3675,7 +3863,7 @@ const MANUAL = {
               },
               {
                 "name": "Save (сохранить)",
-                "what": "Сохраняет название кассы, скорость сканера и выбор места хранения."
+                "what": "Сохраняет название кассы и скорость сканера. Язык и оформление применяются в момент выбора, у двух магазинных разделов есть своя кнопка сохранения, а место хранения продаж здесь вообще нельзя изменить."
               }
             ],
             "notes": [
@@ -3692,7 +3880,8 @@ const MANUAL = {
               "Если браузер блокирует хранение данных сайта, большая часть этой страницы тихо перестаёт работать, и никакого предупреждения на экране нет. Исключение — язык: его копия остаётся в памяти, поэтому выбор действует, пока открыта вкладка, но перезагрузку он не переживёт.",
               "При заблокированном хранении данных сайта название кассы, скорость сканера и выбор места хранения не сохраняются вовсе. Нажатие Save по-прежнему выводит «Settings saved», но ничего не записывается, и прежние значения вернутся, как только вы уйдёте с этой страницы, — перезагружать для этого ничего не нужно. Считайте это сообщение подтверждением того, что вы нажали кнопку, а не доказательством того, что настройка сохранена.",
               "При заблокированном хранении данных сайта идентификатор устройства нестабилен, и это важно: он создаётся заново каждый раз, когда требуется, поэтому код на этой странице не тот, что записывается в ваши продажи. Не диктуйте его в поддержку, пока браузер находится в таком состоянии.",
-              "На кассе, работающей сама по себе, под строкой «Только на этом компьютере» показывается оранжевое предупреждение: больше нигде ничего не хранится. Понимайте это буквально — если компьютер потерян или его диск вышел из строя, продажи на нём исчезли. Копии в облаке нет, потому что нет облака."
+              "На кассе, работающей сама по себе, под строкой «Только на этом компьютере» показывается оранжевое предупреждение: больше нигде ничего не хранится. Понимайте это буквально — если компьютер потерян или его диск вышел из строя, продажи на нём исчезли. Копии в облаке нет, потому что нет облака.",
+              "На кассе, за которой нет сайта, в списке слева на этой странице появляются ещё два пункта: «Магазин» - название магазина, валюта и текст чека, и «Резервная копия» - единственная копия всего, что знает эта касса. Каждый виден только той роли, которой это разрешено, и у каждого есть свой раздел в этом руководстве."
             ]
           },
           {
@@ -3775,43 +3964,10 @@ const MANUAL = {
             ]
           },
           {
-            "id": "activating-a-licence",
-            "title": "Лицензия для кассы",
-            "summary": "Если вы купили эту кассу, вам прислали лицензионный ключ. Вставьте его в поле «Лицензия» (Licence) на экране настроек кассы. Ключ привязан к одному компьютеру: при активации на втором вам сообщат, что лицензия уже используется в другом месте. Если в вашей копии лицензирования нет, этого поля на экране просто не будет и делать ничего не нужно.",
-            "steps": [
-              "В кассе откройте «Настройки» (Settings) в меню слева.",
-              "Найдите поле «Лицензия» (Licence). Если его нет, ваша копия не использует лицензионные ключи и этот раздел можно пропустить.",
-              "Вставьте присланный ключ. Он начинается с «cslic1.» и представляет собой одну длинную строку без пробелов.",
-              "Нажмите «Активировать» (Activate). Появится зелёная отметка «Licensed to» с названием вашего магазина.",
-              "Если вы заменили компьютер, попросите продавца лицензии сначала освободить её со старой машины. Пока это не сделано, новая будет сообщать, что лицензия используется в другом месте."
-            ],
-            "fields": [
-              {
-                "name": "Лицензионный ключ (Licence key)",
-                "what": "Длинная строка, начинающаяся с «cslic1.», которую вам прислали при покупке кассы."
-              },
-              {
-                "name": "Активировать (Activate)",
-                "what": "Проверяет ключ и привязывает его к этому компьютеру. Недоступна, пока вы ничего не вставили."
-              },
-              {
-                "name": "Удалить ключ (Remove key)",
-                "what": "Забывает ключ на этом компьютере. Лицензию для другой машины это не освобождает - так может сделать только продавец."
-              }
-            ],
-            "notes": [
-              "Проблема с лицензией никогда не мешает продавать. Максимум - жёлтая полоса сверху кассы. Её можно скрыть, и она остаётся скрытой до перезагрузки страницы: возвращается при следующей загрузке или когда кассу открывают заново. Касса не останавливается из-за бумаг.",
-              "Ключ привязан к компьютеру, а не к вам. Очистка данных браузера, другой браузер или режим инкогнито выглядят как новый компьютер, и лицензия сообщит, что используется в другом месте.",
-              "Если при активации нет интернета, ключ всё равно сохраняется, и строка сообщит, что он будет подтверждён при следующем выходе в сеть.",
-              "Некоторые старые браузеры не могут проверить ключ сами. Если вы видите такое сообщение, ключ всё равно сохранён и будет подтверждён сервером, когда касса выйдет в сеть.",
-              "Удаление ключа здесь ничего не отменяет и не возвращает деньги. Оно лишь очищает его на этой машине."
-            ]
-          },
-          {
             "id": "settings-you-cannot-change",
             "title": "Четыре настройки, для которых нет экрана",
             "audience": "owner",
-            "summary": "В записи вашего магазина есть четыре настройки кассы, и программа читает все четыре, но нигде в продукте нет того, что их редактирует. Они застряли на встроенных значениях. Они перечислены здесь, чтобы вы не потратили полдня на поиски экрана, которого не существует.",
+            "summary": "В записи магазина, за которым стоит сайт, есть четыре настройки кассы, и программа читает все четыре, но в панели администратора нет ничего, что их редактирует. Они застряли на встроенных значениях и перечислены здесь, чтобы вы не потратили полдня на поиски экрана, которого не существует. Касса без сайта - исключение: три из четырёх находятся на её собственной странице настроек, в разделе «Магазин».",
             "fields": [
               {
                 "name": "Префикс номера чека",
@@ -3832,7 +3988,7 @@ const MANUAL = {
             ],
             "notes": [
               "Это не скрытые настройки, которые нужно найти. Нет ни расширенной страницы, ни файла конфигурации, который правит владелец магазина, ни команды поддержки. Ничто в поставляемом продукте не записывает эти четыре значения.",
-              "Не путайте это со страницей настроек самой кассы. Та страница существует, работает и отвечает за имя этой кассы, её язык, скорость сканера и принтер. Эти четыре - совсем другие настройки.",
+              "Не путайте это со страницей настроек самой кассы. Та страница существует, работает и отвечает за имя этой кассы, её язык, скорость сканера и принтер. На кассе без сайта там есть ещё раздел «Магазин», и именно он задаёт префикс чека, округление наличных и галочку налога.",
               "Страница Касса в панели администратора редактирует ровно две вещи: верхний и нижний текст чека. Всё остальное на той странице - переключатель, число или таблица.",
               "Если в будущем выпуске для них появятся экраны, они начнут вести себя так, как вы зададите. До тех пор все кассы используют значения выше."
             ]
@@ -3947,36 +4103,6 @@ const MANUAL = {
               "Продажи, оформленные им до ухода, сохраняют код его учётной записи. Это сделано намеренно: именно так вы и через месяцы сможете понять, кто принял тот или иной платёж.",
               "Свою собственную роль изменить нельзя, поэтому случайно лишить себя доступа во время наведения порядка невозможно."
             ]
-          },
-          {
-            "id": "roles-on-this-till",
-            "title": "Роли на кассе без сайта",
-            "audience": "owner",
-            "route": "/pos/app-admin",
-            "summary": "Касса, работающая без сайта, хранит собственный список ролей прямо на этом компьютере. На странице «Администратор приложения» вы решаете, какие из семи встроенных ролей нужны магазину, и можете завести свои. Открыть её может только учётная запись поддержки, созданная при вводе кассы в работу, а на кассе с сайтом этой страницы нет вовсе.",
-            "steps": [
-              "Войдите под учётной записью поддержки — это первая запись, созданная при настройке кассы. Пункт «Администратор приложения» появляется в меню, в разделе «Система», только у неё. На кассе, связанной с сайтом, этот адрес просто возвращает вас к продаже.",
-              "В разделе встроенных ролей семь строк, от наименьшего доступа: Кассир, Кассир (дубль), Кладовщик, Бухгалтер, Менеджер, Администратор и Поддержка. В каждой строке перечислено, что эта роль открывает.",
-              "Отметьте роль, чтобы её использовать, снимите отметку, чтобы вывести из обращения. Отключённая роль перестаёт предлагаться при добавлении и изменении сотрудника, а те, у кого она осталась, перестают открывать что-либо — сначала переведите этих людей на другую роль.",
-              "Чтобы завести свою роль, нажмите «Добавить свою роль», дайте ей название, отметьте разделы, которые она открывает, и нажмите «Сохранить роль».",
-              "«Изменить» открывает свою роль заново, «Удалить» убирает её. Удаление происходит сразу, без подтверждения."
-            ],
-            "fields": [
-              {
-                "name": "Доступ",
-                "what": "Шесть флажков у своей роли: Касса, Склад, Бэк-офис, Отчёты, Настройки и Поддержка. Касса — сама продажа, Бэк-офис — локальная админка по адресу /pos/admin, Поддержка — эта страница."
-              },
-              {
-                "name": "Название роли",
-                "what": "То, как роль называется при назначении сотруднику. Произвольный текст и единственное, по чему её узнать на экране сотрудников."
-              }
-            ],
-            "notes": [
-              "Поддержку нельзя отключить. Это единственная роль, открывающая эту страницу, а на кассе без сайта вернуть доступ откуда-то ещё невозможно — если бы её можно было снять, один щелчок навсегда лишил бы вас кассы.",
-              "«Кассир (дубль)» открывает ровно то же, что и Кассир. Он оставлен только для тех, кому уже выдан. Новым кассирам давайте обычного Кассира.",
-              "Эти роли живут только на этом компьютере. У другой кассы, даже в том же магазине, свой отдельный список, и ничего отсюда не появляется в онлайн-панели.",
-              "Список ролей — часть собственных записей магазина, а не кэш. Его стирает только сброс к заводским настройкам, и копии больше нигде нет."
-            ]
           }
         ]
       },
@@ -3985,58 +4111,6 @@ const MANUAL = {
         "title": "День за прилавком",
         "blurb": "Открыть кассу, оформить продажу, принять деньги, напечатать чек и что делать, если продажа не проходит.",
         "sections": [
-          {
-            "id": "opening-the-till",
-            "title": "Открытие кассы в начале смены",
-            "audience": "staff",
-            "route": "/pos",
-            "summary": "Ничего открывать не нужно, и смены как таковой нет. Вы входите — и касса готова. Эта страница про первые две минуты смены и про две части оформления, на которые ссылается остальная часть руководства: меню слева и полосу сверху.",
-            "steps": [
-              "Откройте /pos на кассе.",
-              "Войдите под своей учётной записью. Не делите её с другим кассиром — продажа записывает, кто её провёл.",
-              "Проверьте, что верхняя полоса называет экран, на котором вы находитесь, а внизу меню слева видно ваше имя.",
-              "Если под верхней полосой видна цветная полоска, прочитайте её. Она про лицензию или про ожидающее обновление, и ни то ни другое не мешает продавать.",
-              "Отсканируйте первый товар. Больше настраивать нечего."
-            ],
-            "fields": [
-              {
-                "name": "Меню",
-                "what": "Тёмный столбец слева. В нём все экраны этой кассы, сгруппированные под заголовками «Касса», «Магазин» и «Система», и тот, на котором вы сейчас, подсвечен."
-              },
-              {
-                "name": "Свернуть меню",
-                "what": "Внизу меню. Сжимает его до полоски значков, чтобы ширина осталась продаже; при наведении на значок видно его название. Касса запоминает ваш выбор на этом компьютере."
-              },
-              {
-                "name": "Касса",
-                "what": "Первый пункт в разделе «Касса». Экран продажи. Здесь вы проводите день."
-              },
-              {
-                "name": "Отложенные продажи",
-                "what": "В разделе «Касса», на кассе, за которой стоит сайт. Красное число рядом — сколько продаж ждёт отправки."
-              },
-              {
-                "name": "Настройки",
-                "what": "В разделе «Система». Собственные настройки этой кассы: язык, имя, насколько светло она выглядит, скорость сканера."
-              },
-              {
-                "name": "Оформление",
-                "what": "Маленькая кнопка в верхней полосе со значком солнца, луны или экрана. Нажатия переключают светлый режим, тёмный и режим «как на самом компьютере»."
-              },
-              {
-                "name": "Выйти из кассы",
-                "what": "Внизу меню, а также под вашим именем справа вверху. Выполняет выход. Пользуйтесь этим в конце смены, чтобы следующий человек продавал под своим именем."
-              }
-            ],
-            "notes": [
-              "Смену открывать не нужно, размен пересчитывать тоже. У кассы нет никакой сессии, поэтому нет ни шага в начале дня, ни шага в конце, которые нужно было бы помнить.",
-              "Что именно в меню, зависит от кассы и от учётной записи. Касса с сайтом показывает «Отложенные продажи»; касса без сайта показывает «Магазин» и «Бэк-офис» тем, кому туда можно. Целиком меню не видит никто.",
-              "В конце смены выходите из учётной записи. Продажи записывают того, кто их провёл, поэтому если остаться в системе, продажи следующего человека запишутся на вас.",
-              "На узком экране — планшет вертикально или телефон — меню не показано. Кнопка слева вверху открывает его поверх страницы, и оно закрывается, как только вы выберете экран.",
-              "Касса по-прежнему занимает весь экран. Ни шапки магазина, ни подвала нет — чтобы ничто на экране не отвлекало за прилавком.",
-              "Если появилась жёлтая полоска про лицензию, её можно закрыть, и она не вернётся до перезагрузки страницы. При следующем открытии кассы она появится снова. Продажу она не блокирует никогда."
-            ]
-          },
           {
             "id": "ringing-up-a-sale",
             "title": "Как пробить продажу: сканирование и текущий чек",
@@ -4095,7 +4169,7 @@ const MANUAL = {
               "Касса ищет код в трёх местах и именно в таком порядке: сначала Штрихкод (Barcode) товара, затем его SKU, затем внутренний код товара (id). При совпадении по SKU под полем появляется «Matched by SKU», а при совпадении по внутреннему коду — «Matched by product id».",
               "Если код совпал у двух и более товаров, касса покажет их вместе с ценами и спросит «Which one?». Пока вы не выберете, в продажу ничего не добавляется.",
               "Если совпадений нет, появится «Nothing matches ...», а продажа останется без изменений.",
-              "Найти товар по названию на этом экране невозможно. Здесь нет ни поиска, ни списка для просмотра — только одно поле для кода. Если товар не сканируется и его кода вы не знаете, добавить его в продажу с кассы не получится.",
+              "Товар можно найти по названию - в поле поиска в верхней панели: наберите часть названия, нажмите Enter, и совпадения вернутся картинками, по которым нажимают, чтобы добавить товар в продажу. Чего нет - так это списка для просмотра, поэтому товар, который не сканируется, названия которого вы не знаете и код которого вам неизвестен, добавить всё так же не получится.",
               "Товар без штрихкода и без SKU всё равно можно пробить, если знать его внутренний код (id). Именно его касса проверяет третьим. Код товара виден в адресе страницы его редактирования в админ-панели — в части между /admin/products/ и /edit. Это длинный набор букв и цифр, так что способ запасной, а не для повседневной работы.",
               "Если не сработал сам поиск — например, касса потеряла интернет прямо во время сканирования, — под полем появится сообщение «common.error» на английском. Это не фраза, а служебная метка, известная шероховатость. Читайте её как «что-то пошло не так, попробуйте ещё раз». В продажу при этом ничего не добавляется. На азербайджанском, русском и турецком вместо неё выводится нормальное слово.",
               "Скидку на отдельную строку сделать можно, но поля для промокода по-прежнему нет, и привязать продажу к учётной записи покупателя тоже нельзя. Каждая продажа за прилавком записывается как продажа случайному покупателю.",
@@ -4103,7 +4177,7 @@ const MANUAL = {
               "Повторное сканирование того же товара увеличивает количество в существующей строке, а не создаёт вторую. Максимум в одной строке — 10000, а строка с нулевым количеством удаляется.",
               "Итоги справа — ориентир для вас и покупателя. Настоящие цены сервер берёт из вашего каталога в момент завершения продажи, поэтому если цену изменили в админ-панели, пока продажа была открыта, в продаже запишется новая цена.",
               "Если товар удалят из каталога, пока он находится в открытой продаже, завершить её не удастся. В сообщении будет указан внутренний код товара (id), а не название: «Product ... no longer exists», где вместо товара стоит длинный набор букв и цифр. То есть словами вам не скажут, о каком товаре речь. Если такое случилось, очистите продажу и отсканируйте товары заново, чтобы найти тот, который не проходит.",
-              "Всё, куда можно перейти из кассы, находится в меню слева и сгруппировано под заголовками «Касса», «Магазин» и «Система». Состав зависит от кассы и от вашей учётной записи, поэтому два кассира могут видеть разные меню. «Выйти из кассы» внизу меню выполняет выход.",
+              "Всё, куда можно перейти из кассы, находится в меню слева и сгруппировано под заголовками «Касса», «Магазин» и «Система». Состав зависит от кассы и от вашей учётной записи, поэтому два кассира могут видеть разные меню. «Выйти из кассы» в меню больше нет - он в карточке под вашими инициалами справа вверху.",
               "Если у вашей учётной записи нет роли Staff (Admin тоже подходит), на экране появится «Not a register account» вместе с идентификатором вашей учётной записи и кнопкой Copy id — передайте этот идентификатор владельцу, чтобы он выдал вам доступ.",
               "Если владелец выключил кассу, по адресу /pos вместо неё показывается «Register is switched off»."
             ]
@@ -4263,9 +4337,9 @@ const MANUAL = {
             "notes": [
               "Нигде в этом продукте нет экрана возврата или возмещения. Возврат придётся оформлять вне кассы, тем способом, который ваш магазин уже использует.",
               "Нет ни смены, ни сверки наличных, ни Z-отчёта. Ничто не открывает и не закрывает кассовую сессию, и программа никогда не спрашивает, сколько денег в ящике.",
-              "За прилавком нельзя сделать скидку на строку, и поля промокода нет. Каждая продажа за прилавком оформляется по каталожной цене.",
+              "За прилавком нет поля промокода и нельзя привязать к продаже покупателя. Кнопкой с ярлыком на строке можно снять с неё фиксированную сумму - это единственная скидка: ни процентов, ни скидки на всю продажу.",
               "К продаже за прилавком нельзя привязать покупателя. Каждая продажа записывается как случайный покупатель, даже для постоянного клиента, которого вы знаете по имени.",
-              "Найти товар по названию нельзя. Нет ни поля поиска, ни списка для просмотра - только одно поле для кода. Если товар не сканируется и его код вам неизвестен, добавить его в продажу с кассы не получится.",
+              "В верхней панели есть поле поиска, и оно находит товары по названию. Чего нет - так это списка для просмотра: весь каталог нигде не показывается, поэтому товар, который не сканируется, названия которого вы не знаете и код которого вам неизвестен, в продажу не добавить.",
               "Повторной печати нет. После нажатия «Новая продажа» чек исчезает, и вернуть его не может ни одна кнопка. Печатайте до перехода к следующему покупателю.",
               "Касса действительно продолжает продавать офлайн, но не всё умеет офлайн. Товар, который она никогда не скачивала, найти нельзя, а если на кассе закончатся зарезервированные номера чеков, покупатель получит справочный талон, а не чек.",
               "Касса не общается с вашим карточным терминалом. Выбор «Карта» лишь фиксирует, что платили картой; сам платёж вы по-прежнему проводите на терминале.",
@@ -4376,12 +4450,12 @@ const MANUAL = {
             "audience": "owner",
             "summary": "У большинства магазинов нет. Лицензирование - это дополнительная возможность для тех, кто перепродаёт эту программу другим магазинам, и оно выключено, если кто-то намеренно его не включил. Если вы не находите ни одного из экранов, описанных в следующих двух разделах, это ожидаемый результат и исправлять вам нечего.",
             "steps": [
-              "Откройте страницу настроек кассы и поищите поле Лицензия.",
+              "На кассе, за которой нет сайта, откройте App admin внизу меню и нажмите «Лицензия».",
               "Откройте в панели администратора Продажи, затем Касса, и поищите таблицу лицензий.",
               "Если нет ни того ни другого, в вашей копии лицензирование выключено. Пропустите следующие два раздела."
             ],
             "notes": [
-              "Когда лицензирование выключено, поле лицензии на странице настроек кассы, жёлтая предупреждающая полоса и таблица лицензий в панели администратора не отображают вообще ничего. Они не сделаны неактивными и не спрятаны за настройкой - их просто нет.",
+              "Когда лицензирование выключено, страница «Лицензия» говорит об этом одной строкой - в этой сборке лицензирование не включено, - а жёлтая предупреждающая полоса и таблица лицензий в панели администратора не отображают вообще ничего. Они не сделаны неактивными и не спрятаны за настройкой: их просто нет.",
               "Для магазина, работающего на собственном прилавке, это нормальное состояние. Лицензионный ключ для работы с кассой не нужен, и его у вас никогда не спросят.",
               "Если вы купили эту программу у кого-то и вам прислали ключ, начинающийся с cslic1., значит в вашей копии лицензирование включено и следующий раздел вас касается.",
               "Включено ли лицензирование, решается при сборке программы, а не настройкой в панели администратора. Самостоятельно включить или выключить его нельзя."
@@ -4603,7 +4677,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v12.1.0"
+      "version": "v13.0.0"
     },
     "parts": [
       {
@@ -4867,7 +4941,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Yükle",
-                "what": "Üst çubukta, lisans işareti ile görünüm düğmesi arasında. Bu kasada kasa zaten yüklüyse kaybolur; oradaki boşluk işin çoktan yapıldığı anlamına gelir."
+                "what": "Üst çubukta, görünüm düğmesinin (küçük güneş veya ay) solunda. Bu kasada kasa zaten yüklüyse kaybolur; oradaki boşluk işin çoktan yapıldığı anlamına gelir."
               }
             ],
             "notes": [
@@ -4925,7 +4999,7 @@ const MANUAL = {
               "Basılan ve cslic1. ile başlayan anahtarı müşteriye gönderin. Onlar bunu kasanın Ayarlar sayfasına yapıştırır."
             ],
             "notes": [
-              "Lisanslama varsayılan olarak kapalıdır. Açık anahtar boş gönderilir ve boş olduğu sürece kasanın Ayarlar sayfasındaki lisans kutusu, uyarı şeridi ve yönetim panelindeki lisans tablosu hiçbir şey göstermez. Standart bir yapıdaki müşteri bunların hiçbirini görmeyecektir.",
+              "Lisanslama varsayılan olarak kapalıdır. Açık anahtar boş gönderilir ve boş olduğu sürece App admin içindeki Lisans sayfası bunu tek satırda söyler; uyarı şeridi ve yönetim panelindeki lisans tablosu ise hiçbir şey göstermez. Standart bir yapıdaki müşteri bunların hiçbirini görmez.",
               "Bu bir kopya koruması değildir ve öyle tasarlanmamıştır. Kütüphane açık kaynaklıdır ve serbest bir lisansla dağıtılır; bu yüzden anahtarsız çalıştırmaya kararlı olan herkes bunu yapabilir. Lisanslamanın verdiği şey, kimin ne aldığının ve hangi bilgisayarda etkinleştirdiğinin kaydıdır.",
               "Zorlama bilerek yalnızca uyarıdan ibarettir. Bunun üzerine ticari bir süreç kurmadan önce Süresi dolmuş bir lisans gerçekte ne yapar bölümünü okuyun; çünkü çoğu kişinin sandığından hayli az iş görür.",
               "Etkinleştirme anahtarı tek bir bilgisayara bağlar. O bilgisayar değiştirilirse birinin yönetim panelinden koltuğu serbest bırakması gerekir - müşteri bunu kendisi yapamaz."
@@ -4941,7 +5015,7 @@ const MANUAL = {
           {
             "id": "till-settings",
             "title": "Bu kasaya ait ayarlar",
-            "summary": "Bu sayfadaki her şey karşısında oturduğunuz bilgisayara aittir, mağazanıza değil. Ön tezgâhtaki kasa ve depodaki tablet, her biri kendi adını, kendi dilini, kendi parlaklığını ve kendi tarayıcı ayarını tutar. Sayfa bunu en üstte söyler: bunlar yalnızca bu bilgisayar için geçerlidir.",
+            "summary": "Bu sayfadaki her şey karşısında oturduğunuz bilgisayara aittir, mağazanıza değil. Ön tezgâhtaki kasa ve depodaki tablet, her biri kendi adını, kendi dilini, kendi parlaklığını ve kendi tarayıcı ayarını tutar. Sayfa bunu en üstte söyler: bunlar yalnızca bu bilgisayar için geçerlidir. Arkasında web sitesi olmayan bir kasada listeye iki bölüm daha eklenir - mağazanın kendi bilgileri ve yedek - ve bu ikisi mağazaya aittir.",
             "steps": [
               "Kasa ekranında soldaki menüden Ayarlar (Settings) bölümünü açın.",
               "Dil (Language) menüsünden dilinizi seçin. Dil anında değişir; bunun için Kaydet (Save) düğmesine basmanız gerekmez.",
@@ -4980,7 +5054,7 @@ const MANUAL = {
               },
               {
                 "name": "Kaydet (Save)",
-                "what": "Kasa adını, okuyucu hızını ve saklama seçimini kaydeder."
+                "what": "Kasa adını ve okuyucu hızını kaydeder. Dil ve görünüm seçtiğiniz anda uygulanır, iki mağaza bölümünün kendi kaydetme düğmesi vardır, satışların nerede saklandığı ise burada hiç değiştirilemez."
               }
             ],
             "notes": [
@@ -4997,7 +5071,8 @@ const MANUAL = {
               "Tarayıcınız site verilerini engelliyorsa bu sayfanın çoğu sessizce çalışmaz ve ekranda sizi uyaran hiçbir şey olmaz. Tek istisna dildir: dil bellekte bir kopya tutar, bu yüzden seçiminiz sekme açık kaldığı sürece geçerli olur, ancak sayfa yenilendiğinde kaybolur.",
               "Site verileri engelliyken kasa adı, okuyucu hızı ve saklama seçimi hiç saklanmaz. Kaydet düğmesine basmak yine \"Settings saved\" mesajını gösterir, ama hiçbir şey yazılmaz ve bu sayfadan ayrılır ayrılmaz eski değerler geri gelir; kaybetmeniz için sayfayı yenilemeniz bile gerekmez. O mesajı, ayarın saklandığının kanıtı değil, düğmeye bastığınızın onayı sayın.",
               "Site verileri engelliyken cihaz kimliği önemli bir biçimde kararsız olur: her gerektiğinde yenisi üretilir, bu yüzden bu sayfada gördüğünüz kod, satışlarınıza işlenen kod değildir. Tarayıcı bu durumdayken o kodu destek ekibine okumayın.",
-              "Kendi başına çalışan bir kasada \"Yalnızca bu bilgisayar\" satırının altında turuncu bir uyarı görünür: hiçbir şey başka bir yerde saklanmıyor. Bunu tam anlamıyla ciddiye alın — o bilgisayar kaybolursa ya da diski bozulursa, üzerindeki satışlar da gitmiştir. Bulutta kopya yoktur, çünkü bulut yoktur."
+              "Kendi başına çalışan bir kasada \"Yalnızca bu bilgisayar\" satırının altında turuncu bir uyarı görünür: hiçbir şey başka bir yerde saklanmıyor. Bunu tam anlamıyla ciddiye alın — o bilgisayar kaybolursa ya da diski bozulursa, üzerindeki satışlar da gitmiştir. Bulutta kopya yoktur, çünkü bulut yoktur.",
+              "Arkasında web sitesi olmayan bir kasada bu sayfanın solundaki listeye iki madde eklenir: mağazanın adı, para birimi ve fiş metni için Mağaza ve kasanın bildiği her şeyin tek kopyası için Yedek. Her biri yalnızca izni olan role görünür ve her birinin bu kılavuzda kendi bölümü vardır."
             ]
           },
           {
@@ -5080,43 +5155,10 @@ const MANUAL = {
             ]
           },
           {
-            "id": "activating-a-licence",
-            "title": "Kasa lisansı",
-            "summary": "Bu kasayı satın aldıysanız size bir lisans anahtarı gönderildi. Anahtarı kasa ayarları ekranındaki Lisans (Licence) kutusuna yapıştırın. Anahtar tek bir bilgisayara bağlıdır: ikinci bir makinede etkinleştirdiğinizde lisansın başka yerde kullanıldığı bildirilir. Kopyanızda lisans yoksa bu kutu ekranda hiç görünmez ve yapılacak bir şey yoktur.",
-            "steps": [
-              "Kasada soldaki menüden Ayarlar (Settings) bölümünü açın.",
-              "Lisans (Licence) kutusunu bulun. Yoksa kopyanız lisans anahtarı kullanmıyordur ve bu bölümü atlayabilirsiniz.",
-              "Size gönderilen anahtarı yapıştırın. \"cslic1.\" ile başlar ve boşluksuz tek bir uzun satırdır.",
-              "Etkinleştir (Activate) düğmesine basın. \"Licensed to\" ve mağaza adınızı gösteren yeşil bir etiket belirir.",
-              "Bu bilgisayarı değiştirdiyseniz, lisansı size satan kişiden önce eski makineden serbest bırakmasını isteyin. O yapılana kadar yeni bilgisayar lisansın başka yerde kullanıldığını bildirir."
-            ],
-            "fields": [
-              {
-                "name": "Lisans anahtarı (Licence key)",
-                "what": "Kasayı satın aldığınızda gönderilen, \"cslic1.\" ile başlayan uzun satır."
-              },
-              {
-                "name": "Etkinleştir (Activate)",
-                "what": "Anahtarı kontrol eder ve bu bilgisayara bağlar. Bir şey yapıştırmadan pasiftir."
-              },
-              {
-                "name": "Anahtarı kaldır (Remove key)",
-                "what": "Anahtarı bu bilgisayardan siler. Lisansı başka bir makine için serbest bırakmaz - bunu yalnızca satıcı yapabilir."
-              }
-            ],
-            "notes": [
-              "Lisans sorunu satışı asla durdurmaz. En kötü ihtimalle kasanın üstünde sarı bir şerit çıkar. Onu kapatabilirsiniz ve sayfa yeniden yüklenene kadar kapalı kalır; bir sonraki yüklemede veya kasa yeniden açıldığında geri gelir. Kasalar evrak yüzünden durmaz.",
-              "Anahtar size değil, bu bilgisayara bağlıdır. Tarayıcı verilerini temizlemek, başka bir tarayıcı ya da gizli pencere kullanmak yeni bir bilgisayar gibi görünür ve lisans başka yerde kullanılıyor olarak bildirilir.",
-              "Etkinleştirme sırasında internet yoksa anahtar yine kaydedilir ve bir sonraki çevrimiçi olduğunuzda onaylanacağı bir satırla belirtilir.",
-              "Bazı eski tarayıcılar anahtarı kendileri doğrulayamaz. Böyle bir mesaj görürseniz anahtar yine saklanır ve kasa çevrimiçi olduğunda sunucu tarafından onaylanır.",
-              "Anahtarı buradan kaldırmak hiçbir şeyi iptal etmez ve para iadesi yapmaz. Yalnızca bu makineden temizler."
-            ]
-          },
-          {
             "id": "settings-you-cannot-change",
             "title": "Değiştirmek için ekranı olmayan dört ayar",
             "audience": "owner",
-            "summary": "Mağazanızın kaydında dört kasa ayarı vardır ve yazılım dördünü de okur; ama üründe hiçbir yerde onları düzenleyen bir şey yoktur. Yerleşik değerlerinde sıkışıp kalmışlardır. Burada, var olmayan bir ekranı aramakla bir öğleden sonranızı harcamayasınız diye listelenmişlerdir.",
+            "summary": "Arkasında web sitesi olan bir mağazanın kaydında dört kasa ayarı vardır ve yazılım dördünü de okur; ama yönetim panelinde onları düzenleyen hiçbir şey yoktur. Yerleşik değerlerinde sıkışıp kalmışlardır ve burada, var olmayan bir ekranı aramakla bir öğleden sonranızı harcamayasınız diye listelenmişlerdir. Web sitesi olmayan bir kasa istisnadır: dördünden üçü kendi Ayarlar sayfasında, Mağaza bölümündedir.",
             "fields": [
               {
                 "name": "Fiş numarası öneki",
@@ -5137,7 +5179,7 @@ const MANUAL = {
             ],
             "notes": [
               "Bunlar bulunmayı bekleyen gizli tercihler değildir. Gelişmiş bir sayfa, mağaza sahibinin düzenlediği bir yapılandırma dosyası veya bir destek komutu yoktur. Yayınlanan üründe hiçbir şey bu dört değeri yazmaz.",
-              "Bunu kasanın kendi Ayarlar sayfasıyla karıştırmayın. O sayfa vardır, çalışır ve bu kasanın adını, dilini, tarayıcı hızını ve yazıcısını kapsar. Bu dördü tamamen başka ayarlardır.",
+              "Bunu kasanın kendi Ayarlar sayfasıyla karıştırmayın. O sayfa vardır, çalışır ve bu kasanın adını, dilini, tarayıcı hızını ve yazıcısını kapsar. Web sitesi olmayan bir kasada orada bir de Mağaza bölümü bulunur ve fiş ön ekini, nakit yuvarlamayı ve vergi kutucuğunu asıl o bölüm belirler.",
               "Yönetim panelindeki Kasa sayfası tam olarak iki şeyi düzenler: fişin üst ve alt metnini. O sayfadaki geri kalan her şey bir anahtar, bir sayı veya bir tablodur.",
               "İleride bir sürüm bunlar için ekran eklerse, belirlediğiniz gibi davranmaya başlayacaklar. O zamana kadar bütün kasaların kullandığı değerler yukarıdakilerdir."
             ]
@@ -5252,36 +5294,6 @@ const MANUAL = {
               "Ayrılmadan önce kaydettiği satışlar onun hesap kodunu taşımayı sürdürür. Bu bilerek yapılmıştır: aylar sonra hangi ödemeyi kimin aldığını hâlâ böyle ayırt edebilirsiniz.",
               "Kendi rolünüzü değiştiremezsiniz; bu yüzden ortalığı toplarken yanlışlıkla kendi erişiminizi kaldıramazsınız."
             ]
-          },
-          {
-            "id": "roles-on-this-till",
-            "title": "Web sitesi olmayan kasada roller",
-            "audience": "owner",
-            "route": "/pos/app-admin",
-            "summary": "Arkasında web sitesi olmadan çalışan bir kasa, kendi rol listesini bu bilgisayarda tutar. Uygulama yöneticisi sayfası, mağazanın yerleşik yedi rolden hangilerini kullanacağına karar verdiğiniz ve kendi rollerinizi yazdığınız yerdir. Sayfayı yalnızca kasa devreye alınırken oluşturulan Destek hesabı açabilir; web sitesine bağlı bir kasada bu sayfa hiç yoktur.",
-            "steps": [
-              "Destek hesabıyla oturum açın — kasa kurulurken oluşturulan ilk hesap. Uygulama yöneticisi menüde, Sistem başlığı altında, yalnızca o hesap için görünür. Web sitesine bağlı bir kasada bu adres sizi sessizce satış ekranına geri götürür.",
-              "Önceden tanımlı roller bölümünde, en az yetkiden başlayarak yedi satır vardır: Kasiyer, Kasiyer (kopya), Depocu, Muhasebeci, Müdür, Yönetici ve Destek. Her satır o rolün açtığı bölümleri listeler.",
-              "Kullanmak için rolü işaretleyin, kaldırmak için işareti kaldırın. Kaldırılan rol, kişi eklerken veya düzenlerken artık önerilmez; o rolü taşıyanlar da hiçbir şeyi açamaz — önce bu kişileri başka bir role geçirin.",
-              "Kendi rolünüzü yazmak için Özel rol ekle düğmesine basın, bir ad verin, açabileceği bölümleri işaretleyin ve Rolü kaydet düğmesine basın.",
-              "Düzenle özel rolü yeniden açar, Sil ise kaldırır. Silme onay sormadan hemen uygulanır."
-            ],
-            "fields": [
-              {
-                "name": "Erişebilecekleri",
-                "what": "Özel bir rolde altı kutu: Kasa, Depo, Arka ofis, Raporlar, Ayarlar ve Destek. Kasa satışın kendisi, Arka ofis /pos/admin adresindeki yerel yönetim, Destek ise bu sayfadır."
-              },
-              {
-                "name": "Rol adı",
-                "what": "Rolü birine verirken görünen ad. Serbest metindir ve Kişiler ekranında rolü tanıtan tek şeydir."
-              }
-            ],
-            "notes": [
-              "Destek kapatılamaz. Bu sayfayı açan tek roldür ve web sitesi olmayan bir kasada erişimi başka bir yerden geri vermenin yolu yoktur — kaldırılabilseydi, tek bir tık kasaya erişiminizi kalıcı olarak bitirirdi.",
-              "\"Kasiyer (kopya)\" tam olarak Kasiyerin açtığını açar. Yalnızca hâlihazırda bu rol verilmiş kişiler çalışmaya devam etsin diye durur. Yeni kasiyerlere düz Kasiyer verin.",
-              "Bu roller yalnızca bu bilgisayarda yaşar. Aynı mağazadaki başka bir kasanın kendi ayrı listesi olur ve buradaki hiçbir şey çevrimiçi yönetim panelinde görünmez.",
-              "Rol listesi mağazanın kendi kayıtlarının parçasıdır, önbellek değil. Yalnızca fabrika ayarlarına sıfırlama siler ve başka hiçbir yerde kopyası yoktur."
-            ]
           }
         ]
       },
@@ -5290,58 +5302,6 @@ const MANUAL = {
         "title": "Tezgâhta bir gün",
         "blurb": "Kasayı açmak, satışı kaydetmek, parayı almak, fiş basmak ve satış geçmediğinde ne yapmak.",
         "sections": [
-          {
-            "id": "opening-the-till",
-            "title": "Vardiyanın başında kasayı açmak",
-            "audience": "staff",
-            "route": "/pos",
-            "summary": "Açılacak bir şey ve başlatılacak bir vardiya yok. Oturum açarsınız ve kasa hazırdır. Bu sayfa vardiyanın ilk iki dakikasını ve kılavuzun geri kalanının sürekli andığı iki parçayı anlatır: soldaki menü ve üstteki çubuk.",
-            "steps": [
-              "Kasada /pos adresini açın.",
-              "Kendi hesabınızla oturum açın. Hesabı başka bir kasiyerle paylaşmayın — satış, onu kimin yaptığını kaydeder.",
-              "Üst çubuğun hangi ekranda olduğunuzu yazdığını ve soldaki menünün altında adınızın göründüğünü kontrol edin.",
-              "Üst çubuğun altında renkli bir şerit varsa okuyun. Lisansla ya da bekleyen bir güncellemeyle ilgilidir; ikisi de satışı durdurmaz.",
-              "İlk ürünü okutun. Ayarlanacak başka bir şey yok."
-            ],
-            "fields": [
-              {
-                "name": "Menü",
-                "what": "Soldaki koyu sütun. Bu kasanın bütün ekranlarını tutar — Kasa, Mağaza ve Sistem başlıkları altında gruplanmıştır — ve bulunduğunuz ekran vurgulanır."
-              },
-              {
-                "name": "Menüyü daralt",
-                "what": "Menünün altında. Menüyü bir simge şeridine indirir, böylece genişlik satışa kalır; simgenin üzerine gelince adı görünür. Kasa seçiminizi bu bilgisayarda hatırlar."
-              },
-              {
-                "name": "Kasa",
-                "what": "Kasa başlığı altındaki ilk bölüm. Satış ekranı. Günü burada geçirirsiniz."
-              },
-              {
-                "name": "Bekleyen satışlar",
-                "what": "Arkasında bir web sitesi olan kasada, Kasa başlığı altında. Yanındaki kırmızı sayı, gönderilmeyi bekleyen satış adedidir."
-              },
-              {
-                "name": "Ayarlar",
-                "what": "Sistem başlığı altında. Bu kasanın kendi ayarları: dili, adı, ne kadar aydınlık göründüğü, tarayıcı hızı."
-              },
-              {
-                "name": "Görünüm",
-                "what": "Üst çubukta güneş, ay ya da ekran simgesi taşıyan küçük düğme. Basıldıkça açık, koyu ve bilgisayarın kendi ayarına uyan mod arasında geçiş yapar."
-              },
-              {
-                "name": "Kasadan çık",
-                "what": "Menünün altında ve ayrıca sağ üstte adınızın altında. Oturumu kapatır. Vardiya sonunda kullanın ki sonraki kişi kendi adıyla satış yapsın."
-              }
-            ],
-            "notes": [
-              "Açılacak vardiya ve sayılacak kasa parası yok. Kasanın hiçbir oturumu yoktur, bu yüzden hatırlanması gereken bir gün başı ya da gün sonu adımı da yoktur.",
-              "Menüde ne olduğu kasaya ve hesaba bağlıdır. Arkasında site olan kasa Bekleyen satışlar bölümünü gösterir; olmayan kasa ise izni olanlara Mağaza ve Arka ofis bölümlerini gösterir. Hepsini birden kimse görmez.",
-              "Vardiya sonunda oturumu kapatın. Satışlar onu yapan hesabı kaydeder; açık bırakırsanız sonraki kişinin satışları size yazılır.",
-              "Dar ekranda — dik tutulan tablet ya da telefon — menü görünmez. Sol üstteki düğme onu sayfanın üzerinde açar ve bir ekran seçer seçmez yeniden kapanır.",
-              "Kasa yine bütün ekranı kaplar. Mağaza başlığı ve alt bilgisi yoktur; böylece tezgâhta ekranda dikkat dağıtan hiçbir şey olmaz.",
-              "Sarı lisans şeridi çıkarsa kapatabilirsiniz ve sayfa yeniden yüklenene kadar geri gelmez. Kasa bir dahaki açılışta yine görünür. Satışı asla engellemez."
-            ]
-          },
           {
             "id": "ringing-up-a-sale",
             "title": "Satış girme: barkod okutma ve satış listesi",
@@ -5400,7 +5360,7 @@ const MANUAL = {
               "Kasa kodu üç yerde, şu sırayla arar: önce ürünün Barkod (Barcode) alanı, sonra SKU'su, sonra da ürünün kendi kimlik kodu. SKU ile eşleştiğinde kutunun altında \"Matched by SKU\" (SKU ile eşleşti), kimlik koduyla eşleştiğinde ise \"Matched by product id\" (ürün kimliğiyle eşleşti) yazar.",
               "İki veya daha fazla ürün aynı kodu paylaşıyorsa kasa bunları fiyatlarıyla birlikte listeler ve \"Which one?\" (Hangisi?) diye sorar. Siz birini seçene kadar satışa hiçbir şey eklenmez.",
               "Hiçbir eşleşme yoksa \"Nothing matches ...\" (Eşleşen yok ...) mesajını görürsünüz ve satışa dokunulmaz.",
-              "Bu ekranda bir ürünü adıyla aramanın yolu yoktur. Arama kutusu da, göz atılacak bir liste de yoktur; yalnızca kod için tek bir kutu vardır. Bir ürünü okutamıyor ve kodunu da bilmiyorsanız, o ürünü kasadan satışa ekleyemezsiniz.",
+              "Bir ürünü adıyla arayabilirsiniz: üst çubuktaki arama kutusuna adın bir bölümünü yazın, Enter’a basın; eşleşenler resim olarak gelir ve üzerine basınca satışa eklenir. Olmayan şey göz atma listesidir; bu yüzden okutamadığınız, adını bilmediğiniz ve kodunu da bilmediğiniz bir ürünü yine de satışa ekleyemezsiniz.",
               "Barkodu ve SKU'su olmayan bir ürün de, kimlik kodunu biliyorsanız satılabilir. Kasanın denediği üçüncü şey bu kimliktir. Bir ürünün kimliğini, yönetim panelindeki düzenleme sayfasının web adresinde, /admin/products/ ile /edit arasındaki bölümden okuyabilirsiniz. Harf ve rakamlardan oluşan uzun bir karışımdır; yani bu, günlük çalışma yöntemi değil, son çare bir yoldur.",
               "Aramanın kendisi başarısız olursa - örneğin kasa okutma sırasında internet bağlantısını kaybederse - kutunun altındaki mesajda İngilizce olarak \"common.error\" yazar. Bu bir cümle değil, ham bir iç etikettir ve bilinen bir pürüzdür. Bunu \"bir şeyler ters gitti, tekrar deneyin\" diye okuyun. Bu mesaj çıktığında satışa hiçbir şey eklenmez. Azerbaycanca, Rusça ve Türkçede aynı mesaj düzgün bir kelimeyle görünür.",
               "Tek bir satıra indirim uygulayabilirsiniz; ancak promosyon kodu kutusu hâlâ yoktur ve satışa bir müşteri hesabı bağlanamaz. Her kasa satışı, mağazadan gelen (walk-in) müşteri olarak kaydedilir.",
@@ -5408,7 +5368,7 @@ const MANUAL = {
               "Aynı ürünü ikinci kez okutmak yeni bir satır açmaz, mevcut satırın adedini bir artırır. Bir satıra en çok 10000 girilebilir; adedi sıfıra düşürmek satırı kaldırır.",
               "Sağdaki toplamlar, sizin ve müşteri için yol göstericidir. Gerçek fiyatlar, satışı tamamladığınız anda sunucu tarafından kataloğunuzdan okunur; yani satış açıkken yönetim panelinde bir fiyat değiştirildiyse satış yeni fiyatla kaydedilir.",
               "Satışta beklerken bir ürün katalogdan silinirse satışın tamamlanması başarısız olur. Mesajda ürünün adı değil kimlik kodu geçer: ürünün yerinde harf ve rakamlardan oluşan uzun bir karışımla \"Product ... no longer exists\" (Ürün ... artık yok) yazar. Yani hangi ürün olduğu size açık sözcüklerle söylenmez. Bu olursa satışı temizleyin ve hangisinin eklenmediğini bulmak için ürünleri yeniden okutun.",
-              "Kasanın gidebileceği her yer soldaki menüdedir ve Kasa, Mağaza, Sistem başlıkları altında gruplanmıştır. Listelenenler kasaya ve hesabınıza göre değişir, bu yüzden iki kasiyer farklı menü görebilir. Menünün altındaki \"Kasadan çık\" oturumunuzu kapatır.",
+              "Kasanın gidebileceği her yer soldaki menüdedir ve Kasa, Mağaza, Sistem başlıkları altında gruplanmıştır. Listelenenler kasaya ve hesabınıza göre değişir, bu yüzden iki kasiyer farklı menü görebilir. \"Kasadan çık\" menüde değildir - sağ üstte, baş harflerinizin altındaki karttadır.",
               "Hesabınızda Personel (Staff) rolü yoksa (Yönetici/Admin de olur), ekranda hesap kimliğinizle birlikte \"Not a register account\" (kasa hesabı değil) yazısı ve bir Kimliği kopyala (Copy id) düğmesi görünür; size erişim verebilmesi için o kimliği mağaza sahibine iletin.",
               "Mağaza sahibi kasayı kapattıysa /pos bunun yerine \"Register is switched off\" (Kasa kapalı) yazısını gösterir."
             ]
@@ -5568,9 +5528,9 @@ const MANUAL = {
             "notes": [
               "Bu üründe hiçbir yerde iade veya geri ödeme ekranı yoktur. Bir iade, kasanın dışında, mağazanızın zaten kullandığı yolla halledilmelidir.",
               "Vardiya, nakit sayımı ve Z-raporu yoktur. Hiçbir şey bir kasa oturumu açmaz veya kapatmaz ve yazılım çekmecede ne kadar para olduğunu asla sormaz.",
-              "Tezgâhta bir satıra indirim yapmanın yolu ve promosyon kodu kutusu yoktur. Her tezgâh satışı katalog fiyatından kaydedilir.",
+              "Tezgâhta promosyon kodu kutusu yoktur ve satışa bir müşteri bağlanamaz. Satırın üzerindeki etiket düğmesiyle o satırdan sabit bir tutar düşebilirsiniz; başka indirim yoktur - ne yüzde, ne de satışın tamamından düşen bir indirim.",
               "Bir tezgâh satışına müşteri bağlamanın yolu yoktur. Adıyla tanıdığınız bir müdavim için bile her satış gelen müşteri olarak kaydedilir.",
-              "Bir ürünü ada göre aramanın yolu yoktur. Arama kutusu ve göz atma listesi yoktur - yalnızca kod için tek bir kutu. Bir ürünü okutamıyorsanız ve kodunu bilmiyorsanız onu kasadan satışa ekleyemezsiniz.",
+              "Üst çubukta bir arama kutusu vardır ve ürünleri adına göre bulur. Olmayan şey göz atma listesidir: kataloğun tamamı hiçbir yerde seçilmek üzere gösterilmez; bu yüzden okutamadığınız, adını bilmediğiniz ve kodunu da bilmediğiniz bir ürünü satışa ekleyemezsiniz.",
               "Yeniden basma yoktur. Yeni satış düğmesine bastığınızda fiş gider ve hiçbir düğme onu geri getirmez. Sonrakine geçmeden önce bastırın.",
               "Kasa çevrimdışı satmayı sürdürür ama çevrimdışı her şeyi yapamaz. Hiç indirmediği bir ürünü bulamaz ve kasada ayrılmış fiş numaraları biterse müşteri fiş yerine bir referans fişi alır.",
               "Kasa kart terminalinizle konuşmaz. Kart seçmek yalnızca kartla ödendiğini kaydeder; ödemeyi yine terminalde siz alırsınız.",
@@ -5681,12 +5641,12 @@ const MANUAL = {
             "audience": "owner",
             "summary": "Çoğu mağazada yoktur. Lisanslama, bu yazılımı başka mağazalara satanlar için isteğe bağlı bir eklentidir ve biri bilerek açmadıysa kapalıdır. Sonraki iki bölümde anlatılan ekranların hiçbirini bulamıyorsanız bu beklenen sonuçtur ve düzeltmeniz gereken bir şey yoktur.",
             "steps": [
-              "Kasanın Ayarlar sayfasını açın ve bir Lisans kutusu arayın.",
+              "Arkasında web sitesi olmayan bir kasada menünün altındaki App admin’i açın ve Lisans’a basın.",
               "Yönetim panelinde Satış, ardından Kasa bölümünü açın ve bir lisans tablosu arayın.",
               "İkisi de yoksa kopyanızda lisanslama kapalıdır. Sonraki iki bölümü atlayın."
             ],
             "notes": [
-              "Lisanslama kapalıyken kasanın Ayarlar sayfasındaki lisans kutusu, sarı uyarı şeridi ve yönetim panelindeki lisans tablosu hiçbir şey göstermez. Soluk gösterilmez veya bir ayarın arkasına gizlenmez - basitçe yokturlar.",
+              "Lisanslama kapalıyken Lisans sayfası bunu tek satırda söyler - bu yapıda lisanslama açık değildir - sarı uyarı şeridi ve yönetim panelindeki lisans tablosu ise hiçbir şey göstermez. Soluk gösterilmez veya bir ayarın arkasına gizlenmez: basitçe yokturlar.",
               "Kendi tezgâhını işleten bir mağaza için olağan durum budur. Kasayı kullanmak için lisans anahtarı gerekmez ve size hiçbir zaman sorulmaz.",
               "Bu yazılımı birinden satın aldıysanız ve size cslic1. ile başlayan bir anahtar gönderdiyse, kopyanızda lisanslama açıktır ve sonraki bölüm sizi ilgilendirir.",
               "Lisanslamanın açık olup olmadığı, yönetim panelindeki bir ayarla değil yazılım derlenirken belirlenir. Kendiniz açıp kapatamazsınız."

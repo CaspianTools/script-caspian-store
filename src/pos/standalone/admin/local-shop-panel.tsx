@@ -127,7 +127,7 @@ const textarea: React.CSSProperties = {
   width: '100%',
   padding: 10,
   borderRadius: 'var(--caspian-radius, 8px)',
-  border: '1px solid rgba(0,0,0,0.15)',
+  border: '1px solid var(--cpos-border-strong, rgba(0,0,0,0.15))',
   font: 'inherit',
   resize: 'vertical',
 };

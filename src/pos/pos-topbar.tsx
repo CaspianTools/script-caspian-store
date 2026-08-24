@@ -25,6 +25,8 @@ import { PosConnectionPill } from './pos-connection-pill';
 import { PosInstallButton } from './pos-install-button';
 import { LocalProductFormDialog } from './standalone/admin/local-product-form-dialog';
 import { LocalPersonFormDialog } from './standalone/admin/local-person-form-dialog';
+import { usePosLocalSession } from './standalone/local-session-context';
+import { usePosRoles } from './standalone/role-context';
 import { usePosChrome } from './theme/pos-chrome-context';
 import type { PosSaleQueue } from './offline/pos-sale-queue';
 import type { UserProfile } from '../types';
@@ -66,6 +68,16 @@ export function PosTopbar({
   const [search, setSearch] = useState(() => searchParams?.get('q') ?? '');
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [personDialogOpen, setPersonDialogOpen] = useState(false);
+
+  const session = usePosLocalSession();
+  const { can } = usePosRoles();
+  const role = session.user?.role;
+  const mayAddProduct = local && can(role, 'store.edit');
+  const mayAddPerson = local && can(role, 'people.edit');
+  const maySeeStore = local && can(role, 'store.view');
+  // A cloud till has no role definitions to consult, and settings answered to
+  // nobody before capabilities existed, so it stays open there.
+  const maySeeSettings = !local || can(role, 'settings.view');
 
   const submitSearch = useCallback(
     (term: string) => {
@@ -148,25 +160,37 @@ export function PosTopbar({
           <DropdownMenuItem icon={<ShoppingCartIcon size={16} />} onSelect={() => replace('/pos')}>
             {t('pos.quickAdd.newSale')}
           </DropdownMenuItem>
-          {local ? (
+          {/*
+            A shortcut to something a role cannot do is worse than no shortcut:
+            it offers the till's only route to a screen and then refuses it. Each
+            of these asks for the same capability the screen behind it asks for.
+          */}
+          {mayAddProduct ? (
             <DropdownMenuItem icon={<TagIcon size={16} />} onSelect={() => setProductDialogOpen(true)}>
               {t('pos.quickAdd.product')}
             </DropdownMenuItem>
           ) : null}
-          {local ? (
+          {mayAddPerson ? (
             <DropdownMenuItem icon={<UsersIcon size={16} />} onSelect={() => setPersonDialogOpen(true)}>
               {t('pos.quickAdd.person')}
             </DropdownMenuItem>
           ) : null}
-          {local ? (
+          {maySeeStore ? (
             <DropdownMenuItem icon={<StoreIcon size={16} />} onSelect={() => replace('/pos/store')}>
               {t('pos.quickAdd.store')}
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem icon={<SettingsIcon size={16} />} onSelect={() => replace('/pos/settings')}>
-            {t('pos.nav.settings')}
-          </DropdownMenuItem>
+          {maySeeSettings ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                icon={<SettingsIcon size={16} />}
+                onSelect={() => replace('/pos/settings')}
+              >
+                {t('pos.nav.settings')}
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenu>
 
         {!local && queue ? <PosConnectionPill queue={queue} /> : null}
@@ -214,9 +238,14 @@ export function PosTopbar({
             ) : null}
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem icon={<SettingsIcon size={16} />} onSelect={() => replace('/pos/settings')}>
-            {t('pos.nav.settings')}
-          </DropdownMenuItem>
+          {maySeeSettings ? (
+            <DropdownMenuItem
+              icon={<SettingsIcon size={16} />}
+              onSelect={() => replace('/pos/settings')}
+            >
+              {t('pos.nav.settings')}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem icon={<LogOutIcon size={16} />} destructive onSelect={onExit}>
             {t('pos.nav.exit')}
           </DropdownMenuItem>

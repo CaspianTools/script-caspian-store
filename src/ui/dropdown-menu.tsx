@@ -198,9 +198,9 @@ export function DropdownMenu({
               ...(panelPos.right != null ? { right: panelPos.right } : {}),
               zIndex: 50,
               minWidth,
-              background: '#fff',
+              background: 'var(--cpos-surface, #fff)',
               borderRadius: 'var(--caspian-radius, 8px)',
-              border: '1px solid rgba(0,0,0,0.1)',
+              border: '1px solid var(--cpos-border, rgba(0,0,0,0.1))',
               boxShadow: '0 6px 24px rgba(0,0,0,0.08)',
               padding: 4,
               display: 'flex',
@@ -258,7 +258,7 @@ export function DropdownMenuItem({
         padding: '8px 10px',
         border: 0,
         background: 'transparent',
-        color: destructive ? '#b91c1c' : 'inherit',
+        color: destructive ? 'var(--cpos-danger, #b91c1c)' : 'var(--cpos-fg, inherit)',
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontSize: 14,
@@ -267,13 +267,13 @@ export function DropdownMenuItem({
         width: '100%',
       }}
       onMouseEnter={(e) => {
-        if (!disabled) (e.currentTarget as HTMLButtonElement).style.background = '#f4f4f5';
+        if (!disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--cpos-surface-3, #f4f4f5)';
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
       }}
       onFocus={(e) => {
-        if (!disabled) (e.currentTarget as HTMLButtonElement).style.background = '#f4f4f5';
+        if (!disabled) (e.currentTarget as HTMLButtonElement).style.background = 'var(--cpos-surface-3, #f4f4f5)';
       }}
       onBlur={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
@@ -293,7 +293,7 @@ export function DropdownMenuSeparator() {
       aria-hidden
       style={{
         border: 0,
-        borderTop: '1px solid rgba(0,0,0,0.08)',
+        borderTop: '1px solid var(--cpos-border, rgba(0,0,0,0.08))',
         margin: '4px 0',
       }}
     />

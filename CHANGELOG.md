@@ -16,6 +16,119 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.0.0 — The register's back office becomes the register
+
+The four-tab back office at `/pos/admin` is gone. Sales and People are screens of their own,
+Shop and Backup are sections of Settings, and who may open which is now decided by twelve
+capabilities instead of six coarse areas — so a shop can show someone the day's takings
+without also handing them the export, or the staff list without the password resets. The
+shared inputs, tables, menus and dialogs the till borrows from `src/ui/` follow the
+register's theme now, which is what finally makes its dark mode readable.
+
+### Consumer action required on upgrade
+
+**Only if your own code imports `PosLocalAdminPage` or `PosLocalAdminPageProps`.** Both are
+removed (see **Removed**) and there is no drop-in replacement for the composite page — mount
+`LocalSalesPage` and `LocalPeoplePage`, or just let `PosRoot` route to them. Everyone
+mounting the register the normal way, through `PosRoot` or `CaspianStoreProvider`, needs
+nothing beyond a reinstall:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.0.0
+```
+
+No Firestore rules, no indexes and no Cloud Functions changed, so there is nothing to
+redeploy. Stored role definitions are migrated on read, and the migration is deliberately
+additive — it can only ever hand a role more than it had, so no account loses a screen it
+could open yesterday.
+
+Two behaviour changes a shop will notice on the first morning:
+
+1. **The Accountant role reached no screen at all before.** It held only the `reports` area,
+   which nothing in the register ever enforced, so anyone given it signed in to a till they
+   could not use. Accountant now reaches Sales, including the export.
+2. **`/pos/admin` redirects to `/pos/sales`.** A bookmarked back office, or a cashier typing
+   the address from memory, lands on the screen that inherited most of it rather than on a
+   404.
+
+### Added
+
+- **Sales and People are screens.** `/pos/sales` and `/pos/people`, each with its own menu
+  item, its own page heading and its own capability. They were tab bodies inside the back
+  office, reachable only by opening a page you may not have been allowed to open.
+- **Twelve capabilities in place of six areas**, two tiers per screen — one to see it, one to
+  change it: `register` (Sell at the till), `store.view` / `store.edit` (See the store, Add
+  and edit items), `sales.view` / `sales.export` (See sales, Export sales to a spreadsheet),
+  `people.view` / `people.edit` (See people, Add and edit people), `settings.view` /
+  `settings.shop` / `settings.backup` (Open settings, Change shop and receipt details, Back
+  up and restore), and `appAdmin.view` / `appAdmin.roles` (Open app admin, Change roles). The
+  Roles editor groups them as Counter, Shop and System, the same grouping the menu uses.
+- **New public exports**: `can`, `capabilitiesFromAreas`, `POS_LOCAL_CAPABILITIES`,
+  `CAPABILITY_GROUPS`, `BUILTIN_ROLES`, `POS_LOCAL_AREAS`, `LocalSalesPanel`,
+  `LocalSalesPage`, `LocalPeoplePanel`, `LocalPeoplePage`, and the types
+  `PosLocalCapability` and `RoleDefinition`.
+- **App admin has a sub-navigation** with two panes, addressed as `?section=roles` and
+  `?section=licence`, so a link can point at either.
+- **Shop and Backup sections on `/pos/settings`**, carrying the two back-office tabs that
+  were not big enough to be pages. Both appear only on a standalone till, and only for a role
+  holding `settings.shop` / `settings.backup`.
+
+### Changed
+
+- **`/pos/admin` redirects to `/pos/sales`.** Nothing renders there any more.
+- **Accountant reaches Sales**, where before it reached nothing. See the upgrade notes.
+- **Admin is now identical to Manager.** The only thing that ever separated them was the old
+  `settings` area, and the settings screen was never gated, so holding it changed nothing.
+  Both ids are kept — dropping one takes the register away from everyone holding it — and App
+  admin labels the spare, the same way it already labels the duplicate Cashier.
+- **Every built-in role keeps Open settings**, because `/pos/settings` answered to nobody
+  before capabilities existed: a cashier could always set the theme, the scanner gap and this
+  device's name. An owner can now take it away, which they never could before.
+- **Controls a role cannot use are no longer drawn.** The Sales export button, the Store
+  add / edit / delete buttons, the People role picker, password reset, disable and delete,
+  and the Quick add entries for item, person, store and settings. A shortcut that opens the
+  till's only route to a screen and is then refused by it is worse than no shortcut.
+- **The side menu reads Register, then Store / Sales / People, then Settings**, with App
+  admin pinned to the foot above the collapse toggle — it is the one screen an ordinary shop
+  never opens. The avatar block and the Exit register button are gone from the menu foot;
+  both were already in the top-bar account menu, and this is where they lived before v12.1.0
+  put a second copy downstairs.
+- **The licence pane moved from `/pos/settings` to App admin.** It is parked in every stock
+  build — the vendor public key ships empty — so the pane says in words that licensing is not
+  switched on and that a till without a licence key sells exactly as normal. That has always
+  been true in the strongest sense: `commitPosSale` does not consult licence state at all, so
+  a licence problem cannot block a sale.
+- **`PosLocalArea` and `canAccess` are deprecated, not removed.** Both are public exports;
+  `canAccess` now answers in terms of the capability that opens each old area, so code written
+  against the previous model keeps getting the same answers.
+
+### Fixed
+
+- **The register's dark mode was unreadable in places.** Seven shared primitives — dialog,
+  dropdown menu, input, select, table, button and field description — set light colours
+  inline (`#fff`, `#111`, `#f4f4f5`, `#eee`), and an inline style out-specifies every class
+  rule, so the till's `--cpos-*` tokens could not reach them. The worst of it was the account
+  menu rendering white text on white. Each literal is now the fallback of the token that
+  should have owned it, which fixes the Quick add menu, the account menu, the "Add an item"
+  and "Add person" dialogs, and every table and input on the register. **The storefront and
+  admin panel are unchanged** — outside the register the `--cpos-*` tokens are undefined and
+  the original literal wins.
+
+### Removed
+
+- **`PosLocalAdminPage` and `PosLocalAdminPageProps`.** The page they named held the four
+  tabs and no longer exists. This is the only breaking change in the release, and the reason
+  it is a major.
+
+### Documentation
+
+- `docs/pos-manual.html` is rewritten around the new shape: Sales and People documented as
+  screens rather than tabs, roles documented as capabilities with what each built-in role can
+  reach, the licence pane documented as parked, and the back office's old address documented
+  as a redirect. The gaps stay visible — there is still no returns screen, no shift, no cash
+  drawer and no offline queue on a standalone till, the storage-mode choice at `/pos/settings`
+  is still read-only, and the printer transport is still parked at "browser".
+
 ## v12.1.0 — The register looks like a product
 
 The till has been redesigned. The nav moved out of the top bar into a proper side menu that

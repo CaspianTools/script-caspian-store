@@ -109,8 +109,10 @@ export function PosLicenseSection({ license }: PosLicenseSectionProps) {
 }
 
 const section: React.CSSProperties = {
-  border: '1px solid rgba(0,0,0,0.1)',
-  borderRadius: 'var(--caspian-radius, 12px)',
+  border: '1px solid var(--cpos-border, rgba(0,0,0,0.1))',
+  borderRadius: 'var(--cpos-r-md, 12px)',
+  background: 'var(--cpos-surface, transparent)',
+  color: 'var(--cpos-fg, inherit)',
   padding: 16,
   marginBottom: 16,
   display: 'flex',
@@ -126,6 +128,17 @@ const chip: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-const good: React.CSSProperties = { background: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' };
-const bad: React.CSSProperties = { background: '#fef2f2', color: '#991b1b', borderColor: '#fecaca' };
-const neutral: React.CSSProperties = { background: 'rgba(0,0,0,0.04)', color: '#555' };
+const good: React.CSSProperties = {
+  background: 'var(--cpos-success-soft, #ecfdf5)',
+  color: 'var(--cpos-success, #065f46)',
+  borderColor: 'var(--cpos-success-line, #a7f3d0)',
+};
+const bad: React.CSSProperties = {
+  background: 'var(--cpos-danger-soft, #fef2f2)',
+  color: 'var(--cpos-danger, #991b1b)',
+  borderColor: 'var(--cpos-danger-line, #fecaca)',
+};
+const neutral: React.CSSProperties = {
+  background: 'var(--cpos-surface-3, rgba(0,0,0,0.04))',
+  color: 'var(--cpos-fg-muted, #555)',
+};

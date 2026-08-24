@@ -7,12 +7,12 @@ const inputStyle: React.CSSProperties = {
   display: 'block',
   width: '100%',
   padding: '8px 12px',
-  border: '1px solid rgba(0,0,0,0.15)',
+  border: '1px solid var(--cpos-border-strong, rgba(0,0,0,0.15))',
   borderRadius: 'var(--caspian-radius, 6px)',
   fontSize: 14,
   outline: 'none',
-  background: '#fff',
-  color: 'inherit',
+  background: 'var(--cpos-surface, #fff)',
+  color: 'var(--cpos-fg, inherit)',
   boxSizing: 'border-box',
 };
 
