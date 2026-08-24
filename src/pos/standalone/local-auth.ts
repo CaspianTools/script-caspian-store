@@ -19,6 +19,7 @@ import {
   getLocalUser,
   listLocalUsers,
   newLocalId,
+  readLocalRoles,
   saveLocalUser,
 } from './local-db';
 import type { LocalUser, PosLocalRole } from './types';
@@ -104,7 +105,7 @@ export function normaliseUsername(username: string): string {
 
 export type CreateLocalUserResult =
   | { ok: true; user: LocalUser }
-  | { ok: false; reason: 'username-taken' | 'username-empty' | 'password-too-short' };
+  | { ok: false; reason: 'username-taken' | 'username-empty' | 'password-too-short' | 'invalid-role' };
 
 /** Short, but a till is a physical device behind a counter, not an internet-facing login. */
 export const MIN_LOCAL_PASSWORD_LENGTH = 6;
@@ -120,6 +121,9 @@ export async function createLocalUser(input: {
   if (input.password.length < MIN_LOCAL_PASSWORD_LENGTH) {
     return { ok: false, reason: 'password-too-short' };
   }
+  const roles = await readLocalRoles();
+  const roleDef = roles.find((r) => r.id === input.role);
+  if (!roleDef || !roleDef.enabled) return { ok: false, reason: 'invalid-role' };
   if (await getLocalUserByUsername(username)) return { ok: false, reason: 'username-taken' };
 
   const credentials = await hashLocalPassword(input.password);

@@ -3,38 +3,34 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
 import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
 import { Select } from '../../../ui/select';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
-import { createLocalUser, setLocalPassword, MIN_LOCAL_PASSWORD_LENGTH } from '../local-auth';
+import { setLocalPassword, MIN_LOCAL_PASSWORD_LENGTH } from '../local-auth';
 import { deleteLocalUser, listLocalUsers, saveLocalUser } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
-import { canAccess, POS_LOCAL_ROLES, type LocalUser, type PosLocalRole } from '../types';
-import { actions, danger, field, fieldLabel, muted, row, section } from './panel-styles';
+import { usePosRoles } from '../role-context';
+import { canAccess, type LocalUser, type PosLocalRole } from '../types';
+import { fieldLabel, muted, section } from './panel-styles';
 
 /**
  * Staff and their roles.
  *
- * Only a superadmin can hand out the superadmin role — that is the one rule
- * here that is not merely tidiness. An owner who could promote themselves to
- * support could also lock the installer out of a machine the installer is
- * responsible for.
+ * Adding new people now lives in the Quick Add menu. This panel is for review,
+ * role changes, password resets, and disabling accounts.
  */
 export function LocalPeoplePanel() {
   const t = useT();
   const { toast } = useToast();
   const session = usePosLocalSession();
+  const { enabledRoles } = usePosRoles();
   const [users, setUsers] = useState<LocalUser[] | null>(null);
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<PosLocalRole>('staff');
-  const [error, setError] = useState('');
 
   const isSupport = canAccess(session.user?.role, 'support');
-  const assignable = isSupport ? POS_LOCAL_ROLES : POS_LOCAL_ROLES.filter((r) => r !== 'superadmin');
+  const assignable = isSupport
+    ? enabledRoles
+    : enabledRoles.filter((r) => r.id !== 'superadmin');
 
   const refresh = useCallback(async () => {
     setUsers(await listLocalUsers());
@@ -43,27 +39,6 @@ export function LocalPeoplePanel() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  const add = async () => {
-    setError('');
-    const result = await createLocalUser({ username, displayName, password, role });
-    if (!result.ok) {
-      setError(
-        result.reason === 'password-too-short'
-          ? t('pos.local.passwordTooShort', { min: MIN_LOCAL_PASSWORD_LENGTH })
-          : result.reason === 'username-taken'
-            ? t('pos.local.usernameTaken')
-            : t('pos.admin.people.addFailed'),
-      );
-      return;
-    }
-    setUsername('');
-    setDisplayName('');
-    setPassword('');
-    setRole('staff');
-    await refresh();
-    toast({ title: t('pos.admin.people.added') });
-  };
 
   const changeRole = async (user: LocalUser, next: PosLocalRole) => {
     await saveLocalUser({ ...user, role: next });
@@ -91,48 +66,13 @@ export function LocalPeoplePanel() {
     await refresh();
   };
 
-  const roleLabel = (r: PosLocalRole) => t(`pos.admin.people.role.${r}`);
+  const roleLabel = (r: PosLocalRole) => {
+    const def = enabledRoles.find((role) => role.id === r);
+    return def?.name ?? r;
+  };
 
   return (
     <div>
-      <section style={section}>
-        <span style={fieldLabel}>{t('pos.admin.people.addTitle')}</span>
-        <div style={row}>
-          <div style={{ ...field, flex: '1 1 140px' }}>
-            <label style={fieldLabel}>{t('pos.local.username')}</label>
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} />
-          </div>
-          <div style={{ ...field, flex: '1 1 160px' }}>
-            <label style={fieldLabel}>{t('pos.local.displayName')}</label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </div>
-          <div style={{ ...field, flex: '1 1 140px' }}>
-            <label style={fieldLabel}>{t('pos.local.password')}</label>
-            <Input
-              type="password"
-              value={password}
-              autoComplete="new-password"
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <div style={{ ...field, flex: '1 1 140px' }}>
-            <label style={fieldLabel}>{t('pos.admin.people.roleLabel')}</label>
-            <Select
-              value={role}
-              onChange={(e) => setRole(e.target.value as PosLocalRole)}
-              options={assignable.map((r) => ({ value: r, label: roleLabel(r) }))}
-            />
-          </div>
-        </div>
-        <FieldDescription>{t(`pos.admin.people.roleHelp.${role}`)}</FieldDescription>
-        {error ? <div style={danger}>{error}</div> : null}
-        <div style={actions}>
-          <Button onClick={() => void add()} disabled={!username || !password}>
-            {t('pos.admin.people.add')}
-          </Button>
-        </div>
-      </section>
-
       <section style={section}>
         <span style={fieldLabel}>{t('pos.admin.people.listTitle')}</span>
         {users === null ? (
@@ -150,9 +90,6 @@ export function LocalPeoplePanel() {
             <TBody>
               {users.map((u) => {
                 const isSelf = u.id === session.user?.id;
-                // Only support can touch a support account, and nobody can
-                // take away their own access — a till whose last superadmin
-                // demoted themselves needs a reinstall to fix.
                 const editable = isSupport || u.role !== 'superadmin';
                 return (
                   <TR key={u.id}>
@@ -171,7 +108,7 @@ export function LocalPeoplePanel() {
                         <Select
                           value={u.role}
                           onChange={(e) => void changeRole(u, e.target.value as PosLocalRole)}
-                          options={assignable.map((r) => ({ value: r, label: roleLabel(r) }))}
+                          options={assignable.map((r) => ({ value: r.id, label: r.name }))}
                         />
                       ) : (
                         roleLabel(u.role)

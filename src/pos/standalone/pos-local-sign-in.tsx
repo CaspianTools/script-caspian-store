@@ -112,7 +112,6 @@ function CommissionForm() {
   const t = useT();
   const { commission } = usePosLocalSession();
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -127,7 +126,7 @@ function CommissionForm() {
     setBusy(true);
     setError('');
     try {
-      const result = await commission({ username, displayName, password });
+      const result = await commission({ username, displayName: '', password });
       if (!result.ok) {
         setError(
           result.reason === 'password-too-short'
@@ -165,18 +164,6 @@ function CommissionForm() {
           autoFocus
           autoComplete="off"
           onChange={(e) => setUsername(e.target.value)}
-        />
-      </div>
-
-      <div style={field}>
-        <label style={label} htmlFor="caspian-commission-name">
-          {t('pos.local.displayName')}
-        </label>
-        <Input
-          id="caspian-commission-name"
-          value={displayName}
-          autoComplete="off"
-          onChange={(e) => setDisplayName(e.target.value)}
         />
       </div>
 

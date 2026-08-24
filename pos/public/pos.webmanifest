@@ -1,0 +1,29 @@
+{
+  "name": "Caspian Register",
+  "short_name": "Register",
+  "description": "Point of sale register for Caspian",
+  "start_url": "/pos",
+  "scope": "/pos",
+  "id": "/pos",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icons/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
+}

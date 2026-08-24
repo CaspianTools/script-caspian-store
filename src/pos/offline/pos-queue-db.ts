@@ -12,7 +12,7 @@
  */
 
 export const DB_NAME = 'caspian-pos';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
@@ -34,6 +34,7 @@ export const STORE_LOCAL_USERS = 'localUsers';
 export const STORE_LOCAL_SALES = 'localSales';
 export const STORE_LOCAL_COUNTERS = 'localCounters';
 export const STORE_LOCAL_SETTINGS = 'localSettings';
+export const STORE_LOCAL_ROLES = 'localRoles';
 
 export type StoreName =
   | typeof STORE_QUEUE
@@ -45,7 +46,8 @@ export type StoreName =
   | typeof STORE_LOCAL_USERS
   | typeof STORE_LOCAL_SALES
   | typeof STORE_LOCAL_COUNTERS
-  | typeof STORE_LOCAL_SETTINGS;
+  | typeof STORE_LOCAL_SETTINGS
+  | typeof STORE_LOCAL_ROLES;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -108,6 +110,9 @@ export function openPosDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_LOCAL_SETTINGS)) {
         db.createObjectStore(STORE_LOCAL_SETTINGS, { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_ROLES)) {
+        db.createObjectStore(STORE_LOCAL_ROLES, { keyPath: 'id' });
       }
     };
     req.onsuccess = () => {

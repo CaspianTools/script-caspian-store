@@ -13,9 +13,9 @@ const luivante: CatalogTheme = {
     accent: '#1a73e8',
     radius: '1rem',
     background: '#ffffff',
-    fontFamily: "'Poppins', system-ui, -apple-system, sans-serif",
+    fontFamily: "'Poppins', 'Inter', system-ui, -apple-system, sans-serif",
   },
-  googleFamilies: ['Poppins:wght@300;400;500;600;700'],
+  googleFamilies: ['Poppins:wght@300;400;500;600;700', 'Inter:wght@400;500;600;700'],
   thumbnail: {
     background: '#ffffff',
     foreground: '#1f1f1f',

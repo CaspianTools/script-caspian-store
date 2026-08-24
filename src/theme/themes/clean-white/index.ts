@@ -12,9 +12,9 @@ const cleanWhite: CatalogTheme = {
     accent: '#171717',
     radius: '0.5rem',
     background: '#ffffff',
-    fontFamily: "'Poppins', system-ui, -apple-system, sans-serif",
+    fontFamily: "'Poppins', 'Inter', system-ui, -apple-system, sans-serif",
   },
-  googleFamilies: ['Poppins:wght@400;500;600;700'],
+  googleFamilies: ['Poppins:wght@400;500;600;700', 'Inter:wght@400;500;600;700'],
   thumbnail: {
     background: '#ffffff',
     foreground: '#111111',

@@ -43,7 +43,6 @@ export function RegisterPage({
   const t = useT();
 
   const [accounts, setAccounts] = useState<AccountSettings | undefined>(accountsOverride);
-  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -88,8 +87,8 @@ export function RegisterPage({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) {
-      toast({ title: t('auth.register.nameRequired'), variant: 'destructive' });
+    if (!email.trim()) {
+      toast({ title: t('auth.register.emailRequired'), variant: 'destructive' });
       return;
     }
     if (!setupLinkMode) {
@@ -108,13 +107,13 @@ export function RegisterPage({
     setSubmitting(true);
     try {
       if (setupLinkMode) {
-        await signUpWithSetupLink(email, displayName.trim());
+        await signUpWithSetupLink(email, '');
         toast({
           title: 'Check your email',
           description: 'We sent a link so you can set your password.',
         });
       } else {
-        await signUp(email, password, displayName.trim());
+        await signUp(email, password, '');
       }
       nav.push(redirectTo);
     } catch (error) {
@@ -146,16 +145,6 @@ export function RegisterPage({
       </header>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div>
-          <Label htmlFor="reg-name">{t('auth.register.name')}</Label>
-          <Input
-            id="reg-name"
-            autoComplete="name"
-            required
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-        </div>
         <div>
           <Label htmlFor="reg-email">{t('auth.login.email')}</Label>
           <Input

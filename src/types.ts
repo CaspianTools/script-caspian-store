@@ -1331,12 +1331,12 @@ export const DEFAULT_SCRIPT_SETTINGS: Omit<ScriptSettings, 'updatedAt'> = {
     accent: '#1a73e8',
     radius: '1rem',
     background: '#ffffff',
-    fontFamily: "'Poppins', system-ui, -apple-system, sans-serif",
+    fontFamily: "'Poppins', 'Inter', system-ui, -apple-system, sans-serif",
   },
   fonts: {
-    body: "'Poppins', system-ui, -apple-system, sans-serif",
-    headline: "'Poppins', system-ui, -apple-system, sans-serif",
-    googleFamilies: ['Poppins:wght@300;400;500;600;700'],
+    body: "'Poppins', 'Inter', system-ui, -apple-system, sans-serif",
+    headline: "'Poppins', 'Inter', system-ui, -apple-system, sans-serif",
+    googleFamilies: ['Poppins:wght@300;400;500;600;700', 'Inter:wght@400;500;600;700'],
   },
   hero: {
     title: 'Shop our latest collection',

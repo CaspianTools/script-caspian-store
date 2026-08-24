@@ -38,6 +38,7 @@ import { useScriptSettings } from '../context/script-settings-context';
 import { PosGuard } from '../pos/pos-guard';
 import { PosRoot, PosShell } from '../pos/pos-root';
 import { PosLocalSessionProvider } from '../pos/standalone/local-session-context';
+import { PosRoleProvider } from '../pos/standalone/role-context';
 
 import { AdminGuard } from '../admin/admin-guard';
 import { AdminShell } from '../admin/admin-shell';
@@ -118,11 +119,13 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   if (path === '/pos' || path.startsWith('/pos/')) {
     return (
       <PosLocalSessionProvider>
-        <PosGuard>
-          <PosShell>
-            <PosRoot />
-          </PosShell>
-        </PosGuard>
+        <PosRoleProvider>
+          <PosGuard>
+            <PosShell>
+              <PosRoot />
+            </PosShell>
+          </PosGuard>
+        </PosRoleProvider>
       </PosLocalSessionProvider>
     );
   }

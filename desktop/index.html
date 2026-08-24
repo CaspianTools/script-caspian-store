@@ -10,9 +10,16 @@
       #root {
         height: 100%;
       }
+      /* The register's own screens paint `--caspian-background`, but only once
+         they are inside PosShell -- the sign-in and loading gates render above
+         it and inherit whatever the page behind them is. In a browser that is
+         the site's white body; in this window it is whatever is set here, so a
+         dark backdrop turned the sign-in form into dark text on black. Match
+         the library's surface instead of guessing one. */
       body {
         margin: 0;
-        background: #111;
+        background: var(--caspian-background, #ffffff);
+        color: var(--caspian-foreground, #111111);
       }
       /* Shown until React mounts. A till that looks dead for a second on a cold
          start is a support call, so the window says something immediately. */
@@ -21,7 +28,7 @@
         height: 100%;
         align-items: center;
         justify-content: center;
-        color: #8a8a8a;
+        color: #6a6a6a;
         font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
       }
     </style>

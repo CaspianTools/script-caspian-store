@@ -12,6 +12,7 @@ import type { Product } from '../../types';
 import {
   STORE_LOCAL_COUNTERS,
   STORE_LOCAL_PRODUCTS,
+  STORE_LOCAL_ROLES,
   STORE_LOCAL_SALES,
   STORE_LOCAL_SETTINGS,
   STORE_LOCAL_USERS,
@@ -24,11 +25,13 @@ import {
   posTx,
 } from '../offline/pos-queue-db';
 import {
+  BUILTIN_ROLES,
   DEFAULT_LOCAL_SHOP_SETTINGS,
   type LocalProduct,
   type LocalSale,
   type LocalShopSettings,
   type LocalUser,
+  type RoleDefinition,
 } from './types';
 import { priceLocalSale, type PricedLineInput } from './price-local-sale';
 
@@ -358,6 +361,25 @@ export async function peekLocalReceiptCounter(): Promise<number> {
   return row?.value ?? 0;
 }
 
+// --- Roles ---
+
+const ROLES_KEY = 'roles';
+
+export async function readLocalRoles(): Promise<RoleDefinition[]> {
+  if (!localStoreAvailable()) return BUILTIN_ROLES;
+  return posTx(STORE_LOCAL_ROLES, 'readonly', async (tx) => {
+    const stored = await idbGet<{ key: string; value: RoleDefinition[] }>(tx, STORE_LOCAL_ROLES, ROLES_KEY);
+    return stored?.value ?? BUILTIN_ROLES;
+  });
+}
+
+export async function writeLocalRoles(roles: RoleDefinition[]): Promise<RoleDefinition[]> {
+  await posTx(STORE_LOCAL_ROLES, 'readwrite', (tx) =>
+    idbPut(tx, STORE_LOCAL_ROLES, { key: ROLES_KEY, value: roles }),
+  );
+  return roles;
+}
+
 // --- Shop settings ---
 
 export async function readLocalShopSettings(): Promise<LocalShopSettings> {
@@ -393,6 +415,7 @@ export async function factoryResetLocalStore(): Promise<void> {
     STORE_LOCAL_SALES,
     STORE_LOCAL_COUNTERS,
     STORE_LOCAL_SETTINGS,
+    STORE_LOCAL_ROLES,
   ] as const;
   await posTx([...stores], 'readwrite', (tx) => {
     for (const s of stores) tx.objectStore(s).clear();

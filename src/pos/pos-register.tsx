@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/auth-context';
-import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
+import { useCaspianFirebaseOptional, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { getSiteSettings } from '../services/site-settings-service';
 import { reportServiceError } from '../services/error-log-service';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
+import { PackageIcon, SearchIcon, ShoppingCartIcon, UserIcon, XIcon } from '../ui/icons';
 import { DEFAULT_POS_SETTINGS, type PosSettings, type Product } from '../types';
 import { useBarcodeScanner, DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-scanner';
 import { PosQueuedCloudAdapter } from './storage/queued-cloud-adapter';
@@ -54,6 +55,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const t = useT();
   const ticket = usePosTicket();
 
+  const { searchParams, replace } = useCaspianNavigation();
   const [posSettings, setPosSettings] = useState<PosSettings | null>(null);
   const [currency, setCurrency] = useState('USD');
   const [phase, setPhase] = useState<Phase>({ kind: 'selling' });
@@ -63,6 +65,8 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const [committing, setCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
   const [scanGapMs, setScanGapMs] = useState(DEFAULT_SCAN_GAP_MS);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [searching, setSearching] = useState(false);
 
   // Identity is read at capture time rather than captured in the closure, so a
   // sale held overnight and drained by a different person in the morning is
@@ -102,6 +106,33 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   useEffect(() => {
     setScanGapMs(readScannerGapMs());
   }, []);
+
+  // Search products when the header search query changes.
+  const searchQuery = searchParams?.get('q')?.trim() ?? '';
+  useEffect(() => {
+    if (!searchQuery) {
+      setSearchResults([]);
+      return;
+    }
+    let alive = true;
+    setSearching(true);
+    adapter
+      .searchProducts(searchQuery)
+      .then((products) => {
+        if (!alive) return;
+        setSearchResults(products.slice(0, 24));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSearchResults([]);
+      })
+      .finally(() => {
+        if (alive) setSearching(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [adapter, searchQuery]);
 
   useEffect(() => {
     let alive = true;
@@ -157,6 +188,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     async (code: string) => {
       setManualCode('');
       setAmbiguous(null);
+      setSearchResults([]);
       try {
         const found = await adapter.lookupByCode(code);
         if (!found) {
@@ -182,6 +214,16 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
       }
     },
     [adapter, db, t, ticket],
+  );
+
+  const addProductFromSearch = useCallback(
+    (product: Product) => {
+      ticket.addProduct(product);
+      setSearchResults([]);
+      setScanMessage(null);
+      replace('/pos');
+    },
+    [ticket, replace],
   );
 
   const scanner = useBarcodeScanner({
@@ -333,33 +375,40 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     <div className={className} style={layout}>
       {/* --- Left: scan + browse --- */}
       <section style={pane}>
-        <h2 style={paneTitle}>{t('pos.title')}</h2>
+        <div style={paneHeader}>
+          <div style={paneIcon}>
+            <SearchIcon size={18} />
+          </div>
+          <h2 style={paneTitle}>{t('pos.title')}</h2>
+        </div>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             scanner.submitManual(manualCode);
           }}
-          style={{ display: 'flex', gap: 8 }}
+          style={scanForm}
         >
+          <span style={scanIcon}>
+            <PackageIcon size={18} />
+          </span>
           <Input
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             placeholder={t('pos.scan.placeholder')}
             aria-label={t('pos.scan.placeholder')}
-            style={{ flex: 1, fontSize: 16 }}
+            style={scanInput}
           />
-          <Button type="submit" disabled={!manualCode.trim()}>
+          <Button type="submit" disabled={!manualCode.trim()} size="md">
             {t('pos.scan.submit')}
           </Button>
         </form>
-        <p style={{ margin: 0, fontSize: 12, color: '#666' }}>{t('pos.scan.hint')}</p>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={scanActions}>
           {scanner.cameraSupported ? (
             <Button
               type="button"
-              variant="outline"
+              variant={scanner.cameraActive ? 'primary' : 'outline'}
               size="sm"
               onClick={() => (scanner.cameraActive ? scanner.stopCamera() : void scanner.startCamera())}
             >
@@ -376,19 +425,75 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
         {scanner.cameraActive ? (
           <video
             ref={scanner.videoRef}
-            style={{ width: '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 8, background: '#000' }}
+            style={{ width: '100%', maxHeight: 260, objectFit: 'cover', borderRadius: 12, background: '#000' }}
           />
         ) : null}
 
-        {scanMessage ? (
-          <div style={{ fontSize: 13, color: '#666' }} role="status">
+        {searchQuery && !scanner.cameraActive ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <strong style={{ fontSize: 14, fontWeight: 600 }}>
+                {searching ? t('common.loading') : t('pos.search.results')}
+              </strong>
+              <button
+                type="button"
+                onClick={() => replace('/pos')}
+                style={textButton}
+              >
+                <XIcon size={14} /> {t('common.close')}
+              </button>
+            </div>
+            {searchResults.length === 0 && !searching ? (
+              <p style={{ color: '#888', textAlign: 'center', margin: 'auto 0' }}>
+                {t('pos.search.empty')}
+              </p>
+            ) : (
+              <div style={productGrid}>
+                {searchResults.map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => addProductFromSearch(product)}
+                    style={productCard}
+                  >
+                    <div style={productImage}>
+                      {product.images?.[0]?.url ? (
+                        <img
+                          src={product.images[0].url}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <PackageIcon size={24} />
+                      )}
+                    </div>
+                    <div style={{ padding: 10, textAlign: 'left' }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.3 }}>{product.name}</div>
+                      <div style={{ fontSize: 13, color: 'var(--caspian-primary, #1a73e8)', fontWeight: 700, marginTop: 4 }}>
+                        {formatPrice(product.price)}
+                      </div>
+                      {product.stock ? (
+                        <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                          {Object.values(product.stock).reduce((a, b) => a + b, 0)} in stock
+                        </div>
+                      ) : null}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {scanMessage && !searchQuery ? (
+          <div style={scanMessageBox} role="status">
             {scanMessage}
           </div>
         ) : null}
 
-        {ambiguous ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <strong style={{ fontSize: 13 }}>{t('pos.scan.chooseMatch')}</strong>
+        {ambiguous && !searchQuery ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <strong style={{ fontSize: 14 }}>{t('pos.scan.chooseMatch')}</strong>
             {ambiguous.map((product) => (
               <Button
                 key={product.id}
@@ -407,42 +512,61 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
             ))}
           </div>
         ) : null}
+
+        {!searchQuery && !ambiguous && !scanner.cameraActive ? (
+          <div style={emptyState}>
+            <div style={emptyIcon}>
+              <ShoppingCartIcon size={32} />
+            </div>
+            <p style={{ margin: 0, color: '#888', fontSize: 14 }}>{t('pos.scan.hint')}</p>
+          </div>
+        ) : null}
       </section>
 
       {/* --- Right: the open ticket --- */}
-      <section style={{ ...pane, background: 'rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+      <section style={{ ...pane, background: '#fff' }}>
+        <div style={paneHeader}>
+          <div style={{ ...paneIcon, background: '#10b981', color: '#fff' }}>
+            <ShoppingCartIcon size={18} />
+          </div>
           <h2 style={paneTitle}>{t('pos.ticket.title')}</h2>
-          <Badge>{t('pos.ticket.itemCount', { count: ticket.totals.itemCount })}</Badge>
+          <div style={{ flex: 1, minWidth: 8 }} />
+          <Badge>
+            {t('pos.ticket.itemCount', { count: ticket.totals.itemCount })}
+          </Badge>
         </div>
 
         {ticket.isEmpty ? (
-          <p style={{ color: '#888', padding: '32px 0', textAlign: 'center' }}>
-            {t('pos.ticket.empty')}
-          </p>
+          <div style={emptyState}>
+            <div style={{ ...emptyIcon, background: 'rgba(0,0,0,0.03)', color: '#888' }}>
+              <UserIcon size={32} />
+            </div>
+            <p style={{ margin: 0, color: '#888', fontSize: 14 }}>{t('pos.ticket.empty')}</p>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', flex: 1, minHeight: 0 }}>
             {ticket.lines.map((line, index) => (
               <div key={`${line.productId}-${line.selectedSize ?? ''}`} style={lineRow}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{line.name}</div>
-                  <div style={{ fontSize: 12, color: '#666' }}>
+                  <div style={{ fontWeight: 600, overflowWrap: 'anywhere', fontSize: 14 }}>{line.name}</div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                     {formatPrice(line.unitPrice)}
                     {line.selectedSize ? ` · ${line.selectedSize}` : ''}
                     {line.sku ? ` · ${line.sku}` : ''}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Button
                     type="button"
                     size="icon"
                     variant="outline"
                     aria-label={t('pos.ticket.decrease')}
                     onClick={() => ticket.setQuantity(index, line.quantity - 1)}
+                    style={{ borderRadius: 8 }}
                   >
                     −
                   </Button>
-                  <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 600 }}>
+                  <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 15 }}>
                     {line.quantity}
                   </span>
                   <Button
@@ -451,11 +575,12 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                     variant="outline"
                     aria-label={t('pos.ticket.increase')}
                     onClick={() => ticket.setQuantity(index, line.quantity + 1)}
+                    style={{ borderRadius: 8 }}
                   >
                     +
                   </Button>
                 </div>
-                <div style={{ minWidth: 78, textAlign: 'end', fontWeight: 600 }}>
+                <div style={{ minWidth: 78, textAlign: 'end', fontWeight: 700, fontSize: 15 }}>
                   {formatPrice(line.unitPrice * line.quantity - (line.lineDiscount ?? 0))}
                 </div>
                 <Button
@@ -465,30 +590,32 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                   aria-label={t('pos.ticket.remove')}
                   onClick={() => ticket.removeLine(index)}
                 >
-                  ×
+                  <XIcon size={16} />
                 </Button>
               </div>
             ))}
           </div>
         )}
 
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={ticketFooter}>
           <div style={totalRow}>
-            <span>{t('pos.ticket.subtotal')}</span>
-            <span>{formatPrice(ticket.totals.subtotal)}</span>
+            <span style={{ color: '#666' }}>{t('pos.ticket.subtotal')}</span>
+            <span style={{ fontWeight: 600 }}>{formatPrice(ticket.totals.subtotal)}</span>
           </div>
           {ticket.totals.lineDiscounts > 0 ? (
             <div style={totalRow}>
-              <span>{t('pos.ticket.discountTotal')}</span>
-              <span>-{formatPrice(ticket.totals.lineDiscounts)}</span>
+              <span style={{ color: '#666' }}>{t('pos.ticket.discountTotal')}</span>
+              <span style={{ fontWeight: 600, color: '#16a34a' }}>
+                -{formatPrice(ticket.totals.lineDiscounts)}
+              </span>
             </div>
           ) : null}
-          <div style={{ ...totalRow, fontSize: 24, fontWeight: 700 }}>
+          <div style={{ ...totalRow, fontSize: 24, fontWeight: 800, marginTop: 4, paddingTop: 8, borderTop: '1px dashed rgba(0,0,0,0.1)' }}>
             <span>{t('pos.ticket.total')}</span>
             <span>{formatPrice(ticket.totals.total)}</span>
           </div>
 
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             <Button
               type="button"
               variant="outline"
@@ -496,13 +623,14 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
               onClick={() => {
                 if (window.confirm(t('pos.ticket.clearConfirm'))) startNewSale();
               }}
+              style={{ flex: 1, borderRadius: 12, height: 52 }}
             >
               {t('pos.ticket.clear')}
             </Button>
             <Button
               type="button"
               size="lg"
-              style={{ flex: 1 }}
+              style={{ flex: 2, borderRadius: 12, height: 52, boxShadow: '0 4px 14px rgba(26,115,232,0.35)' }}
               disabled={ticket.isEmpty}
               onClick={() => setPhase({ kind: 'tendering' })}
             >
@@ -599,9 +727,9 @@ function PosSaleComplete({
 
 const layout: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(280px, 1fr) minmax(320px, 1fr)',
-  gap: 16,
-  padding: 16,
+  gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(340px, 1fr)',
+  gap: 20,
+  padding: 20,
   height: '100%',
   minHeight: 0,
   alignItems: 'stretch',
@@ -610,25 +738,167 @@ const layout: React.CSSProperties = {
 const pane: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 12,
-  padding: 16,
-  borderRadius: 'var(--caspian-radius, 12px)',
-  border: '1px solid rgba(0,0,0,0.1)',
+  gap: 14,
+  padding: 20,
+  borderRadius: 20,
+  background: '#fff',
+  border: '1px solid rgba(0,0,0,0.06)',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)',
   minHeight: 0,
+};
+
+const paneHeader: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  marginBottom: 2,
+};
+
+const paneIcon: React.CSSProperties = {
+  width: 36,
+  height: 36,
+  borderRadius: 12,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'var(--caspian-primary, #1a73e8)',
+  color: 'var(--caspian-primary-foreground, #fff)',
+  boxShadow: '0 2px 8px rgba(26,115,232,0.25)',
 };
 
 const paneTitle: React.CSSProperties = { margin: 0, fontSize: 18, fontWeight: 700 };
 
+const scanForm: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  position: 'relative',
+};
+
+const scanIcon: React.CSSProperties = {
+  position: 'absolute',
+  left: 14,
+  color: '#888',
+  pointerEvents: 'none',
+  display: 'inline-flex',
+};
+
+const scanInput: React.CSSProperties = {
+  flex: 1,
+  paddingLeft: 42,
+  paddingRight: 14,
+  height: 48,
+  borderRadius: 14,
+  fontSize: 15,
+  border: '1px solid rgba(0,0,0,0.08)',
+  background: '#f9fafb',
+  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)',
+};
+
+const scanActions: React.CSSProperties = {
+  display: 'flex',
+  gap: 10,
+  alignItems: 'center',
+  flexWrap: 'wrap',
+};
+
+const scanMessageBox: React.CSSProperties = {
+  padding: '12px 14px',
+  borderRadius: 12,
+  background: '#f3f4f6',
+  color: '#4b5563',
+  fontSize: 13,
+};
+
+const productGrid: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+  gap: 12,
+  overflowY: 'auto',
+  padding: 4,
+};
+
+const productCard: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  border: '1px solid rgba(0,0,0,0.08)',
+  borderRadius: 14,
+  background: '#fff',
+  cursor: 'pointer',
+  overflow: 'hidden',
+  textAlign: 'left',
+  padding: 0,
+  transition: 'transform 0.1s, box-shadow 0.15s',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+};
+
+const productImage: React.CSSProperties = {
+  height: 90,
+  background: '#f3f4f6',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#9ca3af',
+};
+
+const emptyState: React.CSSProperties = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  gap: 12,
+  minHeight: 160,
+};
+
+const emptyIcon: React.CSSProperties = {
+  width: 64,
+  height: 64,
+  borderRadius: 20,
+  background: 'rgba(26,115,232,0.08)',
+  color: 'var(--caspian-primary, #1a73e8)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const textButton: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  border: 0,
+  background: 'transparent',
+  color: '#666',
+  cursor: 'pointer',
+  fontSize: 13,
+  fontWeight: 500,
+};
+
 const lineRow: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
+  gap: 10,
+  padding: '10px 8px',
+  borderRadius: 12,
+  background: '#f9fafb',
+  border: '1px solid rgba(0,0,0,0.04)',
+};
+
+const ticketFooter: React.CSSProperties = {
+  marginTop: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
   gap: 8,
-  padding: '8px 4px',
-  borderBottom: '1px solid rgba(0,0,0,0.06)',
+  padding: 16,
+  borderRadius: 16,
+  background: '#f9fafb',
+  border: '1px solid rgba(0,0,0,0.04)',
 };
 
 const totalRow: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'baseline',
+  fontSize: 14,
 };

@@ -484,3 +484,15 @@ export function BookmarkIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function StoreIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <path d="M3 7h18l-2 9H5L3 7z" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M12 16v4" />
+      <path d="M8 16v4" />
+      <path d="M16 16v4" />
+    </svg>
+  );
+}

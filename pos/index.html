@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <title>Caspian POS</title>
+
+    <!-- Manifest is generated from src/pwa/pos-manifest.ts and emitted to
+         /pos.webmanifest by the build. It pins the register install identity,
+         scope and launch handler so the till opens as its own app. -->
+    <link rel="manifest" href="/pos.webmanifest" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="icon" href="/icons/192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/192x192.png" />
+
+    <!-- Google Fonts: Poppins (Azerbaijani Latin) + Inter (Cyrillic fallback). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- iOS ignores the manifest's `display`, so the only way an added-to-home
+         -screen till loses the Safari chrome is these two. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="POS" />
+
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+      /* The register's own screens paint `--caspian-background`, but only once
+         they are inside PosShell -- the sign-in and loading gates render above
+         it and inherit whatever the page behind them is. In a browser that is
+         the site's white body, so a dark backdrop turned the sign-in form into
+         dark text on black. Match the library's surface instead of guessing
+         one, and keep these two in step with the manifest's
+         `background_color` / `theme_color` so the splash does not flash a
+         different colour than the page it hands over to. */
+      body {
+        margin: 0;
+        background: var(--caspian-background, #ffffff);
+        color: var(--caspian-foreground, #111111);
+      }
+      /* Shown until React mounts. A till that looks dead for a second on a cold
+         start is a support call, so the page says something immediately. */
+      #boot {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        color: #6a6a6a;
+        font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="boot">Starting the register…</div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

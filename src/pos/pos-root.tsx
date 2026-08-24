@@ -2,21 +2,22 @@
 
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosLocalSession } from './standalone/local-session-context';
+import { usePosRoles } from './standalone/role-context';
 import { PosLocalAdminPage } from './standalone/admin/pos-local-admin-page';
-import { canAccess } from './standalone/types';
+import { PosAppAdminPage } from './standalone/admin/pos-app-admin-page';
+import { LocalStorePanel } from './standalone/admin/local-store-panel';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
-import { PosInstallButton } from './pos-install-button';
 import { PosQueuePage } from './pos-queue-page';
-import { PosConnectionPill } from './pos-connection-pill';
 import { PosSaleQueue } from './offline/pos-sale-queue';
 import { getPosDeviceId } from './pos-device';
 import { PosServiceWorker } from './pos-service-worker';
+import { PosHeader } from './pos-header';
 import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { PosRegister } from './pos-register';
 import { PosSettingsPage } from './pos-settings-page';
@@ -32,9 +33,9 @@ export function PosShell({ children }: { children: ReactNode }) {
   const { pathname: rawPathname } = useCaspianNavigation();
   // A consumer that puts the locale in the URL hands us `/az/pos/settings`.
   const pathname = stripLocalePrefix(rawPathname);
-  const Link = useCaspianLink();
   const { userProfile, signOut } = useAuth();
   const local = usePosLocalSession();
+  const { canAccess } = usePosRoles();
   const functions = useCaspianFirebaseOptional()?.functions ?? null;
   const t = useT();
   const license = usePosLicense(functions);
@@ -48,8 +49,14 @@ export function PosShell({ children }: { children: ReactNode }) {
   const items = [
     { href: '/pos', label: t('pos.nav.register') },
     ...(local.standalone ? [] : [{ href: '/pos/queue', label: t('pos.nav.queue') }]),
+    ...(local.standalone && canAccess(local.user?.role, 'store')
+      ? [{ href: '/pos/store', label: t('pos.nav.store') }]
+      : []),
     ...(local.standalone && canAccess(local.user?.role, 'admin')
       ? [{ href: '/pos/admin', label: t('pos.nav.localAdmin') }]
+      : []),
+    ...(local.standalone && canAccess(local.user?.role, 'support')
+      ? [{ href: '/pos/app-admin', label: t('pos.nav.appAdmin') }]
       : []),
     { href: '/pos/settings', label: t('pos.nav.settings') },
   ];
@@ -61,45 +68,15 @@ export function PosShell({ children }: { children: ReactNode }) {
 
   return (
     <div style={shell}>
-      <header style={header}>
-        <strong style={{ fontSize: 16 }}>{t('pos.title')}</strong>
-        <nav style={{ display: 'flex', gap: 4, marginInlineStart: 12 }}>
-          {items.map((item) => {
-            const active = item.href === '/pos' ? pathname === '/pos' : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  fontSize: 14,
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  background: active ? 'rgba(0,0,0,0.08)' : 'transparent',
-                  fontWeight: active ? 600 : 400,
-                }}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div style={{ marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#666' }}>{whoIsHere}</span>
-          {!local.standalone && userProfile?.role === 'admin' ? (
-            <Link href="/admin" style={{ fontSize: 13 }}>
-              {t('pos.nav.admin')}
-            </Link>
-          ) : null}
-          {local.standalone ? null : <PosConnectionPill queue={queue} />}
-          <PosInstallButton />
-          <button type="button" onClick={exit} style={exitButton}>
-            {t('pos.nav.exit')}
-          </button>
-        </div>
-      </header>
+      <PosHeader
+        items={items}
+        pathname={pathname}
+        whoIsHere={whoIsHere ?? ''}
+        userProfile={userProfile}
+        local={local.standalone}
+        queue={local.standalone ? null : queue}
+        onExit={exit}
+      />
 
       <PosServiceWorker />
       <PosLicenseBanner license={license} />
@@ -115,27 +92,8 @@ const shell: React.CSSProperties = {
   // The register owns the viewport: a till has no storefront header, no
   // footer, and nothing to scroll past to reach the sale.
   height: '100dvh',
-  background: 'var(--caspian-background, #fff)',
+  background: 'var(--caspian-background, #f7f8fa)',
   color: 'var(--caspian-foreground, #111)',
-};
-
-const header: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  padding: '10px 16px',
-  borderBottom: '1px solid rgba(0,0,0,0.1)',
-  flexWrap: 'wrap',
-};
-
-const exitButton: React.CSSProperties = {
-  padding: '6px 12px',
-  border: '1px solid rgba(0,0,0,0.15)',
-  borderRadius: 8,
-  background: 'transparent',
-  color: 'inherit',
-  cursor: 'pointer',
-  fontSize: 13,
 };
 
 /**
@@ -148,7 +106,8 @@ const exitButton: React.CSSProperties = {
  */
 export function PosRoot(): ReactNode {
   const { pathname } = useCaspianNavigation();
-  const { standalone } = usePosLocalSession();
+  const { standalone, user } = usePosLocalSession();
+  const { canAccess } = usePosRoles();
   const after = stripLocalePrefix(pathname).replace(/^\/pos\/?/, '');
   const [head] = after.split('/');
 
@@ -161,7 +120,11 @@ export function PosRoot(): ReactNode {
     // just a mistyped URL, and the rule above is that those land on the
     // register rather than on a screen with nothing in it.
     case 'admin':
-      return standalone ? <PosLocalAdminPage /> : <PosRegister />;
+      return standalone && canAccess(user?.role, 'admin') ? <PosLocalAdminPage /> : <PosRegister />;
+    case 'store':
+      return standalone && canAccess(user?.role, 'store') ? <LocalStorePanel /> : <PosRegister />;
+    case 'app-admin':
+      return standalone && canAccess(user?.role, 'support') ? <PosAppAdminPage /> : <PosRegister />;
     default:
       return <PosRegister />;
   }

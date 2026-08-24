@@ -10,36 +10,64 @@
 /**
  * Who may reach which part of a standalone till.
  *
- * Deliberately NOT the cloud `UserRole`. That type is mirrored into Firebase
- * Auth custom claims and named directly in `firestore.rules`, so widening it
- * would ripple into rules that a standalone till never evaluates. The two
- * models answer different questions and are kept apart on purpose.
- *
- *   - `staff`      — the counter. Sell, print, reprint. Nothing else.
- *   - `admin`      — the shop owner: catalogue, prices, reports, backups.
- *   - `superadmin` — Technical Support, who commissions the machine, creates
- *                    the shop's accounts and assigns their roles.
+ * Built-in roles are still honoured for backwards compatibility, but the app
+ * admin page can define custom roles too. A role is just a string id backed by
+ * a `RoleDefinition` that lists the areas it may open.
  */
-export type PosLocalRole = 'superadmin' | 'admin' | 'staff';
+export type PosLocalRole = string;
 
+/** Built-in roles that ship with every till. */
 export const POS_LOCAL_ROLES: readonly PosLocalRole[] = ['staff', 'admin', 'superadmin'] as const;
 
 /** The parts of the software a role can be granted. */
-export type PosLocalArea = 'register' | 'admin' | 'support';
+export type PosLocalArea = 'register' | 'store' | 'admin' | 'reports' | 'settings' | 'support';
 
-const AREAS_BY_ROLE: Record<PosLocalRole, readonly PosLocalArea[]> = {
+export const POS_LOCAL_AREAS: readonly PosLocalArea[] = [
+  'register',
+  'store',
+  'admin',
+  'reports',
+  'settings',
+  'support',
+] as const;
+
+/** A role definition managed from App Admin. */
+export interface RoleDefinition {
+  id: PosLocalRole;
+  name: string;
+  enabled: boolean;
+  areas: readonly PosLocalArea[];
+  /** True for built-in roles that cannot be deleted, only enabled/disabled. */
+  builtIn?: boolean;
+}
+
+export const BUILTIN_ROLES: RoleDefinition[] = [
+  { id: 'staff', name: 'Cashier', enabled: true, areas: ['register'], builtIn: true },
+  { id: 'admin', name: 'Admin', enabled: true, areas: ['register', 'store', 'admin', 'reports', 'settings'], builtIn: true },
+  { id: 'superadmin', name: 'Support', enabled: true, areas: ['register', 'store', 'admin', 'reports', 'settings', 'support'], builtIn: true },
+  { id: 'cashier', name: 'Cashier', enabled: true, areas: ['register'], builtIn: true },
+  { id: 'storekeeper', name: 'Storekeeper', enabled: true, areas: ['store'], builtIn: true },
+  { id: 'manager', name: 'Manager', enabled: true, areas: ['register', 'store', 'admin', 'reports'], builtIn: true },
+  { id: 'accountant', name: 'Accountant', enabled: true, areas: ['reports'], builtIn: true },
+];
+
+/** Fallback map used when no dynamic role definitions have been loaded yet. */
+const AREAS_BY_ROLE: Record<string, readonly PosLocalArea[]> = {
   staff: ['register'],
-  admin: ['register', 'admin'],
-  superadmin: ['register', 'admin', 'support'],
+  admin: ['register', 'store', 'admin', 'reports', 'settings'],
+  superadmin: ['register', 'store', 'admin', 'reports', 'settings', 'support'],
+  cashier: ['register'],
+  storekeeper: ['store'],
+  manager: ['register', 'store', 'admin', 'reports'],
+  accountant: ['reports'],
 };
 
 /**
  * Whether a role may open an area.
  *
- * Cumulative rather than exclusive: an owner who has to sign out and back in as
- * somebody else to serve a customer will simply share the cashier's password
- * instead, and then the sales attribution is a fiction. Access widens with
- * rank; it never trades one area for another.
+ * Prefer the `useCanAccess` hook in React components so it reads the latest
+ * role definitions from App Admin. This pure function is a safe synchronous
+ * fallback for guards and utility code.
  */
 export function canAccess(role: PosLocalRole | null | undefined, area: PosLocalArea): boolean {
   if (!role) return false;

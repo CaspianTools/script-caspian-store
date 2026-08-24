@@ -14,7 +14,7 @@
   --caspian-accent: #1a73e8;
   --caspian-radius: 1rem;
   --caspian-background: #ffffff;
-  --caspian-font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  --caspian-font-family: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .caspian-root {
