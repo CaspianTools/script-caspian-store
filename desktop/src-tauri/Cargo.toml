@@ -1,6 +1,6 @@
 [package]
 name = "caspian-register"
-version = "1.0.0"
+version = "1.0.1"
 description = "Caspian Register — the offline in-person till, as a Windows app"
 authors = ["Caspian Tools"]
 edition = "2021"

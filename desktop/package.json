@@ -1,6 +1,6 @@
 {
   "name": "caspian-register-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "The offline Caspian register, as a Windows app. Bundles the standalone till; talks to nothing. Built and released on a desktop/v* tag; not part of the npm package.",
   "type": "module",

@@ -68,9 +68,13 @@ fn open_register(app: &AppHandle) -> Result<(), String> {
     WebviewWindowBuilder::new(app, REGISTER_WINDOW, WebviewUrl::App("index.html".into()))
         .title("Caspian Register")
         .menu(menu)
+        // `eval` lives on WebviewWindow; the menu callback hands back a plain
+        // Window, so the webview is fetched from the app handle.
         .on_menu_event(|window, event| {
             if event.id().as_ref() == MENU_RELOAD {
-                let _ = window.eval("location.reload()");
+                if let Some(register) = window.app_handle().get_webview_window(REGISTER_WINDOW) {
+                    let _ = register.eval("location.reload()");
+                }
             }
         })
         .inner_size(1280.0, 800.0)
