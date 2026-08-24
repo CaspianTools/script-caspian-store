@@ -16,6 +16,73 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v11.0.2 — The Windows register becomes a till with no website
+
+The Windows register app was a thin window onto a shop's hosted `/pos` page, and it asked for that
+address on first run. An address typed once on setup day and never looked at again is an address that is
+sometimes wrong: a till pointed at a company's marketing site showed that site's 404 and nothing else.
+v0.2.0 added a check and a way back to the setup screen, but could not help a till that had *already*
+stored a bad address, because it deliberately never re-probed on launch — so the failure survived the
+upgrade.
+
+The address is now gone. `desktop/` bundles the register and runs it in the library's **standalone**
+mode: the catalogue, the staff, the sales and the receipt numbers live in a local database inside the
+app, and the till contacts nothing. There is no address to type, no account, no website behind it, and
+no 404 that can occur. It is released separately as `desktop/v1.0.0`.
+
+Standalone mode is what made this possible, and it removed both objections that had kept the register
+from being bundled: `signInWithPopup` is irrelevant with no Firebase Auth in the tree, and
+version-locking the UI to a signed binary is what an offline product *is*.
+
+### No consumer action required
+
+Documentation only in the npm package — the register manual and the version stamp. **No library source
+changed**: the offline app is assembled entirely from the existing public API (`standalone`,
+`CaspianRoot`, `features.posOnly` and the framework-adapter contract). The Windows shell is not part of
+the published tarball and releases on its own `desktop/v*` tag, so upgrading the library does not change
+a till, and updating a till does not require upgrading the library.
+
+Shops running a hosted Caspian store are unaffected: the cloud register at `/pos` and its browser
+install are unchanged. What is gone is the *desktop* app's cloud mode — that audience installs the
+register from Chrome or Edge as before.
+
+### Changed
+
+- **`desktop/` — the register is bundled and offline.** The app mounts
+  `<CaspianStoreProvider standalone scriptSettings={{ features: { posOnly: true } }}>` over a Vite React
+  bundle served from inside the binary. The setup screen, the address probe, the `store.json` file and
+  the `Till → Change shop address` menu item are all removed; the `Till` menu keeps Reload and Quit.
+  `ureq` and `url` leave the Rust crate with the network code that used them.
+- **`desktop/` — routing is an in-memory adapter.** Tauri serves the bundle from a custom protocol with
+  no SPA fallback, so `window.location` navigation to `/pos/settings` would ask for a file that does not
+  exist. `desktop/src/memory-navigation.tsx` supplies `pathname`, a reactive `searchParams`, `push`,
+  `replace` and `back` through the documented adapter contract — which is why no library change was
+  needed. External links are inert on purpose: an offline till has no address bar and no back button, so
+  following one is a one-way trip out of the register.
+- **A `store.json` left by a pre-1.0 install is deleted on first launch**, so an upgrade needs no
+  hand-edit.
+
+### Fixed
+
+- **A till upgraded from `desktop/v0.1.0` no longer inherits an unchecked address.** v0.1.0 stored
+  whatever was typed with no validation, and v0.2.0 read it back without re-probing, so a till that had
+  already been pointed at the wrong site kept opening that site's 404 after the upgrade. There is no
+  address to inherit any more.
+
+### Documentation
+
+- **The register manual** (`docs/pos-manual.html`) rewrites "The Windows register app" for what it now
+  is, including the thing that most needs saying out loud: the shop's catalogue, staff and entire
+  trading history exist on that one computer and nowhere else, and **Back office → Backup** is the only
+  copy there will ever be. The `az`, `ru` and `tr` overlays for that section are deleted rather than left
+  stale, so it renders in English with the "not translated yet" notice until it is re-translated.
+- **`desktop/README.md`** corrects what it said about SmartScreen. The warning is not a signature check
+  alone — it weighs the signature, the reputation of both the certificate *and* the exact file hash, and
+  the Mark of the Web, which is why unsigned software installed from a USB stick raises nothing at all.
+  The cost table gains the cheap options it was missing (Certum open-source signing at roughly €30/year,
+  Azure Trusted Signing, Microsoft's file-submission review). **No signing path has been chosen** — the
+  installer is still unsigned and SmartScreen still warns.
+
 ## v11.0.1 — The register app refuses an address with no register on it
 
 A shop that typed its company website into the Windows register app got a bare 404 and no way out. The

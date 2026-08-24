@@ -418,10 +418,11 @@ Then tag the sibling release separately (e.g. `create-caspian-store/v0.1.1`) to 
 
 ### 14. Release the Windows register shell (only when `desktop/` changed)
 
-[desktop/](desktop/) is a Tauri shell around the shop's own `/pos` page. It is **not** in the npm
-package — `files` is an allowlist and does not include it — so it versions and releases independently
-on a `desktop/v*` tag, exactly like `create-caspian-store/`. A library release does **not** imply a
-desktop release, and vice versa.
+[desktop/](desktop/) is a Tauri app that **bundles the register** and runs it in the library's
+standalone mode — no address, no network, no Firebase project. It is **not** in the npm package —
+`files` is an allowlist and does not include it — so it versions and releases independently on a
+`desktop/v*` tag, exactly like `create-caspian-store/`. A library release does **not** imply a desktop
+release, and vice versa.
 
 Skip this step unless something under `desktop/` changed, and say so in the commit body
 (`"desktop/ unaffected"`).
@@ -444,19 +445,39 @@ to discipline:
 - **Report the direct download URL**, read back from the release rather than composed by hand.
 
 There is no local build path on most maintainer machines — the shell is Rust and this repo's usual
-toolchain has no `cargo`. CI is the build, not a mirror of it.
+toolchain has no `cargo`. CI is the build, not a mirror of it. The **web half is checkable locally**
+though, and should be: `npm run build:web` inside `desktop/` plus `npx tsc --noEmit` catches everything
+except the Rust compile, and the bundle can be driven in a real browser with `npx vite preview`.
 
-**Only a definitive 404 refuses an address.** The setup screen probes `{address}/pos` before saving,
-and every other outcome — unreachable host, timeout, TLS failure, 5xx — is accepted. The asymmetry is
-the design, not an oversight: a till is routinely set up before the shop's site is live, so a hard
-reachability check would refuse correct addresses on the very day they are typed. Do not "tighten" it
-into one. The manual states the resulting gap out loud, per the deliberate-gaps rule.
+**The library is built first, at the repo root.** `desktop/` depends on it as `file:..`, which npm
+**links rather than builds**, so a missing `dist/` fails the Vite build with an unresolved import. The
+workflow runs `npm install && npm run build` at the root before touching `desktop/`. Use `npm install`,
+never `npm ci` — this repo commits no lock file.
 
-**The register window's `Till` menu is the only way back to the setup screen.** v0.1.0 shipped a
-`reset_store_url` command that no shipped UI could call, which is why a wrong address was unrecoverable
-without deleting `%APPDATA%\app.caspian.register\store.json` by hand. Do not solve that by adding a
-`capabilities/` directory granting the remote origin IPC access — the shop's own page cannot invoke
-shell commands today, and that is worth keeping.
+**No library source change may be needed to serve the desktop app.** It is assembled entirely from the
+public API: `standalone`, `CaspianRoot`, `features.posOnly`, and the framework-adapter contract. If a
+desktop need seems to require reaching into `src/`, that is the signal to extend the adapter contract
+instead — the same rule that keeps `next/*` out of the library.
+
+**Routing is an in-memory adapter, and must stay one.** Tauri serves the bundle from a custom protocol
+with **no SPA fallback**, so the default `window.location` navigation would ask the protocol handler
+for `/pos/settings` and get nothing. [desktop/src/memory-navigation.tsx](desktop/src/memory-navigation.tsx)
+holds the route in module state and exposes it through `useSyncExternalStore`. Two things there are
+load-bearing: `searchParams` is supplied and reactive (omitting it re-introduces issue #43), and
+**every** link click is intercepted — external hrefs are inert, because an offline till has no address
+bar and no back button, so following one is a one-way trip out of the register.
+
+**The store address is gone, and must not come back.** v0.1.0 asked for it with no validation; v0.2.0
+added a `/pos` probe and a `Till → Change shop address` menu item, but deliberately never re-probed on
+launch, so a till that had already stored a wrong address kept opening that site's 404 across the
+upgrade. The fix was to delete the concept. Do not re-add a cloud mode or a per-device mode switch: the
+same reasoning as `resolvePosStorageMode` applies, the mode is a property of the deployment. A shop with
+a hosted store installs the register from Chrome or Edge as a PWA.
+
+**Standalone data on a till is the shop's only copy.** It lives in IndexedDB inside the app's WebView2
+profile. Uninstalling, wiping the Windows profile or a dead disk destroys it, and `factoryResetLocalStore`
+is a separate call from `clearPosDb` for the same reason. Anything that changes what the Backup panel
+writes or restores must keep the round-trip whole, and the manual must keep saying this out loud.
 
 **The installer is unsigned until a certificate exists.** Windows SmartScreen shows *"Windows protected
 your PC"* on first run. The workflow already does the signing — it imports a PFX, patches the
@@ -470,8 +491,10 @@ producing signed installers the moment two repository secrets exist:
 | `WINDOWS_CERT_PASSWORD` | its password |
 
 The build logs the signature status and warns loudly when a release ships unsigned, so it can never
-happen quietly. Buying the certificate is procurement, not a code change — see
-[desktop/README.md](desktop/README.md) for the options and what each one actually buys.
+happen quietly. **No signing path has been chosen** — that is procurement, not a code change. Note that
+SmartScreen weighs the signature, the reputation of the certificate *and* the exact file hash, and the
+Mark of the Web; it is not a signature check alone, and [desktop/README.md](desktop/README.md) has the
+corrected options table. Azure Trusted Signing is not a PFX and would need a second signing step.
 
 ---
 

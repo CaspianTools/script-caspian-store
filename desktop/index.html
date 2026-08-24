@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>Caspian Register</title>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #111;
+      }
+      /* Shown until React mounts. A till that looks dead for a second on a cold
+         start is a support call, so the window says something immediately. */
+      #boot {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        color: #8a8a8a;
+        font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="boot">Starting the register…</div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

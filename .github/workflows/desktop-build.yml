@@ -2,6 +2,11 @@ name: Desktop — Windows register installer
 
 # Builds desktop/ into a Windows installer (.exe).
 #
+# The app bundles the register itself and runs it in the library's standalone
+# mode, so the library has to be built at the repo root FIRST: desktop/ depends
+# on it as `file:..`, which npm links rather than builds, and a missing dist/
+# fails the Vite build with an unresolved import.
+#
 # This lives in CI rather than on a maintainer's machine because the shell is
 # Rust and most of the people who maintain this repo do not have a Rust
 # toolchain. workflow_dispatch is the iteration path; a `desktop/v*` tag cuts
@@ -49,7 +54,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('desktop/src-tauri/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Install the Tauri CLI
+      # `file:..` is linked, not built, so dist/ must already exist when Vite
+      # resolves the library import.
+      - name: Build the library
+        # `npm install`, not `npm ci` -- this repo deliberately commits no lock file.
+        run: npm install --no-audit --no-fund && npm run build
+
+      - name: Install the register's dependencies
         working-directory: desktop
         run: npm install --no-audit --no-fund
 
@@ -160,7 +171,7 @@ jobs:
           gh release create "${{ github.ref_name }}" `
             "${{ steps.collect.outputs.path }}" `
             --title "Caspian Register ${{ github.ref_name }}" `
-            --notes "Windows installer for the Caspian Store register. Unsigned - Windows SmartScreen will warn on first run until the binary is code-signed. See desktop/README.md."
+            --notes "Windows installer for the Caspian Register. The till runs entirely on the computer it is installed on - no internet connection, no account and no website are needed. Unsigned, so Windows SmartScreen warns on first run: choose More info, then Run anyway. See desktop/README.md."
 
           # Read the URL back rather than composing it: the tag contains a slash,
           # and a hand-built link is a link that can silently be wrong.
