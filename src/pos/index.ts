@@ -27,6 +27,30 @@ export {
   DEFAULT_IDLE_LOCK_MINUTES,
 } from './pos-preferences';
 export { PosLockGate } from './standalone/pos-lock-gate';
+export { PosLocalRecovery, RecoveryCodeBlock } from './standalone/pos-local-recovery';
+export {
+  LocalPasswordDialog,
+  type LocalPasswordDialogProps,
+} from './standalone/admin/local-password-dialog';
+export { PasswordField } from './standalone/password-field';
+export {
+  formatRecoveryCode,
+  normaliseRecoveryCode,
+  isRecoveryCodeShaped,
+  mintRecoveryCode,
+  RECOVERY_CODE_ALPHABET,
+  RECOVERY_CODE_PREFIX,
+  RECOVERY_CODE_SYMBOLS,
+} from './standalone/recovery-code';
+export {
+  hasRecoveryCode,
+  recoveryPatchFor,
+  mintAndStoreRecoveryCode,
+  redeemRecoveryCode,
+  peekRecoveryThrottle,
+  type RecoveryResult,
+  type RecoveryFailure,
+} from './standalone/local-recovery';
 export {
   evaluateSignInThrottle,
   recordSignInFailure,
@@ -263,6 +287,8 @@ export {
   touchLocalSession,
   readLocalSessionLastSeen,
   peekSignInThrottle,
+  passwordIsWeak,
+  verifyStoredCredentials,
   MIN_LOCAL_PASSWORD_LENGTH,
   type LocalCredentials,
   type CreateLocalUserResult,

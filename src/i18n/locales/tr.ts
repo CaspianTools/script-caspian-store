@@ -342,6 +342,88 @@ const tr: MessageDict = {
     'Anahtar kaydedildi, ancak bu tarayıcı onu doğrulayamıyor. Kasa çevrimiçi olduğunda onaylanacak.',
   'pos.license.offline':
     'Bu bilgisayara kaydedildi. Bir sonraki çevrimiçi olduğunuzda lisans sunucusunda onaylanacak.',
+
+  // POS — kimsenin giremediği bir kasaya geri dönmek (kasa v1.1.0)
+  'pos.local.recoveryTitle': 'Devam etmeden önce bu kodu yazın',
+  'pos.local.recoveryBody':
+    'Bu hesabın parolası unutulursa yeni bir parola koyabilecek tek şey budur. Yalnızca bir kez gösterilir — kasa yalnızca kendisinin de okuyamadığı şifrelenmiş bir kopyasını saklar.',
+  'pos.local.recoveryWarning':
+    'Kâğıda yazın ve dükkânın bulabileceği bir yerde saklayın, bu bilgisayarda değil. Bu makine açılamıyorsa, üzerine kaydedilen hiçbir şey de açılamaz.',
+  'pos.local.recoveryConfirm': 'Yazdım — hesabı oluştur',
+  'pos.local.recoveryBack': 'Geri',
+  'pos.local.passwordWeak':
+    'Bu parola tahmin edilmesi çok kolay. Hesap adını ve bir yabancının ilk deneyeceği şeyleri seçmeyin.',
+  'pos.local.currentPassword': 'Şu anki parolanız',
+  'pos.local.wrongCurrentPassword': 'Bu, şu anki parolanız değil.',
+  'pos.local.changeMyPasswordTitle': 'Parolanızı değiştirin',
+
+  'pos.recovery.link': 'Bu kasaya giremiyor musunuz?',
+  'pos.recovery.title': 'Bu kasaya nasıl geri dönülür',
+  'pos.recovery.body':
+    'Üç yol var ve denenmeye değer sırayla yazıldı. Sonuncusu bu bilgisayardaki her şeyi siler, bu yüzden açmadan önce okuyun.',
+  'pos.recovery.back': 'Girişe dön',
+  'pos.recovery.codeTitle': '1. Kurtarma kodunu kullanın',
+  'pos.recovery.codeBody':
+    'Bu kasa kurulurken yazdığınız kod. Hangi hesap için yapıldıysa ona yeni bir parola koyar. Sizi oturuma sokmaz — yeni parolayı sonra normal giriş ekranında yazacaksınız.',
+  'pos.recovery.codeLabel': 'Kurtarma kodu',
+  'pos.recovery.codeHelp':
+    'Büyük küçük harf fark etmez, tireler isteğe bağlıdır. Kâğıtta O veya I yazıyorsa ve kutu kabul etmiyorsa sıfır ya da bir yazın — kasa ikisini aynı okur.',
+  'pos.recovery.newPassword': 'Yeni parola',
+  'pos.recovery.submit': 'Yeni parolayı koy',
+  'pos.recovery.noCode':
+    'Bu kasanın kurtarma kodu yok; kasa kod üretebilmeye başlamadan önce kurulmuş. App admin bölümünü açabilen biri sonrası için kod oluşturabilir.',
+  'pos.recovery.badCode': 'Bu kod bu kasaya uymuyor.',
+  'pos.recovery.accountGone':
+    'Bu kodun yapıldığı hesap artık bu kasada yok. Aşağıdaki diğer iki yolu deneyin.',
+  'pos.recovery.throttled':
+    'Kodu tekrar denemeden önce {seconds} saniye bekleyin. Her yanlış deneme sonraki beklemeyi uzatır.',
+  'pos.recovery.doneTitle': 'Tamam — şimdi yeni parolayla girin',
+  'pos.recovery.doneBody': '{name} için parola değiştirildi. Geri dönün ve onunla girin.',
+  'pos.recovery.newCodeBody':
+    'Eski kod artık çalışmıyor. İşte yerine geçen kod — eskisinin yerine bunu yazın.',
+  'pos.recovery.copy': 'Kodu kopyala',
+  'pos.recovery.copied': 'Kopyalandı',
+  'pos.recovery.askTitle': '2. Bu kasayı kuran kişiden isteyin',
+  'pos.recovery.askBody':
+    'Bu kasada kişi ekleme izni olan herkes, Kişiler ekranından size saniyeler içinde ve hiçbir koda gerek kalmadan yeni bir parola koyabilir. Giremeyen sahibi değil de kasiyerse, cevap budur.',
+  'pos.recovery.resetTitle': '3. Bu kasaya sıfırdan başlayın',
+  'pos.recovery.resetTeaser':
+    'Son çare. Bu bilgisayardaki kataloğu, personeli, satışları ve stok kayıtlarını siler.',
+  'pos.recovery.resetExpand': 'Son çareyi göster',
+  'pos.recovery.resetBody':
+    'Bu, kasanın tuttuğu her şeyi siler: kataloğu, personel hesaplarını, aldığı bütün satışları ve bütün stok kayıtlarını. Geri alınamaz ve hiçbiri başka bir yerde durmuyor. Önce yedeği indirin — dükkânı sonra geri getirmek için gerekecek.',
+  'pos.recovery.resetBackup': 'Önce bir yedek indir',
+  'pos.recovery.resetBackupDone': 'Yedek kaydedildi — yeniden indir',
+  'pos.recovery.resetBackupFailed':
+    'Yedek alınamadı, bu yüzden hiçbir şey silinmedi. Çalışana kadar devam etmeyin.',
+  'pos.recovery.resetConfirmLabel': 'Onaylamak için {name} yazın',
+  'pos.recovery.resetFallbackWord': 'SIL',
+  'pos.recovery.resetCta': 'Bu kasadaki her şeyi sil',
+  'pos.recovery.resetFailed': 'Hiçbir şey silinmedi. Kasa kendi kayıtlarını açamadı.',
+
+  'pos.settings.section.account': 'Hesabınız',
+  'pos.settings.signedInAs': 'Giriş yapan',
+  'pos.settings.changePassword': 'Parolamı değiştir',
+  'pos.settings.changePasswordHelp':
+    'Bu kasada giriş yapmış hesabın parolasını değiştirir. Aynı hesabın açık olduğu diğer her yerde bir dakika kadar içinde oturumu kapatır.',
+
+  'pos.admin.people.passwordTitle': '{name} için yeni parola',
+  'pos.admin.people.newPassword': 'Yeni parola',
+  'pos.admin.people.passwordCta': 'Parolayı kaydet',
+  'pos.admin.backup.credentialsNote':
+    'Dosyada personel hesapları ve şifrelenmiş parolaları var. Klasörü yalnızca dükkânın erişebileceği bir yerde tutun.',
+
+  'pos.appAdmin.section.recovery': 'Kurtarma kodu',
+  'pos.appAdmin.recovery.intro':
+    'Support parolası unutulursa bu kasaya dönmenin tek yolu. Yalnızca bir hesaba yeni parola koyar, başka hiçbir şey yapmaz — kimseyi oturuma sokmaz.',
+  'pos.appAdmin.recovery.none':
+    'Bu kasanın kurtarma kodu yok; kasa kod üretebilmeye başlamadan önce kurulmuş. Parola unutulursa geriye tek yol kasayı silip sıfırdan başlamak kalır ve bu, kataloğu ve satışları da beraberinde götürür.',
+  'pos.appAdmin.recovery.generate': 'Kurtarma kodu oluştur',
+  'pos.appAdmin.recovery.regenerate': 'Kurtarma kodunu değiştir',
+  'pos.appAdmin.recovery.minted': 'Kurtarma kodu oluşturuldu',
+  'pos.appAdmin.recovery.mintedFor': 'Şu anki kod {name} hesabına ait, {date} tarihinde yapıldı.',
+  'pos.appAdmin.recovery.help':
+    'Yeni bir kod oluşturmak eskisini anında geçersiz kılar. Kod bir kez gösterilir; sonrasında kasa yalnızca şifrelenmiş bir kopya tutar ve onu kuran kişi dahil kimse geri okuyamaz.',
 };
 
 export default tr;

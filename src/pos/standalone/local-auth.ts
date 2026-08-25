@@ -117,9 +117,28 @@ export async function hashLocalPassword(password: string): Promise<LocalCredenti
   return { hash, salt: toBase64(salt), iterations: PBKDF2_ITERATIONS };
 }
 
+/**
+ * Check a secret against a stored hash, salt and iteration count.
+ *
+ * The general form. `verifyLocalPassword` is this with a `LocalUser`'s three
+ * fields pulled out; the recovery code stores the same three on the shop record
+ * and verifies through here, so there is one derive-and-compare in the till
+ * rather than two that could drift on the day the cost is raised.
+ */
+export async function verifyStoredCredentials(
+  secret: string,
+  stored: LocalCredentials,
+): Promise<boolean> {
+  const candidate = await derive(secret, fromBase64(stored.salt), stored.iterations);
+  return constantTimeEqual(candidate, stored.hash);
+}
+
 export async function verifyLocalPassword(password: string, user: LocalUser): Promise<boolean> {
-  const candidate = await derive(password, fromBase64(user.passwordSalt), user.passwordIterations);
-  return constantTimeEqual(candidate, user.passwordHash);
+  return verifyStoredCredentials(password, {
+    hash: user.passwordHash,
+    salt: user.passwordSalt,
+    iterations: user.passwordIterations,
+  });
 }
 
 export function normaliseUsername(username: string): string {
@@ -132,6 +151,62 @@ export type CreateLocalUserResult =
 
 /** Short, but a till is a physical device behind a counter, not an internet-facing login. */
 export const MIN_LOCAL_PASSWORD_LENGTH = 6;
+
+/**
+ * Passwords a till refuses, and the one rule worth more than all of them.
+ *
+ * The list is short on purpose. A long blocklist is a way of looking thorough
+ * while stopping nothing: an attacker with the machine in front of them is
+ * working through what they know about *this shop*, not down a leaked-password
+ * chart, and the entries below are the ones a real counter actually produces.
+ * `parol` and `sifre` are here because this till ships in Azerbaijani, Russian
+ * and Turkish and "password" is not the only word for it.
+ *
+ * The rule that earns its place is the last line: a password equal to the
+ * username. It costs nothing, it cannot be argued with, and it closes the case
+ * where an owner sets up three cashiers in a hurry and gives them all their own
+ * name.
+ *
+ * Deliberately advisory to the data layer rather than enforced inside it.
+ * `createLocalUser` and `setLocalPassword` are public exports whose results are
+ * part of the library's contract; widening `CreateLocalUserResult` with a new
+ * reason would drop a consumer's exhaustive switch through, and an upgrade must
+ * never require a consumer to edit their code. The three screens that set a
+ * password call this first, and any consumer building their own can too.
+ */
+const WEAK_PASSWORDS: readonly string[] = [
+  '123456',
+  '1234567',
+  '12345678',
+  '123456789',
+  '1234567890',
+  'password',
+  'password1',
+  'passw0rd',
+  'qwerty',
+  'qwerty123',
+  'abc123',
+  'letmein',
+  'welcome',
+  'admin',
+  'admin123',
+  'cashier',
+  'kassa',
+  'parol',
+  'parol123',
+  'sifre',
+  'iloveyou',
+  'monkey',
+  '000000',
+  '111111',
+];
+
+export function passwordIsWeak(password: string, username: string): boolean {
+  const folded = password.trim().toLowerCase();
+  if (!folded) return true;
+  if (folded === normaliseUsername(username)) return true;
+  return WEAK_PASSWORDS.includes(folded);
+}
 
 export async function createLocalUser(input: {
   username: string;

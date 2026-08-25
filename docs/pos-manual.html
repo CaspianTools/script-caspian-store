@@ -665,7 +665,7 @@ const MANUAL = {
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here.",
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade."
       ],
-      "version": "v1.0.1"
+      "version": "v1.1.0"
     },
     "parts": [
       {
@@ -1048,6 +1048,10 @@ const MANUAL = {
                 "what": "A menu with one entry, \"Browser print dialog\", and it is greyed out. It is the only way receipts print in this version."
               },
               {
+                "name": "Your account",
+                "what": "A box near the top of the index, on a till that runs on its own. It names the account signed in on this computer and carries one button, \"Change my password\". It asks for your current password first, then the new one twice. Changing it signs the same account out anywhere else it is open, within about a minute."
+              },
+              {
                 "name": "Save",
                 "what": "Saves the register name and the scanner speed. The language and the appearance apply the moment you pick them, the two shop sections have a Save button of their own, and where sales are stored cannot be changed here at all."
               }
@@ -1413,18 +1417,18 @@ const MANUAL = {
             "title": "Roles on a till with no website",
             "audience": "owner",
             "route": "/pos/app-admin",
-            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has three pages: Roles, Opening cash and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
+            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has five pages: Roles, Opening cash, Optional screens, Recovery code and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
             "steps": [
               "Sign in as the Support account - the first account created when the till was set up. App admin is at the foot of the menu, under the everyday screens and above the collapse button.",
-              "You arrive on Roles. The other two pages, Opening cash and Licence, are listed under it in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=licence opens that one directly.",
+              "You arrive on Roles. The other four - Opening cash, Optional screens, Recovery code and Licence - are listed under it in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=licence opens that one directly.",
               "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Under each name is the list of everything that role may do, written out in full.",
               "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anybody still holding it can no longer open anything at all - move those people to another role first.",
               "To write your own, press \"Add custom role\", give it a name, tick the boxes it should hold, and press \"Save role\". Edit reopens a custom role; Delete removes it at once, with no confirmation step."
             ],
             "fields": [
               {
-                "name": "Roles / Opening cash / Licence",
-                "what": "The three pages of App admin, listed down the left. Roles is the editor described here. Opening cash is a single switch, and it has a page of its own in \"Asking cashiers what is in the drawer\". Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
+                "name": "The five pages",
+                "what": "Listed down the left. Roles is the editor described here. Opening cash is a single switch with a page of its own in \"Asking cashiers what is in the drawer\". Optional screens turns Categories, Suppliers and batch tracking on and off. Recovery code is the till’s way back in if the Support password is forgotten - see \"If nobody can get into this till\". Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
               },
               {
                 "name": "What this role can do",
@@ -1845,7 +1849,9 @@ const MANUAL = {
             "steps": [
               "Open /pos on the till. Because the machine has no accounts yet it shows \"Set up this till\" rather than a sign-in box.",
               "If the shop does not work in English, change the language first. The picker sits under the card and takes effect at once, and the choice is remembered on this computer, so it is still there the next time anybody signs in.",
-              "Fill in a username, a full name and a password twice, then press \"Create the account\". You are signed in straight away; there is no second sign-in step.",
+              "Fill in a username, a full name and a password twice, then press \"Create the account\".",
+              "The till shows a recovery code and stops there. Write it on paper before pressing \"I have written it down\" - the account is not made until you do, and the code is never shown again. It is the only thing that can set a new password on this account if it is ever forgotten. Keep it somewhere the shop can reach that is not this computer: if the machine cannot be opened, neither can anything saved on it.",
+              "The account is created and you are signed in straight away; there is no second sign-in step.",
               "Open People, under Shop in the menu, and add the shop's own cashiers. Until you do, the Support account is the only way into this till.",
               "From then on /pos shows \"Sign in\" instead, and asks only for the username and the password."
             ],
@@ -1869,6 +1875,10 @@ const MANUAL = {
               {
                 "name": "Language",
                 "what": "Under the card, on the setup screen and the sign-in screen alike. English, Azərbaycan dili, Русский and Türkçe. It belongs to the computer, not to the account, and it is the same setting the register's Settings screen shows later."
+              },
+              {
+                "name": "Recovery code",
+                "what": "Shown on the screen after the form, in the shape CSPR1- followed by five groups of five characters. Copy it onto paper. There is a Copy button for a shop that keeps a password manager, but the paper is the point: this code exists for the day this computer will not let anybody in, and anything stored on it is unreachable then too."
               }
             ],
             "notes": [
@@ -1876,11 +1886,58 @@ const MANUAL = {
               "\"Set up this till\" appearing means the machine has no accounts, and nothing else. A till that has been trading and suddenly offers setup is a fault rather than an invitation: read the two warnings below before touching anything.",
               "If the till says it cannot open its own records, stop. The catalogue, the staff and the sales are still on the computer and the browser is refusing to read them, usually because site data is blocked or the register was opened in a private window. Do not set the till up again; fetch whoever installed it.",
               "If the till says it is not on a secure address, the register is being served over plain http, where a password cannot be checked at all. Only https, or opening it at localhost, will do, and there is nothing on the screen that can fix it.",
-              "There is no way to recover a forgotten Support password. No reset by email, no recovery code, no back door, and the only account that can set a new password is one that is already signed in. Write it down and keep it where the shop can find it. A till whose only account is locked out has to be cleared and set up from scratch, and that takes the shop's catalogue and its trading history with it.",
+              "There is no reset by email and no back door. Nobody at Caspian holds anything that opens a till, and support cannot let you in. What there is, is the recovery code above and the two other ways described in \"If nobody can get into this till\". Write the code down at setup and the worst case stops being the loss of the shop's records.",
+              "A till set up before the register kept recovery codes has none. That is not a fault and there is nothing to do at the counter about it - somebody who can open App admin should make one from the Recovery code page, and it takes about ten seconds.",
               "The password is scrambled on this computer and cannot be read back by anybody, including whoever installed the till.",
               "A space at the start or end of a password is allowed and the screen warns when there is one, because it then has to be typed the same way every time.",
               "The sign-in box slows down repeated wrong passwords. Three tries are free, then it asks for five seconds, fifteen, thirty, and a minute at the very most - it never asks for longer and it never locks an account. The count is kept against the name that was typed rather than against the machine, so one cashier fumbling their password does not hold up the next person in a queue, and it is forgotten after a quarter of an hour of quiet. It is there to stop somebody working through the passwords they can think of at an unattended till, and it is honest about being no more than that.",
               "Nothing on this screen is sent anywhere. There is no server to ask, so a till with no internet connection sets up and signs in exactly as one with."
+            ]
+          },
+          {
+            "id": "if-you-forget-the-support-password",
+            "title": "If nobody can get into this till",
+            "audience": "owner",
+            "route": "/pos",
+            "summary": "There are three ways back into a till nobody can sign into, and they are worth trying in order. The first is the recovery code written down when the till was set up. The second solves most real lockouts in seconds. The third erases the shop's records and is the last resort in the plainest sense.",
+            "steps": [
+              "On the sign-in screen, press \"Locked out of this till?\" under the Sign in button. It is only there when nobody is signed in.",
+              "Try the recovery code first. Type it in, choose a new password twice, and press \"Set the new password\". Capitals and dashes do not matter, and if the paper says O or I where the box will not take it, type a zero or a one instead.",
+              "The till then shows a replacement code. The old one stopped working the moment the new password was set, so write the new one down in place of it before leaving the screen.",
+              "Go back to the sign-in screen and sign in with the password you just chose. The code does not sign anybody in; that is deliberate.",
+              "If there is no code, or it is for an account that has since been deleted, ask anybody on this till who is allowed to add people. They can set a new password for you from the People screen in seconds, with no code at all.",
+              "Only when neither of those is possible, open \"Start this till over\". It asks you to download a backup, then to type the shop's name, and then it erases everything."
+            ],
+            "fields": [
+              {
+                "name": "Recovery code",
+                "what": "The code written down when the till was set up, or made later from App admin. It sets a new password on the one account it was made for and does nothing else - it grants no access by itself."
+              },
+              {
+                "name": "New password",
+                "what": "The password the named account will have afterwards. At least six characters, and the till refuses the handful of passwords a stranger would try first, along with anything identical to the account name."
+              },
+              {
+                "name": "Show me the last resort",
+                "what": "Opens the third way, which is collapsed until you ask for it. Nothing is erased by opening it."
+              },
+              {
+                "name": "Download a backup first",
+                "what": "Writes the whole till - catalogue, staff, sales, stock - to a file you choose. The erase button does not appear until this has worked. If the backup fails, nothing is erased and the screen says so."
+              },
+              {
+                "name": "Type <shop name> to confirm",
+                "what": "The shop's name exactly as it is set under Settings, then Shop. A till whose shop record was never filled in asks you to type ERASE instead, so the last step is never a single click."
+              }
+            ],
+            "notes": [
+              "The recovery code never signs anybody in. All it does is set a password, and then you sign in normally. That is what makes it safe to keep on paper in a drawer.",
+              "It is not used up. Using it mints a replacement and shows it once, because a shop that has just used its way back in is exactly the shop that must not be left without one.",
+              "Wrong codes are slowed down from the very first try, unlike passwords, which get three free attempts. Nobody mistypes twenty-five characters off a piece of paper by leaving caps lock on.",
+              "Most lockouts are a cashier rather than the owner, and for those the second way is the answer. It needs nobody to find any paper.",
+              "\"Start this till over\" erases the catalogue, every account, every sale this till has taken and every stock record. There is no undo and no copy anywhere else. It is offered here at all because anybody standing at this machine can already do exactly the same damage through the browser's own site-data settings - without being made to take a backup first, and without being told what they are about to lose.",
+              "After erasing, the till shows \"Set up this till\" again. Set it up, then restore the backup from Settings, then Backup, to bring the catalogue and the sales back.",
+              "This screen is only reachable when nobody is signed in. Somebody already at the counter with a session open cannot get to it."
             ]
           },
           {
@@ -2339,7 +2396,7 @@ const MANUAL = {
               },
               {
                 "name": "New password",
-                "what": "Asks for the new password in a small box from the browser. At least six characters; anything shorter is refused with a message."
+                "what": "Opens a window on the till asking for the new password twice, with a button to show what you have typed and a line warning about caps lock. At least six characters, and the till refuses the handful of passwords a stranger would try first, along with anything identical to the account name. Until v1.1.0 this was a bare browser prompt that printed the new password in clear text on a screen facing the shop."
               },
               {
                 "name": "Block / Allow in",
@@ -2354,7 +2411,8 @@ const MANUAL = {
               "You cannot change your own role, block yourself or delete yourself. Those controls are missing from your own row, which is marked \"you\". You can still set your own password.",
               "Only a Support account may touch another Support account. To everybody else that row is plain text with no buttons.",
               "Blocking is usually better than deleting. A blocked account can be let back in; a deleted one has to be made again from scratch, and neither changes the receipts that already carry the name.",
-              "Passwords are kept scrambled on this computer and cannot be read back. If somebody forgets theirs, set a new one here - that is the only route in.",
+              "Passwords are kept scrambled on this computer and cannot be read back. If somebody forgets theirs, set a new one here - that is the quickest route in, and it needs no recovery code.",
+              "Setting somebody's password signs them out. If they are signed in on another till, that till stops accepting them within about a minute and asks for the new password.",
               "The Add person window shows a line of help under the role menu. For Cashier, Admin and Support it is a sentence; for the others it currently prints its own internal label instead, such as pos.admin.people.roleHelp.storekeeper. That is a rough edge in the wording only - the role is applied as chosen.",
               "The role menu can list two entries called Cashier. They are identical; App admin marks the second as a duplicate kept for accounts already holding it.",
               "A role that does not hold \"Sell at the till\" cannot get into the register at all, whatever else you give it - so check \"Roles on a till with no website\" before handing somebody Storekeeper or Accountant.",
@@ -2480,7 +2538,9 @@ const MANUAL = {
               }
             ],
             "notes": [
+              "The file contains the staff accounts and their scrambled passwords, along with the till’s recovery code in the same scrambled form. Nobody can read a password back out of it, but it is still the shop’s own record and belongs somewhere only the shop can reach - not a shared drive and not an inbox.",
               "Restoring adds, it does not replace. Sales already on this till are left exactly as they are and counted as already here in the message; items and people are overwritten by the file’s version of them; the shop record is replaced outright.",
+              "Because the shop record is replaced outright, restoring an old file also puts back the recovery code that was current when it was taken. Check which code is live under App admin, then Recovery code, after any restore.",
               "The receipt counter only ever moves forward. Restoring an old file cannot make the till reissue a number that is already on a customer’s receipt.",
               "Custom roles travel in the file. Files written by versions before v12.0.0 do not carry them, and restoring one of those leaves the roles this till already has alone.",
               "A file that is not a till backup is refused with \"That file is not a till backup.\" and nothing is changed.",
@@ -2521,6 +2581,7 @@ const MANUAL = {
               "This needs Chrome or Edge. Firefox and Safari cannot hand a website a folder to write into, and the section says so instead of showing a button that does nothing. On those browsers the manual “Save a backup now” is all there is.",
               "The folder keeps the last dozen files, plus one from each of the last thirty days. Both numbers matter: a busy Saturday writes a file after every sale, and keeping only a flat count would push last week off the disk before lunch. Only files the register itself wrote, named caspian-till- followed by a date and a time, are ever removed - anything else you keep in that folder is left alone, including caspian-till-latest.json.",
               "caspian-till-latest.json is overwritten every time and is always the newest copy. It is the file to point a sync client at. The dated files are the history.",
+              "Every file in that folder holds the staff accounts and their scrambled passwords. Pick a folder only the shop can reach. If you do point a sync client at it, that is the shop’s staff list leaving the building, which may be exactly what you want for safekeeping - but decide it rather than discover it.",
               "After restarting the computer the browser usually asks for permission to the folder again, and a line appears saying so. Press “Back up now” once and say yes. Until you do, no automatic backup is being written.",
               "If more than a day passes with no successful backup, a warning appears in this section. That warning is the only thing standing between a shop and a silent year of no backups, so do not ignore it.",
               "A backup folder is not a substitute for taking a copy off this computer. A folder on the same disk dies with the disk. A folder your cloud drive syncs does not.",
@@ -2863,7 +2924,7 @@ const MANUAL = {
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir.",
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır."
       ],
-      "version": "v1.0.1"
+      "version": "v1.1.0"
     },
     "parts": [
       {
@@ -3223,6 +3284,10 @@ const MANUAL = {
               {
                 "name": "Qəbz printeri (Receipt printer)",
                 "what": "Cəmi bir seçimi olan menyu — \"Brauzerin çap pəncərəsi\" (Browser print dialog) — və o da sönükdür. Bu versiyada qəbzlərin çap olunmasının yeganə yolu budur."
+              },
+              {
+                "name": "Hesabınız (Your account)",
+                "what": "Öz-özünə işləyən kassada indeksin yuxarısındakı bölmə. Bu kompüterdə daxil olmuş hesabın adını göstərir və bir düyməsi var: \"Parolumu dəyiş\". Əvvəlcə hazırkı parolunuzu, sonra yenisini iki dəfə soruşur. Dəyişiklik eyni hesabın açıq olduğu bütün digər yerlərdə təxminən bir dəqiqə ərzində çıxışa səbəb olur."
               },
               {
                 "name": "Yadda saxla (Save)",
@@ -4022,7 +4087,7 @@ const MANUAL = {
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь.",
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат."
       ],
-      "version": "v1.0.1"
+      "version": "v1.1.0"
     },
     "parts": [
       {
@@ -4382,6 +4447,10 @@ const MANUAL = {
               {
                 "name": "Чековый принтер (Receipt printer)",
                 "what": "Меню с единственным пунктом «Browser print dialog», причём неактивное. В этой версии чеки печатаются только так."
+              },
+              {
+                "name": "Ваша учётная запись (Your account)",
+                "what": "Раздел ближе к началу списка, на кассе, работающей сама по себе. Он называет учётную запись, под которой вы вошли на этом компьютере, и содержит одну кнопку — «Сменить мой пароль». Сначала спрашивает текущий пароль, затем новый дважды. Смена примерно за минуту выводит эту же запись отовсюду, где она открыта."
               },
               {
                 "name": "Save (сохранить)",
@@ -5181,7 +5250,7 @@ const MANUAL = {
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür.",
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır."
       ],
-      "version": "v1.0.1"
+      "version": "v1.1.0"
     },
     "parts": [
       {
@@ -5541,6 +5610,10 @@ const MANUAL = {
               {
                 "name": "Fiş yazıcısı (Receipt printer)",
                 "what": "Tek girişi olan bir menü: \"Browser print dialog\" (tarayıcı yazdırma penceresi); menü soluktur. Bu sürümde fişlerin basıldığı tek yol budur."
+              },
+              {
+                "name": "Hesabınız (Your account)",
+                "what": "Kendi başına çalışan bir kasada, dizinin üst tarafındaki bir bölüm. Bu bilgisayarda giriş yapmış hesabı adlandırır ve tek bir düğme taşır: \"Parolamı değiştir\". Önce şu anki parolanızı, sonra yenisini iki kez ister. Değiştirmek, aynı hesabın açık olduğu diğer her yerde bir dakika kadar içinde oturumu kapatır."
               },
               {
                 "name": "Kaydet (Save)",

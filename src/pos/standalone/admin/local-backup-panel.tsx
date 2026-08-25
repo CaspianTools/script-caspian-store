@@ -114,6 +114,15 @@ export function LocalBackupPanel() {
           <div style={warning}>{t('pos.admin.backup.readFailed')}</div>
         ) : null}
         <FieldDescription>{t('pos.admin.backup.help')}</FieldDescription>
+        {/*
+          Said out loud rather than fixed by redaction. Stripping the accounts
+          would produce a backup that restores a till nobody can sign into,
+          which is a worse failure than the exposure; encrypting the file would
+          create a second forgettable secret whose loss destroys the shop's only
+          copy, which is the exact hole the recovery code exists to close. So
+          the file keeps everything, and the screen says what is in it.
+        */}
+        <FieldDescription>{t('pos.admin.backup.credentialsNote')}</FieldDescription>
         <div style={actions}>
           <Button onClick={() => void backup()} disabled={busy}>
             {t('pos.admin.backup.download')}
@@ -128,6 +137,7 @@ export function LocalBackupPanel() {
         ) : (
           <>
             <FieldDescription>{t('pos.admin.backup.auto.help')}</FieldDescription>
+            <FieldDescription>{t('pos.admin.backup.credentialsNote')}</FieldDescription>
             <div style={muted}>
               {auto.folderName
                 ? t('pos.admin.backup.auto.folder', { folder: auto.folderName })

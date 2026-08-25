@@ -10,8 +10,6 @@ import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import {
   canDisableLocalUser,
   canRemoveLocalUser,
-  setLocalPassword,
-  MIN_LOCAL_PASSWORD_LENGTH,
 } from '../local-auth';
 import { deleteLocalUser, listLocalUsers, saveLocalUser } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
@@ -19,6 +17,7 @@ import { usePosRoles } from '../role-context';
 import type { LocalUser, PosLocalRole } from '../types';
 import { fieldLabel, muted, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
+import { LocalPasswordDialog } from './local-password-dialog';
 import { PosAdminPage } from './pos-admin-page';
 import { UsersIcon } from '../../../ui/icons';
 
@@ -76,15 +75,10 @@ export function LocalPeoplePanel() {
     await refresh();
   };
 
-  const resetPassword = async (user: LocalUser) => {
-    const next = window.prompt(t('pos.admin.people.newPasswordPrompt', { name: user.displayName }));
-    if (next === null) return;
-    if (!(await setLocalPassword(user.id, next))) {
-      toast({ title: t('pos.local.passwordTooShort', { min: MIN_LOCAL_PASSWORD_LENGTH }) });
-      return;
-    }
-    toast({ title: t('pos.admin.people.passwordChanged') });
-  };
+  // Was a `window.prompt` until v1.1.0, which put the new password in clear text
+  // on a screen facing the shop floor, had no confirmation box, and in an
+  // installed PWA renders as browser chrome some platforms suppress outright.
+  const [passwordFor, setPasswordFor] = useState<LocalUser | null>(null);
 
   const remove = async (user: LocalUser) => {
     // The People screen only ever stopped you deleting yourself, so two Support
@@ -153,7 +147,7 @@ export function LocalPeoplePanel() {
                     <TD>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         {editable ? (
-                          <Button variant="outline" onClick={() => void resetPassword(u)}>
+                          <Button variant="outline" onClick={() => setPasswordFor(u)}>
                             {t('pos.admin.people.resetPassword')}
                           </Button>
                         ) : null}
@@ -179,6 +173,14 @@ export function LocalPeoplePanel() {
         )}
         <FieldDescription>{t('pos.admin.people.deleteNote')}</FieldDescription>
       </section>
+
+      <LocalPasswordDialog
+        open={!!passwordFor}
+        onOpenChange={(next) => {
+          if (!next) setPasswordFor(null);
+        }}
+        user={passwordFor}
+      />
     </div>
   );
 }

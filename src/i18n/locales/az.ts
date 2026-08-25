@@ -632,6 +632,88 @@ const az: MessageDict = {
     'Açar saxlanıldı, lakin bu brauzer onu yoxlaya bilmir. Kassa onlayn olanda təsdiqlənəcək.',
   'pos.license.offline':
     'Bu kompüterdə saxlanıldı. Növbəti dəfə onlayn olanda lisenziya serveri ilə təsdiqlənəcək.',
+
+  // POS — bağlı qalmış kassaya qayıdış (kassa v1.1.0)
+  'pos.local.recoveryTitle': 'Davam etməzdən əvvəl bu kodu yazın',
+  'pos.local.recoveryBody':
+    'Bu hesabın parolu unudulsa, yeni parol təyin edə bilən yeganə şey budur. Yalnız bir dəfə göstərilir — kassa onun yalnız şifrələnmiş, özünün də oxuya bilmədiyi surətini saxlayır.',
+  'pos.local.recoveryWarning':
+    'Kağıza yazın və mağazanın tapa biləcəyi yerdə saxlayın, bu kompüterdə yox. Əgər bu maşın açılmırsa, orada saxlanılan heç nə də açılmayacaq.',
+  'pos.local.recoveryConfirm': 'Yazdım — hesabı yarat',
+  'pos.local.recoveryBack': 'Geri',
+  'pos.local.passwordWeak':
+    'Bu parolu tapmaq çox asandır. Hesab adını və kənar adamın ilk yoxlayacağı sözləri seçməyin.',
+  'pos.local.currentPassword': 'Hazırkı parolunuz',
+  'pos.local.wrongCurrentPassword': 'Bu, sizin hazırkı parolunuz deyil.',
+  'pos.local.changeMyPasswordTitle': 'Parolunuzu dəyişin',
+
+  'pos.recovery.link': 'Bu kassaya girə bilmirsiniz?',
+  'pos.recovery.title': 'Bu kassaya necə qayıtmalı',
+  'pos.recovery.body':
+    'Üç yol var və sınamağa dəyən ardıcıllıqla verilib. Sonuncusu bu kompüterdəki hər şeyi silir, ona görə açmazdan əvvəl oxuyun.',
+  'pos.recovery.back': 'Girişə qayıt',
+  'pos.recovery.codeTitle': '1. Bərpa kodundan istifadə edin',
+  'pos.recovery.codeBody':
+    'Bu kassa qurulanda yazdığınız kod. Hansı hesab üçün hazırlanıbsa, ona yeni parol təyin edir. Sizi sistemə salmır — yeni parolu sonra adi giriş ekranında yazacaqsınız.',
+  'pos.recovery.codeLabel': 'Bərpa kodu',
+  'pos.recovery.codeHelp':
+    'Böyük-kiçik hərfin fərqi yoxdur, tirelər isə isteğe bağlıdır. Kağızda O və ya I varsa və qəbul edilmirsə, sıfır və ya bir yazın — kassa onları eyni oxuyur.',
+  'pos.recovery.newPassword': 'Yeni parol',
+  'pos.recovery.submit': 'Yeni parolu təyin et',
+  'pos.recovery.noCode':
+    'Bu kassanın bərpa kodu yoxdur. Kassa kod yarada bilməzdən əvvəl qurulub. App admin bölməsini aça bilən şəxs növbəti dəfə üçün kod yarada bilər.',
+  'pos.recovery.badCode': 'Bu kod bu kassaya uyğun deyil.',
+  'pos.recovery.accountGone':
+    'Bu kodun hazırlandığı hesab artıq bu kassada yoxdur. Aşağıdakı digər iki yolu sınayın.',
+  'pos.recovery.throttled':
+    'Kodu yenidən sınamazdan əvvəl {seconds} saniyə gözləyin. Hər səhv cəhd növbəti gözləməni uzadır.',
+  'pos.recovery.doneTitle': 'Hazırdır — indi yeni parolla daxil olun',
+  'pos.recovery.doneBody': '{name} üçün parol dəyişdirildi. Geri qayıdın və onunla daxil olun.',
+  'pos.recovery.newCodeBody':
+    'Köhnə kod artıq işləmir. Budur onun əvəzi — köhnəsinin yerinə bunu yazın.',
+  'pos.recovery.copy': 'Kodu köçür',
+  'pos.recovery.copied': 'Köçürüldü',
+  'pos.recovery.askTitle': '2. Kassanı quran şəxsdən xahiş edin',
+  'pos.recovery.askBody':
+    'Bu kassada adam əlavə etmək icazəsi olan hər kəs Adamlar ekranından sizə saniyələr içində, heç bir kod olmadan yeni parol təyin edə bilər. Sahib yox, kassir bağlı qalıbsa, cavab budur.',
+  'pos.recovery.resetTitle': '3. Bu kassanı sıfırdan başlayın',
+  'pos.recovery.resetTeaser':
+    'Son çarə. Bu kompüterdəki kataloqu, işçiləri, satışları və anbar qeydlərini silir.',
+  'pos.recovery.resetExpand': 'Son çarəni göstər',
+  'pos.recovery.resetBody':
+    'Bu, kassadakı hər şeyi silir: kataloqu, işçi hesablarını, alınmış bütün satışları və bütün anbar qeydlərini. Geri qaytarmaq mümkün deyil və heç nə başqa yerdə saxlanılmır. Əvvəlcə ehtiyat nüsxəsini endirin — mağazanı sonra bərpa etmək üçün lazım olacaq.',
+  'pos.recovery.resetBackup': 'Əvvəlcə ehtiyat nüsxəsini endir',
+  'pos.recovery.resetBackupDone': 'Nüsxə saxlanıldı — yenidən endir',
+  'pos.recovery.resetBackupFailed':
+    'Ehtiyat nüsxəsi yaradıla bilmədi, ona görə heç nə silinmədi. İşləyənə qədər davam etməyin.',
+  'pos.recovery.resetConfirmLabel': 'Təsdiq üçün {name} yazın',
+  'pos.recovery.resetFallbackWord': 'SIL',
+  'pos.recovery.resetCta': 'Bu kassadakı hər şeyi sil',
+  'pos.recovery.resetFailed': 'Heç nə silinmədi. Kassa öz qeydlərini aça bilmədi.',
+
+  'pos.settings.section.account': 'Hesabınız',
+  'pos.settings.signedInAs': 'Daxil olmusunuz',
+  'pos.settings.changePassword': 'Parolumu dəyiş',
+  'pos.settings.changePasswordHelp':
+    'Bu kassada daxil olmuş hesabın parolunu dəyişir. Eyni hesabın açıq olduğu bütün digər yerlərdə təxminən bir dəqiqə ərzində çıxış edilir.',
+
+  'pos.admin.people.passwordTitle': '{name} üçün yeni parol',
+  'pos.admin.people.newPassword': 'Yeni parol',
+  'pos.admin.people.passwordCta': 'Parolu yadda saxla',
+  'pos.admin.backup.credentialsNote':
+    'Faylda işçi hesabları və onların şifrələnmiş parolları var. Qovluğu yalnız mağazanın çata biləcəyi yerdə saxlayın.',
+
+  'pos.appAdmin.section.recovery': 'Bərpa kodu',
+  'pos.appAdmin.recovery.intro':
+    'Support parolu unudularsa, bu kassaya qayıtmağın yeganə yolu. Yalnız bir hesaba yeni parol təyin edir və başqa heç nə etmir — heç kimi sistemə salmır.',
+  'pos.appAdmin.recovery.none':
+    'Bu kassanın bərpa kodu yoxdur. Kassa kod yarada bilməzdən əvvəl qurulub. Parol unudulsa, yeganə yol kassanı silib sıfırdan başlamaqdır ki, bu da kataloqu və satışları özü ilə aparır.',
+  'pos.appAdmin.recovery.generate': 'Bərpa kodu yarat',
+  'pos.appAdmin.recovery.regenerate': 'Bərpa kodunu dəyiş',
+  'pos.appAdmin.recovery.minted': 'Bərpa kodu yaradıldı',
+  'pos.appAdmin.recovery.mintedFor': 'Hazırkı kod {name} hesabına aiddir, {date} tarixində yaradılıb.',
+  'pos.appAdmin.recovery.help':
+    'Yeni kod yaratmaq köhnəsini dərhal dayandırır. Kod bir dəfə göstərilir; sonra kassa yalnız şifrələnmiş surəti saxlayır və onu heç kim, o cümlədən kassanı quran şəxs də, oxuya bilmir.',
 };
 
 export default az;

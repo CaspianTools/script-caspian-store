@@ -1189,6 +1189,27 @@ export const POS_STYLESHEET = String.raw`
   margin: 0 auto 24px;
 }
 
+/* Deliberately understated. Almost everybody who reads the sign-in card is
+   starting a shift; the way back into a locked-out till is a door, not an
+   invitation, so it reads as a link rather than a third button. */
+.cpos-signin__foot-link {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--cpos-fg-muted);
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.cpos-signin__foot-link:hover { color: var(--cpos-fg); }
+.cpos-signin__foot-link:focus-visible { outline: 2px solid var(--cpos-brand); outline-offset: 2px; }
+
 /* The reveal button sits inside the box, so the box has to hold it. */
 .cpos-field__control { position: relative; display: flex; align-items: center; }
 .cpos-input--revealable { padding-inline-end: 46px; }

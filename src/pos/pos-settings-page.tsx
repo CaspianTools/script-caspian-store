@@ -18,6 +18,7 @@ import {
   SlidersIcon,
   StoreIcon,
   SunIcon,
+  UserIcon,
 } from '../ui/icons';
 import { getPosDeviceId, getPosDeviceLabel, setPosDeviceLabel } from './pos-device';
 import {
@@ -39,6 +40,7 @@ import { usePosLocalSession } from './standalone/local-session-context';
 import { usePosRoles } from './standalone/role-context';
 import { LocalShopPanel } from './standalone/admin/local-shop-panel';
 import { LocalBackupPanel } from './standalone/admin/local-backup-panel';
+import { LocalPasswordDialog } from './standalone/admin/local-password-dialog';
 
 export interface PosSettingsPageProps {
   className?: string;
@@ -58,13 +60,23 @@ const POS_LOCALES = BUILTIN_LOCALE_CODES;
 interface SectionConfig {
   id: string;
   labelKey: string;
-  icon: 'appearance' | 'language' | 'device' | 'shop' | 'backup' | 'license' | 'storage' | 'scanner';
+  icon:
+    | 'appearance'
+    | 'language'
+    | 'device'
+    | 'account'
+    | 'shop'
+    | 'backup'
+    | 'license'
+    | 'storage'
+    | 'scanner';
 }
 
 const SECTION_ICON: Record<SectionConfig['icon'], (size: number) => React.ReactNode> = {
   appearance: (size) => <PaletteIcon size={size} />,
   language: (size) => <GlobeIcon size={size} />,
   device: (size) => <MonitorIcon size={size} />,
+  account: (size) => <UserIcon size={size} />,
   shop: (size) => <StoreIcon size={size} />,
   backup: (size) => <InboxIcon size={size} />,
   license: (size) => <LockIcon size={size} />,
@@ -102,6 +114,14 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const showShop = local.standalone && can(local.user?.role, 'settings.shop');
   const showBackup = local.standalone && can(local.user?.role, 'settings.backup');
 
+  // Changing your own password. Not in the avatar menu beside Sign out, where
+  // it would read most naturally: that menu is `pos-topbar.tsx`, a shared file
+  // a cloud register renders too, and pos/CLAUDE.md is explicit that reaching
+  // into one of those is the signal a change has stopped being standalone.
+  // Settings is one click further and every built-in role can open it, because
+  // `settings.view` is granted to all of them.
+  const showAccount = local.standalone && !!local.user;
+
   // A standalone till activates its licence from /pos/app-admin. A cloud till
   // has no app admin to route to, so the key keeps the home it has always had
   // here -- otherwise moving the pane would leave a cloud shop that bought a
@@ -115,6 +135,9 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
       { id: 'language', labelKey: 'pos.settings.section.language', icon: 'language' },
       { id: 'device', labelKey: 'pos.settings.section.device', icon: 'device' },
     ];
+    if (showAccount) {
+      list.push({ id: 'account', labelKey: 'pos.settings.section.account', icon: 'account' });
+    }
     if (showShop) list.push({ id: 'shop', labelKey: 'pos.admin.section.shop', icon: 'shop' });
     if (showLicense) {
       list.push({ id: 'license', labelKey: 'pos.appAdmin.section.licence', icon: 'license' });
@@ -125,12 +148,13 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
     list.push({ id: 'storage', labelKey: 'pos.settings.section.storage', icon: 'storage' });
     list.push({ id: 'scanner', labelKey: 'pos.settings.section.scanner', icon: 'scanner' });
     return list;
-  }, [showShop, showBackup, showLicense]);
+  }, [showAccount, showShop, showBackup, showLicense]);
 
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
   const [gapMs, setGapMs] = useState(40);
   const [idleLock, setIdleLock] = useState(0);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   // Derived, not chosen -- see `resolvePosStorageMode`.
   const storageMode: PosStorageMode = resolvePosStorageMode(Boolean(firebase));
 
@@ -270,6 +294,30 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
             ) : null}
           </section>
 
+          {showAccount ? (
+            <section id="pos-settings-account" className="cpos-section">
+              <h2 className="cpos-section__title">{t('pos.settings.section.account')}</h2>
+              <label className="cpos-field">
+                <span className="cpos-field__label">{t('pos.settings.signedInAs')}</span>
+                <input
+                  className="cpos-input"
+                  value={local.user?.displayName || local.user?.username || ''}
+                  readOnly
+                />
+              </label>
+              <div className="cpos-actions">
+                <button
+                  type="button"
+                  className="cpos-btn cpos-btn--outline"
+                  onClick={() => setPasswordOpen(true)}
+                >
+                  {t('pos.settings.changePassword')}
+                </button>
+              </div>
+              <FieldDescription>{t('pos.settings.changePasswordHelp')}</FieldDescription>
+            </section>
+          ) : null}
+
           {showShop ? (
             <div id="pos-settings-shop">
               <LocalShopPanel />
@@ -358,6 +406,13 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
           </div>
         </div>
       </div>
+
+      <LocalPasswordDialog
+        open={passwordOpen}
+        onOpenChange={setPasswordOpen}
+        user={local.user}
+        self
+      />
     </div>
   );
 }

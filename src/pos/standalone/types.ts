@@ -646,6 +646,40 @@ export interface LocalShopSettings {
   lotTrackingEnabled: boolean;
   /** Set once, by Technical Support, when the machine is commissioned. */
   commissionedAtMillis: number;
+  /**
+   * The recovery code, hashed exactly the way a password is.
+   *
+   * One job: set a new password on the account named by `recoveryForUserId`.
+   * It never grants a session and never signs anybody in -- after it is used
+   * the operator goes to the ordinary sign-in screen and types the password
+   * they just chose. That is what keeps it safe to write on paper and file in
+   * a drawer, and it is why losing the paper costs a shop nothing it was not
+   * already exposed to.
+   *
+   * Deliberately five fields here rather than a `localRecoveryCodes` store.
+   * `readLocalShopSettings` merges over `DEFAULT_LOCAL_SHOP_SETTINGS`, so a
+   * till commissioned before this release reads them back empty and no
+   * migration runs -- the same trick `requireOpeningCash` and
+   * `categoriesEnabled` use. It also means the rule that a new `local*` store
+   * joins `factoryResetLocalStore` *and* the backup in the same change is
+   * satisfied by construction: `localSettings` is already in both.
+   *
+   * Carrying the hash into the backup is correct rather than a leak. A hundred
+   * and twenty-five bits behind PBKDF2 is not grindable the way a six-character
+   * password is, and a shop restoring onto a replacement machine should find
+   * the code it has written down still works.
+   *
+   * Empty `recoveryHash` means no code exists. Tills commissioned before this
+   * release are in that state and are told so on the App admin screen, where
+   * somebody can do something about it -- never at the counter, where a cashier
+   * cannot.
+   */
+  recoveryHash: string;
+  recoverySalt: string;
+  recoveryIterations: number;
+  recoveryMintedAtMillis: number;
+  /** The account a code resets. Empty when no code has been minted. */
+  recoveryForUserId: string;
 }
 
 export const DEFAULT_LOCAL_SHOP_SETTINGS: LocalShopSettings = {
@@ -661,4 +695,9 @@ export const DEFAULT_LOCAL_SHOP_SETTINGS: LocalShopSettings = {
   suppliersEnabled: false,
   lotTrackingEnabled: false,
   commissionedAtMillis: 0,
+  recoveryHash: '',
+  recoverySalt: '',
+  recoveryIterations: 0,
+  recoveryMintedAtMillis: 0,
+  recoveryForUserId: '',
 };

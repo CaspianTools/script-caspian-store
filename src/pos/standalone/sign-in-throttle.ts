@@ -62,8 +62,8 @@ export const SIGN_IN_DELAY_LADDER_MS: readonly number[] = [5_000, 15_000, 30_000
 /** Quiet for this long and the count is forgotten entirely. */
 export const SIGN_IN_THROTTLE_FORGET_MS = 15 * 60_000;
 
-function delayFor(failures: number): number {
-  const rung = failures - SIGN_IN_FREE_ATTEMPTS;
+function delayFor(failures: number, freeAttempts: number): number {
+  const rung = failures - freeAttempts;
   if (rung <= 0) return 0;
   return SIGN_IN_DELAY_LADDER_MS[Math.min(rung, SIGN_IN_DELAY_LADDER_MS.length) - 1] ?? 0;
 }
@@ -81,16 +81,22 @@ function forgotten(record: SignInThrottleRecord, nowMillis: number): boolean {
  * throttle that fires proves nothing about whether the account exists. Doing it
  * the other way round would hand back the username oracle that the dummy derive
  * in `signInLocal` exists to close.
+ *
+ * `freeAttempts` defaults to the three the front door allows. The recovery code
+ * passes zero: nobody mistypes twenty-five symbols off a piece of paper three
+ * times by accident the way they leave caps lock on, and a code that opens the
+ * only account on the till should cost from the first wrong guess.
  */
 export function evaluateSignInThrottle(
   record: SignInThrottleRecord | undefined,
   nowMillis: number,
+  freeAttempts: number = SIGN_IN_FREE_ATTEMPTS,
 ): SignInThrottleVerdict {
   if (!record || forgotten(record, nowMillis)) {
     return { allowed: true, waitMillis: 0, failures: 0 };
   }
   const elapsed = nowMillis - record.lastFailureAtMillis;
-  const remaining = delayFor(record.failures) - elapsed;
+  const remaining = delayFor(record.failures, freeAttempts) - elapsed;
   return remaining > 0
     ? { allowed: false, waitMillis: remaining, failures: record.failures }
     : { allowed: true, waitMillis: 0, failures: record.failures };

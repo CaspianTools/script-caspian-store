@@ -7,9 +7,11 @@ import { Select } from '../../ui/select';
 import { LockIcon, ShoppingCartIcon } from '../../ui/icons';
 import { cn } from '../../utils/cn';
 import { usePosLocalSession } from './local-session-context';
-import { localCryptoAvailable, MIN_LOCAL_PASSWORD_LENGTH } from './local-auth';
+import { localCryptoAvailable, MIN_LOCAL_PASSWORD_LENGTH, passwordIsWeak } from './local-auth';
 import { throttleWaitSeconds } from './sign-in-throttle';
 import { PasswordField } from './password-field';
+import { PosLocalRecovery, RecoveryCodeBlock } from './pos-local-recovery';
+import { mintRecoveryCode } from './recovery-code';
 
 /**
  * Sign-in for a standalone till, the one-time setup that precedes it, and the
@@ -26,6 +28,9 @@ import { PasswordField } from './password-field';
 export function PosLocalSignIn() {
   const { commissioned, storageFailed } = usePosLocalSession();
   const t = useT();
+  // Signed-out only, and state rather than a route: there is no address that
+  // reaches this, so a session cannot be talked into rendering it.
+  const [recovering, setRecovering] = useState(false);
 
   // Checked before the form is wired rather than caught on submit. The throw
   // from `subtle()` used to land in the same catch as a blocked-storage error,
@@ -53,7 +58,19 @@ export function PosLocalSignIn() {
     );
   }
 
-  return <SignInCanvas>{commissioned ? <SignInForm /> : <CommissionForm />}</SignInCanvas>;
+  if (recovering && commissioned) {
+    return (
+      <SignInCanvas>
+        <PosLocalRecovery onDone={() => setRecovering(false)} />
+      </SignInCanvas>
+    );
+  }
+
+  return (
+    <SignInCanvas>
+      {commissioned ? <SignInForm onLockedOut={() => setRecovering(true)} /> : <CommissionForm />}
+    </SignInCanvas>
+  );
 }
 
 /**
@@ -120,7 +137,7 @@ function hasEdgeSpace(password: string): boolean {
   return password.length > 0 && password !== password.trim();
 }
 
-function SignInForm() {
+function SignInForm({ onLockedOut }: { onLockedOut: () => void }) {
   const t = useT();
   const { attemptSignIn } = usePosLocalSession();
   const [username, setUsername] = useState('');
@@ -208,6 +225,15 @@ function SignInForm() {
         {busy ? <span className="cpos-spinner" aria-hidden="true" /> : null}
         {busy ? t('pos.local.signingIn') : t('pos.local.signIn')}
       </button>
+
+      {/*
+        Quiet, and at the foot, because the overwhelming majority of the people
+        who read this screen are simply starting a shift. It is a way out for
+        the rare morning nobody can get in, not an invitation.
+      */}
+      <button type="button" className="cpos-signin__foot-link" onClick={onLockedOut}>
+        {t('pos.recovery.link')}
+      </button>
     </form>
   );
 }
@@ -240,25 +266,50 @@ function CommissionForm() {
 
   const mismatch = confirm.length > 0 && password !== confirm;
   const matched = confirm.length > 0 && password === confirm;
+  const weak =
+    password.length >= MIN_LOCAL_PASSWORD_LENGTH && passwordIsWeak(password, username);
+
+  /*
+    Minted here, and shown before anything is written.
+
+    The obvious arrangement -- commission, then show the code -- cannot work:
+    `commission` sets the signed-in account, at which point `PosGuard` swaps this
+    whole screen for the register and the code is gone before anybody reads it.
+    Doing it in this order also means closing the tab on the code screen leaves
+    the machine exactly as it was, with no half-set-up account on it.
+  */
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
 
   // Advisory, in the polite region, never blocking. Silently trimming would lock
   // out anybody whose password genuinely ends in a space, and refusing it
   // outright would forbid a password that is perfectly good written down.
   const note = mismatch
     ? { tone: 'danger' as const, text: t('pos.local.passwordMismatch') }
-    : hasEdgeSpace(password)
-      ? { tone: 'warning' as const, text: t('pos.local.passwordSpaces') }
-      : matched
-        ? { tone: 'success' as const, text: t('pos.local.passwordsMatch') }
-        : null;
+    : weak
+      ? { tone: 'danger' as const, text: t('pos.local.passwordWeak') }
+      : hasEdgeSpace(password)
+        ? { tone: 'warning' as const, text: t('pos.local.passwordSpaces') }
+        : matched
+          ? { tone: 'success' as const, text: t('pos.local.passwordsMatch') }
+          : null;
 
-  const submit = async (event: FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
     if (busy) return;
     if (password !== confirm) {
       setError(t('pos.local.passwordMismatch'));
       return;
     }
+    if (weak) {
+      setError(t('pos.local.passwordWeak'));
+      return;
+    }
+    setError('');
+    setPendingCode(mintRecoveryCode());
+  };
+
+  const create = async () => {
+    if (busy || !pendingCode) return;
     setBusy(true);
     setError('');
     try {
@@ -266,6 +317,7 @@ function CommissionForm() {
         username: username.trim(),
         displayName: displayName.trim(),
         password,
+        recoveryCode: pendingCode,
       });
       if (!result.ok) {
         setError(
@@ -279,6 +331,10 @@ function CommissionForm() {
                   ? t('pos.local.roleUnavailable')
                   : t('pos.local.commissionFailed'),
         );
+        // Back to the form. A username already taken or a password refused is
+        // fixed there, not on a screen showing a code for an account that was
+        // never created.
+        setPendingCode(null);
       }
     } catch {
       setError(t('pos.local.storageBlocked'));
@@ -286,6 +342,49 @@ function CommissionForm() {
       setBusy(false);
     }
   };
+
+  if (pendingCode) {
+    return (
+      <div className="cpos-signin">
+        <div className="cpos-signin__brand">
+          <span className="cpos-signin__mark">
+            <LockIcon size={24} />
+          </span>
+          <h1 className="cpos-signin__h">{t('pos.local.recoveryTitle')}</h1>
+          <p className="cpos-signin__sub">{t('pos.local.recoveryBody')}</p>
+        </div>
+
+        <RecoveryCodeBlock code={pendingCode} />
+
+        <div className="cpos-note cpos-note--warning">{t('pos.local.recoveryWarning')}</div>
+
+        {error ? (
+          <div className="cpos-note cpos-note--danger" role="alert">
+            {error}
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--primary cpos-btn--lg cpos-btn--block"
+          onClick={create}
+          disabled={busy}
+        >
+          {busy ? <span className="cpos-spinner" aria-hidden="true" /> : null}
+          {busy ? t('pos.local.commissioning') : t('pos.local.recoveryConfirm')}
+        </button>
+
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--ghost cpos-btn--block"
+          onClick={() => setPendingCode(null)}
+          disabled={busy}
+        >
+          {t('pos.local.recoveryBack')}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form className="cpos-signin" aria-labelledby={headingId} onSubmit={submit}>
@@ -396,10 +495,9 @@ function CommissionForm() {
       <button
         type="submit"
         className="cpos-btn cpos-btn--primary cpos-btn--lg cpos-btn--block"
-        disabled={busy || !username.trim() || !password || !confirm}
+        disabled={busy || !username.trim() || !password || !confirm || weak}
       >
-        {busy ? <span className="cpos-spinner" aria-hidden="true" /> : null}
-        {busy ? t('pos.local.commissioning') : t('pos.local.commissionCta')}
+        {t('pos.local.commissionCta')}
       </button>
     </form>
   );

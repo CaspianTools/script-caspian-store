@@ -2259,6 +2259,88 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.license.offline':
     'Saved on this computer. It will be confirmed with the licence server next time you are online.',
 
+
+  // --- Point of sale: getting back into a locked-out till (till v1.1.0) ---
+  'pos.local.recoveryTitle': 'Write this code down before you go on',
+  'pos.local.recoveryBody':
+    'This is the only thing that can set a new password on this account if it is ever forgotten. It is shown once and never again — the till keeps a scrambled copy it cannot read back.',
+  'pos.local.recoveryWarning':
+    'Write it on paper and keep it where the shop can find it, not on this computer. If this machine cannot be opened, anything saved on it cannot be either.',
+  'pos.local.recoveryConfirm': 'I have written it down — create the account',
+  'pos.local.recoveryBack': 'Back',
+  'pos.local.passwordWeak':
+    'That password is too easy to guess. Avoid the account name and anything a stranger would try first.',
+  'pos.local.currentPassword': 'Your current password',
+  'pos.local.wrongCurrentPassword': 'That is not your current password.',
+  'pos.local.changeMyPasswordTitle': 'Change your password',
+
+  'pos.recovery.link': 'Locked out of this till?',
+  'pos.recovery.title': 'Getting back into this till',
+  'pos.recovery.body':
+    'There are three ways back in, in the order worth trying. The last one destroys everything on this computer, so read it before you open it.',
+  'pos.recovery.back': 'Back to sign in',
+  'pos.recovery.codeTitle': '1. Use the recovery code',
+  'pos.recovery.codeBody':
+    'The code written down when this till was set up. It sets a new password on the account it was made for. It does not sign you in — you will type the new password on the ordinary sign-in screen afterwards.',
+  'pos.recovery.codeLabel': 'Recovery code',
+  'pos.recovery.codeHelp':
+    'Capitals do not matter and the dashes are optional. If the paper says O or I and the box will not take it, type a zero or a one — the till reads them the same way.',
+  'pos.recovery.newPassword': 'New password',
+  'pos.recovery.submit': 'Set the new password',
+  'pos.recovery.noCode':
+    'This till has no recovery code. It was set up before the till could make one. Somebody who can open App admin can create one for next time.',
+  'pos.recovery.badCode': 'That code is not right for this till.',
+  'pos.recovery.accountGone':
+    'The account this code was made for no longer exists on this till. Try the other two ways below.',
+  'pos.recovery.throttled':
+    'Wait {seconds} seconds before trying the code again. Every wrong try makes the next wait longer.',
+  'pos.recovery.doneTitle': 'Done — now sign in with the new password',
+  'pos.recovery.doneBody': 'The password for {name} has been changed. Go back and sign in with it.',
+  'pos.recovery.newCodeBody':
+    'The old code has stopped working. Here is its replacement — write this one down in place of the old one.',
+  'pos.recovery.copy': 'Copy the code',
+  'pos.recovery.copied': 'Copied',
+  'pos.recovery.askTitle': '2. Ask whoever set this till up',
+  'pos.recovery.askBody':
+    'Anybody on this till who is allowed to add people can set a new password for you from the People screen, in seconds, without any code. If it is a cashier who is locked out rather than the owner, this is the answer.',
+  'pos.recovery.resetTitle': '3. Start this till over',
+  'pos.recovery.resetTeaser':
+    'The last resort. It erases the catalogue, the staff, the sales and the stock records on this computer.',
+  'pos.recovery.resetExpand': 'Show me the last resort',
+  'pos.recovery.resetBody':
+    'This erases everything this till holds: the catalogue, the staff accounts, every sale it has taken and every stock record. There is no undo and nothing is kept anywhere else. Download the backup first — you will need it to put the shop back afterwards.',
+  'pos.recovery.resetBackup': 'Download a backup first',
+  'pos.recovery.resetBackupDone': 'Backup saved — download it again',
+  'pos.recovery.resetBackupFailed':
+    'The backup could not be made, so nothing has been erased. Do not go on until it works.',
+  'pos.recovery.resetConfirmLabel': 'Type {name} to confirm',
+  'pos.recovery.resetFallbackWord': 'ERASE',
+  'pos.recovery.resetCta': 'Erase everything on this till',
+  'pos.recovery.resetFailed': 'Nothing was erased. The till could not open its own records.',
+
+  'pos.settings.section.account': 'Your account',
+  'pos.settings.signedInAs': 'Signed in as',
+  'pos.settings.changePassword': 'Change my password',
+  'pos.settings.changePasswordHelp':
+    'Changes the password for the account signed in on this till. It signs you out everywhere else the same account is open, within about a minute.',
+
+  'pos.admin.people.passwordTitle': 'New password for {name}',
+  'pos.admin.people.newPassword': 'New password',
+  'pos.admin.people.passwordCta': 'Save the password',
+  'pos.admin.backup.credentialsNote':
+    'The file includes the staff accounts and their scrambled passwords. Keep the folder somewhere only the shop can reach.',
+
+  'pos.appAdmin.section.recovery': 'Recovery code',
+  'pos.appAdmin.recovery.intro':
+    'The one way back into this till if the Support password is ever forgotten. It sets a new password on one account and nothing else — it never signs anybody in.',
+  'pos.appAdmin.recovery.none':
+    'This till has no recovery code. It was set up before the till could make one. If the password is forgotten, the only way back is to erase the till and start over, which takes the catalogue and the sales with it.',
+  'pos.appAdmin.recovery.generate': 'Create a recovery code',
+  'pos.appAdmin.recovery.regenerate': 'Replace the recovery code',
+  'pos.appAdmin.recovery.minted': 'Recovery code created',
+  'pos.appAdmin.recovery.mintedFor': 'The current code belongs to {name}, made on {date}.',
+  'pos.appAdmin.recovery.help':
+    'Making a new one stops the old one working straight away. The code is shown once; afterwards the till keeps only a scrambled copy that nobody, including whoever installed it, can read back.',
 };
 
 /**

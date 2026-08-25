@@ -63,7 +63,7 @@ own files:**
 - [../scripts/check-standalone.mjs](../scripts/check-standalone.mjs) and `.github/workflows/standalone-smoke.yml`
 - [../docs/pos-manual.html](../docs/pos-manual.html) — dual-owned; its version stamp tracks *this* product
 
-Plus **five shared files a standalone change may touch** without becoming a
+Plus **six shared files a standalone change may touch** without becoming a
 library change, provided the touch is additive and gated so a cloud-backed
 register cannot tell the difference:
 
@@ -74,6 +74,7 @@ register cannot tell the difference:
 | [../src/pos/pos-root.tsx](../src/pos/pos-root.tsx) | Mounting a standalone gate in `PosShell` that no-ops outside standalone |
 | [../src/pos/pos-settings-page.tsx](../src/pos/pos-settings-page.tsx) | Controls rendered behind `local.standalone` |
 | [../src/pos/pos-preferences.ts](../src/pos/pos-preferences.ts) | Device preferences only standalone code reads |
+| [../src/pos/theme/pos-stylesheet.ts](../src/pos/theme/pos-stylesheet.ts) | Rules for a class only standalone screens carry |
 
 `.github/exports-snapshot.json` follows the barrels automatically — regenerate it
 with `node scripts/check-exports.mjs --write`, never hand-edit it.
@@ -82,6 +83,14 @@ The worked example is v1.0.0's screen lock. `PosLockGate` computes
 `active = standalone && !!user && minutes > 0`, and its settings control sits
 behind `local.standalone ? … : null`. A cloud register mounts the same tree and
 gets nothing.
+
+The stylesheet joined this table in v1.1.0 and is the narrowest entry on it. The
+register is styled with classes and [pos-stylesheet.ts](../src/pos/theme/pos-stylesheet.ts)
+is the only home for register CSS, so a standalone screen that needs a rule has
+nowhere else to put one — inline-styling it instead would break the rule it was
+trying to respect. The permission is *rules for a new class*, and it holds only
+while no cloud-rendered component carries that class: a selector a cloud register
+can match is a library change, and so is editing an existing rule.
 
 **Escape hatch.** Anything that changes behaviour for a *cloud-backed* register —
 any other file under `../src/pos/`, or anything outside the lists above — is a

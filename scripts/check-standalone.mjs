@@ -83,6 +83,17 @@ const {
   DEFAULT_SIZE_KEY,
   addReceiptLine,
   ensureReceiptLine,
+  passwordIsWeak,
+  verifyStoredCredentials,
+  formatRecoveryCode,
+  normaliseRecoveryCode,
+  isRecoveryCodeShaped,
+  mintRecoveryCode,
+  RECOVERY_CODE_ALPHABET,
+  RECOVERY_CODE_PREFIX,
+  RECOVERY_CODE_SYMBOLS,
+  hasRecoveryCode,
+  DEFAULT_LOCAL_SHOP_SETTINGS,
 } = lib;
 
 let passed = 0;
@@ -1292,6 +1303,151 @@ check('a custom role granted App admin counts as a way in', () => {
     { id: 'b', role: 'shop-owner' },
   ];
   assert.equal(canRemoveLocalUser(users, 'a', holds), true);
+});
+
+console.log('\nthe recovery code');
+
+check('the printed shape is the prefix and five groups of five', () => {
+  const code = mintRecoveryCode();
+  assert.match(code, /^CSPR1(-[0-9A-Z]{5}){5}$/);
+  assert.equal(code.length, 'CSPR1'.length + 5 * 6);
+});
+
+check('the alphabet leaves out the letters people confuse with digits', () => {
+  for (const letter of ['I', 'L', 'O', 'U']) {
+    assert.equal(RECOVERY_CODE_ALPHABET.includes(letter), false, `${letter} should not be mintable`);
+  }
+  assert.equal(RECOVERY_CODE_ALPHABET.length, 32, 'base32 needs exactly 32 symbols');
+  assert.equal(new Set(RECOVERY_CODE_ALPHABET).size, 32, 'and no repeats');
+});
+
+check('two codes minted in a row are not the same', () => {
+  assert.notEqual(mintRecoveryCode(), mintRecoveryCode());
+});
+
+check('a code typed in lower case with no dashes normalises to the printed one', () => {
+  const printed = mintRecoveryCode();
+  const sloppy = printed.toLowerCase().replace(/-/g, '');
+  assert.equal(formatRecoveryCode(normaliseRecoveryCode(sloppy)), printed);
+});
+
+check('the confusable letters are folded onto the digits they look like', () => {
+  // Somebody reading a code down a phone says "oh" for zero and "ell" for one,
+  // and the person writing it down writes what they heard.
+  assert.equal(normaliseRecoveryCode('O I L'), '011');
+  assert.equal(normaliseRecoveryCode('o i l'), '011');
+  // Spaces, dashes and a stray newline from a paste all go.
+  assert.equal(normaliseRecoveryCode(' 2-3 4\n5 '), '2345');
+});
+
+check('the prefix is stripped whether or not it was typed', () => {
+  const payload = normaliseRecoveryCode(mintRecoveryCode());
+  assert.equal(payload.length, RECOVERY_CODE_SYMBOLS);
+  assert.equal(normaliseRecoveryCode(payload), payload, 'already-bare input is left alone');
+  assert.equal(normaliseRecoveryCode(`${RECOVERY_CODE_PREFIX}-${payload}`), payload);
+});
+
+check('garbage and near-misses are refused on shape alone', () => {
+  const good = mintRecoveryCode();
+  assert.equal(isRecoveryCodeShaped(good), true);
+  assert.equal(isRecoveryCodeShaped(good.toLowerCase()), true);
+  assert.equal(isRecoveryCodeShaped(''), false);
+  assert.equal(isRecoveryCodeShaped('CSPR1-ABC'), false, 'too short');
+  assert.equal(isRecoveryCodeShaped(`${good}Z`), false, 'too long');
+  assert.equal(isRecoveryCodeShaped('the quick brown fox jumped over it'), false);
+});
+
+check('a minted code verifies through the same PBKDF2 as a password', async () => {
+  // The point of the round-trip: the code is stored exactly the way a password
+  // is, so raising the iteration count one day cannot leave codes behind.
+  const code = mintRecoveryCode();
+  const stored = await hashLocalPassword(normaliseRecoveryCode(code));
+  assert.equal(await verifyStoredCredentials(normaliseRecoveryCode(code), stored), true);
+
+  const payload = normaliseRecoveryCode(code);
+  const swapped = RECOVERY_CODE_ALPHABET[(RECOVERY_CODE_ALPHABET.indexOf(payload[0]) + 1) % 32];
+  const oneOff = swapped + payload.slice(1);
+  assert.notEqual(oneOff, payload);
+  assert.equal(await verifyStoredCredentials(oneOff, stored), false, 'one symbol out must fail');
+});
+
+check('a till with no code is told apart from one that has one', () => {
+  assert.equal(hasRecoveryCode(DEFAULT_LOCAL_SHOP_SETTINGS), false);
+  assert.equal(
+    hasRecoveryCode({ ...DEFAULT_LOCAL_SHOP_SETTINGS, recoveryHash: 'h', recoverySalt: 's' }),
+    false,
+    'a stored row with no iteration count is not a usable code',
+  );
+  assert.equal(
+    hasRecoveryCode({
+      ...DEFAULT_LOCAL_SHOP_SETTINGS,
+      recoveryHash: 'h',
+      recoverySalt: 's',
+      recoveryIterations: 600000,
+    }),
+    true,
+  );
+});
+
+check('the recovery fields default to empty, so an upgrading till needs no migration', () => {
+  // `readLocalShopSettings` merges over these. If any of them were absent the
+  // merge would hand back `undefined` and `hasRecoveryCode` would throw rather
+  // than say "no code yet".
+  for (const field of ['recoveryHash', 'recoverySalt', 'recoveryForUserId']) {
+    assert.equal(DEFAULT_LOCAL_SHOP_SETTINGS[field], '', `${field} must default to empty`);
+  }
+  assert.equal(DEFAULT_LOCAL_SHOP_SETTINGS.recoveryIterations, 0);
+  assert.equal(DEFAULT_LOCAL_SHOP_SETTINGS.recoveryMintedAtMillis, 0);
+});
+
+check('the recovery ladder charges from the very first wrong code', () => {
+  // Zero free attempts, unlike the three the front door allows: nobody mistypes
+  // twenty-five symbols off a piece of paper by leaving caps lock on.
+  const first = recordSignInFailure(undefined, 1_000);
+  const verdict = evaluateSignInThrottle(first, 1_000, 0);
+  assert.equal(verdict.allowed, false);
+  assert.equal(verdict.waitMillis, SIGN_IN_DELAY_LADDER_MS[0]);
+
+  // ...while the same record at the front door's three free tries is waved through.
+  assert.equal(evaluateSignInThrottle(first, 1_000).allowed, true);
+  assert.equal(evaluateSignInThrottle(first, 1_000, SIGN_IN_FREE_ATTEMPTS).allowed, true);
+});
+
+check('the recovery ladder still climbs, tops out, and is forgotten', () => {
+  let record = undefined;
+  const at = 1_000;
+  for (let i = 0; i < 6; i++) record = recordSignInFailure(record, at);
+  assert.equal(
+    evaluateSignInThrottle(record, at, 0).waitMillis,
+    SIGN_IN_DELAY_LADDER_MS[SIGN_IN_DELAY_LADDER_MS.length - 1],
+    'six failures is past the end of the ladder, so it sits on the ceiling',
+  );
+  assert.equal(
+    evaluateSignInThrottle(record, at + SIGN_IN_THROTTLE_FORGET_MS, 0).allowed,
+    true,
+    'quiet for the forget window clears it, as it does at the front door',
+  );
+});
+
+console.log('\npasswords a till refuses');
+
+check('a password equal to the account name is refused however it is typed', () => {
+  assert.equal(passwordIsWeak('aysel', 'aysel'), true);
+  assert.equal(passwordIsWeak('AYSEL', 'aysel'), true, 'case is not a difference');
+  assert.equal(passwordIsWeak('aysel', '  Aysel  '), true, 'nor is a stray space');
+});
+
+check('the blocklist catches what a stranger tries first', () => {
+  for (const bad of ['123456', 'password', 'qwerty', 'parol', 'admin', 'kassa']) {
+    assert.equal(passwordIsWeak(bad, 'aysel'), true, `${bad} should be refused`);
+  }
+  assert.equal(passwordIsWeak('PASSWORD', 'aysel'), true, 'case is not a difference here either');
+});
+
+check('an ordinary password is allowed', () => {
+  assert.equal(passwordIsWeak('kupfer-lantern-9', 'aysel'), false);
+  assert.equal(passwordIsWeak('aysel2026!', 'aysel'), false, 'containing the name is not being it');
+  assert.equal(passwordIsWeak('', 'aysel'), true, 'nothing at all is not a password');
 });
 
 await Promise.all(pending);

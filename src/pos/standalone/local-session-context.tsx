@@ -22,7 +22,8 @@ import {
   writeLocalSignInId,
   type LocalSignInResult,
 } from './local-auth';
-import { newLocalId } from './local-db';
+import { newLocalId, writeLocalShopSettings } from './local-db';
+import { recoveryPatchFor } from './local-recovery';
 import type { LocalUser, PosLocalRole } from './types';
 
 export interface PosLocalSessionValue {
@@ -72,11 +73,20 @@ export interface PosLocalSessionValue {
   /** Uncover it. Same password, same delay ladder, same `signInId`. */
   unlock: (password: string) => Promise<LocalSignInResult>;
   signOut: () => void;
-  /** Create the first account — the Technical Support one. Refuses once any account exists. */
+  /**
+   * Create the first account — the Technical Support one. Refuses once any
+   * account exists.
+   *
+   * `recoveryCode` is optional so the shape stays the one consumers already
+   * call. Pass one and its hash is stored against the account this creates;
+   * omit it and the till is commissioned without a way back in, which is the
+   * state every till from before v1.1.0 starts in.
+   */
   commission: (input: {
     username: string;
     displayName: string;
     password: string;
+    recoveryCode?: string;
   }) => Promise<{ ok: true } | { ok: false; reason: string }>;
   refresh: () => Promise<void>;
 }
@@ -285,11 +295,29 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const commission = useCallback(
-    async (input: { username: string; displayName: string; password: string }) => {
+    async (input: {
+      username: string;
+      displayName: string;
+      password: string;
+      recoveryCode?: string;
+    }) => {
       if (await isCommissioned()) return { ok: false as const, reason: 'already-commissioned' };
       const role: PosLocalRole = 'superadmin';
-      const created = await createLocalUser({ ...input, role });
+      const { recoveryCode, ...account } = input;
+      const created = await createLocalUser({ ...account, role });
       if (!created.ok) return { ok: false as const, reason: created.reason };
+      // Stored after the account exists, because the code names the account it
+      // resets and there is nothing to name until now. A failure here must not
+      // take the account with it: a till with an account and no recovery code
+      // is the state every till commissioned before this release is in, and it
+      // is recoverable from the App admin screen. A till with neither is not.
+      if (recoveryCode) {
+        try {
+          await writeLocalShopSettings(await recoveryPatchFor(recoveryCode, created.user.id));
+        } catch {
+          // Left without a code. The App admin screen says so and offers one.
+        }
+      }
       const minted = newLocalId();
       startLocalSession(created.user);
       writeLocalSignInId(minted);

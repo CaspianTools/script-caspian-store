@@ -9,11 +9,13 @@ import { Input } from '../../../ui/input';
 import { useToast } from '../../../ui/toast';
 import { cn } from '../../../utils/cn';
 import { useCaspianNavigation, useCaspianFirebaseOptional } from '../../../provider/caspian-store-provider';
-import { readLocalShopSettings, writeLocalShopSettings } from '../local-db';
+import { getLocalUser, readLocalShopSettings, writeLocalShopSettings } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosOpeningCash } from '../opening-cash-context';
 import { usePosRoles } from '../role-context';
 import { usePosShopSettings } from '../shop-settings-context';
+import { hasRecoveryCode, mintAndStoreRecoveryCode } from '../local-recovery';
+import { RecoveryCodeBlock } from '../pos-local-recovery';
 import { usePosLicense } from '../../license/use-pos-license';
 import { PosLicenseSection } from '../../license/pos-license-section';
 import {
@@ -39,7 +41,7 @@ const LOCKED_IDS: readonly PosLocalRole[] = ['superadmin'];
 /** Roles kept only so accounts already holding them keep working. */
 const DUPLICATE_IDS: readonly PosLocalRole[] = ['cashier'];
 
-type Section = 'roles' | 'openingCash' | 'features' | 'licence';
+type Section = 'roles' | 'openingCash' | 'features' | 'recovery' | 'licence';
 
 /**
  * Opening cash sits above the licence because the licence pane is furniture:
@@ -57,6 +59,11 @@ const NAV: { value: Section; labelKey: string; icon: (size: number) => React.Rea
     value: 'features',
     labelKey: 'pos.appAdmin.section.features',
     icon: (s) => <SlidersIcon size={s} />,
+  },
+  {
+    value: 'recovery',
+    labelKey: 'pos.appAdmin.section.recovery',
+    icon: (s) => <LockIcon size={s} />,
   },
   { value: 'licence', labelKey: 'pos.appAdmin.section.licence', icon: (s) => <LockIcon size={s} /> },
 ];
@@ -103,6 +110,8 @@ export function PosAppAdminPage() {
             <OpeningCashSection />
           ) : current === 'features' ? (
             <FeaturesSection />
+          ) : current === 'recovery' ? (
+            <RecoverySection />
           ) : (
             <LicenceSection />
           )}
@@ -337,6 +346,123 @@ function FeaturesSection() {
 
       {settings.lotTrackingEnabled ? (
         <div className="cpos-note cpos-note--brand">{t('pos.appAdmin.features.lotsNote')}</div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * The till's way back in, for a machine that was set up without one.
+ *
+ * Every till commissioned before v1.1.0 has no recovery code, and so does one
+ * whose settings write failed during setup. This pane is where that is put
+ * right -- and it is deliberately here rather than at the counter. A cashier
+ * shown a warning about a missing recovery code can do precisely nothing about
+ * it, so the warning would be noise on the one screen that must not have any.
+ * App admin is where the person who can act already goes.
+ *
+ * The code is shown once and then only its hash is kept, which is the point:
+ * nobody, including whoever installed the machine, can read it back off the
+ * till afterwards.
+ */
+function RecoverySection() {
+  const t = useT();
+  const { toast } = useToast();
+  const session = usePosLocalSession();
+  const { settings, loading, refresh } = usePosShopSettings();
+  const [minted, setMinted] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [belongsTo, setBelongsTo] = useState('');
+
+  const exists = hasRecoveryCode(settings);
+
+  // The stored field is an account id, which is meaningless to an owner reading
+  // this page. Resolve it to the name they know; fall back to the raw id only
+  // when the account has since been deleted, where the id is at least a clue.
+  useEffect(() => {
+    let alive = true;
+    const id = settings.recoveryForUserId;
+    if (!id) {
+      setBelongsTo('');
+      return;
+    }
+    getLocalUser(id)
+      .then((user) => {
+        if (alive) setBelongsTo(user?.displayName || user?.username || id);
+      })
+      .catch(() => {
+        if (alive) setBelongsTo(id);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [settings.recoveryForUserId]);
+
+  const generate = async () => {
+    if (busy || !session.user) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      // Against the account doing this, not against whoever commissioned the
+      // machine: that person may have left the company, and a code naming a
+      // deleted account is a code that opens nothing.
+      const code = await mintAndStoreRecoveryCode(session.user.id);
+      setMinted(code);
+      await refresh();
+      toast({ title: t('pos.appAdmin.recovery.minted') });
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <div className="cpos-muted">{t('common.loading')}</div>;
+
+  return (
+    <section className="cpos-section">
+      <h2 className="cpos-section__title">{t('pos.appAdmin.section.recovery')}</h2>
+      <div className="cpos-muted">{t('pos.appAdmin.recovery.intro')}</div>
+
+      {!exists && !minted ? (
+        <div className="cpos-note cpos-note--warning" role="status">
+          {t('pos.appAdmin.recovery.none')}
+        </div>
+      ) : null}
+
+      {minted ? (
+        <>
+          <div className="cpos-note cpos-note--warning">{t('pos.local.recoveryWarning')}</div>
+          <RecoveryCodeBlock code={minted} />
+        </>
+      ) : null}
+
+      {exists && !minted ? (
+        <FieldDescription>
+          {t('pos.appAdmin.recovery.mintedFor', {
+            name: belongsTo,
+            date: new Date(settings.recoveryMintedAtMillis).toLocaleDateString(),
+          })}
+        </FieldDescription>
+      ) : null}
+
+      <div className="cpos-actions">
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--primary"
+          onClick={() => void generate()}
+          disabled={busy}
+        >
+          {exists ? t('pos.appAdmin.recovery.regenerate') : t('pos.appAdmin.recovery.generate')}
+        </button>
+      </div>
+      <FieldDescription>{t('pos.appAdmin.recovery.help')}</FieldDescription>
+
+      {failed ? (
+        <div className="cpos-note cpos-note--danger" role="alert">
+          {t('pos.appAdmin.openingCash.saveFailed')}
+        </div>
       ) : null}
     </section>
   );
