@@ -524,6 +524,7 @@
     "loadUserCart",
     "loadUserWishlist",
     "localBackupFilename",
+    "localCryptoAvailable",
     "localDayKey",
     "localProductCount",
     "localProductTemplateCsv",

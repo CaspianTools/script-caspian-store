@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useLocaleControls, useT } from '../i18n/locale-context';
-import { BUILTIN_LOCALE_NAMES } from '../i18n/locales';
+import { BUILTIN_LOCALE_CODES, BUILTIN_LOCALE_NAMES } from '../i18n/locales';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
 import { FieldDescription } from '../ui/field-description';
@@ -41,8 +41,16 @@ export interface PosSettingsPageProps {
   className?: string;
 }
 
-/** Languages exposed by the POS settings picker. */
-const POS_LOCALES = ['en', 'az'] as const;
+/**
+ * Languages exposed by the POS settings picker.
+ *
+ * Every locale that ships with a dictionary, not the two that were hand-listed
+ * here. The sign-in screen now offers the same list, and a till that can be set
+ * to Russian before anybody signs in must be able to be set back to it
+ * afterwards -- a picker that drops two of the four is how a shop ends up stuck
+ * in a language it did not choose.
+ */
+const POS_LOCALES = BUILTIN_LOCALE_CODES;
 
 interface SectionConfig {
   id: string;

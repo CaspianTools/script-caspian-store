@@ -16,6 +16,83 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.4.0 — The first screen a shop ever sees
+
+The setup and sign-in screens on a till that runs with no website behind it.
+They were the only screens in the register with no translations at all, and the
+first thing every shop meets.
+
+### No consumer action required
+
+Reinstall and the new screens are there. Nothing is stored differently, no
+account is touched, and a till that has been trading signs in exactly as it did.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.4.0
+```
+
+### Added
+
+- **Azerbaijani, Russian and Turkish for the whole sign-in surface.** All 34
+  `pos.local.*` keys and all 24 `pos.admin.people.*` keys, in every locale. These
+  were the last untranslated screens a cashier or an owner actually touches, and
+  because `LocaleProvider` falls back to English key by key, the gap was
+  invisible in review — an Azerbaijani shop set its till up in English and had no
+  way to tell that was not intended.
+- **A language picker under the sign-in card.** A standalone till has no
+  Firestore to publish a store default, so before this the very first screen
+  opened in English and stayed there until somebody signed in and found
+  `/pos/settings`. The picker is hidden when the consumer pins `locale` on the
+  provider, because a control that silently does nothing is worse than none.
+- **A full-name field on the setup form.** It was never asked for, and the blank
+  fell through to the username — which is stored lower-cased — so a till set up
+  by Fuad spent the rest of its life calling him `fuad` on the avatar, the
+  receipts and every sale.
+- **Show-password and a caps-lock warning** on every password box on those
+  screens. A till is often a tablet with an on-screen keyboard, and a shift key
+  left down is the commonest reason a correct password is refused.
+- **A distinct screen for a till that cannot open its own records.** A failed
+  IndexedDB read used to collapse into "no accounts", which is indistinguishable
+  from a brand-new machine — so a shop with a year of trading history was shown
+  *Set up this till*. It now says the data is still there, that nothing has been
+  lost, and not to set the till up again.
+- **A distinct screen for a till served over plain http.** The throw from
+  `crypto.subtle` landed in the same handler as blocked storage, so the register
+  told the operator to go and look at their site-data settings — the one place
+  the answer was not.
+- `localCryptoAvailable()`, `EyeIcon` and `EyeOffIcon` are exported.
+- A new POS-manual section, **Setting up a till that runs on its own**. The
+  first-run screen had never been documented. It states plainly that there is no
+  recovery for a forgotten Support password, because today there is not.
+
+### Changed
+
+- **`pos.local.username` now reads "Username", not "Name".** The key is
+  unchanged, so a consumer overriding it through `messagesByLocale` keeps
+  working. "Name" sat directly above a Full name box on the same form and named
+  the login id.
+- The register's Settings language picker offers all four built-in languages.
+  It listed two, while the manual had claimed four since v10.
+- Both forms follow the accessibility pattern the opening-cash gate already set:
+  `aria-labelledby` on the form, help text wired through `aria-describedby`,
+  `aria-invalid` on a field that failed, and a polite live region that is in the
+  DOM from first paint rather than mounting with its text.
+- Usernames are trimmed before submit, and the submit button no longer enables
+  on a single space. Passwords are still never trimmed — one that starts or ends
+  with a space now says so instead, because silently trimming would lock out
+  anyone whose password genuinely has one.
+- The confirm-password box says whether the two match while you type.
+- `username-empty` and `invalid-role` get their own messages instead of falling
+  into the generic "could not be created".
+
+### Fixed
+
+- The sign-in card had no narrow-screen rule, unlike the near-identical
+  opening-cash card beside it in the same stylesheet, so a till in portrait kept
+  a 9vh top margin and 30px of padding it could not afford.
+- Username boxes carry `autoCapitalize="none"` and `spellCheck={false}`. A tablet
+  was auto-capitalising the login id while it was being chosen.
+
 ## v13.3.1 — Store management, corrected
 
 Everything below was found by actually running the register: driving the new

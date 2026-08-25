@@ -84,6 +84,78 @@ const ru: MessageDict = {
   'pos.guard.disabledBody':
     'Точка продаж отключена для этого магазина. Администратор может включить её в настройках.',
 
+  // POS — автономная касса: вход, настройка и учётные записи
+  'pos.local.signInTitle': 'Вход',
+  'pos.local.signInBody':
+    'Введите имя пользователя и пароль, которые вам выдали при настройке этой кассы.',
+  'pos.local.username': 'Имя пользователя',
+  'pos.local.usernameHelp': 'То, что вы вводите для входа. Регистр не важен.',
+  'pos.local.password': 'Пароль',
+  'pos.local.confirmPassword': 'Пароль ещё раз',
+  'pos.local.displayName': 'Полное имя',
+  'pos.local.displayNameHelp': 'Имя, которое показывается рядом с продажами этой учётной записи.',
+  'pos.local.signIn': 'Войти',
+  'pos.local.signingIn': 'Выполняется вход…',
+  'pos.local.badCredentials':
+    'Такое имя пользователя и пароль не подходят ни к одной учётной записи на этой кассе.',
+  'pos.local.showPassword': 'Показать пароль',
+  'pos.local.hidePassword': 'Скрыть пароль',
+  'pos.local.capsLock': 'Включён Caps Lock.',
+  'pos.local.passwordSpaces':
+    'Этот пароль начинается или заканчивается пробелом. Так можно, но вводить его придётся каждый раз одинаково.',
+  'pos.local.language': 'Язык',
+  'pos.local.storageBlocked':
+    'Касса не может обратиться к своему хранилищу, поэтому никого не может впустить. Возможно, в настройках браузера заблокированы данные сайта.',
+  'pos.local.storageFailedTitle': 'Касса не может открыть свои записи',
+  'pos.local.storageFailedBody':
+    'Учётные записи, каталог и продажи по-прежнему на этом компьютере, но браузер не даёт кассе их прочитать. Ничего не потеряно. Обычно это заблокированные данные сайта или окно в режиме инкогнито. Обратитесь к тому, кто настраивал этот компьютер, — не настраивайте кассу заново.',
+  'pos.local.insecureContextTitle': 'Касса открыта по небезопасному адресу',
+  'pos.local.insecureContextBody':
+    'По обычному адресу http пароль проверить нельзя. Кассе нужен https или адрес localhost. Попросите того, кто настраивал этот компьютер, исправить адрес — здесь менять нечего.',
+  'pos.local.commissionTitle': 'Настройка этой кассы',
+  'pos.local.commissionBody':
+    'Создайте учётную запись поддержки. Потом она сможет добавить сотрудников магазина, а до этого остаётся единственной записью на этой кассе.',
+  'pos.local.commissionCta': 'Создать учётную запись',
+  'pos.local.commissioning': 'Создаётся…',
+  'pos.local.commissionFailed': 'Учётную запись не удалось создать.',
+  'pos.local.roleUnavailable':
+    'Роль «Поддержка» на этой кассе отключена, поэтому учётную запись создать нельзя.',
+  'pos.local.usernameEmpty': 'Введите имя пользователя.',
+  'pos.local.passwordHelp': 'Не менее {min} символов.',
+  'pos.local.passwordTooShort': 'Введите не менее {min} символов.',
+  'pos.local.passwordMismatch': 'Пароли не совпадают.',
+  'pos.local.passwordsMatch': 'Пароли совпадают.',
+  'pos.local.usernameTaken': 'Такое имя пользователя на этой кассе уже занято.',
+  'pos.local.noAccessTitle': 'Нет доступа к кассе',
+  'pos.local.noAccessBody':
+    'Этой учётной записи не разрешено открывать кассу. Попросите изменить это того, кто настраивал компьютер.',
+  'pos.admin.people.addTitle': 'Добавить человека',
+  'pos.admin.people.add': 'Добавить',
+  'pos.admin.people.added': 'Учётная запись создана',
+  'pos.admin.people.addFailed': 'Эту учётную запись создать не удалось.',
+  'pos.admin.people.invalidRole': 'Эта роль не включена.',
+  'pos.admin.people.roleLabel': 'Может пользоваться',
+  'pos.admin.people.role.superadmin': 'Поддержка',
+  'pos.admin.people.role.admin': 'Владелец',
+  'pos.admin.people.role.staff': 'Кассир',
+  'pos.admin.people.roleHelp.superadmin':
+    'Всё, включая добавление других учётных записей поддержки. Для того, кто устанавливает и обслуживает эту кассу.',
+  'pos.admin.people.roleHelp.admin':
+    'Касса и этот внутренний раздел. Для владельца магазина и менеджеров.',
+  'pos.admin.people.roleHelp.staff': 'Только касса. Не может менять цены, товары и людей.',
+  'pos.admin.people.roleHelp.default': 'Доступ по областям, выбранным для этой роли.',
+  'pos.admin.people.listTitle': 'Люди на этой кассе',
+  'pos.admin.people.resetPassword': 'Новый пароль',
+  'pos.admin.people.newPasswordPrompt': 'Новый пароль для {name}',
+  'pos.admin.people.passwordChanged': 'Пароль изменён',
+  'pos.admin.people.enable': 'Впустить',
+  'pos.admin.people.disable': 'Заблокировать',
+  'pos.admin.people.disabled': 'заблокирован',
+  'pos.admin.people.you': 'вы',
+  'pos.admin.people.confirmDelete': 'Удалить учётную запись {name}?',
+  'pos.admin.people.deleteNote':
+    'Блокировка оставляет имя человека на продажах, которые он пробил. Удаление тоже, но впустить его обратно без создания новой записи не получится.',
+
   // POS — scanning
   'pos.scan.placeholder': 'Отсканируйте или введите штрихкод / артикул',
   'pos.scan.hint': 'USB- или Bluetooth-сканер работает без настройки — просто сканируйте.',

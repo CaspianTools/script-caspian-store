@@ -1163,6 +1163,62 @@ export const POS_STYLESHEET = String.raw`
 }
 .cpos-signin__h { margin: 0; font-size: 20px; font-weight: 750; letter-spacing: -0.02em; }
 .cpos-signin__sub { margin: 0; font-size: 13.5px; color: var(--cpos-fg-muted); line-height: 1.55; }
+/* A dead end rather than a form: the mark drops the brand colour so the screen
+   does not read as somewhere to type. */
+.cpos-signin--notice { gap: 12px; }
+.cpos-signin__mark--muted {
+  background: var(--cpos-surface-2);
+  color: var(--cpos-fg-muted);
+  box-shadow: none;
+}
+/* Field help. Not .cpos-signin__sub, which is centred for the brand block. */
+.cpos-signin__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--cpos-fg-muted);
+  line-height: 1.5;
+}
+/* Under the card, not inside it: this is a property of the device, not of the
+   account being signed into. */
+.cpos-signin__lang {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(400px, 100%);
+  margin: 0 auto 24px;
+}
+
+/* The reveal button sits inside the box, so the box has to hold it. */
+.cpos-field__control { position: relative; display: flex; align-items: center; }
+.cpos-input--revealable { padding-inline-end: 46px; }
+.cpos-input__reveal {
+  position: absolute;
+  inset-inline-end: 6px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cpos-r-sm);
+  background: transparent;
+  color: var(--cpos-fg-muted);
+  cursor: pointer;
+  transition: background var(--cpos-dur-fast) ease, color var(--cpos-dur-fast) ease;
+}
+.cpos-input__reveal:hover { background: var(--cpos-surface-2); color: var(--cpos-fg); }
+.cpos-input__reveal:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+
+/* The card was the one panel in the register with no narrow-screen rule, so a
+   till in portrait kept a 9vh top margin and 30px of padding it could not
+   afford. Mirrors the .cpos-opencash block above. */
+@media (max-width: 640px) {
+  .cpos-signin { margin: 12px auto; padding: 22px 18px; gap: 14px; border-radius: var(--cpos-r-lg); }
+  .cpos-signin__mark { width: 46px; height: 46px; }
+  .cpos-signin__h { font-size: 18px; }
+  .cpos-signin__lang { margin-bottom: 16px; }
+}
 
 /* ---------------------------------------------------- opening cash */
 /* Content inside .cpos-main, and emphatically not a guard screen: the sidebar,

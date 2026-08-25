@@ -41,6 +41,17 @@ export interface PosLocalSessionValue {
   commissioned: boolean;
   /** True when the tree was mounted standalone. Everything else is inert otherwise. */
   standalone: boolean;
+  /**
+   * True when this machine's own records could not be opened at all.
+   *
+   * Distinct from `commissioned: false`, and the distinction is the point. A
+   * failed read used to collapse into "no accounts", which put a shop with a
+   * year of trading history in front of a screen inviting it to set the till up
+   * from scratch. Nothing was lost -- the write would have failed too -- but a
+   * setup screen is the wrong thing to show somebody whose data is still there
+   * and merely unreachable.
+   */
+  storageFailed: boolean;
   signIn: (username: string, password: string) => Promise<boolean>;
   signOut: () => void;
   /** Create the first account — the Technical Support one. Refuses once any account exists. */
@@ -60,6 +71,7 @@ const INERT: PosLocalSessionValue = {
   loading: false,
   commissioned: false,
   standalone: false,
+  storageFailed: false,
   signIn: async () => false,
   signOut: () => undefined,
   commission: async () => ({ ok: false, reason: 'not-standalone' }),
@@ -100,15 +112,22 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [signInId, setSignInId] = useState<string | null>(null);
   const [commissioned, setCommissioned] = useState(false);
+  const [storageFailed, setStorageFailed] = useState(false);
   const [loading, setLoading] = useState(standalone);
 
   const refresh = useCallback(async () => {
     if (!standalone) return;
-    const [restored, hasAccounts] = await Promise.all([restoreLocalSession(), isCommissioned()]);
-    setUser(restored);
-    setSignInId(restored ? adoptSignInId() : null);
-    setCommissioned(hasAccounts);
-    setLoading(false);
+    try {
+      const [restored, hasAccounts] = await Promise.all([restoreLocalSession(), isCommissioned()]);
+      setUser(restored);
+      setSignInId(restored ? adoptSignInId() : null);
+      setCommissioned(hasAccounts);
+      setStorageFailed(false);
+    } catch {
+      setStorageFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }, [standalone]);
 
   useEffect(() => {
@@ -127,6 +146,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
         setUser(restored);
         setSignInId(restored ? adoptSignInId() : null);
         setCommissioned(hasAccounts);
+        setStorageFailed(false);
       } catch {
         // Blocked or unavailable storage. Treat as "not commissioned" so the
         // screen tells someone to fix it, rather than looping on a sign-in
@@ -135,6 +155,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setSignInId(null);
           setCommissioned(false);
+          setStorageFailed(true);
         }
       } finally {
         if (alive) setLoading(false);
@@ -185,9 +206,31 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PosLocalSessionValue>(
     () =>
       standalone
-        ? { user, signInId, loading, commissioned, standalone, signIn, signOut, commission, refresh }
+        ? {
+            user,
+            signInId,
+            loading,
+            commissioned,
+            standalone,
+            storageFailed,
+            signIn,
+            signOut,
+            commission,
+            refresh,
+          }
         : INERT,
-    [standalone, user, signInId, loading, commissioned, signIn, signOut, commission, refresh],
+    [
+      standalone,
+      user,
+      signInId,
+      loading,
+      commissioned,
+      storageFailed,
+      signIn,
+      signOut,
+      commission,
+      refresh,
+    ],
   );
 
   return (

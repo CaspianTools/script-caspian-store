@@ -490,6 +490,7 @@ export {
   readLocalSignInId,
   writeLocalSignInId,
   normaliseUsername,
+  localCryptoAvailable,
   MIN_LOCAL_PASSWORD_LENGTH,
   resolvePosStorageMode,
   type PosLocalSessionValue,

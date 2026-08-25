@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v13.3.1"
+      "version": "v13.4.0"
     },
     "parts": [
       {
@@ -1799,6 +1799,52 @@ const MANUAL = {
         "blurb": "The screens a register keeps when there is no website behind it: the store and everything under it, the sales, the people, the shop record and the backup.",
         "sections": [
           {
+            "id": "setting-up-a-till-on-its-own",
+            "title": "Setting up a till that runs on its own",
+            "audience": "owner",
+            "route": "/pos",
+            "summary": "The first screen a till with no website behind it ever shows. It asks for one account — the Support account — and nothing else, and until that account exists there is nothing else the machine will do. Afterwards the same screen becomes the ordinary sign-in, and the shop's own cashiers are added later from People.",
+            "steps": [
+              "Open /pos on the till. Because the machine has no accounts yet it shows \"Set up this till\" rather than a sign-in box.",
+              "If the shop does not work in English, change the language first. The picker sits under the card and takes effect at once, and the choice is remembered on this computer, so it is still there the next time anybody signs in.",
+              "Fill in a username, a full name and a password twice, then press \"Create the account\". You are signed in straight away; there is no second sign-in step.",
+              "Open People, under Shop in the menu, and add the shop's own cashiers. Until you do, the Support account is the only way into this till.",
+              "From then on /pos shows \"Sign in\" instead, and asks only for the username and the password."
+            ],
+            "fields": [
+              {
+                "name": "Username",
+                "what": "What gets typed to sign in. Capitals do not matter, because it is stored in lower case, and it has to be different from every other account on this till. Spaces at the start and end are trimmed off."
+              },
+              {
+                "name": "Full name",
+                "what": "The name shown beside the sales this account rings up, and printed on the receipt as \"Served by\". Leave it blank and the till falls back to the username in lower case, so the account ends up called \"fuad\" rather than \"Fuad\" everywhere afterwards."
+              },
+              {
+                "name": "Password",
+                "what": "At least six characters. The eye button at the right of the box shows what you have typed, which is worth using on a tablet with an on-screen keyboard. A line appears under the box while caps lock is on."
+              },
+              {
+                "name": "Password again",
+                "what": "The same password a second time. The screen says whether the two match while you type, rather than waiting until you press the button."
+              },
+              {
+                "name": "Language",
+                "what": "Under the card, on the setup screen and the sign-in screen alike. English, Azərbaycan dili, Русский and Türkçe. It belongs to the computer, not to the account, and it is the same setting the register's Settings screen shows later."
+              }
+            ],
+            "notes": [
+              "This screen only appears on a till with no website behind it. A register backed by a website sends people to the website's own sign-in page instead — see \"When a cashier cannot get in\".",
+              "\"Set up this till\" appearing means the machine has no accounts, and nothing else. A till that has been trading and suddenly offers setup is a fault rather than an invitation: read the two warnings below before touching anything.",
+              "If the till says it cannot open its own records, stop. The catalogue, the staff and the sales are still on the computer and the browser is refusing to read them, usually because site data is blocked or the register was opened in a private window. Do not set the till up again; fetch whoever installed it.",
+              "If the till says it is not on a secure address, the register is being served over plain http, where a password cannot be checked at all. Only https, or opening it at localhost, will do, and there is nothing on the screen that can fix it.",
+              "There is no way to recover a forgotten Support password. No reset by email, no recovery code, no back door, and the only account that can set a new password is one that is already signed in. Write it down and keep it where the shop can find it. A till whose only account is locked out has to be cleared and set up from scratch, and that takes the shop's catalogue and its trading history with it.",
+              "The password is scrambled on this computer and cannot be read back by anybody, including whoever installed the till.",
+              "A space at the start or end of a password is allowed and the screen warns when there is one, because it then has to be typed the same way every time.",
+              "Nothing on this screen is sent anywhere. There is no server to ask, so a till with no internet connection sets up and signs in exactly as one with."
+            ]
+          },
+          {
             "id": "where-the-back-office-went",
             "title": "Where the back office went",
             "audience": "owner",
@@ -2234,14 +2280,14 @@ const MANUAL = {
             "summary": "Who can sign in to this till, and what they may do. These accounts belong to the machine, not to a website: no email address, no password reset by email, and no way in from another computer. Adding somebody is done from Quick add in the top bar; this screen is for changing roles, resetting passwords, blocking and deleting.",
             "steps": [
               "Press People in the menu, under Shop.",
-              "To add somebody, open Quick add in the top bar and choose \"Add person\". Give them a name to sign in with, their full name, a password of at least six characters, and a role.",
+              "To add somebody, open Quick add in the top bar and choose \"Add person\". Give them a username to sign in with, their full name, a password of at least six characters, and a role.",
               "To change what somebody may do, pick a different role from the menu in their row. It saves as soon as you pick.",
               "Press \"New password\" on a row and type the new one into the small box the browser puts up. It applies immediately.",
               "Press Block to stop an account signing in without losing the sales it rang, or Delete to remove it altogether."
             ],
             "fields": [
               {
-                "name": "Name",
+                "name": "Username",
                 "what": "What the person types to sign in. Stored in lower case, and never re-used."
               },
               {
@@ -2776,7 +2822,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v13.3.1"
+      "version": "v13.4.0"
     },
     "parts": [
       {
@@ -3934,7 +3980,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v13.3.1"
+      "version": "v13.4.0"
     },
     "parts": [
       {
@@ -5092,7 +5138,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v13.3.1"
+      "version": "v13.4.0"
     },
     "parts": [
       {

@@ -46,6 +46,19 @@ function subtle(): SubtleCrypto {
   return c.subtle;
 }
 
+/**
+ * Whether this origin can hash a password at all.
+ *
+ * Separate from `subtle()` throwing, because the two failures need different
+ * words. A till served over plain http has a configuration problem that nobody
+ * standing at the counter can fix, and telling that operator to check their
+ * site-data settings -- which is what the storage-blocked message says -- sends
+ * them looking in the wrong place entirely.
+ */
+export function localCryptoAvailable(): boolean {
+  return typeof crypto !== 'undefined' && !!crypto.subtle;
+}
+
 function toBase64(bytes: Uint8Array): string {
   let binary = '';
   for (const b of bytes) binary += String.fromCharCode(b);

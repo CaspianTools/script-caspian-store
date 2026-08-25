@@ -96,6 +96,75 @@ const az: MessageDict = {
   'pos.guard.disabledBody':
     'Bu mağaza üçün kassa deaktivdir. Admin onu Tənzimləmələrdən aktiv edə bilər.',
 
+  // POS — standalone kassa: giriş, quruluş və hesablar
+  'pos.local.signInTitle': 'Daxil ol',
+  'pos.local.signInBody': 'Bu kassa qurulanda sizə verilən istifadəçi adı və şifrəni yazın.',
+  'pos.local.username': 'İstifadəçi adı',
+  'pos.local.usernameHelp': 'Daxil olmaq üçün yazdığınız ad. Böyük-kiçik hərfin fərqi yoxdur.',
+  'pos.local.password': 'Şifrə',
+  'pos.local.confirmPassword': 'Şifrə təkrar',
+  'pos.local.displayName': 'Tam ad',
+  'pos.local.displayNameHelp': 'Bu hesabın vurduğu satışların yanında görünən ad.',
+  'pos.local.signIn': 'Daxil ol',
+  'pos.local.signingIn': 'Daxil olunur…',
+  'pos.local.badCredentials':
+    'Bu istifadəçi adı və şifrə bu kassadakı heç bir hesaba uyğun gəlmir.',
+  'pos.local.showPassword': 'Şifrəni göstər',
+  'pos.local.hidePassword': 'Şifrəni gizlət',
+  'pos.local.capsLock': 'Caps Lock açıqdır.',
+  'pos.local.passwordSpaces':
+    'Bu şifrə boşluqla başlayır və ya bitir. Buna icazə var, ancaq hər dəfə eyni cür yazılmalıdır.',
+  'pos.local.language': 'Dil',
+  'pos.local.storageBlocked':
+    'Bu kassa öz yaddaşına çata bilmir, ona görə heç kimi içəri buraxa bilmir. Brauzer parametrlərində sayt məlumatları bağlanmış ola bilər.',
+  'pos.local.storageFailedTitle': 'Bu kassa öz qeydlərini aça bilmir',
+  'pos.local.storageFailedBody':
+    'Hesablar, kataloq və satışlar hələ də bu kompüterdədir, ancaq brauzer kassanın onları oxumasına icazə vermir. Heç nə itməyib. Adətən səbəb sayt məlumatlarının bağlanması və ya gizli pəncərədir. Bu kompüteri quran adamla danışın — kassanı yenidən qurmayın.',
+  'pos.local.insecureContextTitle': 'Bu kassa təhlükəsiz ünvanda deyil',
+  'pos.local.insecureContextBody':
+    'Adi http ünvanında şifrə yoxlanıla bilməz. Kassaya https lazımdır, ya da localhost ünvanında açılmalıdır. Bu kompüteri quran adamdan ünvanı düzəltməsini xahiş edin — burada dəyişdiriləsi bir şey yoxdur.',
+  'pos.local.commissionTitle': 'Bu kassanı qur',
+  'pos.local.commissionBody':
+    'Dəstək hesabını yaradın. Sonra mağazanın öz işçilərini o əlavə edə bilər və bunu edənə qədər bu kassadakı yeganə hesabdır.',
+  'pos.local.commissionCta': 'Hesabı yarat',
+  'pos.local.commissioning': 'Yaradılır…',
+  'pos.local.commissionFailed': 'Hesab yaradıla bilmədi.',
+  'pos.local.roleUnavailable': 'Bu kassada Dəstək rolu söndürülüb, ona görə hesab yaradıla bilmir.',
+  'pos.local.usernameEmpty': 'İstifadəçi adı yazın.',
+  'pos.local.passwordHelp': 'Ən azı {min} simvol.',
+  'pos.local.passwordTooShort': 'Ən azı {min} simvol yazın.',
+  'pos.local.passwordMismatch': 'İki şifrə eyni deyil.',
+  'pos.local.passwordsMatch': 'İki şifrə eynidir.',
+  'pos.local.usernameTaken': 'Bu istifadəçi adı artıq bu kassada istifadə olunur.',
+  'pos.local.noAccessTitle': 'Kassaya giriş yoxdur',
+  'pos.local.noAccessBody':
+    'Bu hesabın kassanı açmağa icazəsi yoxdur. Bu kompüteri quran adamdan dəyişməsini xahiş edin.',
+  'pos.admin.people.addTitle': 'Adam əlavə et',
+  'pos.admin.people.add': 'Əlavə et',
+  'pos.admin.people.added': 'Hesab yaradıldı',
+  'pos.admin.people.addFailed': 'Bu hesab yaradıla bilmədi.',
+  'pos.admin.people.invalidRole': 'Bu rol aktiv deyil.',
+  'pos.admin.people.roleLabel': 'İstifadə edə bilər',
+  'pos.admin.people.role.superadmin': 'Dəstək',
+  'pos.admin.people.role.admin': 'Sahib',
+  'pos.admin.people.role.staff': 'Kassir',
+  'pos.admin.people.roleHelp.superadmin':
+    'Hər şey, o cümlədən başqa dəstək hesabları əlavə etmək. Bu kassanı quran və ona baxan adam üçün.',
+  'pos.admin.people.roleHelp.admin': 'Kassa və bu arxa ofis. Mağaza sahibi və menecerlər üçün.',
+  'pos.admin.people.roleHelp.staff': 'Yalnız kassa. Qiymətləri, malları və adamları dəyişə bilməz.',
+  'pos.admin.people.roleHelp.default': 'Bu rol üçün seçilmiş sahələrə görə giriş.',
+  'pos.admin.people.listTitle': 'Bu kassadakı adamlar',
+  'pos.admin.people.resetPassword': 'Yeni şifrə',
+  'pos.admin.people.newPasswordPrompt': '{name} üçün yeni şifrə',
+  'pos.admin.people.passwordChanged': 'Şifrə dəyişdirildi',
+  'pos.admin.people.enable': 'İçəri burax',
+  'pos.admin.people.disable': 'Bağla',
+  'pos.admin.people.disabled': 'bağlı',
+  'pos.admin.people.you': 'siz',
+  'pos.admin.people.confirmDelete': '{name} hesabı silinsin?',
+  'pos.admin.people.deleteNote':
+    'Bir adamı bağlamaq onun vurduğu satışlarda adını saxlayır. Silmək də saxlayır, ancaq hesabı yenidən yaratmadan onu geri buraxa bilməzsiniz.',
+
   // POS — scanning
   'pos.scan.placeholder': 'Barkod və ya SKU skan edin ya da yazın',
   'pos.scan.hint': 'USB və ya Bluetooth skaner heç bir quraşdırma olmadan işləyir — sadəcə skan edin.',

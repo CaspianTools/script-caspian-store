@@ -1980,26 +1980,44 @@ export const DEFAULT_MESSAGES: MessageDict = {
     'Nothing is copied to the cloud. If this computer is lost or its disk fails, the sales on it are gone — take a backup regularly.',
 
   'pos.local.signInTitle': 'Sign in',
-  'pos.local.signInBody': 'Use the name and password you were given when this till was set up.',
-  'pos.local.username': 'Name',
+  'pos.local.signInBody': 'Use the username and password you were given when this till was set up.',
+  'pos.local.username': 'Username',
+  'pos.local.usernameHelp': 'What you type to sign in. Capitals do not matter.',
   'pos.local.password': 'Password',
   'pos.local.confirmPassword': 'Password again',
   'pos.local.displayName': 'Full name',
+  'pos.local.displayNameHelp': 'The name shown beside the sales this account rings up.',
   'pos.local.signIn': 'Sign in',
   'pos.local.signingIn': 'Signing in…',
-  'pos.local.badCredentials': 'That name and password do not match an account on this till.',
+  'pos.local.badCredentials': 'That username and password do not match an account on this till.',
+  'pos.local.showPassword': 'Show the password',
+  'pos.local.hidePassword': 'Hide the password',
+  'pos.local.capsLock': 'Caps lock is on.',
+  'pos.local.passwordSpaces':
+    'This password starts or ends with a space. That is allowed, but it has to be typed the same way every time.',
+  'pos.local.language': 'Language',
   'pos.local.storageBlocked':
     'This till cannot reach its own storage, so it cannot sign anyone in. Site data may be blocked in the browser settings.',
+  'pos.local.storageFailedTitle': 'This till cannot open its own records',
+  'pos.local.storageFailedBody':
+    'The accounts, the catalogue and the sales are still on this computer, but the browser will not let the register read them. Nothing has been lost. This is usually site data being blocked, or a private window. Ask whoever set up this computer — do not set the till up again.',
+  'pos.local.insecureContextTitle': 'This till is not on a secure address',
+  'pos.local.insecureContextBody':
+    'Passwords cannot be checked over a plain http address. The register needs https, or to be opened at localhost. Ask whoever set up this computer to fix the address — there is nothing to change here.',
   'pos.local.commissionTitle': 'Set up this till',
   'pos.local.commissionBody':
     'Create the support account. It can add the shop\u2019s own staff afterwards, and is the only account on this till until it does.',
   'pos.local.commissionCta': 'Create the account',
   'pos.local.commissioning': 'Creating…',
   'pos.local.commissionFailed': 'The account could not be created.',
+  'pos.local.roleUnavailable':
+    'The Support role is switched off on this till, so the account cannot be created.',
+  'pos.local.usernameEmpty': 'Type a username.',
   'pos.local.passwordHelp': 'At least {min} characters.',
   'pos.local.passwordTooShort': 'Use at least {min} characters.',
   'pos.local.passwordMismatch': 'The two passwords are not the same.',
-  'pos.local.usernameTaken': 'That name is already in use on this till.',
+  'pos.local.passwordsMatch': 'The two passwords match.',
+  'pos.local.usernameTaken': 'That username is already in use on this till.',
   'pos.local.noAccessTitle': 'No access to the register',
   'pos.local.noAccessBody':
     'This account is not allowed to open the till. Ask whoever set up this computer to change it.',

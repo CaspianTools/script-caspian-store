@@ -231,6 +231,7 @@ export {
   readLocalSignInId,
   writeLocalSignInId,
   normaliseUsername,
+  localCryptoAvailable,
   MIN_LOCAL_PASSWORD_LENGTH,
   type LocalCredentials,
   type CreateLocalUserResult,
