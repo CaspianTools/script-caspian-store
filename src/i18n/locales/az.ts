@@ -367,6 +367,8 @@ const az: MessageDict = {
     'Qaytarma qeydə yalnız bu yolla düşür. Kassada geri ödəmə ekranı yoxdur, ona görə pul ayrıca verilir.',
   'pos.store.adjust.invalid': 'Sıfırdan böyük tam ədəd yazın.',
   'pos.store.adjust.saved': 'Stok tənzimləndi',
+  'pos.store.adjust.savedPartly':
+    '{asked} ədəddən yalnız {moved} ədəd hərəkət etdi — partiyalarda qalanı yox idi. Partiya siyahısına baxın.',
   'pos.store.adjust.confirm': 'Tənzimləməni saxla',
   'pos.store.adjust.failed': 'Tənzimləmə saxlanmadı.',
 

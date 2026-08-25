@@ -652,6 +652,8 @@ export {
   receiptTotals,
   lotExpiryState,
   saleStockMovements,
+  addReceiptLine,
+  ensureReceiptLine,
   type PosShopSettingsValue,
   type LocalStockAdjustDialogProps,
   type StoreScreen,
@@ -669,6 +671,7 @@ export {
   type ProductMovementSummary,
   type ReceiptTotals,
   type LotExpiryState,
+  type ReceivableProduct,
 } from './pos';
 export {
   findProductByCode,

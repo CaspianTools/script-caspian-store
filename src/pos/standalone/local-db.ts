@@ -580,6 +580,14 @@ export async function postLocalStockReceipt(
     [STORE_LOCAL_PRODUCTS, STORE_LOCAL_LOTS, STORE_LOCAL_MOVEMENTS, STORE_LOCAL_RECEIPTS],
     'readwrite',
     async (tx) => {
+      // Idempotent on the receipt id, the way `commitLocalSale` is on the sale
+      // id. Without this, a second call -- the same draft posted from another
+      // tab, or a retry after a screen that looked stuck -- would put the whole
+      // delivery on the shelf twice, and the movement ids are per line rather
+      // than per attempt so nothing downstream would notice.
+      const already = await idbGet<LocalStockReceipt>(tx, STORE_LOCAL_RECEIPTS, posted.id);
+      if (already?.status === 'posted') return;
+
       for (const [index, line] of posted.lines.entries()) {
         const quantity = Math.max(0, Math.round(line.quantity));
         if (quantity <= 0) continue;
@@ -678,11 +686,12 @@ export interface LocalStockAdjustInput {
  * putting a returned item back on an arbitrary batch would hand it an expiry
  * date nobody checked.
  */
-export async function adjustLocalStock(input: LocalStockAdjustInput): Promise<void> {
+export async function adjustLocalStock(input: LocalStockAdjustInput): Promise<number> {
   const at = Date.now();
   const sizeKey = input.sizeKey || DEFAULT_SIZE_KEY;
   const quantity = Math.round(input.quantity);
-  if (!quantity) return;
+  if (!quantity) return 0;
+  let moved = 0;
 
   await posTx(
     [STORE_LOCAL_PRODUCTS, STORE_LOCAL_LOTS, STORE_LOCAL_MOVEMENTS],
@@ -692,6 +701,17 @@ export async function adjustLocalStock(input: LocalStockAdjustInput): Promise<vo
       if (!stored) return;
       const product = hydrateLocalProduct(stored);
 
+      // What actually moved, which for a lot-tracked product can be less than
+      // what was asked for. `LocalProduct.stock` is a projection of the lots, so
+      // taking five off the shelf when the batches only hold three would leave
+      // the two disagreeing for ever -- and the shelf figure is the one the
+      // register sells against.
+      moved = quantity;
+      // One row per lot touched, so an adjustment that spans two batches is
+      // legible afterwards. A single row naming only the first batch is how a
+      // recall goes wrong.
+      const drawn: Array<{ lotId: string; quantity: number }> = [];
+
       let lotId = input.lotId ?? '';
       if (product.tracksLots) {
         const lots = (
@@ -700,15 +720,18 @@ export async function adjustLocalStock(input: LocalStockAdjustInput): Promise<vo
 
         if (quantity < 0) {
           const eligible = lotId ? lots.filter((lot) => lot.id === lotId) : lots;
-          for (const draw of allocateFefo(eligible, -quantity).draws) {
+          const allocation = allocateFefo(eligible, -quantity);
+          for (const draw of allocation.draws) {
             const lot = lots.find((candidate) => candidate.id === draw.lotId);
             if (!lot) continue;
             await idbPut(tx, STORE_LOCAL_LOTS, {
               ...lot,
               remainingQty: lot.remainingQty - draw.quantity,
             });
+            drawn.push({ lotId: draw.lotId, quantity: -draw.quantity });
             lotId = lotId || draw.lotId;
           }
+          moved = -(-quantity - allocation.unfulfilled);
         } else {
           const target = lots.find((lot) => lot.id === lotId);
           if (target) {
@@ -734,33 +757,49 @@ export async function adjustLocalStock(input: LocalStockAdjustInput): Promise<vo
             await idbPut(tx, STORE_LOCAL_LOTS, lot);
             lotId = lot.id;
           }
+          drawn.push({ lotId, quantity });
         }
       }
 
+      if (!moved) return;
+
       await idbPut(tx, STORE_LOCAL_PRODUCTS, {
         ...product,
-        stock: { ...product.stock, [sizeKey]: (product.stock[sizeKey] ?? 0) + quantity },
+        stock: { ...product.stock, [sizeKey]: (product.stock[sizeKey] ?? 0) + moved },
         updatedAtMillis: at,
       });
 
-      const movement: LocalStockMovement = {
-        id: newLocalId(),
-        productId: product.id,
-        sizeKey,
-        lotId,
-        kind: input.reason === 'customer-return' ? 'return' : 'adjustment',
-        quantity,
-        reason: input.reason,
-        reference: '',
-        unitCost: 0,
-        userId: input.userId,
-        userName: input.userName,
-        atMillis: at,
-        note: input.note,
-      };
-      await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
+      // A return is stock coming back. Somebody who picks "a customer brought it
+      // back" and then "take stock off" has picked two things that contradict
+      // each other, and recording a negative return would take the product
+      // page's Returned figure DOWN -- so the direction wins and it is filed as
+      // the adjustment it actually is.
+      const kind: LocalStockMovement['kind'] =
+        input.reason === 'customer-return' && moved > 0 ? 'return' : 'adjustment';
+
+      const rows = drawn.length ? drawn : [{ lotId, quantity: moved }];
+      for (const [index, row] of rows.entries()) {
+        const movement: LocalStockMovement = {
+          id: `${newLocalId()}:${index}`,
+          productId: product.id,
+          sizeKey,
+          lotId: row.lotId,
+          kind,
+          quantity: row.quantity,
+          reason: input.reason,
+          reference: '',
+          unitCost: 0,
+          userId: input.userId,
+          userName: input.userName,
+          atMillis: at,
+          note: input.note,
+        };
+        await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
+      }
     },
   );
+
+  return moved;
 }
 
 /** The counter row recording that sales predating the ledger have been written in. */
@@ -787,14 +826,36 @@ export async function backfillLocalStockMovements(): Promise<number> {
   );
   if (done?.value) return 0;
 
-  const sales = await posTx(STORE_LOCAL_SALES, 'readonly', (tx) =>
-    idbGetAll<LocalSale>(tx, STORE_LOCAL_SALES),
-  );
+  const [sales, existing] = await Promise.all([
+    posTx(STORE_LOCAL_SALES, 'readonly', (tx) => idbGetAll<LocalSale>(tx, STORE_LOCAL_SALES)),
+    posTx(STORE_LOCAL_MOVEMENTS, 'readonly', (tx) =>
+      idbGetAll<LocalStockMovement>(tx, STORE_LOCAL_MOVEMENTS),
+    ),
+  ]);
+
+  /**
+   * Sales the ledger already knows about, so this can only ever fill gaps.
+   *
+   * Deterministic ids are NOT enough on their own, and that was a real bug: a
+   * sale of a lot-tracked item is written by `commitLocalSale` as one row per
+   * lot, keyed `...:<lotId>`, while this pass has no draws to hand and would
+   * write a single `...:none` row for the whole quantity. Different ids, both
+   * kept -- and the product page would have reported everything sold since the
+   * upgrade twice over.
+   */
+  const known = new Set<string>();
+  for (const movement of existing) {
+    if (!movement.id.startsWith('sale:')) continue;
+    const rest = movement.id.slice('sale:'.length);
+    const cut = rest.indexOf(':');
+    known.add(cut < 0 ? rest : rest.slice(0, cut));
+  }
 
   let written = 0;
   await posTx([STORE_LOCAL_MOVEMENTS, STORE_LOCAL_COUNTERS], 'readwrite', async (tx) => {
     for (const sale of sales) {
-      // No draws: every sale old enough to need this predates lots entirely.
+      if (known.has(sale.saleId)) continue;
+      // No draws: a sale this pass has anything to say about predates lots.
       for (const movement of saleStockMovements(sale)) {
         await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
         written += 1;
@@ -1075,14 +1136,29 @@ export async function readLocalShopSettings(): Promise<LocalShopSettings> {
   return { ...DEFAULT_LOCAL_SHOP_SETTINGS, ...(row?.value ?? {}) };
 }
 
+/**
+ * Merge a change into the shop record.
+ *
+ * The read and the write are ONE transaction. They used to be two -- a
+ * `readLocalShopSettings()` followed by a separate put -- and with three
+ * switches on one App Admin pane that is a lost update waiting to happen:
+ * flick two of them quickly and the second write merges onto a copy read
+ * before the first landed, so the first silently reverts.
+ */
 export async function writeLocalShopSettings(
   settings: Partial<LocalShopSettings>,
 ): Promise<LocalShopSettings> {
-  const merged = { ...(await readLocalShopSettings()), ...settings };
-  await posTx(STORE_LOCAL_SETTINGS, 'readwrite', (tx) =>
-    idbPut(tx, STORE_LOCAL_SETTINGS, { key: SETTINGS_KEY, value: merged }),
-  );
-  return merged;
+  if (!localStoreAvailable()) return { ...DEFAULT_LOCAL_SHOP_SETTINGS, ...settings };
+  return posTx(STORE_LOCAL_SETTINGS, 'readwrite', async (tx) => {
+    const row = await idbGet<{ key: string; value: LocalShopSettings }>(
+      tx,
+      STORE_LOCAL_SETTINGS,
+      SETTINGS_KEY,
+    );
+    const merged = { ...DEFAULT_LOCAL_SHOP_SETTINGS, ...(row?.value ?? {}), ...settings };
+    await idbPut(tx, STORE_LOCAL_SETTINGS, { key: SETTINGS_KEY, value: merged });
+    return merged;
+  });
 }
 
 /**

@@ -26,7 +26,7 @@ import {
 } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosShopSettings } from '../shop-settings-context';
-import { DEFAULT_SIZE_KEY, receiptTotals } from '../lot-allocation';
+import { addReceiptLine, ensureReceiptLine, receiptTotals } from '../lot-allocation';
 import type {
   LocalProduct,
   LocalStockReceipt,
@@ -98,22 +98,69 @@ export function LocalReceiveStockPage() {
   const receiptRef = useRef<LocalStockReceipt | null>(null);
   receiptRef.current = receipt;
 
-  const reload = useCallback(async () => {
-    const [rows, supplierRows, draft] = await Promise.all([
-      listLocalProducts(),
-      settings.suppliersEnabled ? listLocalSuppliers() : Promise.resolve([]),
-      readLocalStockReceiptDraft(),
-    ]);
-    setProducts(rows);
-    setSuppliers(supplierRows.filter((s) => s.isActive));
-    setReceipt(
-      draft ?? blankReceipt(session.user?.id ?? '', session.user?.displayName ?? ''),
-    );
-  }, [settings.suppliersEnabled, session.user?.id, session.user?.displayName]);
+  /**
+   * The delivery is established once, and the supplier list is loaded apart from
+   * it.
+   *
+   * They used to be one `reload`, and that was a bug with teeth: its identity
+   * depended on `settings.suppliersEnabled`, which starts false and flips true a
+   * beat later when the shop record arrives, so it ran a second time and its
+   * `setReceipt` overwrote whatever had been put on the delivery in between --
+   * the item seeded from a product page, or a scan that arrived while the shop
+   * record was still loading. A storekeeper would have watched a box they had
+   * just scanned disappear.
+   *
+   * The seed happens inside this same pass rather than in an effect of its own,
+   * so there is no second writer to race, and it is idempotent because the
+   * register app mounts under StrictMode and every effect body runs twice.
+   */
+  const userId = session.user?.id ?? '';
+  const userName = session.user?.displayName ?? '';
+  const seedId = searchParams?.get('product') ?? '';
 
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    let alive = true;
+    void (async () => {
+      const [rows, draft, seedProduct] = await Promise.all([
+        listLocalProducts(),
+        readLocalStockReceiptDraft(),
+        seedId ? getLocalProduct(seedId) : Promise.resolve(null),
+      ]);
+      if (!alive) return;
+
+      setProducts(rows);
+      let next = draft ?? blankReceipt(userId, userName);
+      if (seedProduct) {
+        next = { ...next, lines: ensureReceiptLine(next.lines, seedProduct) };
+        // Nothing to scan for -- they already said which item this is about.
+        setMode('manual');
+      }
+      setReceipt(next);
+      receiptRef.current = next;
+      if (seedProduct) {
+        void writeLocalStockReceiptDraft(next).catch(() => {
+          /* Site data blocked. The delivery still works; it cannot be resumed. */
+        });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [seedId, userId, userName]);
+
+  useEffect(() => {
+    if (!settings.suppliersEnabled) {
+      setSuppliers([]);
+      return;
+    }
+    let alive = true;
+    void listLocalSuppliers().then((rows) => {
+      if (alive) setSuppliers(rows.filter((s) => s.isActive));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [settings.suppliersEnabled]);
 
   // Read after mount, like the register does: the scanner gap is a device
   // preference in localStorage, and reading it during render would disagree
@@ -122,8 +169,17 @@ export function LocalReceiveStockPage() {
     setScanGapMs(readScannerGapMs());
   }, []);
 
-  /** Persist every change, so the draft survives a reload mid-delivery. */
+  /**
+   * Persist every change, so the draft survives a reload mid-delivery.
+   *
+   * Refuses to write once the delivery is being posted. `postLocalStockReceipt`
+   * flips that row to `posted`, and a draft write landing after it would put a
+   * `draft` row back under the same id -- a delivery already on the shelf,
+   * offered again as unfinished work.
+   */
+  const postingRef = useRef(false);
   const update = useCallback((next: LocalStockReceipt) => {
+    if (postingRef.current) return;
     setReceipt(next);
     receiptRef.current = next;
     void writeLocalStockReceiptDraft(next).catch(() => {
@@ -135,31 +191,7 @@ export function LocalReceiveStockPage() {
     (product: LocalProduct, quantity = 1) => {
       const current = receiptRef.current;
       if (!current) return;
-      const sizeKey = product.sizes[0] ?? DEFAULT_SIZE_KEY;
-      const existing = current.lines.findIndex(
-        (line) => line.productId === product.id && line.sizeKey === sizeKey,
-      );
-      // A second scan of the same box is one more of it, not a second line.
-      // That is the whole reason a storekeeper scans rather than types.
-      const lines =
-        existing >= 0
-          ? current.lines.map((line, index) =>
-              index === existing ? { ...line, quantity: line.quantity + quantity } : line,
-            )
-          : [
-              ...current.lines,
-              {
-                productId: product.id,
-                productName: product.name,
-                sizeKey,
-                quantity,
-                unitCost: product.costPrice,
-                lotCode: '',
-                expiresOn: '',
-                note: '',
-              } satisfies LocalStockReceiptLine,
-            ];
-      update({ ...current, lines });
+      update({ ...current, lines: addReceiptLine(current.lines, product, quantity) });
     },
     [update],
   );
@@ -188,23 +220,15 @@ export function LocalReceiveStockPage() {
   const scanner = useBarcodeScanner({
     onScan: (code) => void handleCode(code),
     gapMs: scanGapMs,
-    disabled: mode !== 'scan',
+    // Off while the new-product dialog is open, and off while the delivery is
+    // being posted. The hook silences itself for keystrokes whose target is
+    // inside a `[role="dialog"]`, but a wedge fires at whatever has focus --
+    // and after a scan that is the page, not the dialog it just opened. A
+    // second box scanned at that moment wiped the half-typed form. Posting is
+    // the same problem one step later: a scan landing mid-post would write the
+    // receipt back to a draft after it had already gone on the shelf.
+    disabled: mode !== 'scan' || newProductOpen || posting,
   });
-
-  // Arriving from a product page's Receive button: that item is already the one
-  // the storekeeper meant, so it is on the delivery before they touch anything.
-  const seeded = useRef(false);
-  useEffect(() => {
-    const wanted = searchParams?.get('product');
-    if (!wanted || !receipt || seeded.current) return;
-    seeded.current = true;
-    void getLocalProduct(wanted).then((found) => {
-      if (found) {
-        addLine(found);
-        setMode('manual');
-      }
-    });
-  }, [searchParams, receipt, addLine]);
 
   const setLine = (index: number, patch: Partial<LocalStockReceiptLine>) => {
     if (!receipt) return;
@@ -223,7 +247,8 @@ export function LocalReceiveStockPage() {
   const money = (amount: number) => formatLocalMoney(amount, settings.currency);
 
   const post = async () => {
-    if (!receipt || !receipt.lines.length) return;
+    if (!receipt || !receipt.lines.length || postingRef.current) return;
+    postingRef.current = true;
     setPosting(true);
     try {
       const posted = await postLocalStockReceipt({
@@ -243,10 +268,11 @@ export function LocalReceiveStockPage() {
       setReceipt(fresh);
       receiptRef.current = fresh;
       setScanNote('');
-      await listLocalProducts().then(setProducts);
+      setProducts(await listLocalProducts());
     } catch {
       toast({ title: t('pos.store.receive.failed'), variant: 'destructive' });
     } finally {
+      postingRef.current = false;
       setPosting(false);
     }
   };

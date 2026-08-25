@@ -43,7 +43,7 @@ const HISTORY_PAGE = 25;
  */
 export function LocalProductPage({ productId }: { productId: string }) {
   const t = useT();
-  const { push, back } = useCaspianNavigation();
+  const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
   const { can } = usePosRoles();
   const { settings } = usePosShopSettings();
@@ -188,7 +188,13 @@ export function LocalProductPage({ productId }: { productId: string }) {
       <StoreScreenNav current="products" />
 
       <div className="cpos-actions" style={{ justifyContent: 'flex-start' }}>
-        <Button variant="ghost" onClick={() => back()}>
+        {/*
+          Pushes the list rather than calling `back()`. The register's own
+          navigation adapter keeps a route stack, and the way in here is often
+          not the list -- arriving from Receive stock, or from a reload -- so
+          `back()` would send somebody to the delivery they just posted.
+        */}
+        <Button variant="ghost" onClick={() => push('/pos/store')}>
           <ChevronLeftIcon size={16} />
           {t('pos.store.backToProducts')}
         </Button>

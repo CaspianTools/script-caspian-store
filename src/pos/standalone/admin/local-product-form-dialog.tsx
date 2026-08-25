@@ -197,16 +197,29 @@ export function LocalProductFormDialog({
               onChange={(e) => setDraft({ ...draft, sizes: e.target.value })}
             />
           </div>
-          <div style={{ ...field, flex: '1 1 140px' }}>
-            <label style={fieldLabel}>{t('pos.admin.products.stock')}</label>
-            <Input
-              value={draft.stock}
-              placeholder="_default:12"
-              onChange={(e) => setDraft({ ...draft, stock: e.target.value })}
-            />
-          </div>
+          {/*
+            Absent for an item received in batches. For one of those,
+            `LocalProduct.stock` is a projection of the batches, and a figure
+            typed here would be written by a transaction that never touches
+            them -- leaving the shelf saying one thing and the batches another,
+            with the register selling against the wrong one. Stock reaches a
+            batched item through Receive stock and Adjust stock, and nowhere
+            else.
+          */}
+          {draft.tracksLots ? null : (
+            <div style={{ ...field, flex: '1 1 140px' }}>
+              <label style={fieldLabel}>{t('pos.admin.products.stock')}</label>
+              <Input
+                value={draft.stock}
+                placeholder="_default:12"
+                onChange={(e) => setDraft({ ...draft, stock: e.target.value })}
+              />
+            </div>
+          )}
         </div>
-        <FieldDescription>{t('pos.admin.products.stockHelp')}</FieldDescription>
+        <FieldDescription>
+          {t(draft.tracksLots ? 'pos.admin.products.stockByBatch' : 'pos.admin.products.stockHelp')}
+        </FieldDescription>
 
         <div style={field}>
           <label style={fieldLabel}>{t('pos.admin.products.description')}</label>

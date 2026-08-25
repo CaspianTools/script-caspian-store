@@ -236,7 +236,7 @@ export function PosRoot(): ReactNode {
   // id. `screenOf` still keys on `head` alone, so the sidebar stays lit on
   // Store for all of them.
   const [head, sub] = after.split('/');
-  const { settings } = usePosShopSettings();
+  const { settings, loading: settingsLoading } = usePosShopSettings();
 
   // The back office used to live at /pos/admin holding four tabs. Three are
   // pages of their own now and the fourth is a settings section, so the address
@@ -285,11 +285,16 @@ export function PosRoot(): ReactNode {
       if (sub === 'receive') {
         return can(user?.role, 'stock.receive') ? <LocalReceiveStockPage /> : <LocalStorePanel />;
       }
-      if (sub === 'categories') {
-        return settings.categoriesEnabled ? <LocalCategoriesPanel /> : <LocalStorePanel />;
-      }
-      if (sub === 'suppliers') {
-        return settings.suppliersEnabled ? <LocalSuppliersPanel /> : <LocalStorePanel />;
+      if (sub === 'categories' || sub === 'suppliers') {
+        // Held until the shop record has actually been read. These two flags
+        // start false and resolve a beat later, so deciding early would bounce
+        // somebody who opened a bookmark to a screen their shop does have --
+        // and bounce them to a different page, which reads as the address
+        // being wrong rather than as a page still loading.
+        if (settingsLoading) return <div className="cpos-page" aria-busy="true" />;
+        const on = sub === 'categories' ? settings.categoriesEnabled : settings.suppliersEnabled;
+        if (!on) return <LocalStorePanel />;
+        return sub === 'categories' ? <LocalCategoriesPanel /> : <LocalSuppliersPanel />;
       }
       return sub ? <LocalProductPage productId={sub} /> : <LocalStorePanel />;
     }

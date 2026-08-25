@@ -67,6 +67,8 @@ const {
   lotExpiryState,
   saleStockMovements,
   DEFAULT_SIZE_KEY,
+  addReceiptLine,
+  ensureReceiptLine,
 } = lib;
 
 let passed = 0;
@@ -816,6 +818,115 @@ check('a delivery does not drift, however many lines it has', () => {
 check('a negative quantity or cost cannot inflate a delivery', () => {
   assert.equal(receiptTotals([{ quantity: -5, unitCost: 10 }]).totalCost, 0);
   assert.equal(receiptTotals([{ quantity: 5, unitCost: -10 }]).totalCost, 0);
+});
+
+console.log('building up a delivery');
+
+const receivable = (id, name, sizes = [], costPrice = 0) => ({ id, name, sizes, costPrice });
+
+check('a scanned item joins the delivery with what it last cost', () => {
+  const lines = addReceiptLine([], receivable('p1', 'Yoghurt', [], 0.6));
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].productId, 'p1');
+  assert.equal(lines[0].productName, 'Yoghurt');
+  assert.equal(lines[0].sizeKey, DEFAULT_SIZE_KEY);
+  assert.equal(lines[0].quantity, 1);
+  assert.equal(lines[0].unitCost, 0.6);
+});
+
+check('scanning the same box again is one more of it, not a second line', () => {
+  let lines = addReceiptLine([], receivable('p1', 'Yoghurt'));
+  lines = addReceiptLine(lines, receivable('p1', 'Yoghurt'));
+  lines = addReceiptLine(lines, receivable('p1', 'Yoghurt'));
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].quantity, 3);
+});
+
+check('two sizes of one item are two lines', () => {
+  let lines = addReceiptLine([], receivable('p1', 'Shirt', ['S']));
+  lines = addReceiptLine(lines, receivable('p1', 'Shirt', ['M']));
+  assert.equal(lines.length, 2);
+  assert.deepEqual(lines.map((l) => l.sizeKey), ['S', 'M']);
+});
+
+check('seeding a delivery from an item page is idempotent', () => {
+  // The effect that calls this runs twice under React StrictMode. An
+  // incrementing version would open every seeded delivery showing two.
+  const once = ensureReceiptLine([], receivable('p1', 'Yoghurt'));
+  const twice = ensureReceiptLine(once, receivable('p1', 'Yoghurt'));
+  const thrice = ensureReceiptLine(twice, receivable('p1', 'Yoghurt'));
+  assert.equal(thrice.length, 1);
+  assert.equal(thrice[0].quantity, 1);
+});
+
+check('seeding never disturbs a delivery already being entered', () => {
+  const started = addReceiptLine([], receivable('p1', 'Yoghurt'), 24);
+  const seeded = ensureReceiptLine(started, receivable('p2', 'Crisps'));
+  assert.equal(seeded.length, 2);
+  // The 24 already scanned is exactly where it was.
+  assert.equal(seeded[0].quantity, 24);
+  assert.equal(seeded[1].quantity, 1);
+});
+
+check('neither helper mutates the array it was handed', () => {
+  const original = addReceiptLine([], receivable('p1', 'Yoghurt'));
+  const snapshot = JSON.stringify(original);
+  addReceiptLine(original, receivable('p1', 'Yoghurt'));
+  ensureReceiptLine(original, receivable('p2', 'Crisps'));
+  assert.equal(JSON.stringify(original), snapshot);
+});
+
+check('a fractional delivery quantity totals the same way it lands on the shelf', () => {
+  // `postLocalStockReceipt` rounds before it adds to stock. These used to
+  // differ, so a pasted 2.5 put 3 on the shelf while the screen said the
+  // delivery held 2.5.
+  const totals = receiptTotals([{ quantity: 2.5, unitCost: 2 }]);
+  assert.equal(totals.unitCount, 3);
+  assert.equal(totals.totalCost, 6);
+});
+
+console.log('the backfill cannot double-count');
+
+check('a sale already in the ledger is not written a second time', () => {
+  // The shape of the bug: commitLocalSale writes one row PER LOT, keyed by the
+  // lot id. The backfill has no draws to hand and would write a single `:none`
+  // row for the same units -- a different key, so both survive and the product
+  // page reports everything sold since the upgrade twice.
+  const sale = {
+    saleId: 'S1',
+    receiptNumber: 'R-000001',
+    committedAtMillis: 1000,
+    cashierId: 'u1',
+    cashierName: 'Aysel',
+    lines: [{ productId: 'p1', quantity: 5, selectedSize: null }],
+  };
+  const fromCommit = saleStockMovements(sale, [
+    { productId: 'p1', sizeKey: DEFAULT_SIZE_KEY, lotId: 'L1', lotCode: 'L1', quantity: 5 },
+  ]);
+  const fromBackfill = saleStockMovements(sale);
+  assert.equal(fromCommit.length, 1);
+  assert.equal(fromBackfill.length, 1);
+  // Different ids -- which is exactly why the backfill has to skip sales the
+  // ledger already knows about rather than relying on the id alone.
+  assert.notEqual(fromCommit[0].id, fromBackfill[0].id);
+  // And both claim the same 5 units, so keeping both doubles the figure.
+  assert.equal(fromCommit[0].quantity, -5);
+  assert.equal(fromBackfill[0].quantity, -5);
+});
+
+check('the saleId can be recovered from a movement id, which is how they are matched', () => {
+  const rows = saleStockMovements({
+    saleId: 'S-with-dashes',
+    receiptNumber: 'R-1',
+    committedAtMillis: 1,
+    cashierId: 'u',
+    cashierName: 'A',
+    lines: [{ productId: 'p1', quantity: 1, selectedSize: null }],
+  });
+  const id = rows[0].id;
+  assert.ok(id.startsWith('sale:'));
+  const rest = id.slice('sale:'.length);
+  assert.equal(rest.slice(0, rest.indexOf(':')), 'S-with-dashes');
 });
 
 console.log('expiry dates');

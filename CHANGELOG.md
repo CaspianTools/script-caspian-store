@@ -16,6 +16,87 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.3.1 — Store management, corrected
+
+Everything below was found by actually running the register: driving the new
+screens in a browser, then putting the code through an adversarial review that
+made every finding survive an independent attempt to refute it. Eleven did.
+No consumer of v13.3.0 should stay on it — two of these silently corrupt a
+shop's stock figures.
+
+### Consumer action required on upgrade
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.3.1
+```
+
+A till that has already run v13.3.0 **and** sold a batched item may have double
+counted those sales in an item's history. Open the affected item's page: if the
+shelf figure and the history disagree, the page now says so under the stock
+tile. There is no automatic repair for rows already written — correct the shelf
+with an adjustment, which leaves both the error and the correction on the
+record. Tills that never turned batches on are unaffected.
+
+### Fixed
+
+- **The stock history double-counted every sale of a batched item.** A sale
+  drawing from a batch is written as one ledger row per batch; the one-time
+  backfill of older sales had no batches to hand and wrote a second row for the
+  same units under a different id, so both survived. It now skips any sale the
+  ledger already knows about. Reported independently by two reviewers, and the
+  deterministic-id reasoning in the original comment was simply wrong.
+- **Taking stock off a batched item removed more from the shelf than from the
+  batches.** Naming a batch that could not cover the quantity still took the
+  full figure off `stock`, permanently desynchronising the shelf from the
+  batches it is supposed to be the sum of. It now moves only what the batches
+  hold and says so instead of failing quietly.
+- **A delivery could be posted twice.** `postLocalStockReceipt` never checked
+  whether the receipt was already posted, so a retry or a second tab put the
+  whole delivery on the shelf again. Now idempotent on the receipt id, the way
+  `commitLocalSale` is on the sale id.
+- **The item form let you overwrite a batched item's stock** from a transaction
+  that never touched its batches. The box is no longer offered for a batched
+  item; its stock arrives through Receive stock and Adjust stock.
+- **A restore left the shelf disagreeing with the batches.** Products restore
+  wholesale while batches restore append-only, so a till that had traded since
+  the backup ended up with an old shelf figure and new batch remainders. Every
+  batched product's shelf figure is now rebuilt from its batches, and the count
+  is reported in the restore result.
+- **Receive stock opened from an item page came up empty.** The page's loader
+  re-ran when the shop record resolved and overwrote the seeded item — and, in
+  the same window, any barcode already scanned. The delivery is now established
+  in one guarded pass with the seed inside it.
+- **The scanner stayed armed while the receive screen's own new-product dialog
+  was open**, so a second scan wiped the half-typed form. It is now silenced
+  there, and while a delivery is being posted — a scan landing mid-post used to
+  write the posted receipt back to a draft.
+- **A hand adjustment spanning two batches was recorded against only the first.**
+  One ledger row per batch now, as a sale already did.
+- **A customer return entered as an outward move** wrote a negative `return`
+  row, taking the Returned figure down. The direction wins; it is filed as the
+  adjustment it is.
+- **A fractional delivery quantity** was rounded onto the shelf but not into the
+  delivery's own totals, so the screen and the invoice disagreed.
+- **Two shop switches flicked quickly could lose one.**
+  `writeLocalShopSettings` read and wrote in separate transactions.
+- **"Back to items"** called history-back, which from a posted delivery went to
+  the delivery. It navigates to the list.
+- The empty Store screen no longer offers to *"import a spreadsheet"*. There is
+  no import on that screen.
+
+### Added
+
+- `addReceiptLine` / `ensureReceiptLine` — the delivery-line arithmetic as pure
+  functions, so the scan-increments-and-seed-does-not rule is checked in CI.
+- `adjustLocalStock` now returns how many units actually moved.
+- 14 further assertions in `scripts/check-standalone.mjs` (98 → 112).
+
+### Notes
+
+`check-standalone` earned its keep twice here: it caught the new helpers not
+reaching the public export surface, and the backfill assertion pins the exact
+id-collision that caused the double count.
+
 ## v13.3.0 — Store management: item pages, deliveries, batches
 
 ### Consumer action required on upgrade

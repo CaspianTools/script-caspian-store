@@ -79,11 +79,14 @@ export {
   receiptTotals,
   lotExpiryState,
   saleStockMovements,
+  addReceiptLine,
+  ensureReceiptLine,
   type LotDraw,
   type LotAllocation,
   type ProductMovementSummary,
   type ReceiptTotals,
   type LotExpiryState,
+  type ReceivableProduct,
 } from './standalone/lot-allocation';
 export {
   evaluateOpeningCashGate,

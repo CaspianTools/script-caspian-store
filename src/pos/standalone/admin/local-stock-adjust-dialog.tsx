@@ -77,7 +77,7 @@ export function LocalStockAdjustDialog({
     }
     setSaving(true);
     try {
-      await adjustLocalStock({
+      const moved = await adjustLocalStock({
         productId: product.id,
         sizeKey,
         quantity: direction === 'in' ? size : -size,
@@ -89,7 +89,19 @@ export function LocalStockAdjustDialog({
       });
       onOpenChange(false);
       onSaved?.();
-      toast({ title: t('pos.store.adjust.saved') });
+      // Taking stock off a batched item can move less than was asked for --
+      // the batches only hold what they hold, and the shelf figure is a
+      // projection of them. Saying so is the whole point: a silent shortfall
+      // is a shop that thinks it has written something off and has not.
+      const actual = Math.abs(moved);
+      toast(
+        actual === size
+          ? { title: t('pos.store.adjust.saved') }
+          : {
+              title: t('pos.store.adjust.savedPartly', { moved: actual, asked: size }),
+              variant: 'destructive',
+            },
+      );
     } catch {
       toast({ title: t('pos.store.adjust.failed'), variant: 'destructive' });
     } finally {

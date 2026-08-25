@@ -1844,6 +1844,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.store.adjust.invalid': 'Enter how many, as a whole number above zero.',
   'pos.store.adjust.confirm': 'Save the adjustment',
   'pos.store.adjust.saved': 'Stock adjusted',
+  'pos.store.adjust.savedPartly':
+    'Only {moved} of {asked} could be moved — the batches did not hold the rest. Check the batch list.',
   'pos.store.adjust.failed': 'The adjustment could not be saved.',
 
   'pos.store.category.title': 'Categories',
@@ -2057,6 +2059,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.admin.products.description': 'Description',
   'pos.admin.products.descriptionHelp':
     'Shown on the item\u2019s own page in the back office. It never appears on a receipt or at the till.',
+  'pos.admin.products.stockByBatch':
+    'Stock for a batched item comes in through Receive stock and is corrected with Adjust stock, so it is not typed here.',
   'pos.admin.products.tracksLots': 'Received in batches with expiry dates',
   'pos.admin.products.tracksLotsHelp':
     'Turn this on for food, medicine, or anything else with a date on it. The till then sells the batch that goes out of date first.',
@@ -2080,7 +2084,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.admin.products.columns': 'Columns: {columns}. Anything else in the file is ignored.',
   'pos.admin.products.listTitle': 'Items on this till ({count})',
   'pos.admin.products.search': 'Search',
-  'pos.admin.products.empty': 'Nothing here yet. Add an item above, or import a spreadsheet.',
+  'pos.admin.products.empty': 'Nothing here yet.',
   'pos.admin.products.hidden': 'hidden',
 
   'pos.admin.people.addTitle': 'Add somebody',

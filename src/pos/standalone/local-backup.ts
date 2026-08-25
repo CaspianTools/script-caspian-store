@@ -220,6 +220,13 @@ export interface RestoreResult {
   openingCash: number;
   /** Stock records put back. Zero for anything older than v4. */
   lots: number;
+  /**
+   * Batched products whose shelf figure had to be rebuilt from their batches.
+   *
+   * Normally zero. It is not zero when the two halves of the restore disagreed
+   * -- see `reconcileLotProjection`.
+   */
+  reconciled: number;
   movements: number;
   stockReceipts: number;
   categories: number;
@@ -280,6 +287,11 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
   for (const category of backup.categories ?? []) await saveLocalCategory(category);
   for (const supplier of backup.suppliers ?? []) await saveLocalSupplier(supplier);
 
+  // Last, once both halves are in: the products came back wholesale and the
+  // batches came back append-only, and those two rules disagree the moment
+  // this till has traded since the backup was taken.
+  const reconciled = await reconcileLotProjection();
+
   await posTx(STORE_LOCAL_COUNTERS, 'readwrite', async (tx) => {
     const current = await idbGet<{ key: string; value: number }>(tx, STORE_LOCAL_COUNTERS, 'receipt');
     const next = Math.max(current?.value ?? 0, backup.receiptCounter ?? 0);
@@ -298,7 +310,47 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     stockReceipts,
     categories: backup.categories?.length ?? 0,
     suppliers: backup.suppliers?.length ?? 0,
+    reconciled,
   };
+}
+
+/**
+ * Rebuild every batched product's shelf figure from its batches.
+ *
+ * A restore writes products wholesale -- `saveLocalProducts` is a bare put, so
+ * the backup's `stock` replaces whatever is here -- while batches are put back
+ * append-only, skipping any this till already has. Those two rules disagree the
+ * moment a till has traded since the backup was taken: the shelf goes back to
+ * the older figure while the batches keep the newer remainders, and for a
+ * batched product the shelf is supposed to BE the sum of the batches.
+ *
+ * The batches win, because they are the append-only record and the shelf figure
+ * is a projection of them. Only batched products are touched; one that does not
+ * track batches has no second opinion to reconcile against and keeps exactly
+ * what the backup said.
+ */
+async function reconcileLotProjection(): Promise<number> {
+  const [products, lots] = await Promise.all([listLocalProducts(), listAllLocalLots()]);
+  const tracked = products.filter((p) => p.tracksLots);
+  if (!tracked.length) return 0;
+
+  const bySize = new Map<string, Record<string, number>>();
+  for (const lot of lots) {
+    const forProduct = bySize.get(lot.productId) ?? {};
+    forProduct[lot.sizeKey] = (forProduct[lot.sizeKey] ?? 0) + Math.max(0, lot.remainingQty);
+    bySize.set(lot.productId, forProduct);
+  }
+
+  const repaired: LocalProduct[] = [];
+  for (const product of tracked) {
+    const wanted = bySize.get(product.id) ?? {};
+    const same =
+      Object.keys(wanted).length === Object.keys(product.stock).length &&
+      Object.entries(wanted).every(([size, qty]) => product.stock[size] === qty);
+    if (!same) repaired.push({ ...product, stock: wanted });
+  }
+  if (repaired.length) await saveLocalProducts(repaired);
+  return repaired.length;
 }
 
 /**

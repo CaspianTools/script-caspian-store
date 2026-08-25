@@ -46,7 +46,7 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 
 ```bash
 npm install github:CaspianTools/script-caspian-store#v13.2.0 firebase
-# v13.3.0 is the current release. For other versions, see:
+# v13.3.1 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>

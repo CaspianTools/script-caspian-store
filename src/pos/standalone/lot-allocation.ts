@@ -9,6 +9,7 @@
  */
 
 import type {
+  LocalProduct,
   LocalSale,
   LocalStockLot,
   LocalStockMovement,
@@ -154,11 +155,77 @@ export function receiptTotals(lines: readonly LocalStockReceiptLine[]): ReceiptT
   let unitCount = 0;
   let totalMinor = 0;
   for (const line of lines) {
-    const quantity = Math.max(0, line.quantity);
+    // Rounded the same way `postLocalStockReceipt` rounds it onto the shelf.
+    // They used to differ: a pasted `2.5` put 3 on the shelf while the delivery
+    // said it cost 2.5 units, so the screen and the invoice disagreed by half a
+    // unit and nothing said which was right.
+    const quantity = Math.max(0, Math.round(line.quantity));
     unitCount += quantity;
     totalMinor += toMinor(Math.max(0, line.unitCost)) * quantity;
   }
   return { lineCount: lines.length, unitCount, totalCost: fromMinor(totalMinor) };
+}
+
+/** What a delivery line needs to know about the item it is for. */
+export type ReceivableProduct = Pick<
+  LocalProduct,
+  'id' | 'name' | 'sizes' | 'costPrice'
+>;
+
+function newReceiptLine(
+  product: ReceivableProduct,
+  sizeKey: string,
+  quantity: number,
+): LocalStockReceiptLine {
+  return {
+    productId: product.id,
+    // Frozen at entry, so a later rename does not rewrite what was delivered.
+    productName: product.name,
+    sizeKey,
+    quantity,
+    unitCost: product.costPrice,
+    lotCode: '',
+    expiresOn: '',
+    note: '',
+  };
+}
+
+/**
+ * One more of this item on the delivery.
+ *
+ * A second scan of the same box is one more of it, not a second line -- that is
+ * the whole reason a storekeeper scans rather than types.
+ */
+export function addReceiptLine(
+  lines: readonly LocalStockReceiptLine[],
+  product: ReceivableProduct,
+  quantity = 1,
+): LocalStockReceiptLine[] {
+  const sizeKey = product.sizes[0] ?? DEFAULT_SIZE_KEY;
+  const at = lines.findIndex((l) => l.productId === product.id && l.sizeKey === sizeKey);
+  if (at < 0) return [...lines, newReceiptLine(product, sizeKey, quantity)];
+  return lines.map((line, i) =>
+    i === at ? { ...line, quantity: line.quantity + quantity } : line,
+  );
+}
+
+/**
+ * This item is on the delivery -- exactly once, whatever happens.
+ *
+ * What arriving from an item page's Receive button means: this delivery is
+ * about this item. Deliberately NOT `addReceiptLine`, because the effect that
+ * calls it runs twice under React's StrictMode and an incrementing version
+ * would open every seeded delivery showing two.
+ */
+export function ensureReceiptLine(
+  lines: readonly LocalStockReceiptLine[],
+  product: ReceivableProduct,
+): LocalStockReceiptLine[] {
+  const sizeKey = product.sizes[0] ?? DEFAULT_SIZE_KEY;
+  if (lines.some((l) => l.productId === product.id && l.sizeKey === sizeKey)) {
+    return [...lines];
+  }
+  return [...lines, newReceiptLine(product, sizeKey, 1)];
 }
 
 export type LotExpiryState = 'none' | 'ok' | 'soon' | 'expired';
