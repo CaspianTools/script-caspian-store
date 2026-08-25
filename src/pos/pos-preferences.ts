@@ -109,6 +109,18 @@ export function writeNavRail(value: boolean): void {
 
 const IDLE_LOCK_KEY = 'caspian:pos:idleLockMinutes';
 
+/**
+ * Fired on `window` after the idle-lock time changes in *this* tab.
+ *
+ * The browser's own `storage` event covers every tab except the one that wrote
+ * the value, which leaves out the only case an owner ever sees: picking a time
+ * at /pos/settings and pressing Save. `PosLockGate` listens for both.
+ *
+ * Not exported through the barrels -- it is a detail shared by two files inside
+ * the till, not part of the library's surface.
+ */
+export const IDLE_LOCK_CHANGED_EVENT = 'caspian:pos:idle-lock-changed';
+
 /** Off. A change of software must never be the reason a queue stops. */
 export const DEFAULT_IDLE_LOCK_MINUTES = 0;
 
@@ -141,4 +153,5 @@ export function readIdleLockMinutes(): number {
 
 export function writeIdleLockMinutes(value: number): void {
   write(IDLE_LOCK_KEY, String(value > 0 ? Math.min(60, Math.max(1, Math.round(value))) : 0));
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(IDLE_LOCK_CHANGED_EVENT));
 }

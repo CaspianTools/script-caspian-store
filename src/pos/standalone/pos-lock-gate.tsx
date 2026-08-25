@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useT } from '../../i18n/locale-context';
-import { EyeIcon, EyeOffIcon, LockIcon } from '../../ui/icons';
-import { readIdleLockMinutes } from '../pos-preferences';
+import { LockIcon } from '../../ui/icons';
+import { IDLE_LOCK_CHANGED_EVENT, readIdleLockMinutes } from '../pos-preferences';
 import { throttleWaitSeconds } from './sign-in-throttle';
 import { usePosLocalSession } from './local-session-context';
+import { PasswordField } from './password-field';
 
 /**
  * Covers the register when the till has been left alone.
@@ -30,10 +31,18 @@ export function PosLockGate({ children }: { children: ReactNode }) {
   // Read on mount rather than at module scope: it is a localStorage value, and
   // reading it during render would differ between the server and the client.
   useEffect(() => {
-    setMinutes(readIdleLockMinutes());
-    const onStorage = () => setMinutes(readIdleLockMinutes());
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    const reread = () => setMinutes(readIdleLockMinutes());
+    reread();
+    // Two listeners because `storage` fires in every tab *except* the one that
+    // wrote the value, so on its own it misses the case that matters: an owner
+    // picking a time at /pos/settings and pressing Save. v1.0.0 shipped with
+    // only the first, and the setting appeared to do nothing until a reload.
+    window.addEventListener('storage', reread);
+    window.addEventListener(IDLE_LOCK_CHANGED_EVENT, reread);
+    return () => {
+      window.removeEventListener('storage', reread);
+      window.removeEventListener(IDLE_LOCK_CHANGED_EVENT, reread);
+    };
   }, []);
 
   const active = standalone && !!user && minutes > 0;
@@ -72,7 +81,6 @@ function PosLockScreen() {
   const t = useT();
   const { user, unlock, signOut } = usePosLocalSession();
   const [password, setPassword] = useState('');
-  const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const headingId = useId();
@@ -120,33 +128,15 @@ function PosLockScreen() {
           </p>
         </div>
 
-        <div className="cpos-field">
-          <label className="cpos-field__label" htmlFor={passwordId}>
-            {t('pos.local.password')}
-          </label>
-          <div className="cpos-field__control">
-            <input
-              className="cpos-input cpos-input--revealable"
-              id={passwordId}
-              type={revealed ? 'text' : 'password'}
-              value={password}
-              autoFocus
-              autoComplete="current-password"
-              required
-              aria-invalid={error ? true : undefined}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="cpos-input__reveal"
-              aria-pressed={revealed}
-              aria-label={revealed ? t('pos.local.hidePassword') : t('pos.local.showPassword')}
-              onClick={() => setRevealed((on) => !on)}
-            >
-              {revealed ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
-            </button>
-          </div>
-        </div>
+        <PasswordField
+          id={passwordId}
+          label={t('pos.local.password')}
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          invalid={!!error}
+          autoFocus
+        />
 
         {error ? (
           <div className="cpos-note cpos-note--danger" role="alert">

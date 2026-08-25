@@ -1,14 +1,15 @@
 'use client';
 
-import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { useLocaleControls, useT } from '../../i18n/locale-context';
 import { BUILTIN_LOCALE_CODES, BUILTIN_LOCALE_NAMES } from '../../i18n/locales';
 import { Select } from '../../ui/select';
-import { EyeIcon, EyeOffIcon, LockIcon, ShoppingCartIcon } from '../../ui/icons';
+import { LockIcon, ShoppingCartIcon } from '../../ui/icons';
 import { cn } from '../../utils/cn';
 import { usePosLocalSession } from './local-session-context';
 import { localCryptoAvailable, MIN_LOCAL_PASSWORD_LENGTH } from './local-auth';
 import { throttleWaitSeconds } from './sign-in-throttle';
+import { PasswordField } from './password-field';
 
 /**
  * Sign-in for a standalone till, the one-time setup that precedes it, and the
@@ -110,80 +111,6 @@ function PosLocalNotice({ title, body }: { title: string; body: string }) {
         <h1 className="cpos-signin__h">{title}</h1>
         <p className="cpos-signin__sub">{body}</p>
       </div>
-    </div>
-  );
-}
-
-/**
- * A password box with the two things a counter actually needs.
- *
- * The reveal toggle because a till is often a tablet with an on-screen keyboard
- * and no tactile feedback, and the caps-lock warning because a shift key left
- * down is the commonest reason a correct password is refused. Neither is a
- * nicety when the alternative is a queue and a phone call to whoever installed
- * the machine.
- */
-function PasswordField({
-  id,
-  label,
-  value,
-  onChange,
-  autoComplete,
-  describedBy,
-  invalid,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (next: string) => void;
-  autoComplete: string;
-  describedBy?: string;
-  invalid?: boolean;
-}) {
-  const t = useT();
-  const [revealed, setRevealed] = useState(false);
-  const [capsLock, setCapsLock] = useState(false);
-
-  const trackCapsLock = (event: KeyboardEvent<HTMLInputElement>) => {
-    setCapsLock(event.getModifierState('CapsLock'));
-  };
-
-  return (
-    <div className="cpos-field">
-      <label className="cpos-field__label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="cpos-field__control">
-        <input
-          className="cpos-input cpos-input--revealable"
-          id={id}
-          type={revealed ? 'text' : 'password'}
-          value={value}
-          autoComplete={autoComplete}
-          required
-          aria-invalid={invalid || undefined}
-          aria-describedby={describedBy}
-          onKeyDown={trackCapsLock}
-          onKeyUp={trackCapsLock}
-          onBlur={() => setCapsLock(false)}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <button
-          type="button"
-          className="cpos-input__reveal"
-          aria-pressed={revealed}
-          aria-label={revealed ? t('pos.local.hidePassword') : t('pos.local.showPassword')}
-          title={revealed ? t('pos.local.hidePassword') : t('pos.local.showPassword')}
-          onClick={() => setRevealed((on) => !on)}
-        >
-          {revealed ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
-        </button>
-      </div>
-      {capsLock ? (
-        <div className="cpos-note cpos-note--warning" role="status">
-          {t('pos.local.capsLock')}
-        </div>
-      ) : null}
     </div>
   );
 }

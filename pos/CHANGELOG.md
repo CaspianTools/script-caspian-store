@@ -23,6 +23,38 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.0.1 — Make the screen lock work the first time
+
+Two faults in v1.0.0's screen lock, both on the path a shop takes the very first
+time it uses the feature.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+No setting changes and nobody is signed out.
+
+### Fixed
+
+- **Choosing a lock time did nothing until the page was reloaded.** The register
+  watched for the setting changing in *another* tab, which is every case except
+  the one that happens: an owner picking a time at Settings and pressing Save on
+  the till in front of them. They got a feature that looked broken, and the
+  natural next move — trying a shorter time — looked broken too.
+- **The lock screen never warned about caps lock.** The sign-in screen has warned
+  since v1.0.0, but the lock screen carried a hand-copied password box that had
+  the show button and not the warning. That is the wrong way round: a cashier
+  coming back from a break is far likelier to have a shift key stuck down than
+  one signing in at the start of a shift. Both screens now share one password
+  box, so neither can drift from the other again.
+
+### Added
+
+- The delay after repeated wrong passwords is now written down in the manual, in
+  two places — under setting a till up, for the owner, and under opening the till
+  at the start of a shift, for the cashier who meets it. It shipped in v1.0.0
+  with nothing on any screen or page explaining why the till had started asking
+  somebody to wait.
+
 ## v1.0.0 — A till that does not hand itself over
 
 The first release the standalone till has made under its own version. It was
