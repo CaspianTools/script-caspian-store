@@ -23,6 +23,87 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.2.0 — App admin becomes the page a shop is handed
+
+App admin was four settings and a role editor. It is the screen whoever installs
+a till hands over when they leave, so it now carries the things that handover
+actually needs: the staff accounts, the button that puts the register on the
+computer, and the version number somebody will be asked for on the telephone.
+The controls are switches throughout — one shape, read down a column, instead of
+pairs of buttons naming both states in words.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+Nothing is stored differently, no role changes what it holds, and no account is
+touched. A till whose App admin is never opened behaves exactly as it did.
+
+### Added
+
+- **People, inside App admin.** The staff list — add, change a role, reset a
+  password, block, delete — is now a page of App admin as well as the People
+  screen under Shop. It is the same screen in both places, not a copy, so the
+  guards that stop a till losing its last App admin account hold on either. It
+  appears for an account holding "Add and edit people", which out of the box is
+  Support and nothing else.
+- **An "Add them" button on the People screen.** Adding somebody used to be
+  possible only from Quick add in the top bar, which is a shortcut — and a screen
+  called People that could not add one sent the reader hunting for a screen that
+  could.
+- **Install, inside App admin.** The register installs itself from App admin now
+  rather than from a button in the top bar, and unlike that button the page
+  always says which of four situations you are in: ready to install, already
+  installed, an iPad that needs Add to Home Screen, or a browser that cannot do
+  it. The old button rendered nothing at all in two of those four, so "where did
+  the Install button go?" had no screen to go and look at.
+- **A search box inside every role.** Thirteen permissions per role is more than
+  reads at a glance once a shop has a few roles, so an open role carries a box
+  that narrows the list by name.
+- **The register's version, quietly, at the foot of Settings and of every App
+  admin page.** It is there so somebody on the telephone to support can read it
+  out without hunting for it. On a till that runs on its own it is this number;
+  on a till wired to a website it is the shop software's, which is a different
+  number that moves at a different time.
+
+### Changed
+
+- **Every switch on App admin is a switch.** The opening-cash check and the three
+  optional screens were pairs of buttons naming both states — "Ask for it" /
+  "Do not ask", On / Off. They are single knobs on a row now. Naming both states
+  was the safer shape while the page had four settings on it; it stops being
+  safer at forty, where a column of pairs is harder to read down than a column of
+  knobs that are either left or right.
+- **Opening cash is one row, not one page.** It sits at the top of the new
+  General page with the three optional screens under it, and the paragraph of
+  explanation and the "See what has been counted" button are gone. What the
+  paragraph said, the till already shows the moment the switch is on.
+- **App admin's pages are now General, Roles, People, Install, Recovery code and
+  Licence.** Opening cash and Optional screens were folded into General; links to
+  the old addresses still land there.
+- **Roles are one list that opens.** Built-ins and the shop's own roles are a
+  single column of rows, each with a switch for whether anybody can be given it,
+  and each opening to show all thirteen permissions with a switch apiece. The
+  separate "Predefined roles" and "Custom roles" lists, the editor card, the Save
+  button and the Enabled/Disabled wording are all gone.
+- **Built-in roles can be changed.** All seven ship holding exactly what they
+  held before, but their permissions are no longer fixed — so a shop that wants
+  its Storekeeper to be able to sell can flip one switch instead of writing a
+  custom role that duplicates the whole thing. Some switches still refuse to
+  move: "Open app admin" and "Change roles" cannot be taken off Support or off
+  whichever role you are signed in as, and neither of those two roles can be
+  retired. A till with no website has no way to hand access back from somewhere
+  else, so one flip would end your own access to the page for good.
+- **Deleting a role asks first.** It used to go at once, with no confirmation.
+- **A read-only App admin.** An account that can open App admin but does not hold
+  "Change roles" now gets the roles page greyed with a line saying so, instead of
+  controls that looked live.
+
+### Fixed
+
+- The roles list no longer reshuffles itself. It was drawn in whatever order
+  storage returned, so a till that had saved its roles once showed them in a
+  different order from one that had not.
+
 ## v1.1.0 — A way back into a till nobody can sign into
 
 Until now, a shop that forgot its only Support password had exactly one option:

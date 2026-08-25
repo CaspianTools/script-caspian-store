@@ -291,6 +291,7 @@ const ru: MessageDict = {
     'Максимум миллисекунд между нажатиями, которые считаются сканированием. Увеличьте, если сканы приходят разбитыми; уменьшите, если быстрый набор принимается за скан.',
   'pos.settings.save': 'Сохранить',
   'pos.settings.saved': 'Настройки сохранены',
+  'pos.settings.appVersion': 'Версия кассы {version}',
   // Storage health and the recovered sale (v13.2)
   'pos.settings.storage.healthTitle': 'Сохраняет ли этот компьютер ваши данные?',
   'pos.settings.storage.persisted': 'Защищённое хранилище',

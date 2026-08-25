@@ -16,6 +16,59 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.5.0 — The register's version, and where Install lives
+
+Mostly a standalone-till release (see [pos/CHANGELOG.md](pos/CHANGELOG.md) for
+what a shop sees), but three pieces of it change the library and so land here.
+
+### No consumer action required
+
+Reinstall and the new pieces are there. Nothing is stored differently, no
+provider prop changed, and no export was added, renamed or removed.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.5.0
+```
+
+### Added
+
+- **`--cpos-` classes for a switch, a collapsible row and a version stamp**, in
+  [src/pos/theme/pos-stylesheet.ts](src/pos/theme/pos-stylesheet.ts). The
+  library's `<Switch>` could not be reused on a register surface: it is 38×22,
+  half the till's 44px touch floor, and it hardcodes `rgba(0,0,0,0.22)` and
+  `#fff`, neither of them a `--cpos-*` token, so in the till's dark mode it is
+  near-black on near-black. `<Switch>` is untouched and still correct on the
+  always-light admin surfaces that use it.
+- **A generated `CASPIAN_POS_VERSION`.** `tsup.config.ts` now writes
+  `src/pos/standalone/pos-version.ts` from `pos/package.json#version`, the same
+  way it already writes `src/version.ts` from the root `package.json`. The
+  standalone till prints its own number at the foot of Settings and App admin,
+  and a hand-copied constant drifts the first time somebody bumps one file and
+  forgets the other. It is internal — not exported from either barrel.
+- **`pos.settings.appVersion`**, in the message table and in all three locale
+  overlays.
+
+### Changed
+
+- **`/pos/settings` ends with a quiet version line.** A standalone till shows
+  `CASPIAN_POS_VERSION`; a cloud register shows `CASPIAN_STORE_VERSION`. Two
+  products, two numbers — a shop running the till never installs this package,
+  so quoting the library's release to it says nothing it can act on.
+- **The register's top-bar Install button is now shown on cloud registers only.**
+  A standalone till installs itself from App admin instead, where the screen can
+  also say "already installed" and "this browser cannot" — the two answers a
+  button that renders `null` has no way to give. A cloud register has no App
+  admin to move it to, so it keeps the button it has always had.
+
+### Removed
+
+- **Fifteen unused `pos.appAdmin.*` message keys** — the wording of controls App
+  admin no longer draws (`openingCash.help`, `openingCash.on`, `openingCash.off`,
+  `openingCash.rule`, `openingCash.viewRecord`, `features.title`,
+  `features.intro`, `features.on`, `features.off`, `enabled`, `disabled`,
+  `predefinedTitle`, `customTitle`, `saveRole`, `noRoles`), and their Azerbaijani
+  translations. Nothing outside the standalone App admin screen read any of them.
+
 ## v13.4.0 — The first screen a shop ever sees
 
 The setup and sign-in screens on a till that runs with no website behind it.

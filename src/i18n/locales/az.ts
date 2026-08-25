@@ -299,6 +299,7 @@ const az: MessageDict = {
     'Skan sayılan düymələr arasındakı maksimum millisaniyə. Skanlar bölünürsə artırın; sürətli yazı skan kimi qəbul edilirsə azaldın.',
   'pos.settings.save': 'Yadda saxla',
   'pos.settings.saved': 'Tənzimləmələr yadda saxlanıldı',
+  'pos.settings.appVersion': 'Kassa versiyası {version}',
   'pos.settings.section.language': 'Dil',
   'pos.settings.section.device': 'Cihaz',
   'pos.settings.section.storage': 'Saxlama',
@@ -506,9 +507,7 @@ const az: MessageDict = {
     'Bu təchizatçıdan mal gəlib, adı həmin sənədlərdədir. Silmək əvəzinə işlətməyi dayandırın.',
   'pos.appAdmin.title': 'Tətbiq admini',
   'pos.appAdmin.subtitle':
-    'Bu mağazanın rolları, lisenziyası, başlanğıc nağd pul yoxlaması və əlavə ekranları. Bu səhifəni yalnız Dəstək hesabı aça bilər.',
-  'pos.appAdmin.predefinedTitle': 'Təyin edilmiş rollar',
-  'pos.appAdmin.customTitle': 'Xüsusi rollar',
+    'Bu mağazanın tənzimləmələri, onların arxasındakı rollar, həmin rolları daşıyan işçilər və parol itəndə geri qayıtmaq yolu. Bu səhifəni yalnız Dəstək hesabı aça bilər.',
   'pos.appAdmin.role.staff': 'Kassir',
   'pos.appAdmin.role.cashier': 'Kassir (təkrar)',
   'pos.appAdmin.role.storekeeper': 'Anbarçı',
@@ -517,12 +516,21 @@ const az: MessageDict = {
   'pos.appAdmin.role.admin': 'Admin',
   'pos.appAdmin.role.superadmin': 'Dəstək',
   'pos.appAdmin.roleLocked': 'Dəstək rolunu söndürmək olmaz. Bu səhifəni aça bilən yeganə roldur.',
+  'pos.appAdmin.roleIsYours':
+    'Bu, sizin daxil olduğunuz roldur. Onu söndürmək və ondan Tətbiq admini icazəsini almaq olmaz, çünki bir hərəkət sizin bu səhifəyə girişinizi birdəfəlik bağlayardı.',
   'pos.appAdmin.roleDuplicate': 'Kassir ilə eyni giriş. Artıq bu rol verilmiş işçilər işləməyə davam etsin deyə saxlanılıb — yeni işçilərə Kassir verin.',
-  'pos.appAdmin.enabled': 'Aktiv',
-  'pos.appAdmin.disabled': 'Deaktiv',
-  'pos.appAdmin.addRole': 'Xüsusi rol əlavə et',
+  'pos.appAdmin.rolesIntro':
+    'Açar rolun kiməsə verilib-verilə bilməyəcəyini bildirir. Rolu açın ki, onu daşımağın nə demək olduğunu görüb dəyişəsiniz.',
+  'pos.appAdmin.rolesReadOnly':
+    'Rolu açıb nə demək olduğunu görə bilərsiniz. Dəyişmək üçün "Rolları dəyişmək" icazəsi lazımdır, bu hesabda o yoxdur.',
+  'pos.appAdmin.addRole': 'Rol əlavə et',
+  'pos.appAdmin.newRoleName': 'Yeni rol',
   'pos.appAdmin.roleName': 'Rolun adı',
   'pos.appAdmin.capabilities': 'Bu rol nə edə bilər',
+  'pos.appAdmin.searchCapabilities': 'İcazələrdə axtar',
+  'pos.appAdmin.noCapabilities': 'Hələ heç nə',
+  'pos.appAdmin.noCapabilityMatch': 'Buna uyğun icazə yoxdur.',
+  'pos.appAdmin.confirmDeleteRole': '"{name}" rolu silinsin?',
   'pos.appAdmin.capability.register': 'Kassada satış etmək',
   'pos.appAdmin.capability.store.view': 'Anbarı görmək',
   'pos.appAdmin.capability.store.edit': 'Mal əlavə etmək və dəyişmək',
@@ -536,15 +544,20 @@ const az: MessageDict = {
   'pos.appAdmin.capability.settings.backup': 'Nüsxə çıxarmaq və bərpa etmək',
   'pos.appAdmin.capability.appAdmin.view': 'Tətbiq admininə girmək',
   'pos.appAdmin.capability.appAdmin.roles': 'Rolları dəyişmək',
+  'pos.appAdmin.section.general': 'Ümumi',
   'pos.appAdmin.section.roles': 'Rollar',
+  'pos.appAdmin.section.people': 'İşçilər',
+  'pos.appAdmin.section.install': 'Quraşdır',
   'pos.appAdmin.section.licence': 'Lisenziya',
-  'pos.appAdmin.section.openingCash': 'Başlanğıc nağd pul',
-  'pos.appAdmin.section.features': 'Əlavə ekranlar',
-  'pos.appAdmin.features.title': 'Bu mağaza üçün əlavə ekranlar',
-  'pos.appAdmin.features.intro':
-    'Siz burada açmayana qədər hər mağazada bağlıdır. Bağlı olanda kassa əvvəlki kimi işləyir.',
-  'pos.appAdmin.features.on': 'Açıq',
-  'pos.appAdmin.features.off': 'Bağlı',
+  'pos.appAdmin.general.intro':
+    'Bütün mağazaya aiddir və siz burada açmayana qədər bağlıdır. Mağazanın hər kassası bunlara tabedir.',
+  'pos.appAdmin.people.intro':
+    'Bu kassaya girə bilən hesablar və onların rolları. Kassanı quran şəxs işdən ayrılanda təhvil verilməli olan ekran budur.',
+  'pos.appAdmin.install.already': 'Kassa bu kompüterdə artıq quraşdırılıb.',
+  'pos.appAdmin.install.unavailable':
+    'Bu brauzer kassanı quraşdıra bilmir. Eyni ünvanda Chrome və ya Edge bunu bacarır.',
+  'pos.appAdmin.install.note':
+    'Quraşdırma kassaya öz ikonasını və öz pəncərəsini verir. Kassanın özündə heç nə dəyişmir: eyni satışlar, eyni kataloq, eyni kompüter.',
   'pos.appAdmin.features.turnedOn': '{name} bu mağaza üçün açıldı',
   'pos.appAdmin.features.turnedOff': '{name} bu mağaza üçün bağlandı',
   'pos.appAdmin.features.categories': 'Kateqoriyalar',
@@ -560,23 +573,14 @@ const az: MessageDict = {
     'Sonradan bağlasanız partiya xanaları gizlənir, amma stok dəyişmir: artıq partiya ilə işləyən mal yenə də tarixi əvvəl bitəndən satılır, beləliklə rəf ilə qeyd bir-birinə uyğun qalır.',
   'pos.appAdmin.licence.parked':
     'Bu quraşdırmada lisenziya sistemi aktiv deyil, ona görə burada doldurulacaq bir şey yoxdur. Lisenziyasız kassa da normal şəkildə satış edir.',
-  'pos.appAdmin.saveRole': 'Rolu saxla',
   'pos.appAdmin.deleteRole': 'Rolu sil',
-  'pos.appAdmin.noRoles': 'Hələ xüsusi rol yoxdur.',
   'pos.appAdmin.roleSaved': 'Rol saxlanıldı',
   'pos.appAdmin.roleDeleted': 'Rol silindi',
   'pos.appAdmin.roleSaveFailed': 'Rollar bu kompüterdə saxlanıla bilmədi. Heç nə dəyişdirilmədi.',
   'pos.appAdmin.openingCash.title': 'Çekmecedəki nağd pulu soruş',
-  'pos.appAdmin.openingCash.help':
-    'Bu aktiv olanda satış ekranı ilk satışdan əvvəl kassirdən çekmecedə nə qədər pul olduğunu soruşur və məbləği onun adı, vaxtı və hansı kassadan gəldiyi ilə birlikdə yazır. Məbləğ heç vaxt heç nə ilə tutuşdurulmur: nə gün sonu sayımı var, nə də fərq hesabatı. Bu açarı yalnız Dəstək hesabı dəyişə bilər — sahib dəyişə bilməz.',
-  'pos.appAdmin.openingCash.on': 'Soruşulsun',
-  'pos.appAdmin.openingCash.off': 'Soruşulmasın',
-  'pos.appAdmin.openingCash.rule':
-    'Kassir daxil olanda bir dəfə, sonra da yeni günün ilk satış ekranında soruşulur. Səhifəni yeniləmək yenidən soruşmur və sual gözlədiyi müddətdə bütün digər ekranlar açıq qalır.',
   'pos.appAdmin.openingCash.turnedOn': 'Kassirlərdən başlanğıc nağd pul soruşulacaq',
   'pos.appAdmin.openingCash.turnedOff': 'Kassirlərdən başlanğıc nağd pul soruşulmayacaq',
   'pos.appAdmin.openingCash.saveFailed': 'Yadda saxlanılmadı. Yenidən cəhd edin.',
-  'pos.appAdmin.openingCash.viewRecord': 'Sayılanlara bax',
 
   // POS — opening cash
   'pos.openingCash.title': 'Çekmecedə nə qədər pul var?',

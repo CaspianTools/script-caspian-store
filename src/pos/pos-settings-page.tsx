@@ -41,6 +41,8 @@ import { usePosRoles } from './standalone/role-context';
 import { LocalShopPanel } from './standalone/admin/local-shop-panel';
 import { LocalBackupPanel } from './standalone/admin/local-backup-panel';
 import { LocalPasswordDialog } from './standalone/admin/local-password-dialog';
+import { CASPIAN_POS_VERSION } from './standalone/pos-version';
+import { CASPIAN_STORE_VERSION } from '../version';
 
 export interface PosSettingsPageProps {
   className?: string;
@@ -404,6 +406,20 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
               {t('pos.settings.save')}
             </button>
           </div>
+
+          {/*
+            Two products, two numbers. A standalone till never installs this
+            library, so quoting the storefront's release to a shop running one
+            tells it nothing it can act on; a cloud register has no version of
+            its own and the library is what it is running. Below the Save row
+            because it is not a setting -- it is the answer to "which version is
+            that till on?", asked by somebody on the phone.
+          */}
+          <p className="cpos-version">
+            {t('pos.settings.appVersion', {
+              version: local.standalone ? CASPIAN_POS_VERSION : CASPIAN_STORE_VERSION,
+            })}
+          </p>
         </div>
       </div>
 

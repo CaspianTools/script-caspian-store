@@ -194,7 +194,14 @@ export function PosTopbar({
         </DropdownMenu>
 
         {!local && queue ? <PosConnectionPill queue={queue} /> : null}
-        <PosInstallButton />
+        {/*
+          A standalone till installs itself from App admin instead, where the
+          screen can also say "already installed" and "this browser cannot" --
+          the two answers a button that renders `null` has no way to give. A
+          cloud register has no App admin to move it to, so it keeps the button
+          it has always had rather than losing the only route it has.
+        */}
+        {!local ? <PosInstallButton /> : null}
 
         <button
           type="button"

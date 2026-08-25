@@ -665,7 +665,7 @@ const MANUAL = {
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here.",
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade."
       ],
-      "version": "v1.1.0"
+      "version": "v1.2.0"
     },
     "parts": [
       {
@@ -925,7 +925,7 @@ const MANUAL = {
             "summary": "The register can be installed onto a till so it opens in its own window, with its own icon, and no browser address bar. It is still the same web page - nothing is downloaded and nothing is kept up to date by hand - but it looks and starts like an ordinary program. The shop and the register install as two separate apps, so a till gets an icon that opens straight into the counter.",
             "steps": [
               "On the till, open /pos in Google Chrome or Microsoft Edge and sign in.",
-              "Press Install in the bar across the top of the register.",
+              "Press Install. On a till that runs on its own it is App admin, then Install; on a till wired to a website it is in the bar across the top of the register.",
               "Confirm the box the browser shows. The register reopens in its own window and an icon appears in the Start menu or on the desktop.",
               "On an iPad, there is no Install button. Press Install to see the instructions, or use the browser Share button and choose Add to Home Screen.",
               "Pin the icon to the taskbar or the home screen so a cashier can find it without a browser."
@@ -933,13 +933,13 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Install",
-                "what": "Button in the top bar, to the left of the appearance button - the small sun or moon. It disappears once this till has the register installed, so an empty space there means the job is already done."
+                "what": "On a till that runs on its own it is a page of App admin, at the foot of the menu, and it always says which of four situations you are in: ready to install, already installed, an iPad needing Add to Home Screen, or a browser that cannot. On a till wired to a website it is a button in the top bar, to the left of the appearance button - the small sun or moon - which simply disappears once the job is done."
               }
             ],
             "notes": [
               "Installing is not what makes the register work offline — it keeps selling through an outage either way. What installing gives you is a faster start, its own window, and no address bar for a cashier to type in by accident.",
               "The shop and the register are two separate apps. A shop that installs both gets two icons: one that opens the online shop, one that opens the counter. Install only the register on a till.",
-              "The button is not shown at all on Safari and Firefox on a desktop, because those browsers cannot install a web app that way. Use Chrome or Edge on a till.",
+              "Safari and Firefox on a desktop cannot install a web app this way. On a till that runs on its own the Install page says so in words; on a till wired to a website the button is simply not shown. Either way, use Chrome or Edge.",
               "On an iPad the Install button shows instructions rather than doing it for you. Apple does not let a page start the installation itself.",
               "Once installed, tapping the icon while the register is already open brings the existing window forward rather than starting a new one. That is deliberate: starting fresh would throw away a half-rung sale.",
               "When a new version of the register is ready, a strip appears across the top offering to update. It never updates by itself in the middle of a sale - press it between customers, or just close and reopen the register at the end of the day.",
@@ -1071,7 +1071,8 @@ const MANUAL = {
               "With site data blocked, the register name, the scanner speed and the storage choice are not kept at all. Pressing Save still shows \"Settings saved\", but nothing is written down, and the old values come back the moment you leave this page - you do not have to reload to lose them. Treat that message as confirmation that you pressed the button, not as proof the setting was stored.",
               "With site data blocked the device id is unstable in a way that matters: a new one is invented every time it is needed, so the code shown on this page is not the one stamped on your sales. Do not read it out to support while the browser is in that state.",
               "A register running on its own shows an orange line under \"This computer only\" warning that nothing is stored anywhere else. Take that literally: if that computer is lost or its disk fails, the sales on it are gone. There is no copy in the cloud, because there is no cloud.",
-              "On a till that runs with no website behind it, the index down the left of this page grows by two entries: Shop, for the shop name, the currency and the receipt wording, and Backup, for the only copy of everything the till knows. Each appears only for a role allowed into it, and each has a section of its own in this manual."
+              "On a till that runs with no website behind it, the index down the left of this page grows by two entries: Shop, for the shop name, the currency and the receipt wording, and Backup, for the only copy of everything the till knows. Each appears only for a role allowed into it, and each has a section of its own in this manual.",
+              "A grey line under the Save button gives the version this register is running, and App admin carries the same line at the foot of every one of its pages. It is there for one reason: so that somebody on the telephone to support can read it out without hunting for it. It is not a setting and there is nothing to press. On a till that runs on its own it is the register's own version, the number at the top of this manual; on a till wired to a website it is the version of the shop software behind it, which is a different number that moves at a different time."
             ]
           },
           {
@@ -1236,27 +1237,23 @@ const MANUAL = {
             "id": "turning-the-opening-cash-check-on",
             "title": "Asking cashiers what is in the drawer",
             "audience": "owner",
-            "route": "/pos/app-admin",
-            "summary": "A till that runs on its own can be set to ask the cashier how much money is in the drawer before the first sale of the day. It is off in every shop until somebody switches it on, and the switch is the second page of App admin, between Roles and Licence. What it does is write the figure down. It never checks it, and there is still no closing count, no cash-up and no variance report.",
+            "route": "/pos/app-admin?section=general",
+            "summary": "A till that runs on its own can be set to ask the cashier how much money is in the drawer before the first sale of the day. It is off in every shop until somebody switches it on, and the switch is the first row on the General page of App admin. What it does is write the figure down. It never checks it, and there is still no closing count, no cash-up and no variance report.",
             "steps": [
               "Sign in as the Support account. Nobody else can open App admin, so nobody else can move this switch - not the shop owner, not a manager, not an account holding Admin.",
-              "Open App admin at the foot of the menu, then press Opening cash in the short index down the left. It sits between Roles and Licence.",
-              "Press \"Ask for it\" to switch the check on, or \"Do not ask\" to switch it off again. It saves the moment you press, and a message names which way it went. While it is on, a line underneath spells out when a cashier gets asked.",
-              "There is nothing else to set. No float to preset, no amount to approve, no tolerance to configure - the switch is the whole feature.",
-              "Press \"See what has been counted\" to jump to the Sales screen, where the figures cashiers have typed in are listed in a box of their own, above the sales."
+              "Open App admin at the foot of the menu. You arrive on General, and \"Ask for the opening cash\" is the first row on it.",
+              "Flip the switch at the end of the row. It saves the moment you flip it, and a message names which way it went.",
+              "There is nothing else to set. No float to preset, no amount to approve, no tolerance to configure - the switch is the whole feature, and the row carries nothing but its own name.",
+              "To see what cashiers have typed in, open Sales in the menu. The figures are listed in a box of their own, above the sales."
             ],
             "fields": [
               {
-                "name": "Opening cash",
-                "what": "The second page of App admin, between Roles and Licence. Two buttons - \"Ask for it\" and \"Do not ask\" - a paragraph saying what they do, and nothing else."
+                "name": "Ask for the opening cash",
+                "what": "The first row on the General page of App admin, which is where App admin opens. A line of text and a switch at the end of it."
               },
               {
-                "name": "Ask for it / Do not ask",
-                "what": "The two choices. \"Do not ask\" is how every shop starts, so a shop that never opens this page has cashiers who go their whole working life without ever seeing the question."
-              },
-              {
-                "name": "See what has been counted",
-                "what": "A button at the foot of the page that jumps straight to the Opening cash box on the Sales screen. It is there only for a role that may see sales."
+                "name": "The switch",
+                "what": "Off is how every shop starts, so a shop that never opens this page has cashiers who go their whole working life without ever seeing the question. Off is the knob at the left; on is the knob at the right, coloured."
               }
             ],
             "notes": [
@@ -1417,40 +1414,49 @@ const MANUAL = {
             "title": "Roles on a till with no website",
             "audience": "owner",
             "route": "/pos/app-admin",
-            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has five pages: Roles, Opening cash, Optional screens, Recovery code and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
+            "summary": "A till that runs with no website behind it keeps its own list of roles, on the machine itself. App admin is where you set them. It sits on its own at the foot of the menu, below the screens a shop uses every day, and it has six pages: General, Roles, People, Install, Recovery code and Licence. Only an account holding \"Open app admin\" gets in - out of the box that is the Support account made when the till was commissioned - and on a till backed by a website the address quietly returns you to the counter.",
             "steps": [
               "Sign in as the Support account - the first account created when the till was set up. App admin is at the foot of the menu, under the everyday screens and above the collapse button.",
-              "You arrive on Roles. The other four - Opening cash, Optional screens, Recovery code and Licence - are listed under it in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=licence opens that one directly.",
-              "Under Predefined roles you get seven rows, least access first: Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support. Under each name is the list of everything that role may do, written out in full.",
-              "Tick a role to use it, untick it to retire it. A retired role stops being offered when you add or edit a person, and anybody still holding it can no longer open anything at all - move those people to another role first.",
-              "To write your own, press \"Add custom role\", give it a name, tick the boxes it should hold, and press \"Save role\". Edit reopens a custom role; Delete removes it at once, with no confirmation step."
+              "You arrive on General. The other five - Roles, People, Install, Recovery code and Licence - are listed under it in the short index down the left. The address remembers which you are on, so /pos/app-admin?section=roles opens that one directly.",
+              "Press Roles. Every role on the till is one row, built-ins first in least-access order - Cashier, Cashier (duplicate), Storekeeper, Accountant, Manager, Admin and Support - and anything the shop has written of its own underneath. Each row carries the role's name, a one-line summary of what it may do, and a switch.",
+              "Flip the switch to use a role or to retire it. A retired role stops being offered when you add or edit a person, and anybody still holding it can no longer open anything at all - move those people to another role first.",
+              "Press a row to open it. Inside are all thirteen permissions, each with its own switch, grouped the way the menu groups the screens they unlock, and a search box above them for finding one by name.",
+              "To write your own role, press \"Add role\". It appears at the foot of the list, already open, called \"New role\" and holding two permissions. Rename it in the box, flip the permissions you want, and press \"Delete role\" inside the row if you change your mind. Nothing here has a Save button: every switch writes as you flip it, and the name saves when you leave the box."
             ],
             "fields": [
               {
-                "name": "The five pages",
-                "what": "Listed down the left. Roles is the editor described here. Opening cash is a single switch with a page of its own in \"Asking cashiers what is in the drawer\". Optional screens turns Categories, Suppliers and batch tracking on and off. Recovery code is the till’s way back in if the Support password is forgotten - see \"If nobody can get into this till\". Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
+                "name": "The six pages",
+                "what": "Listed down the left. General carries the shop-wide switches - the opening-cash check and the three optional screens. Roles is the editor described here. People is the staff list, the same one the People screen shows. Install puts the register on this computer as an app. Recovery code is the till’s way back in if the Support password is forgotten - see \"If nobody can get into this till\". Licence is where a key would be entered in a copy of the software built to sell licences; in an ordinary copy it holds one line saying licensing is not switched on in this build."
+              },
+              {
+                "name": "The switch on the row",
+                "what": "Whether anybody can be given the role. It writes the moment you flip it, and there is no wording beside it - the knob sits at the left when the role is retired and at the right, coloured, when it is in use."
               },
               {
                 "name": "What this role can do",
-                "what": "Twelve tick boxes on a custom role, grouped the way the menu groups the screens they open. Counter: Sell at the till. Shop: See the store, Add and edit items, See sales, Export sales to a spreadsheet, See people, Add and edit people. System: Open settings, Change shop and receipt details, Back up and restore, Open app admin, Change roles."
+                "what": "Thirteen switches inside the row, grouped the way the menu groups the screens they open. Counter: Sell at the till. Shop: See the store, Add and edit items, Receive stock, See sales, Export sales to a spreadsheet, See people, Add and edit people. System: Open settings, Change shop and receipt details, Back up and restore, Open app admin, Change roles."
+              },
+              {
+                "name": "Search permissions",
+                "what": "A box at the top of an open row. Type part of a permission's name and the list narrows to it; empty the box and all thirteen come back. It searches that row only, so each role keeps its own search."
               },
               {
                 "name": "Role name",
-                "what": "What the role is called when you give it to somebody. Free text, and the only thing that identifies the role on the People screen. A role with no name is not saved."
-              },
-              {
-                "name": "Enabled / Disabled",
-                "what": "The word at the end of each predefined row, and the tick box that changes it. It is the only thing about a built-in role you can change - their twelve boxes are fixed and there is no Edit button on those rows."
+                "what": "What the role is called when you give it to somebody. Free text, on a role the shop wrote itself, and the only thing that identifies it on the People screen. It saves when you leave the box; a name emptied to nothing is not saved."
               }
             ],
             "notes": [
-              "The twelve replace the six areas an older till used, and they come in pairs: one to see a screen, one to change what is on it. That is what lets you give somebody the takings without the export, or the staff list without the password resets.",
+              "The thirteen replace the six areas an older till used, and they come in pairs: one to see a screen, one to change what is on it. That is what lets you give somebody the takings without the export, or the staff list without the password resets.",
+              "Built-in roles can now be changed. Until v1.2.0 the seven that ship were fixed and only their on/off tick could be moved; every one of them opens like any other role now, and its thirteen switches are yours. Nothing changed about what they hold out of the box, so a till whose rows are never opened behaves exactly as it did.",
+              "Some switches refuse to move, and they are all the same trap seen from different sides. \"Open app admin\" and \"Change roles\" cannot be taken off Support, and they cannot be taken off whichever role you are signed in as. A till with no website has no way to hand access back from somewhere else, so one flip would end your access for good.",
+              "Support cannot be retired, and neither can the role you are signed in as. Their row switches are fixed on for the same reason, and the row says which of the two it is when you open it. Every other role, including one that can open App admin but is not yours, retires normally.",
               "Upgrading a till takes nothing away. Roles saved by an older version are brought forward the first time they are read, and that upgrade can only add - so nobody who could open a screen yesterday is shut out of it today. Every role also keeps \"Open settings\", because that screen answered to nobody before.",
-              "A role that cannot sell cannot get in at all. The gate on /pos asks for \"Sell at the till\" before any screen is drawn, so an account whose role lacks it is met with \"No access to the register\" and reaches nothing - not the Store screen, not Sales. As they ship, Storekeeper and Accountant are both in that position, and the twelve boxes of a built-in role cannot be edited. If you want somebody on those screens, make a custom role that holds \"Sell at the till\" as well.",
-              "Accountant did change. It used to hold an area that nothing in the software ever checked, so it opened nothing whatsoever; it now holds \"See sales\" and the export. The gate above is what still stops it being useful on its own - a custom role holding \"Sell at the till\" as well as those two gets a person in, with Sales waiting in the menu.",
-              "Support cannot be switched off. It is the only built-in role holding \"Open app admin\", and a till with no website has no way to hand access back from somewhere else - if it could be unticked, one tick would end your access for good.",
+              "A role that cannot sell cannot get in at all. The gate on /pos asks for \"Sell at the till\" before any screen is drawn, so an account whose role lacks it is met with \"No access to the register\" and reaches nothing - not the Store screen, not Sales. As they ship, Storekeeper and Accountant are both in that position. Open either row and flip \"Sell at the till\" on if you want somebody working those screens.",
+              "Accountant did change. It used to hold an area that nothing in the software ever checked, so it opened nothing whatsoever; it now holds \"See sales\" and the export. The gate above is what still stops it being useful on its own.",
               "\"Cashier (duplicate)\" opens exactly what Cashier opens, and Admin now opens exactly what Manager opens. Both duplicates are kept only so people already given them keep working. Give new people Cashier or Manager.",
-              "A capability a role does not hold is not greyed out - it is simply not there. The export button on Sales, the add, edit and delete buttons on Store, the role menu, password resets, Block and Delete on People, and most of the entries in Quick add are all absent for anybody without the matching tick.",
+              "Deleting a role asks first, and only a role the shop wrote itself can be deleted. The seven built-ins have no Delete button - retire one with its switch instead.",
+              "An account that can open App admin but does not hold \"Change roles\" gets this page read-only: every switch is greyed, there is no \"Add role\" button, and a line at the top says so. Opening a row to read what a role may do still works.",
+              "A capability a role does not hold is not greyed out anywhere else - it is simply not there. The export button on Sales, the add, edit and delete buttons on Store, the role menu, password resets, Block and Delete on People, and most of the entries in Quick add are all absent for anybody without the matching switch.",
               "These roles live on this machine and nowhere else. Another till, even in the same shop, keeps its own separate list, and nothing here shows up in an online admin panel.",
               "The list of roles is part of the shop’s own records, not a cache. Only a factory reset erases it, it travels in the backup file, and there is no copy anywhere else."
             ]
@@ -2292,13 +2298,13 @@ const MANUAL = {
             "id": "optional-screens-for-this-shop",
             "title": "Turning the optional screens on",
             "audience": "owner",
-            "route": "/pos/app-admin?section=features",
-            "summary": "Categories, Suppliers, and Batches with expiry dates are off for every shop until somebody turns them on. They are on the App admin page, which only a Support account can open, beside the roles and the opening-cash check.",
+            "route": "/pos/app-admin?section=general",
+            "summary": "Categories, Suppliers, and Batches with expiry dates are off for every shop until somebody turns them on. They are the last three rows on the General page of App admin, under the opening-cash switch, and only a Support account can open that page.",
             "steps": [
               "Sign in with a Support account.",
-              "Press App admin at the foot of the menu.",
-              "Press \"Optional screens\" in the index down the left.",
-              "Press On or Off beside each one. It saves as you press; there is no Save button.",
+              "Press App admin at the foot of the menu. It opens on General.",
+              "Find the three rows under \"Ask for the opening cash\". Each is a line of text, a sentence saying what it does, and a switch.",
+              "Flip the switch beside each one you want. It saves as you flip it; there is no Save button.",
               "Sign back in as the shop, and the screens are in the strip above the Store list."
             ],
             "fields": [
@@ -2373,12 +2379,12 @@ const MANUAL = {
             "title": "The People screen: who may sign in",
             "audience": "owner",
             "route": "/pos/people",
-            "summary": "Who can sign in to this till, and what they may do. These accounts belong to the machine, not to a website: no email address, no password reset by email, and no way in from another computer. Adding somebody is done from Quick add in the top bar; this screen is for changing roles, resetting passwords, blocking and deleting.",
+            "summary": "Who can sign in to this till, and what they may do. These accounts belong to the machine, not to a website: no email address, no password reset by email, and no way in from another computer. The same list appears twice - as the People screen under Shop, and as the People page of App admin - because whoever installs a till has to hand the staff over to somebody when they leave.",
             "steps": [
-              "Press People in the menu, under Shop.",
-              "To add somebody, open Quick add in the top bar and choose \"Add person\". Give them a username to sign in with, their full name, a password of at least six characters, and a role.",
+              "Press People in the menu, under Shop. A Support account can also reach the same list at App admin, under People.",
+              "Press \"Add them\" above the list to add somebody. Give them a username to sign in with, their full name, a password of at least six characters, and a role. Quick add in the top bar opens the same window.",
               "To change what somebody may do, pick a different role from the menu in their row. It saves as soon as you pick.",
-              "Press \"New password\" on a row and type the new one into the small box the browser puts up. It applies immediately.",
+              "Press \"New password\" on a row and type the new one into the window the till puts up. It applies immediately.",
               "Press Block to stop an account signing in without losing the sales it rang, or Delete to remove it altogether."
             ],
             "fields": [
@@ -2405,10 +2411,15 @@ const MANUAL = {
               {
                 "name": "Delete",
                 "what": "Removes the account after asking. The sales it rang keep the name they were rung up under."
+              },
+              {
+                "name": "Add them",
+                "what": "A button above the list, on both copies of this screen. It opens the same window Quick add opens. It is there only for a role holding \"Add and edit people\"."
               }
             ],
             "notes": [
               "You cannot change your own role, block yourself or delete yourself. Those controls are missing from your own row, which is marked \"you\". You can still set your own password.",
+              "The App admin copy is the same screen, not a second one. Anything done on either shows on the other, and the guards below hold on both. It is there so that the page a shop is handed at the end of an installation carries the accounts as well as the roles behind them.",
               "Only a Support account may touch another Support account. To everybody else that row is plain text with no buttons.",
               "Blocking is usually better than deleting. A blocked account can be let back in; a deleted one has to be made again from scratch, and neither changes the receipts that already carry the name.",
               "Passwords are kept scrambled on this computer and cannot be read back. If somebody forgets theirs, set a new one here - that is the quickest route in, and it needs no recovery code.",
@@ -2924,7 +2935,7 @@ const MANUAL = {
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir.",
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır."
       ],
-      "version": "v1.1.0"
+      "version": "v1.2.0"
     },
     "parts": [
       {
@@ -3166,7 +3177,7 @@ const MANUAL = {
             "summary": "Kassanı kassa kompüterinə quraşdırmaq olar ki, öz pəncərəsində, öz ikonu ilə və brauzer ünvan sətri olmadan açılsın. Bu, yenə də eyni veb səhifədir - heç nə yüklənmir və heç nəyi əl ilə yeniləmək lazım deyil - amma adi proqram kimi görünür və başlayır. Mağaza və kassa iki ayrı tətbiq kimi quraşdırılır, ona görə kassada birbaşa piştaxtanı açan ikon olur.",
             "steps": [
               "Kassada Google Chrome və ya Microsoft Edge-də /pos ünvanını açın və daxil olun.",
-              "Kassanın yuxarı zolağında Quraşdır düyməsini basın.",
+              "Quraşdır düyməsini basın. Öz-özünə işləyən kassada bu, Tətbiq admini, sonra Quraşdır səhifəsidir; veb sayta bağlı kassada isə kassanın yuxarı zolağındadır.",
               "Brauzerin göstərdiyi pəncərəni təsdiqləyin. Kassa öz pəncərəsində yenidən açılır və Başlat menyusunda və ya masaüstündə ikon görünür.",
               "iPad-də Quraşdır düyməsi işi özü görmür. Təlimatı görmək üçün ona toxunun, ya da brauzerin Paylaş düyməsindən Ana ekrana əlavə et seçin.",
               "İkonu tapşırıq panelinə və ya ana ekrana bərkidin ki, kassir onu brauzersiz tapa bilsin."
@@ -3174,13 +3185,13 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Quraşdır",
-                "what": "Yuxarı zolaqda, görünüş düyməsinin (kiçik günəş və ya ay) solunda. Bu kassada kassa artıq quraşdırılıbsa yox olur, ona görə orada boşluq varsa, iş artıq görülüb."
+                "what": "Öz-özünə işləyən kassada bu, menyunun altındakı Tətbiq admininin bir səhifəsidir və dörd vəziyyətdən hansında olduğunuzu həmişə deyir: quraşdırmağa hazır, artıq quraşdırılıb, Ana ekrana əlavə et tələb edən iPad, ya da bunu bacarmayan brauzer. Veb sayta bağlı kassada isə yuxarı zolaqda, görünüş düyməsinin (kiçik günəş və ya ay) solunda bir düymədir və iş görüləndən sonra sadəcə yox olur."
               }
             ],
             "notes": [
               "Kassanın oflayn işləməsini quraşdırma təmin etmir - o, hər halda kəsinti zamanı satmağa davam edir. Quraşdırmanın verdiyi şey daha sürətli başlanğıc, öz pəncərə və kassirin səhvən yaza biləcəyi ünvan sətrinin olmamasıdır.",
               "Mağaza və kassa iki ayrı tətbiqdir. Hər ikisini quraşdıran mağazada iki ikon olur: biri onlayn mağazanı, biri piştaxtanı açır. Kassada yalnız kassanı quraşdırın.",
-              "Masaüstü Safari və Firefox-da düymə ümumiyyətlə görünmür, çünki həmin brauzerlər veb tətbiqi bu yolla quraşdıra bilmir. Kassada Chrome və ya Edge işlədin.",
+              "Masaüstü Safari və Firefox veb tətbiqi bu yolla quraşdıra bilmir. Öz-özünə işləyən kassada Quraşdır səhifəsi bunu sözlə bildirir; veb sayta bağlı kassada isə düymə sadəcə görünmür. Hər halda Chrome və ya Edge işlədin.",
               "iPad-də Quraşdır düyməsi işi görmək əvəzinə təlimat göstərir. Apple səhifənin quraşdırmanı özü başlatmasına icazə vermir.",
               "Quraşdırıldıqdan sonra kassa artıq açıq ikən ikona toxunmaq yeni pəncərə açmaq əvəzinə mövcud pəncərəni önə gətirir. Bu qəsdəndir: yenidən başlamaq yarımçıq satışı atardı.",
               "Kassanın yeni versiyası hazır olduqda yuxarıda yeniləmə təklif edən zolaq çıxır. O, satışın ortasında öz-özünə yeniləmir - müştərilər arasında basın, ya da gün sonunda kassanı bağlayıb yenidən açın.",
@@ -3309,7 +3320,8 @@ const MANUAL = {
               "Sayt məlumatları bloklananda kassa adı, skaner sürəti və saxlanma seçimi ümumiyyətlə yadda saxlanmır. Yadda saxla (Save) düyməsini basanda yenə \"Tənzimləmələr yadda saxlanıldı\" (Settings saved) yazısı çıxır, amma heç nə yazılmır və bu səhifədən çıxan kimi köhnə dəyərlər geri qayıdır — itirmək üçün səhifəni yeniləmək belə lazım deyil. Həmin mesajı tənzimləmənin saxlandığının sübutu yox, sadəcə düyməni basdığınızın təsdiqi kimi qəbul edin.",
               "Sayt məlumatları bloklananda cihaz identifikatoru ciddi şəkildə qeyri-sabit olur: hər dəfə lazım olanda yenisi yaradılır, ona görə bu səhifədə göstərilən kod satışlarınıza yazılan kod deyil. Brauzer bu vəziyyətdə olduğu müddətdə onu dəstək xidmətinə səsləndirməyin.",
               "Təkbaşına işləyən kassada \"Yalnız bu kompüter\" sətrinin altında narıncı xəbərdarlıq görünür: heç nə başqa yerdə saxlanılmır. Bunu hərfi mənada qəbul edin — həmin kompüter itərsə və ya diski sıradan çıxarsa, oradakı satışlar da yox olur. Buludda nüsxə yoxdur, çünki bulud yoxdur.",
-              "Veb saytı olmayan kassada bu səhifənin solundakı siyahıya iki bənd əlavə olunur: mağazanın adı, valyutası və qəbz mətni üçün Mağaza, kassanın bildiyi hər şeyin yeganə nüsxəsi üçün isə Ehtiyat nüsxə. Hər biri yalnız icazəsi olan rola görünür və hər birinin bu təlimatda öz bölməsi var."
+              "Veb saytı olmayan kassada bu səhifənin solundakı siyahıya iki bənd əlavə olunur: mağazanın adı, valyutası və qəbz mətni üçün Mağaza, kassanın bildiyi hər şeyin yeganə nüsxəsi üçün isə Ehtiyat nüsxə. Hər biri yalnız icazəsi olan rola görünür və hər birinin bu təlimatda öz bölməsi var.",
+              "Yadda saxla düyməsinin altındakı boz sətir bu kassanın hansı versiyada işlədiyini bildirir; Tətbiq admini də eyni sətri hər səhifəsinin altında daşıyır. Səbəbi birdir: dəstəklə telefonda danışan adam onu axtarmadan oxuya bilsin. Bu, tənzimləmə deyil, basılası heç nə yoxdur. Öz-özünə işləyən kassada bu, kassanın öz versiyasıdır - bu təlimatın başındakı nömrə; veb sayta bağlı kassada isə arxadakı mağaza proqramının versiyasıdır və o, başqa vaxt dəyişən başqa nömrədir."
             ]
           },
           {
@@ -4087,7 +4099,7 @@ const MANUAL = {
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь.",
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат."
       ],
-      "version": "v1.1.0"
+      "version": "v1.2.0"
     },
     "parts": [
       {
@@ -4329,7 +4341,7 @@ const MANUAL = {
             "summary": "Кассу можно установить на кассовый компьютер, чтобы она открывалась в своём окне, со своим значком и без адресной строки браузера. Это по-прежнему та же веб-страница - ничего не скачивается и ничего не нужно обновлять вручную - но выглядит и запускается как обычная программа. Магазин и касса устанавливаются как два отдельных приложения, поэтому на кассе появляется значок, открывающий сразу прилавок.",
             "steps": [
               "На кассе откройте /pos в Google Chrome или Microsoft Edge и войдите.",
-              "Нажмите «Установить» в полосе вверху кассы.",
+              "Нажмите «Установить». На кассе, работающей сама по себе, это «Администратор приложения», затем «Установить»; на кассе, подключённой к сайту, - в полосе вверху кассы.",
               "Подтвердите окно, которое показывает браузер. Касса откроется заново в своём окне, а значок появится в меню «Пуск» или на рабочем столе.",
               "На iPad кнопка «Установить» не делает это за вас. Нажмите её, чтобы увидеть инструкцию, либо используйте кнопку «Поделиться» и выберите «На экран «Домой»».",
               "Закрепите значок на панели задач или на домашнем экране, чтобы кассир находил его без браузера."
@@ -4337,13 +4349,13 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Установить",
-                "what": "Кнопка в верхней панели, слева от кнопки оформления - маленького солнца или луны. Она исчезает, как только касса на этом компьютере установлена, так что пустое место означает, что дело уже сделано."
+                "what": "На кассе, работающей сама по себе, это страница «Администратора приложения» внизу меню, и она всегда говорит, в какой из четырёх ситуаций вы находитесь: готово к установке, уже установлено, iPad, которому нужно «На экран «Домой»», или браузер, который так не умеет. На кассе, подключённой к сайту, это кнопка в верхней панели, слева от кнопки оформления - маленького солнца или луны, - и она просто исчезает, когда дело сделано."
               }
             ],
             "notes": [
               "Работать офлайн кассе позволяет не установка - она продолжает продавать при обрыве связи в любом случае. Установка даёт более быстрый запуск, собственное окно и отсутствие адресной строки, куда кассир может случайно что-то ввести.",
               "Магазин и касса - два разных приложения. Если установить оба, будет два значка: один открывает интернет-магазин, другой - прилавок. На кассе устанавливайте только кассу.",
-              "В настольных Safari и Firefox кнопка не показывается вовсе, потому что эти браузеры не умеют так устанавливать веб-приложение. На кассе используйте Chrome или Edge.",
+              "Настольные Safari и Firefox не умеют так устанавливать веб-приложение. На кассе, работающей сама по себе, страница «Установить» говорит об этом словами; на кассе, подключённой к сайту, кнопки просто нет. В любом случае используйте Chrome или Edge.",
               "На iPad кнопка «Установить» показывает инструкцию, а не выполняет установку. Apple не позволяет странице запускать её самостоятельно.",
               "После установки нажатие на значок, когда касса уже открыта, выводит вперёд существующее окно, а не открывает новое. Это сделано намеренно: запуск заново выбросил бы наполовину набранную продажу.",
               "Когда готова новая версия кассы, сверху появляется полоса с предложением обновиться. Она никогда не обновляется сама посреди продажи - нажмите её между покупателями или просто закройте и откройте кассу в конце дня.",
@@ -4472,7 +4484,8 @@ const MANUAL = {
               "При заблокированном хранении данных сайта название кассы, скорость сканера и выбор места хранения не сохраняются вовсе. Нажатие Save по-прежнему выводит «Settings saved», но ничего не записывается, и прежние значения вернутся, как только вы уйдёте с этой страницы, — перезагружать для этого ничего не нужно. Считайте это сообщение подтверждением того, что вы нажали кнопку, а не доказательством того, что настройка сохранена.",
               "При заблокированном хранении данных сайта идентификатор устройства нестабилен, и это важно: он создаётся заново каждый раз, когда требуется, поэтому код на этой странице не тот, что записывается в ваши продажи. Не диктуйте его в поддержку, пока браузер находится в таком состоянии.",
               "На кассе, работающей сама по себе, под строкой «Только на этом компьютере» показывается оранжевое предупреждение: больше нигде ничего не хранится. Понимайте это буквально — если компьютер потерян или его диск вышел из строя, продажи на нём исчезли. Копии в облаке нет, потому что нет облака.",
-              "На кассе, за которой нет сайта, в списке слева на этой странице появляются ещё два пункта: «Магазин» - название магазина, валюта и текст чека, и «Резервная копия» - единственная копия всего, что знает эта касса. Каждый виден только той роли, которой это разрешено, и у каждого есть свой раздел в этом руководстве."
+              "На кассе, за которой нет сайта, в списке слева на этой странице появляются ещё два пункта: «Магазин» - название магазина, валюта и текст чека, и «Резервная копия» - единственная копия всего, что знает эта касса. Каждый виден только той роли, которой это разрешено, и у каждого есть свой раздел в этом руководстве.",
+              "Серая строка под кнопкой «Сохранить» показывает версию, на которой работает эта касса; «Администратор приложения» несёт ту же строку внизу каждой своей страницы. Причина одна: чтобы человек, говорящий по телефону со службой поддержки, мог её прочитать, не разыскивая. Это не настройка, нажимать нечего. На кассе, работающей сама по себе, это собственная версия кассы - число в начале этого руководства; на кассе, подключённой к сайту, это версия магазинной программы за ней, а она другая и меняется в другое время."
             ]
           },
           {
@@ -5250,7 +5263,7 @@ const MANUAL = {
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür.",
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır."
       ],
-      "version": "v1.1.0"
+      "version": "v1.2.0"
     },
     "parts": [
       {
@@ -5492,7 +5505,7 @@ const MANUAL = {
             "summary": "Kasa, bir kasa bilgisayarına yüklenebilir; böylece kendi penceresinde, kendi simgesiyle ve tarayıcı adres çubuğu olmadan açılır. Yine aynı web sayfasıdır - hiçbir şey indirilmez ve elle güncellenmesi gereken bir şey yoktur - ama sıradan bir program gibi görünür ve başlar. Mağaza ile kasa iki ayrı uygulama olarak yüklenir; böylece kasada doğrudan tezgâhı açan bir simge olur.",
             "steps": [
               "Kasada Google Chrome veya Microsoft Edge ile /pos adresini açın ve giriş yapın.",
-              "Kasanın üst çubuğundaki Yükle düğmesine basın.",
+              "Yükle düğmesine basın. Kendi başına çalışan bir kasada bu, Uygulama yöneticisi, sonra Yükle sayfasıdır; bir web sitesine bağlı kasada ise kasanın üst çubuğundadır.",
               "Tarayıcının gösterdiği kutuyu onaylayın. Kasa kendi penceresinde yeniden açılır ve Başlat menüsünde veya masaüstünde bir simge belirir.",
               "iPad üzerinde Yükle düğmesi işi sizin yerinize yapmaz. Yönergeleri görmek için ona dokunun ya da tarayıcının Paylaş düğmesinden Ana Ekrana Ekle seçeneğini kullanın.",
               "Simgeyi görev çubuğuna veya ana ekrana sabitleyin ki kasiyer onu tarayıcı olmadan bulabilsin."
@@ -5500,13 +5513,13 @@ const MANUAL = {
             "fields": [
               {
                 "name": "Yükle",
-                "what": "Üst çubukta, görünüm düğmesinin (küçük güneş veya ay) solunda. Bu kasada kasa zaten yüklüyse kaybolur; oradaki boşluk işin çoktan yapıldığı anlamına gelir."
+                "what": "Kendi başına çalışan bir kasada bu, menünün dibindeki Uygulama yöneticisinin bir sayfasıdır ve dört durumdan hangisinde olduğunuzu her zaman söyler: yüklemeye hazır, zaten yüklü, Ana Ekrana Ekle gereken bir iPad ya da bunu yapamayan bir tarayıcı. Bir web sitesine bağlı kasada ise üst çubukta, görünüm düğmesinin (küçük güneş veya ay) solunda bir düğmedir ve iş bitince kaybolur."
               }
             ],
             "notes": [
               "Kasanın çevrimdışı çalışmasını sağlayan şey yükleme değildir - kesinti sırasında zaten satmayı sürdürür. Yüklemenin kazandırdığı şey daha hızlı bir açılış, kendi penceresi ve kasiyerin yanlışlıkla bir şey yazabileceği bir adres çubuğunun olmamasıdır.",
               "Mağaza ile kasa iki ayrı uygulamadır. İkisini de yükleyen bir mağazada iki simge olur: biri çevrimiçi mağazayı, diğeri tezgâhı açar. Kasaya yalnızca kasayı yükleyin.",
-              "Masaüstü Safari ve Firefox’ta düğme hiç gösterilmez; çünkü o tarayıcılar bir web uygulamasını bu yolla yükleyemez. Kasada Chrome veya Edge kullanın.",
+              "Masaüstü Safari ve Firefox bir web uygulamasını bu yolla yükleyemez. Kendi başına çalışan bir kasada Yükle sayfası bunu sözle söyler; bir web sitesine bağlı kasada düğme hiç gösterilmez. Her hâlükârda Chrome veya Edge kullanın.",
               "iPad üzerinde Yükle düğmesi yüklemeyi yapmak yerine yönergeleri gösterir. Apple, bir sayfanın yüklemeyi kendisinin başlatmasına izin vermez.",
               "Yüklendikten sonra kasa zaten açıkken simgeye dokunmak yeni bir pencere açmak yerine var olan pencereyi öne getirir. Bu bilinçlidir: baştan başlamak yarım kalmış bir satışı çöpe atardı.",
               "Kasanın yeni bir sürümü hazır olduğunda üstte güncellemeyi öneren bir şerit çıkar. Satışın ortasında kendi kendine asla güncellemez - müşteriler arasında basın ya da gün sonunda kasayı kapatıp yeniden açın.",
@@ -5635,7 +5648,8 @@ const MANUAL = {
               "Site verileri engelliyken kasa adı, okuyucu hızı ve saklama seçimi hiç saklanmaz. Kaydet düğmesine basmak yine \"Settings saved\" mesajını gösterir, ama hiçbir şey yazılmaz ve bu sayfadan ayrılır ayrılmaz eski değerler geri gelir; kaybetmeniz için sayfayı yenilemeniz bile gerekmez. O mesajı, ayarın saklandığının kanıtı değil, düğmeye bastığınızın onayı sayın.",
               "Site verileri engelliyken cihaz kimliği önemli bir biçimde kararsız olur: her gerektiğinde yenisi üretilir, bu yüzden bu sayfada gördüğünüz kod, satışlarınıza işlenen kod değildir. Tarayıcı bu durumdayken o kodu destek ekibine okumayın.",
               "Kendi başına çalışan bir kasada \"Yalnızca bu bilgisayar\" satırının altında turuncu bir uyarı görünür: hiçbir şey başka bir yerde saklanmıyor. Bunu tam anlamıyla ciddiye alın — o bilgisayar kaybolursa ya da diski bozulursa, üzerindeki satışlar da gitmiştir. Bulutta kopya yoktur, çünkü bulut yoktur.",
-              "Arkasında web sitesi olmayan bir kasada bu sayfanın solundaki listeye iki madde eklenir: mağazanın adı, para birimi ve fiş metni için Mağaza ve kasanın bildiği her şeyin tek kopyası için Yedek. Her biri yalnızca izni olan role görünür ve her birinin bu kılavuzda kendi bölümü vardır."
+              "Arkasında web sitesi olmayan bir kasada bu sayfanın solundaki listeye iki madde eklenir: mağazanın adı, para birimi ve fiş metni için Mağaza ve kasanın bildiği her şeyin tek kopyası için Yedek. Her biri yalnızca izni olan role görünür ve her birinin bu kılavuzda kendi bölümü vardır.",
+              "Kaydet düğmesinin altındaki gri satır bu kasanın hangi sürümde çalıştığını söyler; Uygulama yöneticisi de aynı satırı her sayfasının dibinde taşır. Tek nedeni şu: destekle telefonda konuşan kişi onu aramadan okuyabilsin. Bir ayar değildir, basılacak bir şey yoktur. Kendi başına çalışan bir kasada bu, kasanın kendi sürümüdür - bu kılavuzun başındaki sayı; bir web sitesine bağlı kasada ise arkasındaki mağaza yazılımının sürümüdür ve o, başka zaman değişen başka bir sayıdır."
             ]
           },
           {

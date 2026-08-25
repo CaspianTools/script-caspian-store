@@ -1510,6 +1510,135 @@ export const POS_STYLESHEET = String.raw`
 .cpos-radio--on { border-color: var(--cpos-brand-line); background: var(--cpos-brand-soft); }
 .cpos-radio input { accent-color: var(--cpos-brand); margin-top: 2px; flex: 0 0 auto; }
 
+/* ------------------------------------------------------------ switch */
+/* A switch, for a setting that lands the moment it is flipped.
+   The library's <Switch> could not be used here: it is 38x22 -- half the
+   register's 44px touch floor -- and it hardcodes rgba(0,0,0,0.22) and #fff,
+   neither of them a --cpos-* token, so on a till in dark mode it is near-black
+   on near-black. This one is built to the floor and reads the brand, so
+   theming the store themes the till. The knob is white in both themes on
+   purpose: it is the moving part, and it has to stay legible against a track
+   that goes from a grey to the shop's own colour. */
+.cpos-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--cpos-r-full);
+  background: var(--cpos-border-strong);
+  cursor: pointer;
+  transition: background var(--cpos-dur) var(--cpos-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+/* The track is 52x32 so it reads as a switch rather than a slab; this pushes
+   the hit area out to 64x44 for a gloved finger without moving the artwork. */
+.cpos-switch::after { content: ''; position: absolute; inset: -6px; border-radius: var(--cpos-r-full); }
+.cpos-switch__knob {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--cpos-r-full);
+  background: #fff;
+  box-shadow: var(--cpos-sh-sm);
+  transition: transform var(--cpos-dur) var(--cpos-ease);
+}
+.cpos-switch--on { background: var(--cpos-brand); }
+.cpos-switch--on .cpos-switch__knob { transform: translateX(20px); }
+[dir='rtl'] .cpos-switch--on .cpos-switch__knob { transform: translateX(-20px); }
+.cpos-switch:hover:not(:disabled) { background: var(--cpos-fg-subtle); }
+.cpos-switch--on:hover:not(:disabled) { background: var(--cpos-brand-hover); }
+.cpos-switch:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+.cpos-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* A setting stated as a sentence with its switch at the end of the line. */
+.cpos-switchrow { display: flex; align-items: center; gap: 14px; min-height: var(--cpos-touch); padding: 9px 0; }
+.cpos-switchrow + .cpos-switchrow { border-top: 1px solid var(--cpos-border); }
+.cpos-switchrow__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cpos-switchrow__title { font-size: 14px; font-weight: 620; color: var(--cpos-fg); }
+.cpos-switchrow__sub { font-size: 12px; color: var(--cpos-fg-muted); line-height: 1.5; }
+
+/* ------------------------------------------------------------ collapse */
+/* A row that opens to show its own detail. Used by the roles list, where a
+   till may carry a dozen roles and thirteen permissions each: printing all of
+   it at once is 150 controls on one screen. */
+.cpos-collapse {
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-md);
+  background: var(--cpos-surface);
+}
+.cpos-collapse + .cpos-collapse { margin-top: 10px; }
+.cpos-collapse--open { border-color: var(--cpos-border-strong); box-shadow: var(--cpos-sh-xs); }
+.cpos-collapse__head { display: flex; align-items: center; gap: 10px; padding: 4px 14px; min-height: var(--cpos-touch); }
+.cpos-collapse__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--cpos-r-sm);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.cpos-collapse__toggle:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+.cpos-collapse__caret {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  flex-shrink: 0;
+  color: var(--cpos-fg-subtle);
+  transition: transform var(--cpos-dur-fast) ease;
+}
+.cpos-collapse--open .cpos-collapse__caret { transform: rotate(90deg); }
+[dir='rtl'] .cpos-collapse__caret { transform: rotate(180deg); }
+[dir='rtl'] .cpos-collapse--open .cpos-collapse__caret { transform: rotate(90deg); }
+.cpos-collapse__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cpos-collapse__title { font-size: 14px; font-weight: 650; }
+.cpos-collapse__sub {
+  font-size: 11.5px;
+  color: var(--cpos-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cpos-collapse__body {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--cpos-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cpos-collapse__grouplabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cpos-fg-muted);
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------ version */
+/* The build number, at the foot of the screens where somebody who has been
+   asked "which version is that till on?" would go looking for it. Deliberately
+   quiet: it is an answer to a support question, not a setting. */
+.cpos-version {
+  margin-top: 20px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--cpos-fg-subtle);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 860px) {
   .cpos-settings__grid { grid-template-columns: minmax(0, 1fr); }
   .cpos-jump { position: static; flex-direction: row; overflow-x: auto; }

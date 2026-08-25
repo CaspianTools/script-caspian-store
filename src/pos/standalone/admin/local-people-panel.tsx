@@ -18,14 +18,22 @@ import type { LocalUser, PosLocalRole } from '../types';
 import { fieldLabel, muted, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 import { LocalPasswordDialog } from './local-password-dialog';
+import { LocalPersonFormDialog } from './local-person-form-dialog';
 import { PosAdminPage } from './pos-admin-page';
 import { UsersIcon } from '../../../ui/icons';
 
 /**
- * Staff and their roles.
+ * Staff and their roles: adding, review, role changes, password resets, and
+ * blocking accounts.
  *
- * Adding new people now lives in the Quick Add menu. This panel is for review,
- * role changes, password resets, and disabling accounts.
+ * Rendered at `/pos/people` and again inside App admin, where it is the staff
+ * half of what a shop is handed when whoever installed the till leaves. One
+ * component in both places on purpose -- a second table that resets passwords
+ * is a second place for the last-account guards to be got wrong.
+ *
+ * Adding also lives in the Quick Add menu. It is here as well because that menu
+ * is a shortcut, and a screen called People that cannot add one sends the
+ * reader looking for a screen that can.
  */
 export function LocalPeoplePanel() {
   const t = useT();
@@ -34,6 +42,7 @@ export function LocalPeoplePanel() {
   const { enabledRoles, can } = usePosRoles();
   const [users, setUsers] = useState<LocalUser[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const isSupport = can(session.user?.role, 'appAdmin.view');
   /** The live test, handed to the pure last-account guards below. */
@@ -102,7 +111,14 @@ export function LocalPeoplePanel() {
   return (
     <div>
       <section style={section}>
-        <span style={fieldLabel}>{t('pos.admin.people.listTitle')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ ...fieldLabel, flex: 1 }}>{t('pos.admin.people.listTitle')}</span>
+          {mayEdit ? (
+            <Button size="sm" onClick={() => setAddOpen(true)}>
+              {t('pos.admin.people.add')}
+            </Button>
+          ) : null}
+        </div>
         {loadFailed ? (
           <PanelLoadError onRetry={() => void refresh()} />
         ) : users === null ? (
@@ -180,6 +196,12 @@ export function LocalPeoplePanel() {
           if (!next) setPasswordFor(null);
         }}
         user={passwordFor}
+      />
+
+      <LocalPersonFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onSaved={() => void refresh()}
       />
     </div>
   );

@@ -286,6 +286,7 @@ const tr: MessageDict = {
     'Okutma sayılan tuş vuruşları arasındaki en fazla milisaniye. Okutmalar bölünüyorsa artırın; hızlı yazma okutma sanılıyorsa azaltın.',
   'pos.settings.save': 'Kaydet',
   'pos.settings.saved': 'Ayarlar kaydedildi',
+  'pos.settings.appVersion': 'Kasa sürümü {version}',
   // Storage health and the recovered sale (v13.2)
   'pos.settings.storage.healthTitle': 'Bu bilgisayar verilerinizi saklıyor mu?',
   'pos.settings.storage.persisted': 'Korumalı depolama',
