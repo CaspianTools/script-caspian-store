@@ -11,6 +11,10 @@ import type { PosLocalCapability } from './standalone/types';
 import { PosAppAdminPage } from './standalone/admin/pos-app-admin-page';
 import { PosOpeningCashGate } from './standalone/pos-opening-cash-gate';
 import { LocalStorePanel } from './standalone/admin/local-store-panel';
+import { LocalProductPage } from './standalone/admin/local-product-page';
+import { LocalReceiveStockPage } from './standalone/admin/local-receive-stock-page';
+import { LocalCategoriesPanel } from './standalone/admin/local-categories-panel';
+import { LocalSuppliersPanel } from './standalone/admin/local-suppliers-panel';
 import { LocalSalesPage } from './standalone/admin/local-sales-panel';
 import { LocalPeoplePage } from './standalone/admin/local-people-panel';
 import { usePosLicense } from './license/use-pos-license';
@@ -20,6 +24,7 @@ import { PosAdapterProvider, usePosAdapter } from './pos-adapter-context';
 import { PosOpenSaleProvider } from './open-sale-context';
 import { PosOpenSaleBanner } from './open-sale-banner';
 import { PosAutoBackupProvider } from './standalone/auto-backup-context';
+import { PosShopSettingsProvider, usePosShopSettings } from './standalone/shop-settings-context';
 import { PosServiceWorker } from './pos-service-worker';
 import { PosSidebar, type PosNavItem } from './pos-sidebar';
 import { PosTopbar } from './pos-topbar';
@@ -57,7 +62,17 @@ export function PosShell({ children }: { children: ReactNode }) {
           */}
           <PosOpenSaleProvider>
             <PosAutoBackupProvider>
-              <PosShellChrome>{children}</PosShellChrome>
+              {/*
+                Above `PosShellChrome`, which is where the menu is built, and
+                therefore above `PosRoot`, which the chrome renders as its
+                children. Both halves have to agree about which optional
+                screens this shop has: a menu that grew a Categories link a
+                frame after the route already resolved would be a link to a
+                page that had just bounced to the register.
+              */}
+              <PosShopSettingsProvider>
+                <PosShellChrome>{children}</PosShellChrome>
+              </PosShopSettingsProvider>
             </PosAutoBackupProvider>
           </PosOpenSaleProvider>
         </PosAdapterProvider>
@@ -216,7 +231,12 @@ export function PosRoot(): ReactNode {
   const { standalone, user } = usePosLocalSession();
   const { can } = usePosRoles();
   const after = stripLocalePrefix(pathname).replace(/^\/pos\/?/, '');
-  const [head] = after.split('/');
+  // The store is the one screen with a second level: `/pos/store/receive`,
+  // `/pos/store/categories`, `/pos/store/suppliers`, and otherwise a product
+  // id. `screenOf` still keys on `head` alone, so the sidebar stays lit on
+  // Store for all of them.
+  const [head, sub] = after.split('/');
+  const { settings } = usePosShopSettings();
 
   // The back office used to live at /pos/admin holding four tabs. Three are
   // pages of their own now and the fourth is a settings section, so the address
@@ -255,8 +275,24 @@ export function PosRoot(): ReactNode {
       return !standalone || can(user?.role, 'settings.view') ? <PosSettingsPage /> : register;
     case 'queue':
       return <PosQueuePage />;
-    case 'store':
-      return opens('store.view') ? <LocalStorePanel /> : register;
+    case 'store': {
+      if (!opens('store.view')) return register;
+      // Reserved words first, then anything else is a product id. A screen the
+      // shop has switched off, or that this role cannot open, lands on the
+      // products list rather than the register: whoever got here holds
+      // `store.view`, so the useful place to put them is the screen they can
+      // see, not the till.
+      if (sub === 'receive') {
+        return can(user?.role, 'stock.receive') ? <LocalReceiveStockPage /> : <LocalStorePanel />;
+      }
+      if (sub === 'categories') {
+        return settings.categoriesEnabled ? <LocalCategoriesPanel /> : <LocalStorePanel />;
+      }
+      if (sub === 'suppliers') {
+        return settings.suppliersEnabled ? <LocalSuppliersPanel /> : <LocalStorePanel />;
+      }
+      return sub ? <LocalProductPage productId={sub} /> : <LocalStorePanel />;
+    }
     case 'sales':
       return opens('sales.view') ? <LocalSalesPage /> : register;
     case 'people':

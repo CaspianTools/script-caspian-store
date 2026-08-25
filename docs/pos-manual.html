@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v13.2.0"
+      "version": "v13.3.0"
     },
     "parts": [
       {
@@ -1777,7 +1777,7 @@ const MANUAL = {
             "audience": "staff",
             "summary": "An honest list of the things this register does not have, so that you find out here rather than in front of a queue. With one exception, called out below, none of these are settings that can be switched on: the screens simply do not exist in this version.",
             "notes": [
-              "There is no returns or refunds screen anywhere in this product. A refund has to be handled outside the register, by whatever means your shop already uses.",
+              "There is no returns or refunds screen at the counter. Nothing recalls a receipt, and no button gives money back - a refund is handled outside the register, by whatever means your shop already uses. A till that runs on its own can put the goods back on the shelf afterwards and record why, on the item\u2019s own page - see \"Putting stock right by hand\". That moves the stock and nothing else; the money is still yours to hand over.",
               "There is no shift, no cash-up and no Z-report, and nothing opens or closes a till session. The one exception on this page: a till that runs on its own can be set to ask you what is in the drawer at the start of a day. That figure is written down and never compared with anything - see \"Confirming the cash in the drawer\".",
               "There is no promo code box at the counter and no way to attach a customer to a sale. You can take a fixed amount off a single line with the tag button on it, and that is the only discount there is - no percentages, and nothing that comes off the sale as a whole.",
               "There is no way to attach a customer to a counter sale. Every sale is recorded as a walk-in, even for a regular you know by name.",
@@ -1796,7 +1796,7 @@ const MANUAL = {
         "id": "standalone-till",
         "icon": "i-store",
         "title": "A till that runs on its own",
-        "blurb": "The screens a register keeps when there is no website behind it: the store, the sales, the people, the shop record and the backup.",
+        "blurb": "The screens a register keeps when there is no website behind it: the store and everything under it, the sales, the people, the shop record and the backup.",
         "sections": [
           {
             "id": "where-the-back-office-went",
@@ -1823,19 +1823,32 @@ const MANUAL = {
             "title": "The Store screen: your catalogue on this computer",
             "audience": "owner",
             "route": "/pos/store",
-            "summary": "The catalogue this till scans from, kept on the machine itself. It is a searchable list of every item with its barcode, its price and how much stock it has, and a form for adding and correcting them. It is in the menu under Shop, for anybody whose role may see the store.",
+            "summary": "The catalogue this till scans from, kept on the machine itself. It is a searchable list of every item with its barcode, its price and how much stock it has. Each row opens that item\u2019s own page, and the two ways stock arrives - a new item, or more of one you already sell - are the two buttons above the list. It is in the menu under Shop, for anybody whose role may see the store.",
             "steps": [
               "Press Store in the menu, under Shop.",
               "Search with the box above the list. It matches the name, your own code and the barcode, and filters as you type.",
+              "Press an item\u2019s name, or Open at the end of its row, to see everything about it and everything that has happened to it.",
               "Press \"Add item\" to put something new on the till. The form opens over the page.",
+              "Press \"Receive stock\" to take a delivery in - that is how you add more of something you already sell.",
               "Fill in at least a name and a price. Fill in the barcode, your own code, or both - those are what the counter matches when something is scanned or typed.",
-              "Write the stock as a count per size, like S:3;M:5. An item with no sizes takes _default:12.",
-              "Press \"Add it\". Edit reopens the same form on an existing item, and Delete asks before removing one."
+              "Press \"Add it\". Delete asks before removing an item."
             ],
             "fields": [
               {
                 "name": "Search",
                 "what": "Box above the list. Matches the item name, your own code and the barcode. It filters as you type; there is no button to press."
+              },
+              {
+                "name": "The strip above the list",
+                "what": "Items, Receive stock, and - if your shop has them switched on - Categories and Suppliers. It only appears when there is more than one screen to move between, so a shop with everything switched off sees the plain list it always saw."
+              },
+              {
+                "name": "Group filter",
+                "what": "Beside the search box, and only when Categories is switched on for your shop. Narrows the list to one group."
+              },
+              {
+                "name": "Receive stock",
+                "what": "Opens the delivery screen. Only for a role holding \"Receive stock\"."
               },
               {
                 "name": "Add item",
@@ -1847,11 +1860,11 @@ const MANUAL = {
               },
               {
                 "name": "Barcode / Your code",
-                "what": "What the counter looks for when something is scanned or typed: the barcode first, then your own code, then the item’s internal id."
+                "what": "What the counter looks for when something is scanned or typed: the barcode first, then your own code, then the item\u2019s internal id."
               },
               {
                 "name": "Group",
-                "what": "Free text, for your own sorting. Nothing at the counter uses it."
+                "what": "Which group the item is filed under. It is a box you type in, unless Categories is switched on for your shop, in which case it is a list to pick from. Nothing at the counter uses it."
               },
               {
                 "name": "Sizes",
@@ -1859,21 +1872,310 @@ const MANUAL = {
               },
               {
                 "name": "In stock",
-                "what": "A count per size, written size:count and separated by semicolons - S:3;M:5. For an item with no sizes write _default:12. The list shows the total of all sizes in its Stock column."
+                "what": "A count per size, written size:count and separated by semicolons - S:3;M:5. For an item with no sizes write _default:12. The list shows the total of all sizes in its Stock column. Once you are receiving deliveries you will rarely type in this box again."
               },
               {
-                "name": "Edit / Delete",
-                "what": "At the end of each row, and only for a role that may add and edit items. Delete asks \"Remove ... from the till?\" first, and sales already taken keep their record."
+                "name": "Description",
+                "what": "Free text about the item, shown on its own page in the back office. It never appears on a receipt or at the counter."
+              },
+              {
+                "name": "Received in batches with expiry dates",
+                "what": "A tick on the item form, and only there when Batches is switched on for your shop. See \"Batches and expiry dates\"."
+              },
+              {
+                "name": "Open / Delete",
+                "what": "At the end of each row. Delete is only for a role that may add and edit items; it asks \"Remove ... from the till?\" first, and sales already taken keep their record."
               }
             ],
             "notes": [
               "The list shows every item and the heading counts them. There is no paging.",
-              "There is no way to import a spreadsheet on this screen. Items go on one at a time, or come back from a backup file - so filling a till for the first time is honest typing.",
-              "An item can be marked hidden, and the word appears beside its name in the list, but nothing on this screen sets it. It arrives that way from a backup. A hidden item cannot be scanned or found at the counter.",
+              "Editing an item is now on the item\u2019s own page rather than in the row. Press the name, then Edit.",
+              "There is no way to import a spreadsheet on this screen. Items go on one at a time, arrive on a delivery, or come back from a backup file.",
+              "An item can be marked hidden, and the word appears beside its name in the list, but nothing on this screen sets it. It arrives that way from a backup. A hidden item cannot be scanned or found at the counter - but it can still be received, because a delivery of something you have taken off the shelf is still a delivery.",
               "Prices are read from this list at the moment a sale is completed. Correcting a price here changes what the next sale charges and nothing that has already been rung up.",
               "Stock is allowed to go negative. Selling more than the count says does not block the sale; the shortfall is recorded against it and the count goes below zero, which is your signal to come here and correct it.",
               "Deleting an item does not touch the sales that included it. Those keep the name and the price they were rung up at.",
               "This screen is only on a till that runs on its own, and only for a role holding \"See the store\". Adding, editing and deleting need the second tick, \"Add and edit items\"; without it those buttons are not on the screen at all."
+            ]
+          },
+          {
+            "id": "a-product-page",
+            "title": "An item\u2019s own page: everything that has happened to it",
+            "audience": "owner",
+            "route": "/pos/store/<item>",
+            "summary": "Press an item\u2019s name on the Store screen and you get a page about that item alone: what it is, what is on the shelf, what it has cost you and what it has earned, and a dated list of every single thing that has moved it - deliveries in, sales out, returns back, and anything put right by hand.",
+            "steps": [
+              "Open Store and press an item\u2019s name, or Open at the end of its row.",
+              "Read the row of figures near the top: what is on the shelf, what has been received, sold, returned and adjusted, the price and margin, and what the stock is worth.",
+              "Read \"On the shelf\" under it for the count per size.",
+              "If the item is received in batches, read the Batches table: each batch with its code, its date, what came in and what is left.",
+              "Read \"Everything that has happened\" at the foot. It is newest first, twenty-five at a time, with a button for more.",
+              "Use the buttons at the top to Edit the item, Receive stock of it, put its stock right by hand, or Delete it."
+            ],
+            "fields": [
+              {
+                "name": "On the shelf",
+                "what": "The count the counter sells against, added up across every size."
+              },
+              {
+                "name": "Received / Sold / Returned / Adjusted",
+                "what": "Totals for the whole life of the item, worked out from the list at the foot of the page rather than stored separately. Returned counts only what was recorded with the reason \"A customer brought it back\"."
+              },
+              {
+                "name": "Sells for",
+                "what": "The price, with what the last delivery cost you underneath it and the margin between the two. The cost line is missing until you have received the item at least once - a margin worked out against a cost nobody entered would be a number to act on and wrong."
+              },
+              {
+                "name": "Stock value",
+                "what": "What is on the shelf multiplied by the last price you paid for it."
+              },
+              {
+                "name": "Everything that has happened",
+                "what": "When, what (Received, Sold, Returned or Adjusted), how many with a plus or a minus, the size, the reference - a receipt number for a sale, your invoice number for a delivery - and who did it."
+              }
+            ],
+            "notes": [
+              "The first time this page is opened on a till that has been trading a while, it writes up the sales it already had so the history is complete. That happens once and takes a moment; every visit after it is immediate.",
+              "If the figures and the shelf ever disagree, the page says so under the shelf count. It means a quantity was typed straight into the item form rather than received or adjusted - the form still lets you do that, and nothing records why.",
+              "The list is written once and never edited, like the sales list. A mistake is corrected with another adjustment, not by changing a line here.",
+              "Deleting from this page removes the item and returns you to the Store screen. The sales that included it keep their record."
+            ]
+          },
+          {
+            "id": "receiving-stock-on-this-till",
+            "title": "Receive stock: taking a delivery in",
+            "audience": "owner",
+            "route": "/pos/store/receive",
+            "summary": "How more of something gets onto the shelf. Scan the boxes as you unpack them, or work down a supplier\u2019s invoice and type it. Anything the till does not recognise becomes a new item there and then. Nothing moves until you press Confirm.",
+            "steps": [
+              "Press \"Receive stock\" on the Store screen, or Receive stock in the strip above the list.",
+              "Choose \"Scan it\" or \"Type it\" at the top.",
+              "Scanning: scan a label and it joins the delivery. Scan the same one again and its count goes up by one. There is no button to press between scans.",
+              "If the till has never seen the code, the item form opens with the barcode already filled in. Give it a name and a price, save, and it joins the delivery.",
+              "Typing: search for the item by name, code or barcode and press it in the results. \"Add an item the shop does not have yet\" opens the same form with nothing filled in.",
+              "Fill in the delivery note or invoice number under \"The delivery\", and the supplier if your shop has them switched on.",
+              "Go down the list and correct the count and the cost each. If an item is received in batches, give the batch its code and its best-before date here.",
+              "Check \"Units\" and \"Delivery cost\" against the paperwork.",
+              "Press \"Confirm the delivery\"."
+            ],
+            "fields": [
+              {
+                "name": "Scan it / Type it",
+                "what": "Two ways to put items on the delivery. Scanning listens for a scanner the way the counter does; typing gives you a search box."
+              },
+              {
+                "name": "Invoice or delivery note",
+                "what": "Whatever number is on the supplier\u2019s paperwork. Free text. It is written against every item on the delivery, so you can find them from an item\u2019s own page later."
+              },
+              {
+                "name": "Supplier",
+                "what": "Only there when Suppliers is switched on for your shop. Picks from the suppliers you have added; \"Not saying\" is always allowed."
+              },
+              {
+                "name": "How many / Cost each",
+                "what": "Per line. Cost each is what you paid per unit, and it becomes the item\u2019s last cost - which is what the margin and the stock value on its own page are worked out from."
+              },
+              {
+                "name": "Batch / Best before",
+                "what": "Per line, and only for an item set to be received in batches. Leave the date empty for something that does not go out of date."
+              },
+              {
+                "name": "Units / Delivery cost",
+                "what": "The running totals at the foot: how many units in the whole delivery, and what it came to."
+              },
+              {
+                "name": "Confirm the delivery",
+                "what": "Puts the stock on the shelf, records the batches, and writes a line into every item\u2019s history. Off until there is at least one item on the delivery."
+              },
+              {
+                "name": "Throw this away",
+                "what": "Clears the whole delivery without putting anything on the shelf. It asks first."
+              }
+            ],
+            "notes": [
+              "Nothing moves until you press Confirm. Up to that point the delivery is saved as you go, so closing the tab half-way through forty boxes and coming back finds it where you left it.",
+              "One delivery at a time. Confirming clears the screen ready for the next one.",
+              "A confirmed delivery is not edited afterwards. A miscount is corrected with an adjustment on the item\u2019s own page, which leaves both the delivery and the correction on the record.",
+              "This screen needs the role permission \"Receive stock\". Cashier does not have it; Storekeeper, Manager, Admin and Support do. It is a permission you can tick on a custom role like any other.",
+              "Receiving works for a hidden item. Scanning one still finds it, because a delivery of something you have taken off the shelf is still a delivery.",
+              "Cost each is only ever seen here and in the back office. Nothing at the counter shows a customer what you paid."
+            ]
+          },
+          {
+            "id": "batches-and-expiry-dates",
+            "title": "Batches and expiry dates",
+            "audience": "owner",
+            "summary": "For food, medicine and anything else with a date on it. An item set to use batches is received in batches - each with its own code and best-before date - and the counter always sells the batch that goes out of date first, without the cashier having to think about it.",
+            "steps": [
+              "Ask whoever installed the till to switch Batches on for your shop, on the App admin page.",
+              "Open an item and press Edit.",
+              "Tick \"Received in batches with expiry dates\" and save.",
+              "From then on, receiving that item asks for a batch code and a best-before date on every line.",
+              "The item\u2019s own page grows a Batches table: each batch, its date, what came in, what is left.",
+              "The Store list marks the item \"Going out of date\" within a month of its earliest live batch, and \"Out of date\" once that date has passed."
+            ],
+            "fields": [
+              {
+                "name": "Batch",
+                "what": "Your own code for the delivery - whatever is printed on the case. It can be left empty; the date is what the till sorts by."
+              },
+              {
+                "name": "Best before",
+                "what": "A calendar day. Leave it empty for stock that does not go out of date; undated stock is always sold after dated stock, so nothing perishable is left behind a tin."
+              },
+              {
+                "name": "Left",
+                "what": "What remains of that batch. A batch that runs out stays on the list at zero, greyed - it is the record of what was on the shelf when somebody bought it."
+              }
+            ],
+            "notes": [
+              "The counter never asks which batch. The till takes the earliest best-before first, splitting across batches when one cannot cover the sale.",
+              "An item is only marked out of date on the shelf. Nothing stops it being sold, and no message reaches the cashier - the register never blocks a sale, and this is not the exception.",
+              "Stock still goes negative if you sell more than the batches hold. The part no batch covered is recorded as sold with no batch against it, so the totals still add up.",
+              "Sizes keep their own batches. A medium coming off the shelf never draws down a large\u2019s dates.",
+              "Turning batches on for an item you already have stock of does not invent batches for what is on the shelf. The count stays as it is and sells as it always did; only what you receive from then on gets a date. If you need dates on what is already there, count it off with an adjustment and receive it back in as a batch.",
+              "Switching Batches off for the shop hides the boxes and the columns. It does not change what happens to stock: an item already set to use them goes on selling its earliest date first, so the shelf and the record stay in step.",
+              "Batches are not in the spreadsheet export or the template. They arrive through Receive stock and travel in the backup file."
+            ]
+          },
+          {
+            "id": "putting-stock-right-by-hand",
+            "title": "Putting stock right by hand",
+            "audience": "owner",
+            "summary": "The way a count changes when nothing was sold and nothing was delivered: a customer brought something back, a case was dropped, a shelf was counted and came out different. It is also the only place a return reaches your records.",
+            "steps": [
+              "Open the item from the Store screen.",
+              "Press \"Adjust stock\".",
+              "Choose \"Put stock back\" or \"Take stock off\".",
+              "Type how many, and pick the size if the item has sizes.",
+              "Pick why: a customer brought it back, damaged or thrown away, correcting a count, out of date, or something else.",
+              "Add a note if it will mean anything to you in a month.",
+              "Press \"Save the adjustment\"."
+            ],
+            "fields": [
+              {
+                "name": "Which way",
+                "what": "Two buttons. It is asked separately from the reason on purpose - a recount goes either way, and guessing the direction from the reason would occasionally double a discrepancy instead of correcting it."
+              },
+              {
+                "name": "Why",
+                "what": "Five reasons. \"A customer brought it back\" is the only one that counts towards the Returned figure on the item\u2019s page; the other four are recorded as adjustments."
+              },
+              {
+                "name": "Batch",
+                "what": "Only for an item received in batches. Taking stock off leaves it alone and it comes off the batch going out of date soonest. Putting stock back with no batch named makes a new undated batch, rather than handing the item an expiry date nobody checked."
+              }
+            ],
+            "notes": [
+              "This moves stock and nothing else. The register has no refund screen, so the money is still yours to hand over by whatever means your shop uses - see \"What the register cannot do\".",
+              "Every adjustment is written into the item\u2019s history with the reason, the note and your name. Nothing here is silent.",
+              "Adjusting needs \"Add and edit items\". A role that may only see the store does not get the button."
+            ]
+          },
+          {
+            "id": "categories-on-this-till",
+            "title": "Categories: the groups you file items under",
+            "audience": "owner",
+            "route": "/pos/store/categories",
+            "summary": "An optional screen. With it on, the Group box on an item becomes a list to pick from and the Store screen grows a filter. With it off - which is how every till starts - a group is just something you type, exactly as before.",
+            "steps": [
+              "Ask whoever installed the till to switch Categories on, on the App admin page.",
+              "Press Categories in the strip above the Store list.",
+              "Type a name and press Add.",
+              "Or press \"Take in the ones already used\" to bring the groups already typed on your items into the list in one go.",
+              "Use Up and Down to put them in the order you want them offered in.",
+              "Edit renames one; the items filed under it are renamed with it."
+            ],
+            "fields": [
+              {
+                "name": "Take in the ones already used",
+                "what": "Reads every item, collects the groups typed on them, and adds any that are not on the list. Nothing is changed on the items themselves."
+              },
+              {
+                "name": "Items",
+                "what": "How many items are filed under that group right now."
+              },
+              {
+                "name": "Up / Down",
+                "what": "The order the list is offered in on the item form and in the Store filter."
+              }
+            ],
+            "notes": [
+              "An item stores the name of its group, not a link to this list. That is why renaming here rewrites the items, and why deleting a group leaves them filed under the name they had.",
+              "Deleting a group only takes it off this list. Nothing is uncategorised behind your back.",
+              "Switching Categories off hides this screen and turns the Group box back into free text. Nothing you entered is lost, and switching it on again finds it all there.",
+              "Nothing at the counter uses groups. They are for finding things in the back office."
+            ]
+          },
+          {
+            "id": "suppliers-on-this-till",
+            "title": "Suppliers: who you buy from",
+            "audience": "owner",
+            "route": "/pos/store/suppliers",
+            "summary": "An optional screen. With it on, a delivery can say who it came from, and this list shows what each supplier has delivered and what you have spent with them.",
+            "steps": [
+              "Ask whoever installed the till to switch Suppliers on, on the App admin page.",
+              "Press Suppliers in the strip above the Store list.",
+              "Press \"Add a supplier\" and fill in at least a name.",
+              "From then on, Receive stock offers a Supplier list.",
+              "Read the table for how many deliveries each has made, what you have spent, and when the last one was."
+            ],
+            "fields": [
+              {
+                "name": "Name",
+                "what": "The only thing a supplier must have."
+              },
+              {
+                "name": "Contact / Phone / Email / Address",
+                "what": "All optional. The first three are shown together in the Contact column."
+              },
+              {
+                "name": "Deliveries / Spent / Last delivery",
+                "what": "Worked out from the deliveries you have confirmed, not typed in."
+              },
+              {
+                "name": "Stop using",
+                "what": "Takes a supplier out of the list offered on a delivery without removing it. Its name stays on the deliveries it already made."
+              }
+            ],
+            "notes": [
+              "A supplier that has delivered cannot be deleted, and the till says so. Its name is on that paperwork; stop using it instead.",
+              "A delivery freezes the supplier\u2019s name onto the batches it brings, so an item\u2019s page still names who it came from whatever happens to this list afterwards.",
+              "Switching Suppliers off hides this screen and takes the Supplier box off the delivery screen. Nothing already recorded changes."
+            ]
+          },
+          {
+            "id": "optional-screens-for-this-shop",
+            "title": "Turning the optional screens on",
+            "audience": "owner",
+            "route": "/pos/app-admin?section=features",
+            "summary": "Categories, Suppliers, and Batches with expiry dates are off for every shop until somebody turns them on. They are on the App admin page, which only a Support account can open, beside the roles and the opening-cash check.",
+            "steps": [
+              "Sign in with a Support account.",
+              "Press App admin at the foot of the menu.",
+              "Press \"Optional screens\" in the index down the left.",
+              "Press On or Off beside each one. It saves as you press; there is no Save button.",
+              "Sign back in as the shop, and the screens are in the strip above the Store list."
+            ],
+            "fields": [
+              {
+                "name": "Categories",
+                "what": "Adds the Categories screen and turns the Group box on an item into a list to pick from."
+              },
+              {
+                "name": "Suppliers",
+                "what": "Adds the Suppliers screen and lets a delivery say who it came from."
+              },
+              {
+                "name": "Batches and expiry dates",
+                "what": "Lets an item be received in batches with a code and a best-before date, sold earliest-date-first. Meant for food and medicine, not for clothing."
+              }
+            ],
+            "notes": [
+              "These are shop-wide, not per computer. Every till in the shop that shares this data sees the same answer.",
+              "Off is the way every till arrives, including one upgrading from an older version. Nothing about a shop that never touches this page changes.",
+              "Turning one off hides its screen and its boxes. It never deletes what you entered, and turning it back on finds it all there.",
+              "Batches is the one exception worth knowing: switching it off hides the boxes but does not change what happens to stock. An item already set to use batches goes on selling its earliest date first."
             ]
           },
           {
@@ -2472,7 +2774,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v13.2.0"
+      "version": "v13.3.0"
     },
     "parts": [
       {
@@ -3630,7 +3932,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v13.2.0"
+      "version": "v13.3.0"
     },
     "parts": [
       {
@@ -4788,7 +5090,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v13.2.0"
+      "version": "v13.3.0"
     },
     "parts": [
       {

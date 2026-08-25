@@ -46,7 +46,7 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 
 ```bash
 npm install github:CaspianTools/script-caspian-store#v13.2.0 firebase
-# v13.2.0 is the current release. For other versions, see:
+# v13.3.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -1246,13 +1246,37 @@ deploy and no Cloud Functions codebase.
 | --- | --- |
 | First run | Creates the **Support** account. Nothing else can happen until it exists. |
 | `/pos` | The register: scan, ticket, tender, receipt — the same screen as a cloud till. |
-| `/pos/store` | The catalogue: search the stock list, add, edit and delete items. |
+| `/pos/store` | The catalogue: search the stock list, add and delete items. Each row opens the item's own page. |
+| `/pos/store/<id>` | One item: its description, its stock per size, its batches, and a dated ledger of everything received, sold, returned and adjusted. Edit, receive, adjust and delete are here. |
+| `/pos/store/receive` | **Receive stock** — take a delivery in by scanner or by hand, with cost per unit and (for batched items) a batch code and expiry date. Needs the `stock.receive` capability. |
+| `/pos/store/categories` | The shop's group vocabulary. **Optional** — off unless switched on for the shop. |
+| `/pos/store/suppliers` | Who the shop buys from, with what each has delivered. **Optional** — off unless switched on for the shop. |
 | `/pos/sales` | Sales and takings, with a CSV export. |
 | `/pos/people` | The staff list: add someone, set their role, reset a password, disable or delete an account. |
 | `/pos/settings` | Appearance, language, this register's name and its scanner timing — plus a **Shop** section (shop details and receipt wording) and a **Backup** section, each shown only to a role that holds it. |
-| `/pos/app-admin` | Three panes: **Roles**, the role editor, **Opening cash**, the drawer-count switch, and **Licence**. Of the built-in roles only Support reaches it. |
+| `/pos/app-admin` | Four panes: **Roles**, the role editor, **Opening cash**, the drawer-count switch, **Optional screens**, and **Licence**. Of the built-in roles only Support reaches it. |
 
-`/pos/store`, `/pos/sales`, `/pos/people` and `/pos/app-admin` exist only in this mode —
+### The three optional screens (v13.3.0+)
+
+`categoriesEnabled`, `suppliersEnabled` and `lotTrackingEnabled` live on
+`LocalShopSettings` and are **off for every shop**, including one upgrading.
+Switch them on at **`/pos/app-admin` → Optional screens**, which only a Support
+account can open — they are an installation decision, not a shopkeeper's
+preference, and a corner shop with forty lines is not helped by discovering a
+Categories screen on its own.
+
+- **Categories** adds `/pos/store/categories` and turns an item's Group box into
+  a picker. A product stores the category *name*, not an id, so switching the
+  screen off leaves every item filed exactly where it was.
+- **Suppliers** adds `/pos/store/suppliers` and a Supplier box on a delivery.
+- **Batches and expiry dates** adds a per-item `tracksLots` tick. A batched item
+  is received with a code and a best-before date and sold earliest-date-first,
+  splitting across batches when one cannot cover a sale. Switching this off
+  hides the fields but **does not change stock behaviour** — an item already
+  marked `tracksLots` goes on drawing earliest-date-first, because a switch that
+  quietly stopped doing so would leave the shelf and the record disagreeing.
+
+`/pos/store` and everything under it, `/pos/sales`, `/pos/people` and `/pos/app-admin` exist only in this mode —
 on a cloud till those addresses fall back to `/pos`, because a mistyped URL should leave a
 cashier able to sell rather than sat on a screen with nothing behind it. `/pos` and
 `/pos/settings` render in both modes.
@@ -1276,6 +1300,7 @@ export, or the staff list without the password resets.
 | --- | --- |
 | `register` | Sell at the till |
 | `store.view` / `store.edit` | See the store / Add and edit items |
+| `stock.receive` | Receive stock (v13.3.0+) |
 | `sales.view` / `sales.export` | See sales / Export sales to a spreadsheet |
 | `people.view` / `people.edit` | See people / Add and edit people |
 | `settings.view` | Open settings |

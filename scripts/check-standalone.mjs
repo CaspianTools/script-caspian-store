@@ -60,6 +60,13 @@ const {
   RECENT_BACKUPS_KEPT,
   DAILY_BACKUPS_KEPT,
   OPEN_SALE_KEY,
+  allocateFefo,
+  sortLotsFefo,
+  summariseProductMovements,
+  receiptTotals,
+  lotExpiryState,
+  saleStockMovements,
+  DEFAULT_SIZE_KEY,
 } = lib;
 
 let passed = 0;
@@ -124,6 +131,7 @@ const products = [
     category: 'Clothing',
     sizes: ['S', 'M'],
     stock: { S: 3, M: 5 },
+    description: 'Soft cotton, regular fit.',
   }),
   makeLocalProduct({
     id: 'p2',
@@ -131,6 +139,8 @@ const products = [
     price: 8.5,
     barcode: '4006381333931',
     stock: { _default: 12 },
+    tracksLots: true,
+    costPrice: 4.25,
   }),
 ];
 
@@ -146,7 +156,18 @@ check('export then import round-trips every field', () => {
   for (const original of products) {
     const round = back.find((p) => p.id === original.id);
     assert.ok(round, 'missing ' + original.id);
-    for (const key of ['name', 'price', 'sku', 'barcode', 'category', 'isActive', 'imageUrl']) {
+    for (const key of [
+      'name',
+      'price',
+      'sku',
+      'barcode',
+      'category',
+      'isActive',
+      'imageUrl',
+      'description',
+      'tracksLots',
+      'costPrice',
+    ]) {
       assert.deepEqual(round[key], original[key], `${original.id}.${key} drifted`);
     }
     assert.deepEqual(round.sizes, original.sizes, 'sizes drifted');
@@ -229,6 +250,40 @@ check('a well-formed backup parses', () => {
   assert.ok(ok);
   assert.equal(ok.receiptCounter, 7);
 });
+check('a backup from before the stock records parses, with nothing to put back', () => {
+  const old = parseLocalBackup(
+    JSON.stringify({
+      format: 'caspian-standalone-till',
+      version: 3,
+      createdAtMillis: 1,
+      shop: {},
+      receiptCounter: 7,
+      products: [],
+      users: [],
+      sales: [],
+    }),
+  );
+  assert.ok(old, 'a v3 backup must still restore');
+  assert.equal(old.lots, undefined);
+  assert.equal(old.categories, undefined);
+});
+
+check('a stock record that is not a list is refused rather than walked', () => {
+  const bad = parseLocalBackup(
+    JSON.stringify({
+      format: 'caspian-standalone-till',
+      version: 4,
+      createdAtMillis: 1,
+      shop: {},
+      receiptCounter: 0,
+      products: [],
+      users: [],
+      lots: 'nope',
+    }),
+  );
+  assert.equal(bad, null);
+});
+
 check('backup filename is dated and sortable', () => {
   assert.equal(
     localBackupFilename(new Date(2026, 7, 23, 9, 5)),
@@ -535,6 +590,254 @@ check('a daylight-saving change does not move the calendar date', () => {
 check('the time to the next local day is never zero', () => {
   assert.equal(msUntilNextLocalDay(at(2026, 7, 24, 19, 0), BAKU), 60 * 60 * 1000);
   assert.equal(msUntilNextLocalDay(at(2026, 7, 24, 20, 0), BAKU), 24 * 60 * 60 * 1000);
+});
+
+console.log('batches');
+
+/** A lot, with only the fields the arithmetic reads. */
+const lot = (id, expiresOn, remainingQty, receivedAtMillis = 0, sizeKey = '_default') => ({
+  id,
+  productId: 'p1',
+  sizeKey,
+  lotCode: id.toUpperCase(),
+  expiresOn,
+  receivedQty: remainingQty,
+  remainingQty,
+  unitCost: 0,
+  supplierId: '',
+  receiptId: '',
+  receivedAtMillis,
+  note: '',
+});
+
+check('the earliest expiry goes out first, whatever order it arrived in', () => {
+  const order = sortLotsFefo([
+    lot('c', '2027-01-15', 5, 1),
+    lot('a', '2026-11-02', 5, 3),
+    lot('b', '2026-12-01', 5, 2),
+  ]).map((l) => l.id);
+  assert.deepEqual(order, ['a', 'b', 'c']);
+});
+
+check('stock with no date sorts last, so perishables move first', () => {
+  const order = sortLotsFefo([lot('undated', '', 5), lot('dated', '2030-01-01', 5)]).map((l) => l.id);
+  assert.deepEqual(order, ['dated', 'undated']);
+});
+
+check('same date falls back to what arrived first', () => {
+  const order = sortLotsFefo([
+    lot('newer', '2026-11-02', 5, 200),
+    lot('older', '2026-11-02', 5, 100),
+  ]).map((l) => l.id);
+  assert.deepEqual(order, ['older', 'newer']);
+});
+
+check('a draw takes the whole of the front lot before touching the next', () => {
+  const { draws, unfulfilled } = allocateFefo(
+    [lot('a', '2026-11-02', 4), lot('b', '2027-01-15', 10)],
+    7,
+  );
+  assert.equal(unfulfilled, 0);
+  assert.deepEqual(
+    draws.map((d) => [d.lotId, d.quantity]),
+    [['a', 4], ['b', 3]],
+  );
+});
+
+check('an empty lot is skipped rather than drawn from', () => {
+  const { draws } = allocateFefo([lot('spent', '2026-01-01', 0), lot('live', '2027-01-01', 3)], 2);
+  assert.deepEqual(draws, [{ lotId: 'live', lotCode: 'LIVE', quantity: 2 }]);
+});
+
+check('more than every lot holds is reported, never refused', () => {
+  const { draws, unfulfilled } = allocateFefo([lot('a', '2026-11-02', 2)], 5);
+  assert.equal(draws.length, 1);
+  assert.equal(draws[0].quantity, 2);
+  // The rule the whole till follows: the customer is already holding the goods.
+  assert.equal(unfulfilled, 3);
+});
+
+check('lots are only drawn for a product that tracks them', () => {
+  const plain = makeLocalProduct({ id: 'p1', name: 'Tote bag', price: 5, stock: { _default: 10 } });
+  const priced = priceLocalSale(
+    [{ productId: 'p1', name: 'Tote bag', unitPrice: 5, quantity: 2 }],
+    new Map([['p1', plain]]),
+    new Map([['p1', [lot('a', '2026-11-02', 10)]]]),
+  );
+  assert.equal(priced.lotDraws.length, 0);
+  assert.equal(priced.lotsAfter.size, 0);
+  // And the answer is exactly what it was before lots existed.
+  assert.equal(priced.stockAfter.get('p1')._default, 8);
+});
+
+check('a tracked product draws its earliest date and leaves the rest', () => {
+  const tracked = makeLocalProduct({
+    id: 'p1',
+    name: 'Yoghurt',
+    price: 1.2,
+    stock: { _default: 15 },
+    tracksLots: true,
+  });
+  const priced = priceLocalSale(
+    [{ productId: 'p1', name: 'Yoghurt', unitPrice: 1.2, quantity: 6 }],
+    new Map([['p1', tracked]]),
+    new Map([['p1', [lot('a', '2026-11-02', 4), lot('b', '2027-01-15', 11)]]]),
+  );
+  assert.deepEqual(
+    priced.lotDraws.map((d) => [d.lotId, d.quantity]),
+    [['a', 4], ['b', 2]],
+  );
+  assert.equal(priced.lotsAfter.get('a'), 0);
+  assert.equal(priced.lotsAfter.get('b'), 9);
+  assert.equal(priced.stockAfter.get('p1')._default, 9);
+});
+
+check('one size does not draw down another size lots', () => {
+  const tracked = makeLocalProduct({
+    id: 'p1',
+    name: 'Shirt',
+    price: 20,
+    sizes: ['S', 'M'],
+    stock: { S: 5, M: 5 },
+    tracksLots: true,
+  });
+  const priced = priceLocalSale(
+    [{ productId: 'p1', name: 'Shirt', unitPrice: 20, quantity: 2, selectedSize: 'M' }],
+    new Map([['p1', tracked]]),
+    new Map([
+      ['p1', [lot('small', '2026-11-02', 5, 0, 'S'), lot('medium', '2027-01-15', 5, 0, 'M')]],
+    ]),
+  );
+  assert.deepEqual(
+    priced.lotDraws.map((d) => d.lotId),
+    ['medium'],
+  );
+  assert.equal(priced.lotsAfter.get('medium'), 3);
+  assert.equal(priced.lotsAfter.has('small'), false);
+});
+
+console.log('the stock ledger');
+
+const soldSale = {
+  saleId: 's1',
+  receiptNumber: 'R-000001',
+  committedAtMillis: 1000,
+  cashierId: 'u1',
+  cashierName: 'Aysel',
+  lines: [
+    { productId: 'p1', quantity: 2, selectedSize: null },
+    { productId: 'p1', quantity: 1, selectedSize: null },
+    { productId: 'p2', quantity: 4, selectedSize: 'M' },
+  ],
+};
+
+check('a sale with no lots produces one row per product and size', () => {
+  const rows = saleStockMovements(soldSale);
+  assert.equal(rows.length, 2);
+  assert.equal(rows.find((r) => r.productId === 'p1').quantity, -3);
+  assert.equal(rows.find((r) => r.productId === 'p2').quantity, -4);
+  assert.equal(rows[0].sizeKey, DEFAULT_SIZE_KEY);
+  assert.equal(rows[0].kind, 'sale');
+  assert.equal(rows[0].reference, 'R-000001');
+  assert.equal(rows[0].userName, 'Aysel');
+});
+
+check('movement ids are deterministic, so a backfill can be run twice', () => {
+  const once = saleStockMovements(soldSale).map((r) => r.id);
+  const twice = saleStockMovements(soldSale).map((r) => r.id);
+  assert.deepEqual(once, twice);
+  assert.equal(new Set(once).size, once.length);
+  assert.ok(once[0].startsWith('sale:s1:'));
+});
+
+check('a lot-drawn sale has one row per lot, and they add up to what was sold', () => {
+  const rows = saleStockMovements(soldSale, [
+    { productId: 'p1', sizeKey: DEFAULT_SIZE_KEY, lotId: 'a', lotCode: 'A', quantity: 2 },
+    { productId: 'p1', sizeKey: DEFAULT_SIZE_KEY, lotId: 'b', lotCode: 'B', quantity: 1 },
+  ]);
+  const forP1 = rows.filter((r) => r.productId === 'p1');
+  assert.equal(forP1.length, 2);
+  assert.equal(
+    forP1.reduce((total, r) => total + r.quantity, 0),
+    -3,
+  );
+  assert.deepEqual(forP1.map((r) => r.lotId).sort(), ['a', 'b']);
+});
+
+check('an oversell still adds up: the part no lot covered gets its own row', () => {
+  const rows = saleStockMovements(soldSale, [
+    { productId: 'p1', sizeKey: DEFAULT_SIZE_KEY, lotId: 'a', lotCode: 'A', quantity: 1 },
+  ]).filter((r) => r.productId === 'p1');
+  assert.equal(
+    rows.reduce((total, r) => total + r.quantity, 0),
+    -3,
+  );
+  assert.equal(rows.find((r) => r.lotId === '').quantity, -2);
+});
+
+check('the figures on a product page net out to what is on the shelf', () => {
+  const summary = summariseProductMovements([
+    { kind: 'receipt', quantity: 24 },
+    { kind: 'sale', quantity: -19 },
+    { kind: 'return', quantity: 3 },
+    { kind: 'adjustment', quantity: -1 },
+  ]);
+  assert.deepEqual(summary, { received: 24, sold: 19, returned: 3, adjusted: -1, onHand: 7 });
+});
+
+check('nothing having happened is zero, not a crash', () => {
+  assert.deepEqual(summariseProductMovements([]), {
+    received: 0,
+    sold: 0,
+    returned: 0,
+    adjusted: 0,
+    onHand: 0,
+  });
+});
+
+console.log('what a delivery cost');
+
+check('a delivery totals its lines', () => {
+  const totals = receiptTotals([
+    { quantity: 24, unitCost: 0.6 },
+    { quantity: 12, unitCost: 0.45 },
+  ]);
+  assert.deepEqual(totals, { lineCount: 2, unitCount: 36, totalCost: 19.8 });
+});
+
+check('a delivery does not drift, however many lines it has', () => {
+  // The float answer is 2.0999999999999996 — a delivery that will not match its
+  // own invoice, which is an argument with a supplier.
+  assert.equal(receiptTotals([{ quantity: 3, unitCost: 0.07 }]).totalCost, 0.21);
+  const many = Array.from({ length: 30 }, () => ({ quantity: 1, unitCost: 0.07 }));
+  assert.equal(receiptTotals(many).totalCost, 2.1);
+});
+
+check('a negative quantity or cost cannot inflate a delivery', () => {
+  assert.equal(receiptTotals([{ quantity: -5, unitCost: 10 }]).totalCost, 0);
+  assert.equal(receiptTotals([{ quantity: 5, unitCost: -10 }]).totalCost, 0);
+});
+
+console.log('expiry dates');
+
+check('a date that has passed reads as out of date', () => {
+  assert.equal(lotExpiryState('2026-08-20', '2026-08-25'), 'expired');
+});
+
+check('a lot is sellable on the day it expires', () => {
+  // Not 'expired': it is good until the day is out, and a shop that binned it
+  // at midnight would bin a day of stock it could have sold.
+  assert.equal(lotExpiryState('2026-08-25', '2026-08-25'), 'soon');
+});
+
+check('the warning window is a whole number of days from today', () => {
+  assert.equal(lotExpiryState('2026-09-24', '2026-08-25', 30), 'soon');
+  assert.equal(lotExpiryState('2026-09-25', '2026-08-25', 30), 'ok');
+});
+
+check('stock with no date never warns', () => {
+  assert.equal(lotExpiryState('', '2026-08-25'), 'none');
+  assert.equal(lotExpiryState('not a date', '2026-08-25'), 'none');
 });
 
 console.log('misc');

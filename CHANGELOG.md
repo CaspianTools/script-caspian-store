@@ -16,6 +16,84 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.3.0 — Store management: item pages, deliveries, batches
+
+### Consumer action required on upgrade
+
+Reinstall, then — on each standalone till — decide which of the three optional
+screens the shop should have. They are **off** for every shop, including one
+upgrading, so a till nobody touches works exactly as it did.
+
+1. Reinstall:
+   ```bash
+   npm install github:CaspianTools/script-caspian-store#v13.3.0
+   ```
+2. Sign in to the till with a **Support** account, open **App admin → Optional
+   screens**, and switch on any of **Categories**, **Suppliers** and **Batches
+   and expiry dates** the shop needs.
+3. Nothing else. The register database moves to version 5 on first open, which
+   adds five stores and touches none of the existing ones; a shop that has been
+   trading writes its past sales into the new stock history the first time
+   somebody opens an item's page.
+
+Cloud shops are unaffected — every screen here is standalone-only, and a wired
+register sends `/pos/store*` to the sale screen as it always did.
+
+### Added
+
+- **Every item has its own page**, at `/pos/store/<item>`. Its description,
+  what is on the shelf per size, what it has been received, sold, returned and
+  adjusted over its whole life, what the stock is worth, the margin against the
+  last price paid, and a dated list of every movement with who did it and why.
+- **Receive stock** (`/pos/store/receive`) — take a delivery in by scanning it
+  or by typing it off the supplier's invoice. A scan of something the till has
+  never seen opens the item form with the barcode already in it; a scan of
+  something it knows adds one more. Captures cost per unit, so margin and stock
+  value are real figures rather than guesses. The delivery is saved as a draft
+  while it is being entered, so a dropped tab half-way through forty boxes does
+  not mean starting again. Behind a new role permission, **Receive stock**.
+- **Batches with expiry dates**, per item, off by default. A batch carries its
+  own code, best-before date, cost and supplier, and the counter sells the
+  batch that goes out of date first — splitting across batches when one cannot
+  cover a sale, and recording an oversell rather than refusing it, like the
+  rest of the till. Sizes keep their own batches. The Store list marks an item
+  going out of date within a month, and out of date after.
+- **Adjust stock** on an item's page: a signed quantity with a reason —
+  customer return, damaged, correcting a count, out of date, other. This is the
+  only route a return reaches the books; the register still has no refund
+  screen, and the manual says so.
+- **Categories** and **Suppliers**, two optional screens switched on per shop
+  from App admin. Categories turns the Group box on an item into a picker and
+  adds a filter to the Store list; Suppliers lets a delivery say who it came
+  from and totals what has been spent with each.
+- **Optional screens** pane on `/pos/app-admin`, alongside roles and the
+  opening-cash check.
+- Products gain `description`, `tracksLots` and `costPrice`, all three carried
+  by the catalogue CSV so an export → import round-trip still reproduces the
+  item.
+
+### Changed
+
+- The Store screen is rebuilt on the register's own `cpos-*` classes, rows link
+  to the item's page, and editing moved from the row to that page.
+- `LOCAL_BACKUP_VERSION` is 4: the backup now carries batches, the stock
+  history, deliveries, categories and suppliers. A v3 file still restores and
+  simply has no stock history to put back; a v4 file is refused by a v3 reader
+  rather than being read with half of it dropped.
+- The register database is at version 5. The five new stores are additive;
+  `clearPosDb` still wipes only the cloud caches, and all five join
+  `factoryResetLocalStore` and the backup.
+- `priceLocalSale` takes an optional lot map and returns what a sale drew from.
+  Called without it — every call a shop makes until it turns batches on — the
+  output is byte-identical to before.
+
+### Notes
+
+- Still no refund flow at the counter, no purchase orders, no low-stock
+  thresholds, and no CSV import button on the Store screen.
+- Batches are not in the CSV. They arrive through Receive stock and travel in
+  the JSON backup, so nobody can invent stock history in a spreadsheet.
+
 ## v13.2.0 — A till that cannot lose what it is holding
 
 ### No consumer action required

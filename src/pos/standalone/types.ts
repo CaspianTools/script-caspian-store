@@ -52,6 +52,7 @@ export type PosLocalCapability =
   | 'register'
   | 'store.view'
   | 'store.edit'
+  | 'stock.receive'
   | 'sales.view'
   | 'sales.export'
   | 'people.view'
@@ -73,6 +74,7 @@ export const CAPABILITY_GROUPS: ReadonlyArray<{
     capabilities: [
       'store.view',
       'store.edit',
+      'stock.receive',
       'sales.view',
       'sales.export',
       'people.view',
@@ -114,6 +116,7 @@ const MANAGER_CAPABILITIES: readonly PosLocalCapability[] = [
   'register',
   'store.view',
   'store.edit',
+  'stock.receive',
   'sales.view',
   'sales.export',
   'people.view',
@@ -162,7 +165,7 @@ export const BUILTIN_ROLES: RoleDefinition[] = [
     id: 'storekeeper',
     name: 'Storekeeper',
     enabled: true,
-    capabilities: ['store.view', 'store.edit', 'settings.view'],
+    capabilities: ['store.view', 'store.edit', 'stock.receive', 'settings.view'],
     builtIn: true,
   },
   {
@@ -193,7 +196,7 @@ export const BUILTIN_ROLES: RoleDefinition[] = [
  */
 const CAPABILITIES_BY_AREA: Record<PosLocalArea, readonly PosLocalCapability[]> = {
   register: ['register'],
-  store: ['store.view', 'store.edit'],
+  store: ['store.view', 'store.edit', 'stock.receive'],
   admin: ['people.view', 'people.edit', 'settings.view', 'settings.shop', 'settings.backup'],
   reports: ['sales.view', 'sales.export'],
   settings: ['settings.view'],
@@ -290,11 +293,216 @@ export interface LocalProduct {
   price: number;
   sku: string;
   barcode: string;
+  /**
+   * The category NAME, not an id.
+   *
+   * `localCategories` is a managed vocabulary that fills a picker, not a
+   * foreign-key table: keeping the name here is what lets the CSV, the backup
+   * and `toProduct` stay exactly as they were, and what lets a shop with the
+   * Categories screen switched off go on typing whatever it likes. Renaming a
+   * category rewrites the products carrying it.
+   */
   category: string;
   sizes: string[];
+  /**
+   * On hand, per size key (`_default` for an item with no sizes).
+   *
+   * For a product with `tracksLots`, this is a PROJECTION of the remaining
+   * quantities in `localStockLots`, rewritten by whichever transaction moved
+   * them. It stays the field every reader reads -- the register tile, the
+   * receipt, `toProduct`, the CSV -- so lots did not have to ripple outwards.
+   */
   stock: Record<string, number>;
   isActive: boolean;
   imageUrl: string;
+  /** Shown on the product page. Free text; the till renders it as-is. */
+  description: string;
+  /**
+   * Whether this item is received in lots with codes and expiry dates, and sold
+   * first-expiry-first-out.
+   *
+   * Per product, not per shop: one counter sells both yoghurt and tote bags,
+   * and nobody wants to type an expiry date for a tote bag. A product with this
+   * off follows exactly the path it followed before lots existed.
+   */
+  tracksLots: boolean;
+  /** What the last delivery of this item cost per unit. Restamped on receipt. */
+  costPrice: number;
+  createdAtMillis: number;
+  updatedAtMillis: number;
+}
+
+/**
+ * A batch of one product, as it arrived.
+ *
+ * The unit a shop actually buys in: forty yoghurts off one delivery, with one
+ * expiry date between them. Authoritative for a product that tracks lots --
+ * `LocalProduct.stock` is kept in step with the sum of `remainingQty` here, and
+ * a sale draws the earliest expiry down first.
+ *
+ * Never deleted once it has been received. A lot that runs out sits at
+ * `remainingQty: 0` and stays, because it is the record of what was on the
+ * shelf when a customer bought it.
+ */
+export interface LocalStockLot {
+  id: string;
+  productId: string;
+  /** Which size bucket this lot feeds. `_default` for an item with no sizes. */
+  sizeKey: string;
+  /** What the shop calls the batch. Blank is allowed; the code is for humans. */
+  lotCode: string;
+  /**
+   * `YYYY-MM-DD`, local, or `''` for stock that does not expire.
+   *
+   * A date string rather than millis because an expiry is a calendar day, not
+   * an instant: a yoghurt is out of date on the 4th wherever the till is
+   * standing, and storing an instant would move that day for a shop that keeps
+   * its clock on the wrong offset.
+   */
+  expiresOn: string;
+  receivedQty: number;
+  remainingQty: number;
+  unitCost: number;
+  supplierId: string;
+  /** The delivery this lot came in on. */
+  receiptId: string;
+  receivedAtMillis: number;
+  note: string;
+}
+
+/**
+ * Why a quantity changed. Signed: positive put stock on the shelf.
+ *
+ * `sale` rows are written inside `commitLocalSale`'s own transaction, so the
+ * ledger cannot disagree with the sale that caused it.
+ */
+export type LocalStockMovementKind = 'receipt' | 'sale' | 'return' | 'adjustment';
+
+/**
+ * Why someone changed a quantity by hand.
+ *
+ * `customer-return` is the one that is not an adjustment: it writes a `return`
+ * movement, and it is the only thing the product page's Returned figure counts.
+ * The register has no refund flow, so a return reaches the books through here.
+ */
+export type LocalStockAdjustReason =
+  | 'customer-return'
+  | 'damaged'
+  | 'count-correction'
+  | 'expired'
+  | 'other';
+
+export const LOCAL_STOCK_ADJUST_REASONS: readonly LocalStockAdjustReason[] = [
+  'customer-return',
+  'damaged',
+  'count-correction',
+  'expired',
+  'other',
+] as const;
+
+/**
+ * One line of the stock ledger: what moved, when, why, and who did it.
+ *
+ * Append-only, like `LocalSale`. A mistake is corrected by another movement,
+ * never by editing this one -- that is what makes the history add up to the
+ * quantity on the shelf.
+ */
+export interface LocalStockMovement {
+  /**
+   * Deterministic for a sale (`sale:<saleId>:<lineIndex>`), random otherwise.
+   *
+   * That shape is what makes the one-time backfill of sales that predate this
+   * store idempotent: running it twice overwrites the same rows rather than
+   * doubling every product's sold figure.
+   */
+  id: string;
+  productId: string;
+  sizeKey: string;
+  /** Which lot moved, or `''` for a product that does not track them. */
+  lotId: string;
+  kind: LocalStockMovementKind;
+  /** Signed. Negative took stock off the shelf. */
+  quantity: number;
+  /** Set on `return` and `adjustment` rows only. */
+  reason: LocalStockAdjustReason | '';
+  /** A receipt number, a stock-receipt reference -- whatever names the cause. */
+  reference: string;
+  /** What a unit cost at the time, for a `receipt`; zero elsewhere. */
+  unitCost: number;
+  userId: string;
+  /** Frozen, so a renamed or disabled account still names who did it. */
+  userName: string;
+  atMillis: number;
+  note: string;
+}
+
+/** One line of a delivery as it is being entered. */
+export interface LocalStockReceiptLine {
+  productId: string;
+  /** Frozen at entry, so a later rename does not rewrite what was delivered. */
+  productName: string;
+  sizeKey: string;
+  quantity: number;
+  unitCost: number;
+  lotCode: string;
+  expiresOn: string;
+  note: string;
+}
+
+/**
+ * A delivery: its supplier, its paperwork, and what was in it.
+ *
+ * Kept in `draft` while a storekeeper is still scanning -- the same posture as
+ * the register's open ticket, and for the same reason: forty scans should
+ * survive a dropped tab. `posted` is the point at which stock moved, and a
+ * posted receipt is never edited.
+ */
+export interface LocalStockReceipt {
+  id: string;
+  /** The supplier's invoice or delivery-note number. Free text. */
+  reference: string;
+  supplierId: string;
+  /** Frozen, so a deleted supplier still names who delivered. */
+  supplierName: string;
+  lines: LocalStockReceiptLine[];
+  receivedAtMillis: number;
+  userId: string;
+  userName: string;
+  note: string;
+  totalCost: number;
+  status: 'draft' | 'posted';
+}
+
+/**
+ * One entry in the shop's category vocabulary.
+ *
+ * Optional: switched on per shop from App Admin. With it off, a product's
+ * category is whatever someone typed, exactly as before.
+ */
+export interface LocalCategory {
+  id: string;
+  name: string;
+  nameLower: string;
+  sortOrder: number;
+  createdAtMillis: number;
+  updatedAtMillis: number;
+}
+
+/** Who the shop buys from. Optional, switched on per shop from App Admin. */
+export interface LocalSupplier {
+  id: string;
+  name: string;
+  nameLower: string;
+  contactName: string;
+  phone: string;
+  email: string;
+  address: string;
+  note: string;
+  /**
+   * A supplier stops appearing in the picker rather than being deleted, so last
+   * quarter's deliveries still name who they came from.
+   */
+  isActive: boolean;
   createdAtMillis: number;
   updatedAtMillis: number;
 }
@@ -420,6 +628,22 @@ export interface LocalShopSettings {
    * that name would invite someone to wire the two together.
    */
   requireOpeningCash: boolean;
+  /**
+   * The optional screens, switched on per shop by whoever installed the till.
+   *
+   * Off by default and off on every till that upgrades into this release, for
+   * the reason `requireOpeningCash` gives above: `readLocalShopSettings` merges
+   * over the defaults, so a settings row written before these existed reads
+   * back false and no migration runs.
+   *
+   * `lotTrackingEnabled` hides the lot fields and columns; it does NOT change
+   * what happens to stock. A product already marked `tracksLots` goes on
+   * drawing first-expiry-first-out with this off, because a switch that quietly
+   * stopped drawing lots would leave the shelf and the record disagreeing.
+   */
+  categoriesEnabled: boolean;
+  suppliersEnabled: boolean;
+  lotTrackingEnabled: boolean;
   /** Set once, by Technical Support, when the machine is commissioned. */
   commissionedAtMillis: number;
 }
@@ -433,5 +657,8 @@ export const DEFAULT_LOCAL_SHOP_SETTINGS: LocalShopSettings = {
   roundCashTo: 0,
   showTaxOnReceipt: false,
   requireOpeningCash: false,
+  categoriesEnabled: false,
+  suppliersEnabled: false,
+  lotTrackingEnabled: false,
   commissionedAtMillis: 0,
 };

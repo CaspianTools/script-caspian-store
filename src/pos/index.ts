@@ -71,6 +71,21 @@ export {
   type PricedLineInput,
 } from './standalone/price-local-sale';
 export {
+  DEFAULT_SIZE_KEY,
+  LOT_EXPIRY_WARNING_DAYS,
+  sortLotsFefo,
+  allocateFefo,
+  summariseProductMovements,
+  receiptTotals,
+  lotExpiryState,
+  saleStockMovements,
+  type LotDraw,
+  type LotAllocation,
+  type ProductMovementSummary,
+  type ReceiptTotals,
+  type LotExpiryState,
+} from './standalone/lot-allocation';
+export {
   evaluateOpeningCashGate,
   localDayKey,
   msUntilNextLocalDay,
@@ -79,6 +94,21 @@ export {
   type OpeningCashGateInput,
 } from './standalone/opening-cash';
 export { LocalSalesPanel, LocalSalesPage } from './standalone/admin/local-sales-panel';
+export { LocalStorePanel } from './standalone/admin/local-store-panel';
+export { LocalProductPage } from './standalone/admin/local-product-page';
+export { LocalReceiveStockPage } from './standalone/admin/local-receive-stock-page';
+export { LocalCategoriesPanel } from './standalone/admin/local-categories-panel';
+export { LocalSuppliersPanel } from './standalone/admin/local-suppliers-panel';
+export {
+  LocalStockAdjustDialog,
+  type LocalStockAdjustDialogProps,
+} from './standalone/admin/local-stock-adjust-dialog';
+export { StoreScreenNav, type StoreScreen } from './standalone/admin/store-screen-nav';
+export {
+  PosShopSettingsProvider,
+  usePosShopSettings,
+  type PosShopSettingsValue,
+} from './standalone/shop-settings-context';
 export { LocalPeoplePanel, LocalPeoplePage } from './standalone/admin/local-people-panel';
 export {
   LOCAL_PRODUCT_COLUMNS,
@@ -119,6 +149,15 @@ export {
   type LocalSaleLine,
   type LocalShopSettings,
   type LocalOpeningCash,
+  LOCAL_STOCK_ADJUST_REASONS,
+  type LocalStockLot,
+  type LocalStockMovement,
+  type LocalStockMovementKind,
+  type LocalStockAdjustReason,
+  type LocalStockReceipt,
+  type LocalStockReceiptLine,
+  type LocalCategory,
+  type LocalSupplier,
 } from './standalone/types';
 export {
   localStoreAvailable,
@@ -150,9 +189,32 @@ export {
   listLocalOpeningCash,
   factoryResetLocalStore,
   localRolesRow,
+  lookupLocalProductByCode,
+  listLocalLots,
+  listAllLocalLots,
+  listLocalMovements,
+  listLocalStockReceipts,
+  getLocalStockReceipt,
+  readLocalStockReceiptDraft,
+  writeLocalStockReceiptDraft,
+  discardLocalStockReceiptDraft,
+  postLocalStockReceipt,
+  adjustLocalStock,
+  backfillLocalStockMovements,
+  makeLocalCategory,
+  listLocalCategories,
+  saveLocalCategory,
+  renameLocalCategory,
+  deleteLocalCategory,
+  adoptLocalCategoriesFromProducts,
+  makeLocalSupplier,
+  listLocalSuppliers,
+  saveLocalSupplier,
+  deleteLocalSupplier,
   type LocalLookup,
   type LocalCommitInput,
   type LocalCommitLine,
+  type LocalStockAdjustInput,
 } from './standalone/local-db';
 export {
   hashLocalPassword,

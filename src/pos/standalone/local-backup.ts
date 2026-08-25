@@ -14,31 +14,46 @@
  */
 
 import {
+  listAllLocalLots,
+  listLocalCategories,
   listLocalOpeningCash,
   listLocalProducts,
   listLocalSales,
+  listLocalStockReceipts,
+  listLocalSuppliers,
   listLocalUsers,
   peekLocalReceiptCounter,
   readLocalRoles,
   readLocalShopSettings,
+  saveLocalCategory,
   saveLocalProducts,
+  saveLocalSupplier,
   saveLocalUser,
   writeLocalRoles,
   writeLocalShopSettings,
 } from './local-db';
 import {
   STORE_LOCAL_COUNTERS,
+  STORE_LOCAL_LOTS,
+  STORE_LOCAL_MOVEMENTS,
   STORE_LOCAL_OPENING_CASH,
+  STORE_LOCAL_RECEIPTS,
   STORE_LOCAL_SALES,
   idbGet,
+  idbGetAll,
   idbPut,
   posTx,
 } from '../offline/pos-queue-db';
 import type {
+  LocalCategory,
   LocalOpeningCash,
   LocalProduct,
   LocalSale,
   LocalShopSettings,
+  LocalStockLot,
+  LocalStockMovement,
+  LocalStockReceipt,
+  LocalSupplier,
   LocalUser,
   RoleDefinition,
 } from './types';
@@ -55,8 +70,13 @@ import type {
  * right way round for the same reason: those declarations are the only record
  * of what a cashier said was in the drawer, and an old build dropping them
  * loses them for good.
+ *
+ * v4 added the stock records — lots, the movement ledger, deliveries — and the
+ * category and supplier lists. Same rule again: a v3 file restores fine and
+ * simply has no stock history to put back, and a v4 file is refused by a v3
+ * reader rather than being read with the new half quietly dropped.
  */
-export const LOCAL_BACKUP_VERSION = 3;
+export const LOCAL_BACKUP_VERSION = 4;
 
 export interface LocalBackup {
   format: 'caspian-standalone-till';
@@ -84,10 +104,42 @@ export interface LocalBackup {
    * finds its drawer history gone has lost it silently.
    */
   openingCash?: LocalOpeningCash[];
+  /**
+   * What the shop bought and what became of it. Absent before v4.
+   *
+   * `lots` is the one that would hurt most to lose: for a lot-tracked product
+   * it is what `LocalProduct.stock` is a projection of, so a restore without it
+   * would put the shelf back with no idea what expires when.
+   */
+  lots?: LocalStockLot[];
+  movements?: LocalStockMovement[];
+  stockReceipts?: LocalStockReceipt[];
+  categories?: LocalCategory[];
+  suppliers?: LocalSupplier[];
+}
+
+/** Read whole, because the backup is the one place that wants every row. */
+async function listAllMovements(): Promise<LocalStockMovement[]> {
+  return posTx(STORE_LOCAL_MOVEMENTS, 'readonly', (tx) =>
+    idbGetAll<LocalStockMovement>(tx, STORE_LOCAL_MOVEMENTS),
+  );
 }
 
 export async function buildLocalBackup(): Promise<LocalBackup> {
-  const [shop, receiptCounter, products, users, sales, roles, openingCash] = await Promise.all([
+  const [
+    shop,
+    receiptCounter,
+    products,
+    users,
+    sales,
+    roles,
+    openingCash,
+    lots,
+    movements,
+    stockReceipts,
+    categories,
+    suppliers,
+  ] = await Promise.all([
     readLocalShopSettings(),
     peekLocalReceiptCounter(),
     listLocalProducts(),
@@ -95,6 +147,12 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     listLocalSales(),
     readLocalRoles(),
     listLocalOpeningCash(),
+    listAllLocalLots(),
+    listAllMovements(),
+    // Every delivery, not the screen's hundred: this file is the only copy.
+    listLocalStockReceipts(Number.MAX_SAFE_INTEGER),
+    listLocalCategories(),
+    listLocalSuppliers(),
   ]);
   return {
     format: 'caspian-standalone-till',
@@ -107,6 +165,11 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     sales,
     roles,
     openingCash,
+    lots,
+    movements,
+    stockReceipts,
+    categories,
+    suppliers,
   };
 }
 
@@ -130,6 +193,15 @@ export function parseLocalBackup(text: string): LocalBackup | null {
     if (parsed.sales != null && !Array.isArray(parsed.sales)) return null;
     if (parsed.roles != null && !Array.isArray(parsed.roles)) return null;
     if (parsed.openingCash != null && !Array.isArray(parsed.openingCash)) return null;
+    for (const rows of [
+      parsed.lots,
+      parsed.movements,
+      parsed.stockReceipts,
+      parsed.categories,
+      parsed.suppliers,
+    ]) {
+      if (rows != null && !Array.isArray(rows)) return null;
+    }
     return parsed as LocalBackup;
   } catch {
     return null;
@@ -146,6 +218,12 @@ export interface RestoreResult {
   roles: number;
   /** Drawer declarations put back. Zero for a v1 or v2 file, which carried none. */
   openingCash: number;
+  /** Stock records put back. Zero for anything older than v4. */
+  lots: number;
+  movements: number;
+  stockReceipts: number;
+  categories: number;
+  suppliers: number;
 }
 
 /**
@@ -191,6 +269,17 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     if (wrote) openingCashRestored++;
   }
 
+  // Append-only, like sales, and skipped rather than overwritten for the same
+  // reason: a lot on this till has been sold out of since the backup was taken,
+  // and putting the older copy back would refill a shelf that is empty.
+  const lots = await restoreAppendOnly(STORE_LOCAL_LOTS, backup.lots ?? []);
+  const movements = await restoreAppendOnly(STORE_LOCAL_MOVEMENTS, backup.movements ?? []);
+  const stockReceipts = await restoreAppendOnly(STORE_LOCAL_RECEIPTS, backup.stockReceipts ?? []);
+
+  // Vocabularies, not records of anything that happened, so these upsert.
+  for (const category of backup.categories ?? []) await saveLocalCategory(category);
+  for (const supplier of backup.suppliers ?? []) await saveLocalSupplier(supplier);
+
   await posTx(STORE_LOCAL_COUNTERS, 'readwrite', async (tx) => {
     const current = await idbGet<{ key: string; value: number }>(tx, STORE_LOCAL_COUNTERS, 'receipt');
     const next = Math.max(current?.value ?? 0, backup.receiptCounter ?? 0);
@@ -204,7 +293,36 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     salesSkipped: skipped,
     roles: backup.roles?.length ?? 0,
     openingCash: openingCashRestored,
+    lots,
+    movements,
+    stockReceipts,
+    categories: backup.categories?.length ?? 0,
+    suppliers: backup.suppliers?.length ?? 0,
   };
+}
+
+/**
+ * Put rows back without ever overwriting one this till already has.
+ *
+ * The rule sales and drawer counts already follow, applied to the three stock
+ * stores that are records of something that happened rather than lists somebody
+ * maintains.
+ */
+async function restoreAppendOnly(
+  store: typeof STORE_LOCAL_LOTS | typeof STORE_LOCAL_MOVEMENTS | typeof STORE_LOCAL_RECEIPTS,
+  rows: readonly { id: string }[],
+): Promise<number> {
+  let written = 0;
+  for (const row of rows) {
+    const wrote = await posTx(store, 'readwrite', async (tx) => {
+      const existing = await idbGet<{ id: string }>(tx, store, row.id);
+      if (existing) return false;
+      await idbPut(tx, store, row);
+      return true;
+    });
+    if (wrote) written++;
+  }
+  return written;
 }
 
 /**

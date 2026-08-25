@@ -12,7 +12,7 @@
  */
 
 export const DB_NAME = 'caspian-pos';
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
@@ -51,6 +51,21 @@ export const STORE_LOCAL_ROLES = 'localRoles';
  * must never touch it.
  */
 export const STORE_LOCAL_OPENING_CASH = 'localOpeningCash';
+/**
+ * What the shop bought, what is left of it, and every move in between.
+ *
+ * Added at version 5, and `local*` for the same reason as the rest: a delivery
+ * nobody wrote down anywhere else is gone the moment this is cleared.
+ *
+ * `localStockLots` is authoritative for a product that tracks lots --
+ * `LocalProduct.stock` is kept as a projection of it so the register, the
+ * receipt and the CSV can go on reading the field they always read.
+ */
+export const STORE_LOCAL_LOTS = 'localStockLots';
+export const STORE_LOCAL_MOVEMENTS = 'localStockMovements';
+export const STORE_LOCAL_RECEIPTS = 'localStockReceipts';
+export const STORE_LOCAL_CATEGORIES = 'localCategories';
+export const STORE_LOCAL_SUPPLIERS = 'localSuppliers';
 
 export type StoreName =
   | typeof STORE_QUEUE
@@ -64,7 +79,12 @@ export type StoreName =
   | typeof STORE_LOCAL_COUNTERS
   | typeof STORE_LOCAL_SETTINGS
   | typeof STORE_LOCAL_ROLES
-  | typeof STORE_LOCAL_OPENING_CASH;
+  | typeof STORE_LOCAL_OPENING_CASH
+  | typeof STORE_LOCAL_LOTS
+  | typeof STORE_LOCAL_MOVEMENTS
+  | typeof STORE_LOCAL_RECEIPTS
+  | typeof STORE_LOCAL_CATEGORIES
+  | typeof STORE_LOCAL_SUPPLIERS;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -137,6 +157,30 @@ export function openPosDb(): Promise<IDBDatabase> {
         // back office lists everyone in date order.
         opening.createIndex('by-cashier', 'cashierId');
         opening.createIndex('by-confirmedAt', 'confirmedAtMillis');
+      }
+      // One index each, and only where something reads through it. The stores
+      // above carry several that nothing has ever queried; adding one back
+      // later is a version bump, which this file does routinely.
+      if (!db.objectStoreNames.contains(STORE_LOCAL_LOTS)) {
+        const lots = db.createObjectStore(STORE_LOCAL_LOTS, { keyPath: 'id' });
+        // Every read of this store starts from one product.
+        lots.createIndex('by-product', 'productId');
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_MOVEMENTS)) {
+        const moves = db.createObjectStore(STORE_LOCAL_MOVEMENTS, { keyPath: 'id' });
+        moves.createIndex('by-product', 'productId');
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_RECEIPTS)) {
+        const receipts = db.createObjectStore(STORE_LOCAL_RECEIPTS, { keyPath: 'id' });
+        // Drafts are found by status, not by time: the receiving screen asks
+        // "is a delivery half-entered?" every time it opens.
+        receipts.createIndex('by-status', 'status');
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_CATEGORIES)) {
+        db.createObjectStore(STORE_LOCAL_CATEGORIES, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_SUPPLIERS)) {
+        db.createObjectStore(STORE_LOCAL_SUPPLIERS, { keyPath: 'id' });
       }
     };
     req.onsuccess = () => {

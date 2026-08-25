@@ -10,12 +10,17 @@
 
 import type { Product } from '../../types';
 import {
+  STORE_LOCAL_CATEGORIES,
   STORE_LOCAL_COUNTERS,
+  STORE_LOCAL_LOTS,
+  STORE_LOCAL_MOVEMENTS,
   STORE_LOCAL_OPENING_CASH,
   STORE_LOCAL_PRODUCTS,
+  STORE_LOCAL_RECEIPTS,
   STORE_LOCAL_ROLES,
   STORE_LOCAL_SALES,
   STORE_LOCAL_SETTINGS,
+  STORE_LOCAL_SUPPLIERS,
   STORE_LOCAL_USERS,
   STORE_TICKET,
   idbDelete,
@@ -29,15 +34,28 @@ import {
 import {
   BUILTIN_ROLES,
   DEFAULT_LOCAL_SHOP_SETTINGS,
+  type LocalCategory,
   type LocalOpeningCash,
   type LocalProduct,
   type LocalSale,
   type LocalShopSettings,
+  type LocalStockAdjustReason,
+  type LocalStockLot,
+  type LocalStockMovement,
+  type LocalStockReceipt,
+  type LocalSupplier,
   type LocalUser,
   type RoleDefinition,
 } from './types';
 import { latestOpeningCash, localDayKey } from './opening-cash';
 import { fromMinor, priceLocalSale, toMinor, type PricedLineInput } from './price-local-sale';
+import {
+  DEFAULT_SIZE_KEY,
+  allocateFefo,
+  receiptTotals,
+  saleStockMovements,
+  sortLotsFefo,
+} from './lot-allocation';
 
 const RECEIPT_COUNTER_KEY = 'receipt';
 const SETTINGS_KEY = 'shop';
@@ -72,7 +90,7 @@ export function toProduct(local: LocalProduct): Product {
     id: local.id,
     name: local.name,
     brand: '',
-    description: '',
+    description: local.description,
     price: local.price,
     sku: local.sku,
     barcode: local.barcode,
@@ -103,8 +121,37 @@ export function makeLocalProduct(
     stock: input.stock ?? {},
     isActive: input.isActive !== false,
     imageUrl: input.imageUrl ?? '',
+    description: input.description ?? '',
+    tracksLots: input.tracksLots === true,
+    costPrice: input.costPrice ?? 0,
     createdAtMillis: input.createdAtMillis ?? now,
     updatedAtMillis: now,
+  };
+}
+
+/**
+ * Fill in fields a row on disk predates.
+ *
+ * Products are read straight out of `getAll` with no merge step, unlike shop
+ * settings, so a catalogue written before `description`, `tracksLots` and
+ * `costPrice` existed hands back `undefined` for all three and every screen
+ * reading them has to defend itself. Normalising on the way out keeps the three
+ * fields required in the type and means no migration ever runs -- a till that
+ * upgrades overnight is not a till that rewrites its whole catalogue on boot.
+ */
+function hydrateLocalProduct(row: LocalProduct): LocalProduct {
+  if (
+    typeof row.description === 'string' &&
+    typeof row.tracksLots === 'boolean' &&
+    typeof row.costPrice === 'number'
+  ) {
+    return row;
+  }
+  return {
+    ...row,
+    description: row.description ?? '',
+    tracksLots: row.tracksLots === true,
+    costPrice: row.costPrice ?? 0,
   };
 }
 
@@ -113,7 +160,7 @@ export async function listLocalProducts(): Promise<LocalProduct[]> {
   const all = await posTx(STORE_LOCAL_PRODUCTS, 'readonly', (tx) =>
     idbGetAll<LocalProduct>(tx, STORE_LOCAL_PRODUCTS),
   );
-  return all.sort((a, b) => a.nameLower.localeCompare(b.nameLower));
+  return all.map(hydrateLocalProduct).sort((a, b) => a.nameLower.localeCompare(b.nameLower));
 }
 
 export async function getLocalProduct(id: string): Promise<LocalProduct | null> {
@@ -121,7 +168,7 @@ export async function getLocalProduct(id: string): Promise<LocalProduct | null> 
   const row = await posTx(STORE_LOCAL_PRODUCTS, 'readonly', (tx) =>
     idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, id),
   );
-  return row ?? null;
+  return row ? hydrateLocalProduct(row) : null;
 }
 
 export async function saveLocalProduct(product: LocalProduct): Promise<void> {
@@ -169,18 +216,24 @@ export async function lookupLocalByCode(code: string): Promise<LocalLookup | nul
     );
     const activeBarcode = byBarcode.filter((p) => p.isActive);
     if (activeBarcode.length) {
-      return { matchedBy: 'barcode' as const, products: activeBarcode.map(toProduct) };
+      return {
+        matchedBy: 'barcode' as const,
+        products: activeBarcode.map((p) => toProduct(hydrateLocalProduct(p))),
+      };
     }
 
     const bySku = await idbGetAllByIndex<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, 'by-sku', trimmed);
     const activeSku = bySku.filter((p) => p.isActive);
     if (activeSku.length) {
-      return { matchedBy: 'sku' as const, products: activeSku.map(toProduct) };
+      return {
+        matchedBy: 'sku' as const,
+        products: activeSku.map((p) => toProduct(hydrateLocalProduct(p))),
+      };
     }
 
     const byId = await idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, trimmed);
     if (byId && byId.isActive) {
-      return { matchedBy: 'id' as const, products: [toProduct(byId)] };
+      return { matchedBy: 'id' as const, products: [toProduct(hydrateLocalProduct(byId))] };
     }
     return null;
   });
@@ -296,7 +349,13 @@ export async function commitLocalSale(
   receiptPrefix: string,
 ): Promise<{ sale: LocalSale; duplicate: boolean }> {
   return posTx(
-    [STORE_LOCAL_SALES, STORE_LOCAL_PRODUCTS, STORE_LOCAL_COUNTERS],
+    [
+      STORE_LOCAL_SALES,
+      STORE_LOCAL_PRODUCTS,
+      STORE_LOCAL_COUNTERS,
+      STORE_LOCAL_LOTS,
+      STORE_LOCAL_MOVEMENTS,
+    ],
     'readwrite',
     async (tx) => {
       const existing = await idbGet<LocalSale>(tx, STORE_LOCAL_SALES, input.saleId);
@@ -322,7 +381,20 @@ export async function commitLocalSale(
         }
       }
 
-      const priced = priceLocalSale(input.lines, products);
+      // Read in the same transaction as the products, for the same reason: a
+      // delivery landing mid-sale must not leave the draw and the shelf
+      // disagreeing. Only lot-tracked products are looked up, so a shop that
+      // has never turned lots on does no extra reads.
+      const lots = new Map<string, LocalStockLot[]>();
+      for (const product of products.values()) {
+        if (!product?.tracksLots || lots.has(product.id)) continue;
+        lots.set(
+          product.id,
+          await idbGetAllByIndex<LocalStockLot>(tx, STORE_LOCAL_LOTS, 'by-product', product.id),
+        );
+      }
+
+      const priced = priceLocalSale(input.lines, products, lots);
 
       for (const [productId, stock] of priced.stockAfter) {
         const product = products.get(productId);
@@ -332,6 +404,16 @@ export async function commitLocalSale(
           stock,
           updatedAtMillis: input.committedAtMillis,
         });
+      }
+
+      const lotById = new Map<string, LocalStockLot>();
+      for (const forProduct of lots.values()) {
+        for (const lot of forProduct) lotById.set(lot.id, lot);
+      }
+      for (const [lotId, remainingQty] of priced.lotsAfter) {
+        const lot = lotById.get(lotId);
+        if (!lot) continue;
+        await idbPut(tx, STORE_LOCAL_LOTS, { ...lot, remainingQty });
       }
 
       const committed: LocalSale = {
@@ -349,6 +431,14 @@ export async function commitLocalSale(
         stockShortfall: priced.stockShortfall,
       };
       await idbPut(tx, STORE_LOCAL_SALES, committed);
+
+      // Written here rather than derived later, and inside this transaction
+      // rather than after it: a ledger that can disagree with the sale that
+      // caused it is worse than no ledger.
+      for (const movement of saleStockMovements(committed, priced.lotDraws)) {
+        await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
+      }
+
       return { sale: committed, duplicate: false };
     },
   );
@@ -361,6 +451,495 @@ export async function peekLocalReceiptCounter(): Promise<number> {
     idbGet<{ key: string; value: number }>(tx, STORE_LOCAL_COUNTERS, RECEIPT_COUNTER_KEY),
   );
   return row?.value ?? 0;
+}
+
+// --- Stock: lots, the ledger, and deliveries ---
+
+/**
+ * Resolve a scanned code to the product record itself.
+ *
+ * Unlike `lookupLocalByCode`, which answers the register and therefore only
+ * offers what is on sale, this one includes hidden products: a delivery of
+ * something taken off the shelf last month is still a delivery, and refusing to
+ * find it would leave a storekeeper creating a duplicate of a product they
+ * already have. Same barcode-then-SKU-then-id precedence, so the same scan
+ * finds the same item on both screens.
+ */
+export async function lookupLocalProductByCode(code: string): Promise<LocalProduct | null> {
+  if (!localStoreAvailable()) return null;
+  const trimmed = code.trim();
+  if (!trimmed) return null;
+
+  return posTx(STORE_LOCAL_PRODUCTS, 'readonly', async (tx) => {
+    for (const index of ['by-barcode', 'by-sku'] as const) {
+      const hits = await idbGetAllByIndex<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, index, trimmed);
+      const first = hits[0];
+      if (first) return hydrateLocalProduct(first);
+    }
+    const byId = await idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, trimmed);
+    return byId ? hydrateLocalProduct(byId) : null;
+  });
+}
+
+/** Every lot of one product, earliest expiry first. Empty ones included — they are the record. */
+export async function listLocalLots(productId: string): Promise<LocalStockLot[]> {
+  if (!localStoreAvailable()) return [];
+  const rows = await posTx(STORE_LOCAL_LOTS, 'readonly', (tx) =>
+    idbGetAllByIndex<LocalStockLot>(tx, STORE_LOCAL_LOTS, 'by-product', productId),
+  );
+  return sortLotsFefo(rows);
+}
+
+/**
+ * Every lot on the till.
+ *
+ * For the two callers that genuinely want all of them: the backup, which is the
+ * shop's only copy, and the products list, which shows one expiry badge per row
+ * and would otherwise do a read per product.
+ */
+export async function listAllLocalLots(): Promise<LocalStockLot[]> {
+  if (!localStoreAvailable()) return [];
+  return posTx(STORE_LOCAL_LOTS, 'readonly', (tx) => idbGetAll<LocalStockLot>(tx, STORE_LOCAL_LOTS));
+}
+
+/** One product's ledger, newest first. */
+export async function listLocalMovements(productId: string): Promise<LocalStockMovement[]> {
+  if (!localStoreAvailable()) return [];
+  const rows = await posTx(STORE_LOCAL_MOVEMENTS, 'readonly', (tx) =>
+    idbGetAllByIndex<LocalStockMovement>(tx, STORE_LOCAL_MOVEMENTS, 'by-product', productId),
+  );
+  return rows.sort((a, b) => b.atMillis - a.atMillis);
+}
+
+/** Posted deliveries, newest first. Drafts are deliberately left out. */
+export async function listLocalStockReceipts(limit = 100): Promise<LocalStockReceipt[]> {
+  if (!localStoreAvailable()) return [];
+  const rows = await posTx(STORE_LOCAL_RECEIPTS, 'readonly', (tx) =>
+    idbGetAll<LocalStockReceipt>(tx, STORE_LOCAL_RECEIPTS),
+  );
+  return rows
+    .filter((r) => r.status === 'posted')
+    .sort((a, b) => b.receivedAtMillis - a.receivedAtMillis)
+    .slice(0, limit);
+}
+
+export async function getLocalStockReceipt(id: string): Promise<LocalStockReceipt | null> {
+  if (!localStoreAvailable()) return null;
+  const row = await posTx(STORE_LOCAL_RECEIPTS, 'readonly', (tx) =>
+    idbGet<LocalStockReceipt>(tx, STORE_LOCAL_RECEIPTS, id),
+  );
+  return row ?? null;
+}
+
+/**
+ * The delivery somebody is part-way through entering, if there is one.
+ *
+ * Same posture as the register's open ticket: forty scans should survive a
+ * dropped tab. Only one draft is kept — a till receives one delivery at a time,
+ * and offering a list of half-finished ones would be a way to post the wrong
+ * one.
+ */
+export async function readLocalStockReceiptDraft(): Promise<LocalStockReceipt | null> {
+  if (!localStoreAvailable()) return null;
+  const rows = await posTx(STORE_LOCAL_RECEIPTS, 'readonly', (tx) =>
+    idbGetAllByIndex<LocalStockReceipt>(tx, STORE_LOCAL_RECEIPTS, 'by-status', 'draft'),
+  );
+  return rows.sort((a, b) => b.receivedAtMillis - a.receivedAtMillis)[0] ?? null;
+}
+
+export async function writeLocalStockReceiptDraft(draft: LocalStockReceipt): Promise<void> {
+  await posTx(STORE_LOCAL_RECEIPTS, 'readwrite', (tx) =>
+    idbPut(tx, STORE_LOCAL_RECEIPTS, { ...draft, status: 'draft' as const }),
+  );
+}
+
+export async function discardLocalStockReceiptDraft(id: string): Promise<void> {
+  await posTx(STORE_LOCAL_RECEIPTS, 'readwrite', (tx) => idbDelete(tx, STORE_LOCAL_RECEIPTS, id));
+}
+
+/**
+ * Post a delivery: create its lots, put the stock on the shelf, and say so.
+ *
+ * One transaction over four stores, so a delivery cannot half-land. Stock and
+ * lots move together for the reason the whole design turns on — for a
+ * lot-tracked product `LocalProduct.stock` is a projection of the lots, and a
+ * projection written by a different transaction is a projection that drifts.
+ *
+ * A lot is created per line rather than merged into a matching one, even when
+ * the code and date are identical: two cases of the same batch bought a week
+ * apart cost different money and were counted by different people, and merging
+ * them throws that away.
+ */
+export async function postLocalStockReceipt(
+  receipt: LocalStockReceipt,
+): Promise<LocalStockReceipt> {
+  const totals = receiptTotals(receipt.lines);
+  const posted: LocalStockReceipt = { ...receipt, totalCost: totals.totalCost, status: 'posted' };
+
+  await posTx(
+    [STORE_LOCAL_PRODUCTS, STORE_LOCAL_LOTS, STORE_LOCAL_MOVEMENTS, STORE_LOCAL_RECEIPTS],
+    'readwrite',
+    async (tx) => {
+      for (const [index, line] of posted.lines.entries()) {
+        const quantity = Math.max(0, Math.round(line.quantity));
+        if (quantity <= 0) continue;
+
+        const stored = await idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, line.productId);
+        // A product deleted between entering the line and posting it. The line
+        // is skipped rather than recreating the product: a delivery is not the
+        // place to resurrect something somebody chose to remove.
+        if (!stored) continue;
+        const product = hydrateLocalProduct(stored);
+        const sizeKey = line.sizeKey || DEFAULT_SIZE_KEY;
+        const unitCost = Math.max(0, line.unitCost);
+
+        // Only for a product that tracks them. A lot nothing ever draws down
+        // would sit at its full quantity for ever, and the day a shop switched
+        // tracking on for that product it would inherit a shelf full of batches
+        // that were sold months ago. What the delivery cost and who it came
+        // from is on the receipt and on the ledger row either way.
+        let lotId = '';
+        if (product.tracksLots) {
+          const lot: LocalStockLot = {
+            id: newLocalId(),
+            productId: product.id,
+            sizeKey,
+            lotCode: line.lotCode,
+            expiresOn: line.expiresOn,
+            receivedQty: quantity,
+            remainingQty: quantity,
+            unitCost,
+            supplierId: posted.supplierId,
+            receiptId: posted.id,
+            receivedAtMillis: posted.receivedAtMillis,
+            note: line.note,
+          };
+          await idbPut(tx, STORE_LOCAL_LOTS, lot);
+          lotId = lot.id;
+        }
+
+        await idbPut(tx, STORE_LOCAL_PRODUCTS, {
+          ...product,
+          stock: { ...product.stock, [sizeKey]: (product.stock[sizeKey] ?? 0) + quantity },
+          costPrice: unitCost,
+          updatedAtMillis: posted.receivedAtMillis,
+        });
+
+        const movement: LocalStockMovement = {
+          id: `receipt:${posted.id}:${index}`,
+          productId: product.id,
+          sizeKey,
+          lotId,
+          kind: 'receipt',
+          quantity,
+          reason: '',
+          reference: posted.reference,
+          unitCost,
+          userId: posted.userId,
+          userName: posted.userName,
+          atMillis: posted.receivedAtMillis,
+          note: line.note,
+        };
+        await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
+      }
+
+      await idbPut(tx, STORE_LOCAL_RECEIPTS, posted);
+    },
+  );
+
+  return posted;
+}
+
+export interface LocalStockAdjustInput {
+  productId: string;
+  sizeKey: string;
+  /** Signed. Positive puts stock back on the shelf. */
+  quantity: number;
+  reason: LocalStockAdjustReason;
+  note: string;
+  userId: string;
+  userName: string;
+  /** Which lot to move, for a product that tracks them. Blank picks by expiry. */
+  lotId?: string;
+}
+
+/**
+ * Move stock by hand, and say why.
+ *
+ * The one route a return reaches the books by: the register has no refund flow,
+ * so a customer handing something back is recorded here, and `customer-return`
+ * is the only reason that counts towards the Returned figure on a product page.
+ * Everything else is an adjustment — a write-off, a recount, a case that went
+ * out of date on the shelf.
+ *
+ * A negative adjustment on a lot-tracked product comes off the earliest expiry
+ * first, the same order a sale would take it, unless a lot was named. A positive
+ * one goes back on the lot it was named against, or onto a fresh undated lot —
+ * putting a returned item back on an arbitrary batch would hand it an expiry
+ * date nobody checked.
+ */
+export async function adjustLocalStock(input: LocalStockAdjustInput): Promise<void> {
+  const at = Date.now();
+  const sizeKey = input.sizeKey || DEFAULT_SIZE_KEY;
+  const quantity = Math.round(input.quantity);
+  if (!quantity) return;
+
+  await posTx(
+    [STORE_LOCAL_PRODUCTS, STORE_LOCAL_LOTS, STORE_LOCAL_MOVEMENTS],
+    'readwrite',
+    async (tx) => {
+      const stored = await idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, input.productId);
+      if (!stored) return;
+      const product = hydrateLocalProduct(stored);
+
+      let lotId = input.lotId ?? '';
+      if (product.tracksLots) {
+        const lots = (
+          await idbGetAllByIndex<LocalStockLot>(tx, STORE_LOCAL_LOTS, 'by-product', product.id)
+        ).filter((lot) => lot.sizeKey === sizeKey);
+
+        if (quantity < 0) {
+          const eligible = lotId ? lots.filter((lot) => lot.id === lotId) : lots;
+          for (const draw of allocateFefo(eligible, -quantity).draws) {
+            const lot = lots.find((candidate) => candidate.id === draw.lotId);
+            if (!lot) continue;
+            await idbPut(tx, STORE_LOCAL_LOTS, {
+              ...lot,
+              remainingQty: lot.remainingQty - draw.quantity,
+            });
+            lotId = lotId || draw.lotId;
+          }
+        } else {
+          const target = lots.find((lot) => lot.id === lotId);
+          if (target) {
+            await idbPut(tx, STORE_LOCAL_LOTS, {
+              ...target,
+              remainingQty: target.remainingQty + quantity,
+            });
+          } else {
+            const lot: LocalStockLot = {
+              id: newLocalId(),
+              productId: product.id,
+              sizeKey,
+              lotCode: '',
+              expiresOn: '',
+              receivedQty: quantity,
+              remainingQty: quantity,
+              unitCost: product.costPrice,
+              supplierId: '',
+              receiptId: '',
+              receivedAtMillis: at,
+              note: input.note,
+            };
+            await idbPut(tx, STORE_LOCAL_LOTS, lot);
+            lotId = lot.id;
+          }
+        }
+      }
+
+      await idbPut(tx, STORE_LOCAL_PRODUCTS, {
+        ...product,
+        stock: { ...product.stock, [sizeKey]: (product.stock[sizeKey] ?? 0) + quantity },
+        updatedAtMillis: at,
+      });
+
+      const movement: LocalStockMovement = {
+        id: newLocalId(),
+        productId: product.id,
+        sizeKey,
+        lotId,
+        kind: input.reason === 'customer-return' ? 'return' : 'adjustment',
+        quantity,
+        reason: input.reason,
+        reference: '',
+        unitCost: 0,
+        userId: input.userId,
+        userName: input.userName,
+        atMillis: at,
+        note: input.note,
+      };
+      await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
+    },
+  );
+}
+
+/** The counter row recording that sales predating the ledger have been written in. */
+const MOVEMENT_BACKFILL_KEY = 'movementBackfill';
+
+/**
+ * Write ledger rows for sales that happened before the ledger existed.
+ *
+ * Without this a shop that has been trading for a year upgrades, opens a product
+ * page and reads "Sold 0" beside a sales screen showing hundreds — which reads
+ * as a broken page, not as a new feature. Runs once, guarded by a counter row,
+ * and safe to run again regardless: `saleStockMovements` gives every row a
+ * deterministic id, so a second pass overwrites rather than doubles.
+ *
+ * Deliberately not run inside `onupgradeneeded`. A version-change transaction
+ * blocks every tab until it finishes, and a year of sales is not something to
+ * make a cashier wait for at eight in the morning.
+ */
+export async function backfillLocalStockMovements(): Promise<number> {
+  if (!localStoreAvailable()) return 0;
+
+  const done = await posTx(STORE_LOCAL_COUNTERS, 'readonly', (tx) =>
+    idbGet<{ key: string; value: number }>(tx, STORE_LOCAL_COUNTERS, MOVEMENT_BACKFILL_KEY),
+  );
+  if (done?.value) return 0;
+
+  const sales = await posTx(STORE_LOCAL_SALES, 'readonly', (tx) =>
+    idbGetAll<LocalSale>(tx, STORE_LOCAL_SALES),
+  );
+
+  let written = 0;
+  await posTx([STORE_LOCAL_MOVEMENTS, STORE_LOCAL_COUNTERS], 'readwrite', async (tx) => {
+    for (const sale of sales) {
+      // No draws: every sale old enough to need this predates lots entirely.
+      for (const movement of saleStockMovements(sale)) {
+        await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);
+        written += 1;
+      }
+    }
+    await idbPut(tx, STORE_LOCAL_COUNTERS, { key: MOVEMENT_BACKFILL_KEY, value: 1 });
+  });
+
+  return written;
+}
+
+// --- Categories ---
+
+export function makeLocalCategory(input: Partial<LocalCategory> & { name: string }): LocalCategory {
+  const now = Date.now();
+  const name = input.name.trim();
+  return {
+    id: input.id || newLocalId(),
+    name,
+    nameLower: name.toLowerCase(),
+    sortOrder: input.sortOrder ?? now,
+    createdAtMillis: input.createdAtMillis ?? now,
+    updatedAtMillis: now,
+  };
+}
+
+export async function listLocalCategories(): Promise<LocalCategory[]> {
+  if (!localStoreAvailable()) return [];
+  const all = await posTx(STORE_LOCAL_CATEGORIES, 'readonly', (tx) =>
+    idbGetAll<LocalCategory>(tx, STORE_LOCAL_CATEGORIES),
+  );
+  return all.sort((a, b) => a.sortOrder - b.sortOrder || a.nameLower.localeCompare(b.nameLower));
+}
+
+export async function saveLocalCategory(category: LocalCategory): Promise<void> {
+  await posTx(STORE_LOCAL_CATEGORIES, 'readwrite', (tx) =>
+    idbPut(tx, STORE_LOCAL_CATEGORIES, category),
+  );
+}
+
+/**
+ * Rename a category and carry the products with it.
+ *
+ * A product stores the category NAME, so a rename that touched only this store
+ * would strand every product on the old string. One transaction over both, so
+ * the two can never disagree.
+ */
+export async function renameLocalCategory(id: string, nextName: string): Promise<void> {
+  const name = nextName.trim();
+  if (!name) return;
+  await posTx([STORE_LOCAL_CATEGORIES, STORE_LOCAL_PRODUCTS], 'readwrite', async (tx) => {
+    const category = await idbGet<LocalCategory>(tx, STORE_LOCAL_CATEGORIES, id);
+    if (!category || category.name === name) return;
+    const previous = category.name;
+    await idbPut(tx, STORE_LOCAL_CATEGORIES, {
+      ...category,
+      name,
+      nameLower: name.toLowerCase(),
+      updatedAtMillis: Date.now(),
+    });
+    for (const row of await idbGetAll<LocalProduct>(tx, STORE_LOCAL_PRODUCTS)) {
+      if (row.category !== previous) continue;
+      await idbPut(tx, STORE_LOCAL_PRODUCTS, { ...hydrateLocalProduct(row), category: name });
+    }
+  });
+}
+
+/**
+ * Drop a category from the vocabulary.
+ *
+ * Products keep the name they were given. Blanking them would silently
+ * uncategorise a shelf because somebody tidied a list, and the name is still the
+ * truthful answer to what that product was filed under.
+ */
+export async function deleteLocalCategory(id: string): Promise<void> {
+  await posTx(STORE_LOCAL_CATEGORIES, 'readwrite', (tx) => idbDelete(tx, STORE_LOCAL_CATEGORIES, id));
+}
+
+/**
+ * Take the categories already typed on products into the managed list.
+ *
+ * What a shop switching the Categories screen on has instead of an empty page:
+ * it already filed its catalogue, it just did it in a free-text box.
+ */
+export async function adoptLocalCategoriesFromProducts(): Promise<number> {
+  const [products, existing] = await Promise.all([listLocalProducts(), listLocalCategories()]);
+  const known = new Set(existing.map((c) => c.nameLower));
+  const found = new Map<string, string>();
+  for (const product of products) {
+    const name = product.category.trim();
+    if (!name || known.has(name.toLowerCase())) continue;
+    found.set(name.toLowerCase(), name);
+  }
+  if (!found.size) return 0;
+
+  let sortOrder = existing.length;
+  await posTx(STORE_LOCAL_CATEGORIES, 'readwrite', async (tx) => {
+    for (const name of found.values()) {
+      await idbPut(tx, STORE_LOCAL_CATEGORIES, makeLocalCategory({ name, sortOrder: sortOrder++ }));
+    }
+  });
+  return found.size;
+}
+
+// --- Suppliers ---
+
+export function makeLocalSupplier(input: Partial<LocalSupplier> & { name: string }): LocalSupplier {
+  const now = Date.now();
+  const name = input.name.trim();
+  return {
+    id: input.id || newLocalId(),
+    name,
+    nameLower: name.toLowerCase(),
+    contactName: (input.contactName ?? '').trim(),
+    phone: (input.phone ?? '').trim(),
+    email: (input.email ?? '').trim(),
+    address: (input.address ?? '').trim(),
+    note: input.note ?? '',
+    isActive: input.isActive !== false,
+    createdAtMillis: input.createdAtMillis ?? now,
+    updatedAtMillis: now,
+  };
+}
+
+export async function listLocalSuppliers(): Promise<LocalSupplier[]> {
+  if (!localStoreAvailable()) return [];
+  const all = await posTx(STORE_LOCAL_SUPPLIERS, 'readonly', (tx) =>
+    idbGetAll<LocalSupplier>(tx, STORE_LOCAL_SUPPLIERS),
+  );
+  return all.sort((a, b) => a.nameLower.localeCompare(b.nameLower));
+}
+
+export async function saveLocalSupplier(supplier: LocalSupplier): Promise<void> {
+  await posTx(STORE_LOCAL_SUPPLIERS, 'readwrite', (tx) => idbPut(tx, STORE_LOCAL_SUPPLIERS, supplier));
+}
+
+/**
+ * Remove a supplier outright.
+ *
+ * Offered only for one entered by mistake — deliveries freeze the supplier's
+ * name, so a real one is disabled instead and last quarter's paperwork still
+ * says who it came from.
+ */
+export async function deleteLocalSupplier(id: string): Promise<void> {
+  await posTx(STORE_LOCAL_SUPPLIERS, 'readwrite', (tx) => idbDelete(tx, STORE_LOCAL_SUPPLIERS, id));
 }
 
 // --- Opening cash ---
@@ -523,6 +1102,11 @@ export async function factoryResetLocalStore(): Promise<void> {
     STORE_LOCAL_COUNTERS,
     STORE_LOCAL_SETTINGS,
     STORE_LOCAL_ROLES,
+    STORE_LOCAL_LOTS,
+    STORE_LOCAL_MOVEMENTS,
+    STORE_LOCAL_RECEIPTS,
+    STORE_LOCAL_CATEGORIES,
+    STORE_LOCAL_SUPPLIERS,
     // The sale somebody was part-way through. `clearPosDb` deliberately spares
     // it, so without this line nothing on the machine would ever erase it and a
     // till handed on to a new owner would offer them the last shop's basket.

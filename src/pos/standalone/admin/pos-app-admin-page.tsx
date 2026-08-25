@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { CashDrawerIcon, LockIcon, ShieldIcon } from '../../../ui/icons';
+import { CashDrawerIcon, LockIcon, ShieldIcon, SlidersIcon } from '../../../ui/icons';
 import { Button } from '../../../ui/button';
 import { FieldDescription } from '../../../ui/field-description';
 import { Input } from '../../../ui/input';
@@ -13,6 +13,7 @@ import { readLocalShopSettings, writeLocalShopSettings } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosOpeningCash } from '../opening-cash-context';
 import { usePosRoles } from '../role-context';
+import { usePosShopSettings } from '../shop-settings-context';
 import { usePosLicense } from '../../license/use-pos-license';
 import { PosLicenseSection } from '../../license/pos-license-section';
 import {
@@ -38,7 +39,7 @@ const LOCKED_IDS: readonly PosLocalRole[] = ['superadmin'];
 /** Roles kept only so accounts already holding them keep working. */
 const DUPLICATE_IDS: readonly PosLocalRole[] = ['cashier'];
 
-type Section = 'roles' | 'openingCash' | 'licence';
+type Section = 'roles' | 'openingCash' | 'features' | 'licence';
 
 /**
  * Opening cash sits above the licence because the licence pane is furniture:
@@ -51,6 +52,11 @@ const NAV: { value: Section; labelKey: string; icon: (size: number) => React.Rea
     value: 'openingCash',
     labelKey: 'pos.appAdmin.section.openingCash',
     icon: (s) => <CashDrawerIcon size={s} />,
+  },
+  {
+    value: 'features',
+    labelKey: 'pos.appAdmin.section.features',
+    icon: (s) => <SlidersIcon size={s} />,
   },
   { value: 'licence', labelKey: 'pos.appAdmin.section.licence', icon: (s) => <LockIcon size={s} /> },
 ];
@@ -95,6 +101,8 @@ export function PosAppAdminPage() {
             <RolesSection />
           ) : current === 'openingCash' ? (
             <OpeningCashSection />
+          ) : current === 'features' ? (
+            <FeaturesSection />
           ) : (
             <LicenceSection />
           )}
@@ -242,6 +250,93 @@ function OpeningCashSection() {
             {t('pos.appAdmin.openingCash.viewRecord')}
           </Button>
         </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * The screens a shop gets only if whoever installed the till switched them on.
+ *
+ * Three switches, all off by default, all shop-wide. They are here rather than
+ * on `/pos/settings` because they are not a shopkeeper's preference: a corner
+ * shop with forty lines does not want a Categories screen, and handing it one
+ * to discover on its own is how a simple till stops being simple. The person
+ * commissioning the machine decides, alongside the drawer count.
+ *
+ * Turning one off hides its screen and its fields; it never deletes what the
+ * shop entered, and for lots it never changes what happens to stock. A product
+ * already marked as tracked goes on drawing earliest-expiry-first with the
+ * switch off, because a switch that quietly stopped drawing lots would leave
+ * the shelf and the record disagreeing.
+ */
+function FeaturesSection() {
+  const t = useT();
+  const { toast } = useToast();
+  const { settings, loading, save } = usePosShopSettings();
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  const SWITCHES = [
+    { key: 'categoriesEnabled', labelKey: 'pos.appAdmin.features.categories' },
+    { key: 'suppliersEnabled', labelKey: 'pos.appAdmin.features.suppliers' },
+    { key: 'lotTrackingEnabled', labelKey: 'pos.appAdmin.features.lots' },
+  ] as const;
+
+  // Awaited and rolled back on failure, like the drawer switch above: a till
+  // with site data blocked really does reject this write, and a silent revert
+  // reads as a switch that refuses to move.
+  const choose = async (key: (typeof SWITCHES)[number]['key'], next: boolean) => {
+    if (settings[key] === next) return;
+    setSaveFailed(false);
+    try {
+      await save({ [key]: next });
+      toast({
+        title: t(next ? 'pos.appAdmin.features.turnedOn' : 'pos.appAdmin.features.turnedOff', {
+          name: t(SWITCHES.find((s) => s.key === key)!.labelKey),
+        }),
+      });
+    } catch {
+      setSaveFailed(true);
+    }
+  };
+
+  if (loading) return <div className="cpos-muted">{t('common.loading')}</div>;
+
+  return (
+    <section className="cpos-section">
+      <h2 className="cpos-section__title">{t('pos.appAdmin.features.title')}</h2>
+      <div className="cpos-muted">{t('pos.appAdmin.features.intro')}</div>
+
+      {SWITCHES.map((item) => (
+        <div className="cpos-field" key={item.key}>
+          <span className="cpos-field__label">{t(item.labelKey)}</span>
+          <div className="cpos-choices" role="group" aria-label={t(item.labelKey)}>
+            {([false, true] as const).map((value) => (
+              <button
+                key={String(value)}
+                type="button"
+                className={cn('cpos-choice', settings[item.key] === value && 'cpos-choice--on')}
+                aria-pressed={settings[item.key] === value}
+                onClick={() => void choose(item.key, value)}
+              >
+                <span>
+                  {t(value ? 'pos.appAdmin.features.on' : 'pos.appAdmin.features.off')}
+                </span>
+              </button>
+            ))}
+          </div>
+          <FieldDescription>{t(`${item.labelKey}Help`)}</FieldDescription>
+        </div>
+      ))}
+
+      {saveFailed ? (
+        <div className="cpos-note cpos-note--danger" role="alert">
+          {t('pos.appAdmin.openingCash.saveFailed')}
+        </div>
+      ) : null}
+
+      {settings.lotTrackingEnabled ? (
+        <div className="cpos-note cpos-note--brand">{t('pos.appAdmin.features.lotsNote')}</div>
       ) : null}
     </section>
   );

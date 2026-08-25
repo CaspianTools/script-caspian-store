@@ -7,7 +7,8 @@
  * around it is mechanical; this part is not.
  */
 
-import type { LocalProduct, LocalSale, LocalSaleLine } from './types';
+import type { LocalProduct, LocalSale, LocalSaleLine, LocalStockLot } from './types';
+import { allocateFefo } from './lot-allocation';
 
 /**
  * Same integer-minor-unit accumulation as `usePosTicket`.
@@ -37,6 +38,15 @@ export interface PricedLineInput {
   lineDiscount?: number;
 }
 
+/** One draw against one lot, for the stock ledger. */
+export interface PricedLotDraw {
+  productId: string;
+  sizeKey: string;
+  lotId: string;
+  lotCode: string;
+  quantity: number;
+}
+
 export interface PricedSale {
   lines: LocalSaleLine[];
   subtotal: number;
@@ -45,6 +55,13 @@ export interface PricedSale {
   stockShortfall: LocalSale['stockShortfall'];
   /** Product id → the stock map it should be left with. */
   stockAfter: Map<string, Record<string, number>>;
+  /**
+   * Which lots the sale came out of. Empty for a till with no lot-tracked
+   * products, which is every till until a shop turns lots on.
+   */
+  lotDraws: PricedLotDraw[];
+  /** Lot id → the remaining quantity it should be left with. */
+  lotsAfter: Map<string, number>;
 }
 
 /**
@@ -58,10 +75,15 @@ export interface PricedSale {
  * goods and the money is already in the drawer, so refusing would lose the sale
  * record — strictly worse than recording an oversell. The shortfall is reported
  * so somebody can reconcile it later.
+ *
+ * `lots` is optional and only consulted for a product marked `tracksLots`.
+ * Called without it — which is every call a shop makes until it turns lots on —
+ * the output is exactly what it was before lots existed.
  */
 export function priceLocalSale(
   input: PricedLineInput[],
   products: Map<string, LocalProduct | undefined>,
+  lots?: Map<string, LocalStockLot[]>,
 ): PricedSale {
   let grossMinor = 0;
   let discountMinor = 0;
@@ -102,6 +124,8 @@ export function priceLocalSale(
 
   const stockShortfall: LocalSale['stockShortfall'] = [];
   const stockAfter = new Map<string, Record<string, number>>();
+  const lotDraws: PricedLotDraw[] = [];
+  const lotsAfter = new Map<string, number>();
   for (const [productId, sizes] of wanted) {
     const product = products.get(productId);
     if (!product) continue;
@@ -110,6 +134,17 @@ export function priceLocalSale(
       const available = stock[sizeKey] ?? 0;
       if (available < qty) stockShortfall.push({ productId, sizeKey, requested: qty, available });
       stock[sizeKey] = available - qty;
+
+      if (!product.tracksLots) continue;
+      // Only this size's lots: a medium coming off the shelf must not draw down
+      // the large's expiry dates.
+      const forSize = (lots?.get(productId) ?? []).filter((lot) => lot.sizeKey === sizeKey);
+      const allocation = allocateFefo(forSize, qty);
+      for (const draw of allocation.draws) {
+        lotDraws.push({ productId, sizeKey, ...draw });
+        const lot = forSize.find((candidate) => candidate.id === draw.lotId);
+        lotsAfter.set(draw.lotId, (lot?.remainingQty ?? 0) - draw.quantity);
+      }
     }
     stockAfter.set(productId, stock);
   }
@@ -121,5 +156,7 @@ export function priceLocalSale(
     total: fromMinor(Math.max(0, grossMinor - discountMinor)),
     stockShortfall,
     stockAfter,
+    lotDraws,
+    lotsAfter,
   };
 }

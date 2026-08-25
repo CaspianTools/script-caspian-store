@@ -3,10 +3,17 @@
  *
  * Headers deliberately match the cloud products export where the two models
  * overlap (`name`, `sku`, `barcode`, `price`, `category`, `sizes`, `stock`,
- * `isActive`), and unknown columns are ignored rather than rejected. That is
- * what lets a shop export from an online store and import the file straight
- * into a standalone till — the extra storefront columns (slug, brand,
- * description, taxonomies) simply have nowhere to land here.
+ * `isActive`, `description`), and unknown columns are ignored rather than
+ * rejected. That is what lets a shop export from an online store and import the
+ * file straight into a standalone till — the extra storefront columns (slug,
+ * brand, taxonomies) simply have nowhere to land here.
+ *
+ * Lots are deliberately NOT here. A batch has a code, a date, a cost, a
+ * supplier and a quantity that only ever moves through a delivery or an
+ * adjustment; a column that let somebody paste one in would be a way to invent
+ * stock history in a spreadsheet. `tracksLots` says whether an item works that
+ * way, and the batches themselves arrive through Receive stock and travel in
+ * the JSON backup.
  *
  * The cell encodings come from the import/export helpers rather than being
  * re-implemented, so `S:3;M:5` means the same thing on both sides.
@@ -44,6 +51,21 @@ export const LOCAL_PRODUCT_COLUMNS: LocalColumnMeta[] = [
   },
   { header: 'isActive', sample: 'true', help: 'false hides the item from the till without deleting it.' },
   { header: 'imageUrl', sample: '', help: 'Optional. Only shown if the till has the picture available.' },
+  {
+    header: 'description',
+    sample: 'Soft cotton, regular fit.',
+    help: 'Shown on the item\u2019s own page in the back office. Never on a receipt.',
+  },
+  {
+    header: 'tracksLots',
+    sample: 'false',
+    help: 'true if this item is received in batches with expiry dates and sold oldest-date-first.',
+  },
+  {
+    header: 'costPrice',
+    sample: '8.50',
+    help: 'What the last delivery cost per unit. Receiving stock overwrites it.',
+  },
 ];
 
 export function localProductsToCsv(products: LocalProduct[]): string {
@@ -60,6 +82,9 @@ export function localProductsToCsv(products: LocalProduct[]): string {
       joinStock(p.stock),
       p.isActive ? 'true' : 'false',
       p.imageUrl,
+      p.description,
+      p.tracksLots ? 'true' : 'false',
+      p.costPrice,
     ]);
   }
   return toCsv(rows);
@@ -133,6 +158,12 @@ export function planLocalProductImport(text: string, existing: LocalProduct[]): 
         stock: parseStock(record.stock),
         isActive: parseBool(record.isActive, true),
         imageUrl: (record.imageUrl ?? '').trim(),
+        description: (record.description ?? '').trim(),
+        tracksLots: parseBool(record.tracksLots, false),
+        // A blank cell means zero rather than an error: a shop importing a
+        // price list from a supplier rarely knows its own cost yet, and the
+        // next delivery stamps the real figure over it.
+        costPrice: parseNumber(record.costPrice) ?? 0,
       }),
     });
   });
