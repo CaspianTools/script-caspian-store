@@ -1824,7 +1824,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.openingCash.confirm': 'Start selling',
   'pos.openingCash.confirming': 'Saving…',
   'pos.openingCash.needAmount': 'Type what is in the drawer first.',
-  'pos.openingCash.emptyDrawer': 'Nothing in the drawer? Type 0 and carry on.',
+  'pos.openingCash.emptyDrawer': 'You are saying the drawer is empty. If that is right, carry on.',
   'pos.openingCash.noDecimal': 'That has no small change in it. If you meant {suggestion}, type it that way.',
   'pos.openingCash.notANumber': 'That is not a number. Use digits only, like 120.50.',
   'pos.openingCash.tooLarge': 'That is more than a till drawer holds. Check the figure.',

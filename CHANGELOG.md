@@ -16,6 +16,26 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.1.1 — Say the right thing about an empty drawer
+
+### No consumer action required
+
+A one-string copy fix in the register. Reinstall to pick it up.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.1.1
+```
+
+### Fixed
+
+- **The empty-drawer warning told a cashier to do what they had just done.** It read
+  "Nothing in the drawer? Type 0 and carry on.", but it only appears *after* a figure that
+  reads as zero has been typed — so it answered a question the cashier had already
+  answered. It now says what is actually being claimed on their behalf, and asks them to
+  confirm it: "You are saying the drawer is empty. If that is right, carry on." The
+  Azerbaijani string is corrected the same way, and now uses `çekmece` for the drawer like
+  every other string in that file rather than `kassa`, which is the till.
+
 ## v13.1.0 — Count the drawer before you sell
 
 A standalone till can now be told to ask a cashier what is in the drawer before the sale

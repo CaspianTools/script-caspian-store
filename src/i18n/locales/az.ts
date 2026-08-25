@@ -303,7 +303,7 @@ const az: MessageDict = {
   'pos.openingCash.confirm': 'Satışa başla',
   'pos.openingCash.confirming': 'Yadda saxlanılır…',
   'pos.openingCash.needAmount': 'Əvvəlcə çekmecedə nə olduğunu yazın.',
-  'pos.openingCash.emptyDrawer': 'Çekmece boşdur? 0 yazın və davam edin.',
+  'pos.openingCash.emptyDrawer': 'Çekmecenin boş olduğunu bildirirsiniz. Əgər belədirsə, davam edin.',
   'pos.openingCash.noDecimal': 'Bu məbləğdə xırda pul yoxdur. {suggestion} nəzərdə tutmusunuzsa, elə yazın.',
   'pos.openingCash.notANumber': 'Bu, rəqəm deyil. Yalnız rəqəm yazın, məsələn 120.50.',
   'pos.openingCash.tooLarge': 'Bu, kassa çekmecesinin tutduğundan çoxdur. Məbləği yoxlayın.',

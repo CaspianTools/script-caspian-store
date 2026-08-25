@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v13.1.0 firebase
-# v13.1.0 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v13.1.1 firebase
+# v13.1.1 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -60,7 +60,7 @@ Peer deps: React 18/19, `firebase` 10, 11, or 12. Next.js consumers: install `ne
 
 ```bash
 npm install react@^19 react-dom@^19 firebase@^12
-npm install github:CaspianTools/script-caspian-store#v13.1.0
+npm install github:CaspianTools/script-caspian-store#v13.1.1
 ```
 
 Newly scaffolded sites (`npm create caspian-store@latest`) get the new versions automatically.
