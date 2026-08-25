@@ -17,6 +17,14 @@ export const DB_VERSION = 4;
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
 export const STORE_CATALOG = 'catalog';
+/**
+ * The sale a cashier is part-way through -- see `open-sale-store.ts`.
+ *
+ * Declared with the cloud five because it was created alongside them, but it
+ * belongs to neither group: it is not a cache of anything (nothing else has a
+ * copy) and it is not a record of trade (no money has been taken yet). That is
+ * why `clearPosDb` leaves it alone.
+ */
 export const STORE_TICKET = 'openTicket';
 export const STORE_META = 'meta';
 
@@ -218,7 +226,7 @@ export function idbGetAllByIndex<T>(
 /**
  * Wipe the cloud register's caches and outbox. An explicit operator action only.
  *
- * Deliberately does NOT touch the `local*` stores. Everything cleared here can
+ * Deliberately does NOT touch `openTicket` or the `local*` stores. Everything cleared here can
  * be rebuilt from Firestore; a standalone till's catalogue, users and sales
  * cannot be rebuilt from anywhere, so a support engineer clearing a stuck
  * offline queue must not be able to delete a shop's trading history by
@@ -226,13 +234,11 @@ export function idbGetAllByIndex<T>(
  * separate call with its own confirmation.
  */
 export async function clearPosDb(): Promise<void> {
-  await posTx(
-    [STORE_QUEUE, STORE_LEASES, STORE_CATALOG, STORE_TICKET, STORE_META],
-    'readwrite',
-    (tx) => {
-      for (const s of [STORE_QUEUE, STORE_LEASES, STORE_CATALOG, STORE_TICKET, STORE_META]) {
-        tx.objectStore(s).clear();
-      }
-    },
-  );
+  // `openTicket` is excluded: a support engineer clearing a stuck queue must not
+  // wipe the sale the cashier is standing there ringing up.
+  await posTx([STORE_QUEUE, STORE_LEASES, STORE_CATALOG, STORE_META], 'readwrite', (tx) => {
+    for (const s of [STORE_QUEUE, STORE_LEASES, STORE_CATALOG, STORE_META]) {
+      tx.objectStore(s).clear();
+    }
+  });
 }

@@ -17,6 +17,9 @@ import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
 import { PosQueuePage } from './pos-queue-page';
 import { PosAdapterProvider, usePosAdapter } from './pos-adapter-context';
+import { PosOpenSaleProvider } from './open-sale-context';
+import { PosOpenSaleBanner } from './open-sale-banner';
+import { PosAutoBackupProvider } from './standalone/auto-backup-context';
 import { PosServiceWorker } from './pos-service-worker';
 import { PosSidebar, type PosNavItem } from './pos-sidebar';
 import { PosTopbar } from './pos-topbar';
@@ -44,7 +47,19 @@ export function PosShell({ children }: { children: ReactNode }) {
     <PosStyleScope>
       <PosChromeProvider>
         <PosAdapterProvider>
-          <PosShellChrome>{children}</PosShellChrome>
+          {/*
+            Above the chrome, and therefore above `PosRoot`, because that is a
+            switch returning a different component for every screen: an open
+            sale held inside the register dies the moment a cashier touches
+            Settings. Inside `PosAdapterProvider` because recovering a ticket
+            after a crash means asking the adapter whether its sale already
+            landed.
+          */}
+          <PosOpenSaleProvider>
+            <PosAutoBackupProvider>
+              <PosShellChrome>{children}</PosShellChrome>
+            </PosAutoBackupProvider>
+          </PosOpenSaleProvider>
         </PosAdapterProvider>
       </PosChromeProvider>
     </PosStyleScope>
@@ -180,6 +195,7 @@ function PosShellChrome({ children }: { children: ReactNode }) {
 
         <PosServiceWorker />
         <PosLicenseBanner license={license} />
+        <PosOpenSaleBanner />
 
         <main className="cpos-main">{children}</main>
       </div>

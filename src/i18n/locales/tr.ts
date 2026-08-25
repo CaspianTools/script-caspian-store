@@ -201,6 +201,31 @@ const tr: MessageDict = {
     'Okutma sayılan tuş vuruşları arasındaki en fazla milisaniye. Okutmalar bölünüyorsa artırın; hızlı yazma okutma sanılıyorsa azaltın.',
   'pos.settings.save': 'Kaydet',
   'pos.settings.saved': 'Ayarlar kaydedildi',
+  // Storage health and the recovered sale (v13.2)
+  'pos.settings.storage.healthTitle': 'Bu bilgisayar verilerinizi saklıyor mu?',
+  'pos.settings.storage.persisted': 'Korumalı depolama',
+  'pos.settings.storage.persistedYes': 'Açık — bu tarayıcı verilerinizi silmeyecek',
+  'pos.settings.storage.persistedNo': 'Kapalı — bu tarayıcı verilerinizi silebilir',
+  'pos.settings.storage.persistedUnknown': 'Bu tarayıcı yanıt vermiyor',
+  'pos.settings.storage.persistHelp':
+    'Korumalı depolama olmadan disk dolduğunda tarayıcının bu kasayı temizlemesine izin verilir. Kasayı kurmak (başlıktaki Kur düğmesi) genellikle bunu açar. Ayrıca otomatik yedekleme klasörü de ayarlayın — her şeye rağmen ayakta kalan kopya odur.',
+  'pos.settings.storage.persistAsk': 'Korumalı depolamayı aç',
+  'pos.settings.storage.recheck': 'Yeniden denetle',
+  'pos.settings.storage.database': 'Kasa veritabanı',
+  'pos.settings.storage.databaseOk': 'Çalışıyor',
+  'pos.settings.storage.databaseBlocked':
+    'Kasa başka bir sekmede açık ve onu tutuyor. Diğer sekmeleri kapatıp yeniden denetleyin.',
+  'pos.settings.storage.used': 'Kullanılan alan',
+  'pos.settings.storage.usedOf': '{total} içinden {used}',
+  'pos.openSale.found':
+    '{when} saatinde {count} ürünlük yarım kalmış bir satış var. Devam edin ya da temizleyin.',
+  'pos.openSale.foundOther':
+    '{name}, {when} saatinde {count} ürünlük bir satışı yarım bıraktı. Devam edin ya da temizleyin.',
+  'pos.openSale.resume': 'Satışa devam et',
+  'pos.openSale.discard': 'Temizle',
+  'pos.openSale.dismiss': 'Tamam',
+  'pos.openSale.settled':
+    'Burada açık kalan satış zaten {receipt} numaralı fiş olarak kaydedilmişti, bu yüzden temizlendi. Kimseden iki kez tahsilat yapılmadı.',
 
   // POS — storage mode
   'pos.storage.title': 'Satışlar nerede saklanır',

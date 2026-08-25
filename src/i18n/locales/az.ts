@@ -216,6 +216,31 @@ const az: MessageDict = {
   'pos.settings.section.language': 'Dil',
   'pos.settings.section.device': 'Cihaz',
   'pos.settings.section.storage': 'Saxlama',
+  // Storage health and the recovered sale (v13.2)
+  'pos.settings.storage.healthTitle': 'Bu kompüter məlumatlarınızı saxlayırmı?',
+  'pos.settings.storage.persisted': 'Qorunan yaddaş',
+  'pos.settings.storage.persistedYes': 'Açıq — bu brauzer məlumatlarınızı silməyəcək',
+  'pos.settings.storage.persistedNo': 'Bağlı — bu brauzer məlumatlarınızı silə bilər',
+  'pos.settings.storage.persistedUnknown': 'Bu brauzer cavab vermir',
+  'pos.settings.storage.persistHelp':
+    'Qorunan yaddaş olmadan disk dolduqda brauzerin bu kassanı silməyə icazəsi var. Kassanı quraşdırmaq (başlıqdakı Quraşdır düyməsi) adətən onu açır. Həmçinin avtomatik ehtiyat nüsxə qovluğu təyin edin — hər şeydən sağ çıxan nüsxə odur.',
+  'pos.settings.storage.persistAsk': 'Qorunan yaddaşı aç',
+  'pos.settings.storage.recheck': 'Yenidən yoxla',
+  'pos.settings.storage.database': 'Kassa bazası',
+  'pos.settings.storage.databaseOk': 'İşləyir',
+  'pos.settings.storage.databaseBlocked':
+    'Başqa bir tab kassanı açıq saxlayır. Digər tabları bağlayın və yenidən yoxlayın.',
+  'pos.settings.storage.used': 'İstifadə olunan yer',
+  'pos.settings.storage.usedOf': '{total} içindən {used}',
+  'pos.openSale.found':
+    '{when} tarixində {count} məhsulluq yarımçıq satış qalıb. Davam edin və ya təmizləyin.',
+  'pos.openSale.foundOther':
+    '{name} {when} tarixində {count} məhsulluq satışı yarımçıq qoyub. Davam edin və ya təmizləyin.',
+  'pos.openSale.resume': 'Satışa davam et',
+  'pos.openSale.discard': 'Təmizlə',
+  'pos.openSale.dismiss': 'Oldu',
+  'pos.openSale.settled':
+    'Burada açıq qalan satış artıq {receipt} nömrəli qəbz kimi qeyd olunmuşdu, ona görə təmizləndi. Heç kimdən iki dəfə pul alınmadı.',
   'pos.settings.section.scanner': 'Skaner və printer',
   'pos.nav.store': 'Anbar',
   'pos.nav.appAdmin': 'Tətbiq admini',
@@ -276,6 +301,7 @@ const az: MessageDict = {
   'pos.appAdmin.noRoles': 'Hələ xüsusi rol yoxdur.',
   'pos.appAdmin.roleSaved': 'Rol saxlanıldı',
   'pos.appAdmin.roleDeleted': 'Rol silindi',
+  'pos.appAdmin.roleSaveFailed': 'Rollar bu kompüterdə saxlanıla bilmədi. Heç nə dəyişdirilmədi.',
   'pos.appAdmin.openingCash.title': 'Çekmecedəki nağd pulu soruş',
   'pos.appAdmin.openingCash.help':
     'Bu aktiv olanda satış ekranı ilk satışdan əvvəl kassirdən çekmecedə nə qədər pul olduğunu soruşur və məbləği onun adı, vaxtı və hansı kassadan gəldiyi ilə birlikdə yazır. Məbləğ heç vaxt heç nə ilə tutuşdurulmur: nə gün sonu sayımı var, nə də fərq hesabatı. Bu açarı yalnız Dəstək hesabı dəyişə bilər — sahib dəyişə bilməz.',

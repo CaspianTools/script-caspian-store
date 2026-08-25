@@ -17,6 +17,7 @@ import {
   STORE_LOCAL_SALES,
   STORE_LOCAL_SETTINGS,
   STORE_LOCAL_USERS,
+  STORE_TICKET,
   idbDelete,
   idbGet,
   idbGetAll,
@@ -441,6 +442,20 @@ export async function listLocalOpeningCash(
 
 // --- Roles ---
 
+/**
+ * The single row every role definition lives in.
+ *
+ * Written as BOTH `id` and `key`, and that is not belt-and-braces. The store is
+ * created with `keyPath: 'id'` while this code has always put `{ key, value }`
+ * -- a value with no `id` is a `DataError`, so every write since the store was
+ * added silently aborted its transaction and the rejection was swallowed by a
+ * bare `void saveRoles(...)`. A shop that customised who may open which screen
+ * got the built-in roles back on the next reload, with nothing saying so.
+ *
+ * Carrying both fields fixes it without a `DB_VERSION` bump: `id` satisfies the
+ * store, `key` keeps rows written by a future in-line-key change readable, and
+ * the existing get by `ROLES_KEY` still matches because the two are equal.
+ */
 const ROLES_KEY = 'roles';
 
 export async function readLocalRoles(): Promise<RoleDefinition[]> {
@@ -451,9 +466,22 @@ export async function readLocalRoles(): Promise<RoleDefinition[]> {
   });
 }
 
+/**
+ * Split out purely so `scripts/check-standalone.mjs` can assert the `id` is
+ * there. The bug this guards against needs a browser to reproduce and produced
+ * no error anywhere -- exactly the shape of thing worth pinning in CI.
+ */
+export function localRolesRow(roles: RoleDefinition[]): {
+  id: string;
+  key: string;
+  value: RoleDefinition[];
+} {
+  return { id: ROLES_KEY, key: ROLES_KEY, value: roles };
+}
+
 export async function writeLocalRoles(roles: RoleDefinition[]): Promise<RoleDefinition[]> {
   await posTx(STORE_LOCAL_ROLES, 'readwrite', (tx) =>
-    idbPut(tx, STORE_LOCAL_ROLES, { key: ROLES_KEY, value: roles }),
+    idbPut(tx, STORE_LOCAL_ROLES, localRolesRow(roles)),
   );
   return roles;
 }
@@ -480,7 +508,7 @@ export async function writeLocalShopSettings(
 
 /**
  * Erase a standalone till completely — catalogue, staff, sales, drawer counts,
- * counters, settings.
+ * counters, settings, and any sale left open.
  *
  * Kept separate from `clearPosDb`, which only drops rebuildable cloud caches.
  * This one destroys records that exist nowhere else, so it is never called on a
@@ -495,6 +523,10 @@ export async function factoryResetLocalStore(): Promise<void> {
     STORE_LOCAL_COUNTERS,
     STORE_LOCAL_SETTINGS,
     STORE_LOCAL_ROLES,
+    // The sale somebody was part-way through. `clearPosDb` deliberately spares
+    // it, so without this line nothing on the machine would ever erase it and a
+    // till handed on to a new owner would offer them the last shop's basket.
+    STORE_TICKET,
   ] as const;
   await posTx([...stores], 'readwrite', (tx) => {
     for (const s of stores) tx.objectStore(s).clear();

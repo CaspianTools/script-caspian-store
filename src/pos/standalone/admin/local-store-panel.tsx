@@ -12,6 +12,7 @@ import { usePosRoles } from '../role-context';
 import type { LocalProduct } from '../types';
 import { LocalProductFormDialog } from './local-product-form-dialog';
 import { fieldLabel, muted, row, section } from './panel-styles';
+import { PanelLoadError } from './panel-load-error';
 
 /**
  * Storekeeper inventory page.
@@ -27,12 +28,18 @@ export function LocalStorePanel() {
   // given the stock list to count against without also being able to rewrite it.
   const mayEdit = can(session.user?.role, 'store.edit');
   const [products, setProducts] = useState<LocalProduct[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LocalProduct | null>(null);
 
   const refresh = useCallback(async () => {
-    setProducts(await listLocalProducts());
+    try {
+      setProducts(await listLocalProducts());
+      setLoadFailed(false);
+    } catch {
+      setLoadFailed(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -98,7 +105,9 @@ export function LocalStorePanel() {
           </div>
         </div>
 
-        {products === null ? (
+        {loadFailed ? (
+          <PanelLoadError onRetry={() => void refresh()} />
+        ) : products === null ? (
           <div style={muted}>{t('common.loading')}</div>
         ) : visible.length === 0 ? (
           <div style={muted}>{t('pos.admin.products.empty')}</div>

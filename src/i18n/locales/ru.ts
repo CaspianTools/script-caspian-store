@@ -202,6 +202,31 @@ const ru: MessageDict = {
     'Максимум миллисекунд между нажатиями, которые считаются сканированием. Увеличьте, если сканы приходят разбитыми; уменьшите, если быстрый набор принимается за скан.',
   'pos.settings.save': 'Сохранить',
   'pos.settings.saved': 'Настройки сохранены',
+  // Storage health and the recovered sale (v13.2)
+  'pos.settings.storage.healthTitle': 'Сохраняет ли этот компьютер ваши данные?',
+  'pos.settings.storage.persisted': 'Защищённое хранилище',
+  'pos.settings.storage.persistedYes': 'Включено — браузер не удалит ваши данные',
+  'pos.settings.storage.persistedNo': 'Выключено — браузер может удалить ваши данные',
+  'pos.settings.storage.persistedUnknown': 'Браузер не отвечает на этот вопрос',
+  'pos.settings.storage.persistHelp':
+    'Без защищённого хранилища браузеру разрешено очистить эту кассу, когда закончится место на диске. Установка кассы (кнопка «Установить» в шапке) обычно включает его. Настройте также папку для автоматических резервных копий — именно эта копия переживёт всё.',
+  'pos.settings.storage.persistAsk': 'Включить защищённое хранилище',
+  'pos.settings.storage.recheck': 'Проверить снова',
+  'pos.settings.storage.database': 'База данных кассы',
+  'pos.settings.storage.databaseOk': 'Работает',
+  'pos.settings.storage.databaseBlocked':
+    'Касса открыта в другой вкладке и заблокирована ею. Закройте другие вкладки и проверьте снова.',
+  'pos.settings.storage.used': 'Занято места',
+  'pos.settings.storage.usedOf': '{used} из {total}',
+  'pos.openSale.found':
+    'В {when} осталась незавершённая продажа на {count} товаров. Продолжите её или очистите.',
+  'pos.openSale.foundOther':
+    '{name} оставил(а) незавершённую продажу на {count} товаров в {when}. Продолжите её или очистите.',
+  'pos.openSale.resume': 'Продолжить продажу',
+  'pos.openSale.discard': 'Очистить',
+  'pos.openSale.dismiss': 'Понятно',
+  'pos.openSale.settled':
+    'Продажа, остававшаяся здесь открытой, уже была записана как чек {receipt}, поэтому она очищена. Никто не был списан дважды.',
 
   // POS — storage mode
   'pos.storage.title': 'Где хранятся продажи',

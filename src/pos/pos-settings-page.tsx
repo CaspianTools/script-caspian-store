@@ -27,6 +27,7 @@ import {
   type PosThemeMode,
 } from './pos-preferences';
 import type { PosStorageMode } from './storage/types';
+import { PosStorageHealthCard } from './pos-storage-health-card';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosChrome } from './theme/pos-chrome-context';
 import { usePosLicense } from './license/use-pos-license';
@@ -282,6 +283,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
                 </label>
               ))}
             </div>
+            <PosStorageHealthCard />
           </section>
 
           <section id="pos-settings-scanner" className="cpos-section">

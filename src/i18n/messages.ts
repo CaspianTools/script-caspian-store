@@ -1702,6 +1702,21 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.settings.section.language': 'Language',
   'pos.settings.section.device': 'Device',
   'pos.settings.section.storage': 'Storage',
+  'pos.settings.storage.healthTitle': 'Is this computer keeping your data?',
+  'pos.settings.storage.persisted': 'Protected storage',
+  'pos.settings.storage.persistedYes': 'On — this browser will not delete your data',
+  'pos.settings.storage.persistedNo': 'Off — this browser may delete your data',
+  'pos.settings.storage.persistedUnknown': 'This browser will not say',
+  'pos.settings.storage.persistHelp':
+    'Without protected storage the browser is allowed to clear this register when the disk gets full. Installing the register (the Install button in the header) usually turns it on. Set up an automatic backup folder as well — that is the copy that survives anything.',
+  'pos.settings.storage.persistAsk': 'Turn on protected storage',
+  'pos.settings.storage.recheck': 'Check again',
+  'pos.settings.storage.database': 'Register database',
+  'pos.settings.storage.databaseOk': 'Working',
+  'pos.settings.storage.databaseBlocked':
+    'Another tab has the register open and is holding it. Close the other tabs and check again.',
+  'pos.settings.storage.used': 'Space used',
+  'pos.settings.storage.usedOf': '{used} of {total}',
   'pos.settings.section.scanner': 'Scanner & printer',
   'pos.nav.store': 'Store',
   'pos.nav.appAdmin': 'App admin',
@@ -1762,6 +1777,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.appAdmin.noRoles': 'No custom roles yet.',
   'pos.appAdmin.roleSaved': 'Role saved',
   'pos.appAdmin.roleDeleted': 'Role deleted',
+  'pos.appAdmin.roleSaveFailed': 'Could not save the roles to this computer. Nothing was changed.',
   'pos.appAdmin.openingCash.title': 'Ask for the opening cash',
   'pos.appAdmin.openingCash.help':
     'When this is on, the sale screen asks the cashier what is in the drawer before their first sale, and writes the figure down with their name, the time and which till it came from. Nothing is ever compared against it: there is no closing count and no variance report. Only a Support account can change this switch — an owner cannot.',
@@ -1918,6 +1934,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.admin.sales.export': 'Export to a spreadsheet',
   'pos.admin.sales.listTitle': 'Sales',
   'pos.admin.sales.empty': 'No sales in this period.',
+  'pos.admin.sales.emptyForRange':
+    'No sales in this period. This till has {total} recorded in total — choose a longer period to see them.',
   'pos.admin.sales.receipt': 'Receipt',
   'pos.admin.sales.when': 'When',
   'pos.admin.sales.cashier': 'Who',
@@ -1962,6 +1980,41 @@ export const DEFAULT_MESSAGES: MessageDict = {
     'Adds everything from the file back onto this till. Sales already here are kept as they are, and receipt numbers never go backwards.',
   'pos.admin.backup.restore': 'Choose a backup file',
   'pos.admin.backup.restored': 'Restored {products} items, {users} people and {sales} sales. {skipped} sales were already here.',
+  'pos.admin.backup.readFailed':
+    'Could not read this computer’s records to count them. The backup button may not produce a complete file — check Settings → Storage.',
+  'pos.admin.backup.auto.title': 'Automatic backups',
+  'pos.admin.backup.auto.help':
+    'Choose a folder on this computer and the register saves a copy of everything into it by itself — after each sale, and at least every half hour. Pick a folder that your cloud drive syncs and the shop has an off-site copy too.',
+  'pos.admin.backup.auto.unsupported':
+    'Automatic backups need Chrome or Edge. In this browser you can still save a backup by hand with the button above.',
+  'pos.admin.backup.auto.noFolder': 'No folder chosen — nothing is being backed up automatically.',
+  'pos.admin.backup.auto.folder': 'Saving to: {folder}',
+  'pos.admin.backup.auto.last': 'Last backup: {when}',
+  'pos.admin.backup.auto.never': 'No backup has been saved to this folder yet.',
+  'pos.admin.backup.auto.stale':
+    'No backup has been saved for more than a day. Press “Back up now” and check the folder is still there.',
+  'pos.admin.backup.auto.needsPermission':
+    'This browser needs your permission again before it can write to the folder. Press “Back up now” once to grant it.',
+  'pos.admin.backup.auto.denied':
+    'Permission to write to that folder was refused. Choose the folder again to restore it.',
+  'pos.admin.backup.auto.failed': 'The last backup did not save: {reason}',
+  'pos.admin.backup.auto.choose': 'Choose a backup folder',
+  'pos.admin.backup.auto.change': 'Change folder',
+  'pos.admin.backup.auto.folderSet': 'Backup folder set',
+  'pos.admin.backup.auto.runNow': 'Back up now',
+  'pos.admin.backup.auto.stop': 'Stop automatic backups',
+  'pos.admin.loadFailed':
+    'This computer’s records could not be read. Nothing has been lost — check Settings → Storage, and close any other tab that has the register open.',
+  'pos.admin.loadRetry': 'Try again',
+  'pos.openSale.found':
+    'A sale of {count} items was left unfinished at {when}. Resume it, or clear it away.',
+  'pos.openSale.foundOther':
+    '{name} left a sale of {count} items unfinished at {when}. Resume it, or clear it away.',
+  'pos.openSale.resume': 'Resume sale',
+  'pos.openSale.discard': 'Clear it',
+  'pos.openSale.dismiss': 'OK',
+  'pos.openSale.settled':
+    'The sale that was open here had already been recorded as receipt {receipt}, so it has been cleared. Nobody was charged twice.',
   'pos.admin.backup.notABackup': 'That file is not a till backup.',
   'pos.admin.backup.confirmRestore': 'Add everything from this file onto this till?',
 

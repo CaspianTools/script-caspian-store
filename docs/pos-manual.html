@@ -664,7 +664,7 @@ const MANUAL = {
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
       ],
-      "version": "v13.1.1"
+      "version": "v13.2.0"
     },
     "parts": [
       {
@@ -1745,8 +1745,30 @@ const MANUAL = {
               "An amber warning about stock going negative is not a failure. The sale was recorded. It means you sold something the catalogue thought had run out, and the owner can tidy the stock figure up later.",
               "The scanner stops listening while the payment window is open and while the \"Sale complete\" screen is showing. That is deliberate, so that typing an amount cannot be read as a barcode. On the completed-sale screen you must press \"New sale\" before scanning the next customer's items.",
               "If the till loses its internet connection the sale is still recorded — it is held on this computer and sent when the connection returns. The receipt prints as normal. You can see what is waiting under Held sales in the menu down the left.",
-              "If the whole screen goes blank or the browser reloads mid-sale, the items on the ticket are gone and nothing was recorded. Scan them again.",
+              "If the whole screen goes blank, the browser reloads, or the power goes out mid-sale, the items on the ticket are not lost. The register writes the open sale onto this computer as you scan, and offers it back at the top of the screen when it comes up again — see “Coming back to an interrupted sale”. Nothing was recorded and nobody was charged; you choose whether to carry on with it or clear it away.",
               "Nothing is charged, recorded or taken off stock until \"Complete sale\" succeeds. If you are unsure whether a sale went through, look for it in the recent-sales table on the Point of sale page in the admin panel, or ask the owner to."
+            ]
+          },
+          {
+            "id": "resuming-an-interrupted-sale",
+            "title": "Coming back to an interrupted sale",
+            "audience": "staff",
+            "route": "/pos",
+            "summary": "A sale you are part-way through is written onto this computer as you scan it. Walking off to another screen keeps it. Reloading the page, closing the register and reopening it, or losing power at the wall all keep it too - when the register comes back a strip appears across the top offering the sale back, and you choose whether to carry on with it or clear it away.",
+            "steps": [
+              "Scan the items as normal. There is nothing to press to save the sale - it is written down as you go.",
+              "If you leave the sale screen for Settings, Sales, Store or People, the ticket is still there when you come back. Nothing is offered and nothing is lost.",
+              "If the register was reloaded, closed or cut off, a strip appears at the top of whatever screen you land on, saying how many items were on the sale and when it was left.",
+              "Press “Resume sale” to put the ticket back on the sale screen exactly as it was, and carry on.",
+              "Press “Clear it” if the customer has gone or you would rather start again. That throws the ticket away for good."
+            ],
+            "notes": [
+              "The strip is an offer, never an automatic restore. A basket that reappeared on its own would be indistinguishable from a scanning fault, and a cashier who did not know something had come back would ring the next customer's goods on top of it.",
+              "A sale left by a different cashier is still offered, and the strip names who left it. It is not hidden from you - a ticket nobody can reach is a ticket that is lost.",
+              "If the till died between taking the money and printing the receipt, you are not offered the sale back. Instead the strip says the sale had already been recorded and gives its receipt number. Nobody was charged twice. The register works this out by asking whether that exact sale landed, rather than guessing.",
+              "Only one interrupted sale is kept per till. Starting a new sale replaces it. There is no way to park several sales side by side and come back to them - that is a different feature and this register does not have it.",
+              "Nothing about this is switched on or off, and there is no setting for it. It is how the register behaves.",
+              "Completing a sale clears the ticket from the computer at the same moment. There is nothing left behind to be offered back afterwards."
             ]
           },
           {
@@ -2006,6 +2028,41 @@ const MANUAL = {
             ]
           },
           {
+            "id": "storage-health-on-this-till",
+            "title": "Checking this computer is actually keeping your data",
+            "audience": "owner",
+            "route": "/pos/settings",
+            "summary": "A till that runs on its own keeps everything inside the browser, and a browser is allowed to throw that away when the disk fills up. The Storage section of Settings says whether it has promised not to, whether the database is opening at all, and how much room is left. Look at it once when you set a till up, and again if anything ever looks wrong.",
+            "steps": [
+              "Press Settings in the menu, then Storage in the index down the left.",
+              "Under “Is this computer keeping your data?”, check that Protected storage reads On.",
+              "If it reads Off, press “Turn on protected storage”. If the browser refuses, install the register as an app with the Install button in the header and try again - an installed register is nearly always granted it.",
+              "Check that Register database reads Working.",
+              "Set up an automatic backup folder as well. Protected storage stops the browser deleting your data; it does nothing about a dead disk."
+            ],
+            "fields": [
+              {
+                "name": "Protected storage",
+                "what": "Whether this browser has promised not to clear the register when it needs space. Off means it may."
+              },
+              {
+                "name": "Register database",
+                "what": "Whether the store the register keeps everything in actually opens. Anything other than Working is the reason a screen is empty."
+              },
+              {
+                "name": "Space used",
+                "what": "How much room the register is taking, and how much this browser will allow it."
+              }
+            ],
+            "notes": [
+              "“Off - this browser may delete your data” does not mean anything has been lost. It means the browser has not committed to keeping it, which is the ordinary state of a website you have not installed.",
+              "Some browsers will not answer at all, and the line then reads “This browser will not say”. Treat that the same as Off: back up to a folder.",
+              "“Another tab has the register open and is holding it” means exactly that. Close the other tabs and press “Check again”. Until you do, the Store, Sales and People screens will show an error rather than your records.",
+              "If the database line says this computer's records are newer than this version of the register expects, an update was rolled back. Do not sell on that till; put the newer version back, or restore a backup onto a clean one.",
+              "This section is on every register, cloud or standalone, because the offline queue on a cloud till lives in the same place."
+            ]
+          },
+          {
             "id": "backing-up-this-till",
             "title": "Backing this till up, and putting it back",
             "audience": "owner",
@@ -2039,8 +2096,45 @@ const MANUAL = {
               "A file that is not a till backup is refused with \"That file is not a till backup.\" and nothing is changed.",
               "The file is plain text, and it includes the scrambled passwords of everybody on the till. Keep it where you would keep the takings.",
               "This is not the same thing as the export on the Sales screen. That is a record of sales for reading; this is the only thing that can put a till back.",
-              "Do it weekly, and always before moving the till to a new computer. There is no reminder, no schedule and no automatic copy - the software will never do this for you.",
+              "Set up an automatic backup folder as well - see “Backups that happen without you”. That is the copy that gets taken when nobody remembers. Still save one by hand before moving the till to a new computer, and keep a copy somewhere that is not this machine.",
               "This section is only on a till that runs on its own, and only for a role holding \"Back up and restore\"."
+            ]
+          },
+          {
+            "id": "automatic-backups",
+            "title": "Backups that happen without you",
+            "audience": "owner",
+            "route": "/pos/settings",
+            "summary": "Point the register at a folder on this computer once, and it writes the whole till into that folder by itself - after every sale, and at least every half hour. This is the part of backing up that does not depend on anybody remembering, which is the part that fails.",
+            "steps": [
+              "Press Settings in the menu, then Backup in the index down the left.",
+              "Under “Automatic backups”, press “Choose a backup folder” and pick a folder. Your browser asks permission to write to it - say yes.",
+              "Check that the line underneath now reads “Saving to:” followed by the folder name, and that a backup time appears.",
+              "Open that folder in your file manager and confirm two files are there: one named for the date and time, and one named caspian-till-latest.json.",
+              "If you have a cloud drive - OneDrive, Google Drive, Dropbox - choose a folder inside it. The shop then has an off-site copy with nothing else to set up."
+            ],
+            "fields": [
+              {
+                "name": "Choose a backup folder",
+                "what": "Asks which folder to write into, and takes one backup straight away so you can see it working."
+              },
+              {
+                "name": "Back up now",
+                "what": "Writes one immediately rather than waiting. Also how you grant permission again after restarting the computer."
+              },
+              {
+                "name": "Stop automatic backups",
+                "what": "Forgets the folder. The files already written are left exactly where they are."
+              }
+            ],
+            "notes": [
+              "This needs Chrome or Edge. Firefox and Safari cannot hand a website a folder to write into, and the section says so instead of showing a button that does nothing. On those browsers the manual “Save a backup now” is all there is.",
+              "The folder keeps the last dozen files, plus one from each of the last thirty days. Both numbers matter: a busy Saturday writes a file after every sale, and keeping only a flat count would push last week off the disk before lunch. Only files the register itself wrote, named caspian-till- followed by a date and a time, are ever removed - anything else you keep in that folder is left alone, including caspian-till-latest.json.",
+              "caspian-till-latest.json is overwritten every time and is always the newest copy. It is the file to point a sync client at. The dated files are the history.",
+              "After restarting the computer the browser usually asks for permission to the folder again, and a line appears saying so. Press “Back up now” once and say yes. Until you do, no automatic backup is being written.",
+              "If more than a day passes with no successful backup, a warning appears in this section. That warning is the only thing standing between a shop and a silent year of no backups, so do not ignore it.",
+              "A backup folder is not a substitute for taking a copy off this computer. A folder on the same disk dies with the disk. A folder your cloud drive syncs does not.",
+              "This section is only on a till that runs on its own, and only for a role holding “Back up and restore”."
             ]
           }
         ]
@@ -2378,7 +2472,7 @@ const MANUAL = {
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
       ],
-      "version": "v13.1.1"
+      "version": "v13.2.0"
     },
     "parts": [
       {
@@ -3203,7 +3297,7 @@ const MANUAL = {
               "Ehtiyatın mənfiyə düşməsi ilə bağlı sarı xəbərdarlıq uğursuzluq deyil. Satış qeyd olunub. O, kataloqun qurtardığını düşündüyü bir şeyi satdığınızı bildirir və sahib ehtiyat rəqəmini sonra səliqəyə sala bilər.",
               "Ödəniş pəncərəsi açıq ikən və Satış tamamlandı ekranı göstərilərkən skaner dinləməni dayandırır. Bu qəsdəndir ki, məbləğ yazmaq barkod kimi oxunmasın. Tamamlanmış satış ekranında növbəti müştərinin məhsullarını skan etməzdən əvvəl Yeni satış düyməsini basmalısınız.",
               "Kassa internet bağlantısını itirsə də satış qeyd olunur - o, bu kompüterdə saxlanılır və bağlantı qayıdanda göndərilir. Qəbz adi qaydada çap olunur. Nəyin gözlədiyini soldakı menyudakı Gözləyən satışlar bölməsində görə bilərsiniz.",
-              "Bütün ekran qaralarsa və ya brauzer satışın ortasında yenidən yüklənərsə, siyahıdakı məhsullar itir və heç nə qeyd olunmur. Onları yenidən skan edin.",
+              "Bütün ekran qaralarsa, brauzer yenidən yüklənərsə və ya satışın ortasında işıq kəsilərsə, siyahıdakı məhsullar itmir. Kassa siz skan etdikcə açıq satışı bu kompüterə yazır və yenidən açılanda onu ekranın yuxarısında geri təklif edir — “Yarımçıq qalmış satışa qayıtmaq” bölməsinə baxın. Heç nə qeyd olunmayıb və heç kimdən pul alınmayıb; davam etmək və ya təmizləmək sizin seçiminizdir.",
               "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin."
             ]
           }
@@ -3536,7 +3630,7 @@ const MANUAL = {
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
       ],
-      "version": "v13.1.1"
+      "version": "v13.2.0"
     },
     "parts": [
       {
@@ -4361,7 +4455,7 @@ const MANUAL = {
               "Жёлтое предупреждение об уходе остатка в минус - это не сбой. Продажа записана. Оно означает, что вы продали то, что каталог считал закончившимся, и владелец сможет позже поправить цифру остатка.",
               "Пока открыто окно оплаты и пока показан экран «Продажа завершена», сканер перестаёт слушать. Это сделано намеренно, чтобы ввод суммы не читался как штрихкод. На экране завершённой продажи нужно нажать «Новая продажа», прежде чем сканировать товары следующего покупателя.",
               "Если касса потеряет связь с интернетом, продажа всё равно записывается - она хранится на этом компьютере и отправляется, когда связь вернётся. Чек печатается как обычно. Что именно ждёт отправки, видно в разделе «Отложенные продажи» в меню слева.",
-              "Если экран погас или браузер перезагрузился посреди продажи, товары из чека пропали и ничего не записано. Отсканируйте их заново.",
+              "Если экран погас, браузер перезагрузился или посреди продажи пропало электричество, товары из чека не пропадают. Касса записывает открытую продажу на этот компьютер по мере сканирования и предлагает её обратно вверху экрана при следующем запуске — см. «Возвращение к незавершённой продаже». Ничего не записано и никто не был списан; вы сами решаете, продолжить её или очистить.",
               "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца."
             ]
           }
@@ -4694,7 +4788,7 @@ const MANUAL = {
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
       ],
-      "version": "v13.1.1"
+      "version": "v13.2.0"
     },
     "parts": [
       {
@@ -5519,7 +5613,7 @@ const MANUAL = {
               "Stoğun eksiye düşmesiyle ilgili sarı uyarı bir hata değildir. Satış kaydedildi. Kataloğun tükendiğini sandığı bir şeyi sattığınızı gösterir ve mağaza sahibi stok rakamını sonra düzeltebilir.",
               "Ödeme penceresi açıkken ve Satış tamamlandı ekranı gösterilirken tarayıcı dinlemeyi bırakır. Bu bilerek yapılmıştır ki bir tutar yazmak barkod olarak okunmasın. Tamamlanan satış ekranında, bir sonraki müşterinin ürünlerini okutmadan önce Yeni satış düğmesine basmanız gerekir.",
               "Kasa internet bağlantısını kaybetse de satış yine kaydedilir - bu bilgisayarda tutulur ve bağlantı döndüğünde gönderilir. Fiş normal şekilde basılır. Neyin beklediğini soldaki menüdeki Bekleyen satışlar bölümünde görebilirsiniz.",
-              "Ekran tamamen kararırsa veya tarayıcı satışın ortasında yeniden yüklenirse fişteki ürünler gitmiştir ve hiçbir şey kaydedilmemiştir. Onları yeniden okutun.",
+              "Ekran tamamen kararırsa, tarayıcı yeniden yüklenirse veya satışın ortasında elektrik giderse fişteki ürünler kaybolmaz. Kasa, siz okuttukça açık satışı bu bilgisayara yazar ve yeniden açıldığında ekranın üstünde geri önerir — bkz. “Yarım kalan bir satışa dönmek”. Hiçbir şey kaydedilmedi ve kimseden tahsilat yapılmadı; devam etmek ya da temizlemek sizin seçiminiz.",
               "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin."
             ]
           }

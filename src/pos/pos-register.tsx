@@ -24,7 +24,8 @@ import { usePosAdapter } from './pos-adapter-context';
 import type { PosCommittedSale, PosSaleLine, PosTenderInput } from './storage/types';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { readLocalShopSettings } from './standalone/local-db';
-import { usePosTicket } from './use-pos-ticket';
+import { announcePosSaleCommitted } from './standalone/use-pos-auto-backup';
+import { usePosOpenSale } from './open-sale-context';
 import { getPosDeviceId, getPosDeviceLabel, nextPosSaleId } from './pos-device';
 import { PosTenderDialog, parseAmount } from './pos-tender-dialog';
 import {
@@ -88,7 +89,11 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const { user, userProfile } = useAuth();
   const local = usePosLocalSession();
   const t = useT();
-  const ticket = usePosTicket();
+  // The open sale lives above this component, and on disk. `PosRoot` swaps
+  // this whole component out for every other /pos screen, so a ticket owned
+  // here would not survive a cashier glancing at Settings.
+  const openSale = usePosOpenSale();
+  const ticket = openSale.ticket;
   // One adapter for the whole register, shared with the connection pill and the
   // held-sales page so all three watch the same outbox.
   const { adapter } = usePosAdapter();
@@ -117,8 +122,11 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     : userProfile?.displayName || user?.email || '';
 
   const deviceId = useMemo(() => getPosDeviceId(), []);
-  // Held across retries of the SAME sale — see the note in `commit`.
-  const saleIdRef = useRef<string | null>(null);
+  // Held across retries of the SAME sale — see the note in `commit`. Owned by
+  // the provider so it is written to disk beside the lines it belongs to: a
+  // ticket recovered without its sale id would mint a fresh one and charge a
+  // customer twice for a commit that had actually landed.
+  const saleIdRef = openSale.saleIdRef;
   // What was tendered on the last attempt, so a sale recovered on cancel can
   // still print a full receipt instead of one missing its payment lines.
   const lastTendersRef = useRef<PosTenderInput[]>([]);
@@ -284,6 +292,11 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
       // charging. Minting a fresh id per retry would create the second sale.
       const saleId = saleIdRef.current ?? nextPosSaleId();
       saleIdRef.current = saleId;
+      // Awaited, not fired and forgotten: the window this closes is a crash
+      // between sending the sale and hearing back, and a ticket recovered
+      // without this id would mint a fresh one and charge the customer twice.
+      // An unawaited write is not ordered against the commit at all.
+      await openSale.flush();
       lastTendersRef.current = tenders;
       try {
         const sale = await adapter.commitSale({
@@ -311,7 +324,21 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           receiptFooter: posSettings?.receiptFooter,
           cashRounding: posSettings?.roundCashTo,
         });
-        saleIdRef.current = null;
+        // Both, and in this order. `settle` forgets the sale id and stops the
+        // writer; `clear` empties the basket that has just been paid for. The
+        // receipt above was built from those lines a moment ago and the done
+        // screen renders from `receipt`, so nothing downstream needs them.
+        //
+        // Clearing used to happen by accident: the ticket lived inside this
+        // component and died when `PosRoot` swapped the screen. Now that it
+        // outlives the screen, leaving it would put a settled basket back in
+        // front of the next customer with a live Pay button.
+        openSale.settle();
+        ticket.clear();
+        // The trigger for an automatic backup. A sale is the only event that
+        // makes the previous backup out of date, so it is the only one worth
+        // waking the writer for.
+        announcePosSaleCommitted();
         setPhase({ kind: 'done', sale, receipt });
       } catch (error) {
         reportServiceError(db, 'pos-register.commit', error);
@@ -322,7 +349,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
         setCommitting(false);
       }
     },
-    [adapter, cashierName, db, deviceId, posSettings, t, ticket],
+    [adapter, cashierName, db, deviceId, openSale, posSettings, t, ticket],
   );
 
   /**
@@ -365,25 +392,31 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           receiptFooter: posSettings?.receiptFooter,
           cashRounding: posSettings?.roundCashTo,
         });
-        saleIdRef.current = null;
+        openSale.settle();
+        ticket.clear();
         setPhase({ kind: 'done', sale: landed, receipt });
         return;
       }
       // Definitively absent: nothing was charged, so an edited ticket is free to
       // start a fresh id.
       saleIdRef.current = null;
+      openSale.setOutcomeUnknown(false);
+      openSale.persist();
       setPhase({ kind: 'selling' });
     } catch (error) {
       // Could not find out. Keep the id — a retry then collides with the
       // committed sale instead of creating a second one. The cost is that an
       // item added now would be swallowed, so say so rather than hide it.
       reportServiceError(db, 'pos-register.cancelProbe', error);
-      setScanMessage(t('pos.done.outcomeUnknown'));
+      // Held in the provider, not in `scanMessage`: the burnt sale id now
+      // survives a walk to another screen, and a warning that did not would
+      // leave a cashier adding items to a sale that cannot accept them.
+      openSale.setOutcomeUnknown(true);
       setPhase({ kind: 'selling' });
     } finally {
       setCommitting(false);
     }
-  }, [adapter, cashierName, db, posSettings, t, ticket]);
+  }, [adapter, cashierName, db, openSale, posSettings, t, ticket]);
 
   const startNewSale = useCallback(() => {
     ticket.clear();
@@ -392,8 +425,9 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     setCommitError(null);
     setDiscountLine(null);
     saleIdRef.current = null;
+    openSale.settle();
     setPhase({ kind: 'selling' });
-  }, [ticket]);
+  }, [openSale, ticket]);
 
 
   if (!posSettings) {

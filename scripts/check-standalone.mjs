@@ -11,7 +11,10 @@
  *
  * The IndexedDB layer is deliberately not covered here — it needs a browser,
  * which is exactly why the arithmetic it wraps was extracted into
- * `priceLocalSale`, where it can be checked without one.
+ * `priceLocalSale`, where it can be checked without one. The same trick is used
+ * for the row shape `writeLocalRoles` puts (`localRolesRow`) and for the backup
+ * pruner, which is handed a fake directory handle: both delete or drop data,
+ * and both failed silently in a browser before anything checked them.
  *
  *   npm run build && node scripts/check-standalone.mjs
  */
@@ -49,6 +52,14 @@ const {
   localDayKey,
   msUntilNextLocalDay,
   latestOpeningCash,
+  localRolesRow,
+  formatBytes,
+  storageIsTight,
+  pruneDatedBackups,
+  LATEST_BACKUP_FILENAME,
+  RECENT_BACKUPS_KEPT,
+  DAILY_BACKUPS_KEPT,
+  OPEN_SALE_KEY,
 } = lib;
 
 let passed = 0;
@@ -532,6 +543,122 @@ check('usernames are case-insensitive', () => {
 });
 check('minimum password length is exported', () => {
   assert.ok(MIN_LOCAL_PASSWORD_LENGTH >= 6);
+});
+
+console.log('roles are written in a shape the store will accept');
+check('the roles row carries the id its object store keys on', () => {
+  // The store is created with `keyPath: 'id'`. A row without one is a
+  // `DataError`, the transaction aborts, and the only visible symptom is a
+  // success toast that never appears -- which is how custom roles quietly
+  // failed to survive a reload for three releases.
+  const row = localRolesRow([{ id: 'staff', name: 'Staff', enabled: true, capabilities: [] }]);
+  assert.equal(row.id, 'roles');
+  assert.equal(row.key, row.id);
+  assert.equal(row.value.length, 1);
+});
+
+console.log('storage health');
+check('bytes are reported in units a shop reads', () => {
+  assert.equal(formatBytes(512), '512 B');
+  assert.equal(formatBytes(2048), '2.0 KB');
+  assert.equal(formatBytes(5 * 1024 * 1024), '5.0 MB');
+  assert.equal(formatBytes(20 * 1024 * 1024), '20 MB');
+});
+check('a near-full quota is called tight, and an unknown one is not', () => {
+  assert.equal(storageIsTight({ usage: 95, quota: 100 }), true);
+  assert.equal(storageIsTight({ usage: 50, quota: 100 }), false);
+  assert.equal(storageIsTight({ usage: null, quota: null }), false);
+  // A zero quota is a browser declining to answer, not a full disk.
+  assert.equal(storageIsTight({ usage: 10, quota: 0 }), false);
+});
+
+console.log('backup pruning');
+const fakeFolder = (names) => {
+  const removed = [];
+  return {
+    removed,
+    async *entries() {
+      for (const name of names) yield [name, { kind: 'file' }];
+    },
+    removeEntry: async (name) => {
+      removed.push(name);
+    },
+  };
+};
+const stamp = (day, hhmm) => `caspian-till-2026-01-${String(day).padStart(2, '0')}-${hhmm}.json`;
+
+await (async () => {
+  // The failure this policy exists to prevent: the writer makes a file after
+  // every sale, so a plain keep-30 count meant a busy till's oldest "backup"
+  // was two hours old. One a day has to survive regardless of volume.
+  const busyDay = ['0900', '1000', '1100', '1200', '1300', '1400', '1500', '1600'];
+  const names = [];
+  for (const day of [1, 2, 3]) for (const t of busyDay) names.push(stamp(day, t));
+
+  const folder = fakeFolder(names);
+  await pruneDatedBackups(folder, { recent: 3, days: 30 });
+  const kept = names.filter((n) => !folder.removed.includes(n));
+
+  check('one file survives from every day, however many that day produced', () => {
+    for (const day of [1, 2, 3]) {
+      const survivors = kept.filter((n) => n.includes(`2026-01-0${day}-`));
+      assert.ok(survivors.length >= 1, `nothing kept from day ${day}`);
+    }
+  });
+  check('the file kept for a day is that day\'s last, not its first', () => {
+    assert.ok(kept.includes(stamp(1, '1600')));
+    assert.ok(!kept.includes(stamp(1, '0900')));
+  });
+  check('the most recent few survive on top of the daily ones', () => {
+    for (const t of ['1400', '1500', '1600']) assert.ok(kept.includes(stamp(3, t)));
+  });
+})();
+
+await (async () => {
+  // Everything else in the folder is somebody's file. This runs against a real
+  // directory a shop chose, so anything but our own dated pattern must be
+  // untouchable -- including the rolling copy, which is the newest data there is.
+  const names = [
+    stamp(1, '0900'), stamp(2, '0900'), stamp(3, '0900'), stamp(4, '0900'),
+    LATEST_BACKUP_FILENAME,
+    'payroll.json',
+    'caspian-till-notes.json',
+    'caspian-till-2026-01-09.json',
+    'caspian-till-2026-01-09-0900.json.bak',
+  ];
+  const folder = fakeFolder(names);
+  await pruneDatedBackups(folder, { recent: 1, days: 1 });
+  check('nothing outside the dated pattern is ever deleted', () => {
+    assert.deepEqual(folder.removed, [stamp(1, '0900'), stamp(2, '0900'), stamp(3, '0900')]);
+  });
+})();
+
+await (async () => {
+  const names = [stamp(1, '0900'), stamp(2, '0900')];
+  const folder = fakeFolder(names);
+  await pruneDatedBackups(folder);
+  check('a folder under the keep counts loses nothing', () => {
+    assert.deepEqual(folder.removed, []);
+  });
+})();
+
+check('the keep policy is two numbers, and both are sane', () => {
+  assert.ok(RECENT_BACKUPS_KEPT >= 1);
+  assert.ok(DAILY_BACKUPS_KEPT >= 7);
+});
+
+check('the name the till writes is the name the pruner recognises', () => {
+  // The coupling that would otherwise rot silently: change the stamp format and
+  // pruning stops matching, so a busy till grows an unbounded folder forever.
+  const dated = /^caspian-till-(\d{4}-\d{2}-\d{2})-\d{4}\.json$/;
+  const produced = localBackupFilename(new Date(2026, 0, 9, 8, 5));
+  assert.ok(dated.test(produced), produced);
+  assert.equal(dated.exec(produced)[1], '2026-01-09');
+  assert.ok(!dated.test(LATEST_BACKUP_FILENAME));
+});
+
+check('the open sale is stored under one key per till', () => {
+  assert.equal(OPEN_SALE_KEY, 'current');
 });
 
 if (failed) {

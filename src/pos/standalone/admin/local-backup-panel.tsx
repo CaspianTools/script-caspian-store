@@ -13,6 +13,9 @@ import {
   saveTextFile,
 } from '../local-backup';
 import { listLocalProducts, listLocalSales, listLocalUsers } from '../local-db';
+import { useFormatDate } from '../../../i18n/locale-context';
+import { pickBackupFolder, forgetBackupFolder, backupFolderSupported } from '../local-backup-folder';
+import { usePosAutoBackupState } from '../auto-backup-context';
 import { actions, fieldLabel, muted, section, warning } from './panel-styles';
 
 /**
@@ -31,15 +34,27 @@ export function LocalBackupPanel() {
     null,
   );
   const [busy, setBusy] = useState(false);
+  const [countsError, setCountsError] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const auto = usePosAutoBackupState();
+  const formatWhen = useFormatDate({ dateStyle: 'medium', timeStyle: 'short' });
 
   const refresh = useCallback(async () => {
-    const [products, users, sales] = await Promise.all([
-      listLocalProducts(),
-      listLocalUsers(),
-      listLocalSales(),
-    ]);
-    setCounts({ products: products.length, users: users.length, sales: sales.length });
+    // Wrapped because an IndexedDB that will not open rejects here, and an
+    // unhandled rejection left this screen showing nothing at all -- which is
+    // exactly how "my sales disappeared" looks from the counter.
+    try {
+      const [products, users, sales] = await Promise.all([
+        listLocalProducts(),
+        listLocalUsers(),
+        listLocalSales(),
+      ]);
+      setCounts({ products: products.length, users: users.length, sales: sales.length });
+      setCountsError(false);
+    } catch {
+      setCounts(null);
+      setCountsError(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -95,12 +110,94 @@ export function LocalBackupPanel() {
             })}
           </div>
         ) : null}
+        {countsError ? (
+          <div style={warning}>{t('pos.admin.backup.readFailed')}</div>
+        ) : null}
         <FieldDescription>{t('pos.admin.backup.help')}</FieldDescription>
         <div style={actions}>
           <Button onClick={() => void backup()} disabled={busy}>
             {t('pos.admin.backup.download')}
           </Button>
         </div>
+      </section>
+
+      <section style={section}>
+        <span style={fieldLabel}>{t('pos.admin.backup.auto.title')}</span>
+        {!backupFolderSupported() ? (
+          <FieldDescription>{t('pos.admin.backup.auto.unsupported')}</FieldDescription>
+        ) : (
+          <>
+            <FieldDescription>{t('pos.admin.backup.auto.help')}</FieldDescription>
+            <div style={muted}>
+              {auto.folderName
+                ? t('pos.admin.backup.auto.folder', { folder: auto.folderName })
+                : t('pos.admin.backup.auto.noFolder')}
+            </div>
+            {auto.folderName ? (
+              <div style={muted}>
+                {auto.lastOkMillis
+                  ? t('pos.admin.backup.auto.last', {
+                      when: formatWhen.format(new Date(auto.lastOkMillis)),
+                    })
+                  : t('pos.admin.backup.auto.never')}
+              </div>
+            ) : null}
+            {auto.stale ? <div style={warning}>{t('pos.admin.backup.auto.stale')}</div> : null}
+            {auto.permission === 'prompt' && auto.folderName ? (
+              <div style={warning}>{t('pos.admin.backup.auto.needsPermission')}</div>
+            ) : null}
+            {auto.permission === 'denied' ? (
+              <div style={warning}>{t('pos.admin.backup.auto.denied')}</div>
+            ) : null}
+            {auto.lastError && auto.lastError !== 'permission' ? (
+              <div style={warning}>
+                {t('pos.admin.backup.auto.failed', { reason: auto.lastError })}
+              </div>
+            ) : null}
+            <div style={actions}>
+              <Button
+                variant={auto.folderName ? 'outline' : 'primary'}
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    if (await pickBackupFolder()) {
+                      await auto.refresh();
+                      await auto.backupNow();
+                      toast({ title: t('pos.admin.backup.auto.folderSet') });
+                    }
+                  })();
+                }}
+              >
+                {auto.folderName
+                  ? t('pos.admin.backup.auto.change')
+                  : t('pos.admin.backup.auto.choose')}
+              </Button>
+              {auto.folderName ? (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={busy || auto.running}
+                    onClick={() => void auto.backupNow()}
+                  >
+                    {t('pos.admin.backup.auto.runNow')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => {
+                      void (async () => {
+                        await forgetBackupFolder();
+                        await auto.refresh();
+                      })();
+                    }}
+                  >
+                    {t('pos.admin.backup.auto.stop')}
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </>
+        )}
       </section>
 
       <section style={section}>

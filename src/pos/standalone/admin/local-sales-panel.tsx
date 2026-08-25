@@ -13,6 +13,7 @@ import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
 import type { LocalOpeningCash, LocalSale } from '../types';
 import { actions, fieldLabel, muted, row, section } from './panel-styles';
+import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
 
 type Range = 'today' | 'week' | 'month' | 'all';
@@ -41,21 +42,30 @@ export function LocalSalesPanel() {
   const session = usePosLocalSession();
   const mayExport = can(session.user?.role, 'sales.export');
   const [sales, setSales] = useState<LocalSale[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [openingCash, setOpeningCash] = useState<LocalOpeningCash[] | null>(null);
   const [requireOpeningCash, setRequireOpeningCash] = useState(false);
   const [currency, setCurrency] = useState('USD');
   const [range, setRange] = useState<Range>('today');
 
   const refresh = useCallback(async () => {
-    const [rows, shop, floats] = await Promise.all([
-      listLocalSales(),
-      readLocalShopSettings(),
-      listLocalOpeningCash(),
-    ]);
-    setSales(rows);
-    setCurrency(shop.currency || 'USD');
-    setRequireOpeningCash(shop.requireOpeningCash);
-    setOpeningCash(floats);
+    // Guarded because this rejects when IndexedDB will not open, and an
+    // unhandled rejection left `sales` null forever -- a permanent "loading"
+    // that reads, from the counter, as the day's takings having vanished.
+    try {
+      const [rows, shop, floats] = await Promise.all([
+        listLocalSales(),
+        readLocalShopSettings(),
+        listLocalOpeningCash(),
+      ]);
+      setSales(rows);
+      setCurrency(shop.currency || 'USD');
+      setRequireOpeningCash(shop.requireOpeningCash);
+      setOpeningCash(floats);
+      setLoadFailed(false);
+    } catch {
+      setLoadFailed(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -245,10 +255,22 @@ export function LocalSalesPanel() {
 
       <section style={section}>
         <span style={fieldLabel}>{t('pos.admin.sales.listTitle')}</span>
-        {sales === null ? (
+        {loadFailed ? (
+          <PanelLoadError onRetry={() => void refresh()} />
+        ) : sales === null ? (
           <div style={muted}>{t('common.loading')}</div>
         ) : visible.length === 0 ? (
-          <div style={muted}>{t('pos.admin.sales.empty')}</div>
+          <div style={muted}>
+            {/*
+              Names the filter, because the picker defaults to Today and an
+              empty table under it looks exactly like a till that has lost its
+              history. Saying how many sales are on the machine altogether is
+              what separates the two.
+            */}
+            {sales.length > 0
+              ? t('pos.admin.sales.emptyForRange', { total: sales.length })
+              : t('pos.admin.sales.empty')}
+          </div>
         ) : (
           <Table>
             <THead>

@@ -13,6 +13,7 @@ import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
 import { can as canBuiltIn, type LocalUser, type PosLocalRole } from '../types';
 import { fieldLabel, muted, section } from './panel-styles';
+import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
 import { UsersIcon } from '../../../ui/icons';
 
@@ -28,6 +29,7 @@ export function LocalPeoplePanel() {
   const session = usePosLocalSession();
   const { enabledRoles, can } = usePosRoles();
   const [users, setUsers] = useState<LocalUser[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const isSupport = canBuiltIn(session.user?.role, 'appAdmin.view');
   // Seeing the staff list and changing it are separate grants, so a role can be
@@ -39,7 +41,12 @@ export function LocalPeoplePanel() {
     : enabledRoles.filter((r) => r.id !== 'superadmin');
 
   const refresh = useCallback(async () => {
-    setUsers(await listLocalUsers());
+    try {
+      setUsers(await listLocalUsers());
+      setLoadFailed(false);
+    } catch {
+      setLoadFailed(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -81,7 +88,9 @@ export function LocalPeoplePanel() {
     <div>
       <section style={section}>
         <span style={fieldLabel}>{t('pos.admin.people.listTitle')}</span>
-        {users === null ? (
+        {loadFailed ? (
+          <PanelLoadError onRetry={() => void refresh()} />
+        ) : users === null ? (
           <div style={muted}>{t('common.loading')}</div>
         ) : (
           <Table>

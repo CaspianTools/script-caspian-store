@@ -26,6 +26,12 @@ export interface PosTicket {
   setQuantity: (index: number, quantity: number) => void;
   setLineDiscount: (index: number, discount: number) => void;
   removeLine: (index: number) => void;
+  /**
+   * Put a whole ticket back, for a sale recovered from disk after a reload or a
+   * power cut. Not a scanning operation — nothing in the register calls this
+   * except `PosOpenSaleProvider`.
+   */
+  replaceLines: (lines: PosSaleLine[]) => void;
   clear: () => void;
   isEmpty: boolean;
 }
@@ -98,6 +104,8 @@ export function usePosTicket(): PosTicket {
     setLines((current) => current.filter((_, i) => i !== index));
   }, []);
 
+  const replaceLines = useCallback((next: PosSaleLine[]) => setLines(next), []);
+
   const clear = useCallback(() => setLines([]), []);
 
   const totals = useMemo<PosTicketTotals>(() => {
@@ -127,6 +135,7 @@ export function usePosTicket(): PosTicket {
     setQuantity,
     setLineDiscount,
     removeLine,
+    replaceLines,
     clear,
     isEmpty: lines.length === 0,
   };

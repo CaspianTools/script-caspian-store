@@ -253,10 +253,25 @@ function RolesSection() {
   const { roles, saveRoles, loading } = usePosRoles();
   const [editing, setEditing] = useState<RoleDefinition | null>(null);
 
+  /**
+   * Every save reports its failure. They used to be bare `void x.then(...)`
+   * chains, so when `writeLocalRoles` was aborting on every call the only
+   * symptom was a success toast that never appeared -- and the roles were back
+   * to the built-ins on the next reload with nothing having said so.
+   */
+  const persistRoles = (next: RoleDefinition[], title: string, after?: () => void) => {
+    void saveRoles(next)
+      .then(() => {
+        after?.();
+        toast({ title });
+      })
+      .catch(() => toast({ title: t('pos.appAdmin.roleSaveFailed') }));
+  };
+
   const toggleBuiltIn = (id: PosLocalRole) => {
     if (LOCKED_IDS.includes(id)) return;
     const next = roles.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r));
-    void saveRoles(next).then(() => toast({ title: t('pos.settings.saved') }));
+    persistRoles(next, t('pos.settings.saved'));
   };
 
   const startAdd = () => {
@@ -275,15 +290,12 @@ function RolesSection() {
     const next = exists
       ? roles.map((r) => (r.id === editing.id ? editing : r))
       : [...roles, editing];
-    void saveRoles(next).then(() => {
-      setEditing(null);
-      toast({ title: t('pos.appAdmin.roleSaved') });
-    });
+    persistRoles(next, t('pos.appAdmin.roleSaved'), () => setEditing(null));
   };
 
   const removeCustom = (id: PosLocalRole) => {
     const next = roles.filter((r) => r.id !== id);
-    void saveRoles(next).then(() => toast({ title: t('pos.appAdmin.roleDeleted') }));
+    persistRoles(next, t('pos.appAdmin.roleDeleted'));
   };
 
   /**

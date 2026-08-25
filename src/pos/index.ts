@@ -149,6 +149,7 @@ export {
   latestLocalOpeningCash,
   listLocalOpeningCash,
   factoryResetLocalStore,
+  localRolesRow,
   type LocalLookup,
   type LocalCommitInput,
   type LocalCommitLine,
@@ -188,3 +189,53 @@ export {
   type PosLicenseBannerProps,
   type PosLicenseSectionProps,
 } from './license';
+
+// --- Keeping a standalone till's data (v13.2.0) ---
+
+export {
+  PosOpenSaleProvider,
+  usePosOpenSale,
+  type PosOpenSale,
+  type RecoveredOpenSale,
+} from './open-sale-context';
+export { PosOpenSaleBanner } from './open-sale-banner';
+export {
+  readOpenSale,
+  writeOpenSale,
+  clearOpenSale,
+  OPEN_SALE_KEY,
+  type PersistedOpenSale,
+} from './open-sale-store';
+
+export {
+  ensurePosStoragePersisted,
+  readPosStorageHealth,
+  probePosDb,
+  formatBytes,
+  storageIsTight,
+  type PosStorageHealth,
+  type PosDbProbe,
+} from './pos-storage-durability';
+export { PosStorageHealthCard } from './pos-storage-health-card';
+
+export {
+  backupFolderSupported,
+  pickBackupFolder,
+  readBackupFolder,
+  forgetBackupFolder,
+  backupFolderPermission,
+  writeBackupFile,
+  pruneDatedBackups,
+  LATEST_BACKUP_FILENAME,
+  RECENT_BACKUPS_KEPT,
+  DAILY_BACKUPS_KEPT,
+  type BackupDirectoryHandle,
+  type BackupFolderPermission,
+} from './standalone/local-backup-folder';
+export {
+  usePosAutoBackup,
+  announcePosSaleCommitted,
+  BACKUP_STALE_MS,
+  type PosAutoBackupState,
+} from './standalone/use-pos-auto-backup';
+export { PosAutoBackupProvider, usePosAutoBackupState } from './standalone/auto-backup-context';

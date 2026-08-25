@@ -16,6 +16,74 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.2.0 — A till that cannot lose what it is holding
+
+### No consumer action required
+
+Nothing to migrate. The `openTicket` object store this uses has existed since
+version 2 of the register database, so no schema change and no `DB_VERSION`
+bump. Reinstall to pick it up, then on each till open **Settings → Storage**
+once to check protected storage is on, and — on a standalone till —
+**Settings → Backup** to choose a backup folder. The folder picker needs Chrome
+or Edge; other browsers keep the manual download and say so.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.2.0
+```
+
+### Added
+
+- **The open sale survives everything.** The ticket a cashier is part-way
+  through is written to IndexedDB on every change and offered back after a
+  reload, a crash or a power cut. Its sale id travels with it, so a till that
+  died between taking the money and printing the receipt does not charge the
+  customer twice — on restart the register asks the storage adapter whether that
+  sale landed, and says so instead of restoring a basket that was already paid
+  for. A committed sale clears the ticket the instant it is recorded and the
+  writer then refuses to touch disk until the next item is scanned, so no
+  `pagehide` can write a paid-for basket back as an open one. New:
+  `PosOpenSaleProvider`, `usePosOpenSale`, `PosOpenSaleBanner`,
+  `readOpenSale` / `writeOpenSale` / `clearOpenSale`.
+- **The "could not check the last sale" warning now follows the sale id it
+  describes.** It lived in the register's own state and vanished the moment a
+  cashier looked at another screen, while the burnt id it was warning about
+  survived — so items scanned afterwards would have been swallowed silently.
+- **Automatic backups to a folder on the computer.** Point the register at a
+  folder once and it writes the whole till into it by itself — after every sale
+  and at least every half hour — keeping the last dozen files plus one from each
+  of the last thirty days, alongside a rolling `caspian-till-latest.json`.
+  Choose a folder your cloud drive syncs and the shop has an off-site copy
+  without anyone remembering anything. Chromium only; Firefox and Safari say so
+  plainly and keep the manual download.
+- **A storage health card at `/pos/settings`.** Says whether the browser has
+  promised not to evict this origin, whether the database actually opens, and
+  how much space is left, with a button to request protected storage.
+
+### Changed
+
+- The register now requests `navigator.storage.persist()` whenever it starts.
+  It was previously requested only inside the service-worker effect, which
+  returns early outside production builds — so a till running anything else
+  never asked, and its IndexedDB stayed evictable.
+- `clearPosDb` no longer wipes `openTicket`. Clearing a stuck offline queue must
+  not throw away the sale the cashier is standing there ringing up.
+- The sales list distinguishes "nothing in this period" from "nothing at all",
+  naming the total on the till. The period picker defaults to Today, and an
+  empty table under it read as lost history.
+
+### Fixed
+
+- **Custom roles never persisted.** `localRoles` is keyed on `id` but every
+  write put a row with only a `key`, so IndexedDB threw `DataError`, the
+  transaction aborted, and the rejection was swallowed by a bare
+  `void saveRoles(...)`. A shop that customised who may open which screen got
+  the built-in roles back on the next reload with nothing saying so. Role saves
+  now report failure, and `scripts/check-standalone.mjs` pins the row shape.
+- Back-office panels no longer render a permanent spinner when IndexedDB will
+  not open. A database blocked by another tab, blocked site data, or one written
+  by a newer build now produces an error card with a retry — previously it was
+  indistinguishable from a till that had never sold anything.
+
 ## v13.1.1 — Say the right thing about an empty drawer
 
 ### No consumer action required
