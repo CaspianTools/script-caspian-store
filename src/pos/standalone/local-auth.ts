@@ -23,9 +23,18 @@ import {
   saveLocalUser,
 } from './local-db';
 import type { LocalUser, PosLocalRole } from './types';
+import {
+  evaluateSignInThrottle,
+  pruneSignInThrottle,
+  recordSignInFailure,
+  type SignInThrottleRecord,
+  type SignInThrottleState,
+  type SignInThrottleVerdict,
+} from './sign-in-throttle';
 
 const SESSION_KEY = 'caspian:pos:localSession';
 const SIGN_IN_KEY = 'caspian:pos:localSignIn';
+const THROTTLE_KEY = 'caspian:pos:localSignInThrottle';
 
 /**
  * OWASP's current floor for PBKDF2-HMAC-SHA256. Costs a few hundred
@@ -180,44 +189,329 @@ export async function isCommissioned(): Promise<boolean> {
   return (await listLocalUsers()).length > 0;
 }
 
-export async function signInLocal(username: string, password: string): Promise<LocalUser | null> {
-  const user = await getLocalUserByUsername(normaliseUsername(username));
+/**
+ * Whether a stored account should be re-hashed at the current cost.
+ *
+ * `passwordIterations` is stored per user precisely so the cost can be raised
+ * later without locking out anybody who signed up under the old one. Nothing
+ * acted on it until now, which made the field decoration: an account created at
+ * the old cost stayed there for life. `attemptLocalSignIn` calls this on the one
+ * occasion the plaintext is in hand.
+ */
+export function needsRehash(user: LocalUser): boolean {
+  return user.passwordIterations < PBKDF2_ITERATIONS;
+}
+
+export type LocalSignInResult =
+  | { ok: true; user: LocalUser }
+  | { ok: false; reason: 'bad-credentials' }
+  | { ok: false; reason: 'throttled'; waitMillis: number };
+
+/**
+ * Sign in, with the delay ladder applied.
+ *
+ * The throttle is evaluated on the **typed** name before the account is looked
+ * up. That ordering is the whole point: a throttle that only fired for accounts
+ * that exist would be exactly the username oracle the dummy derive below exists
+ * to close, and it would give it away in milliseconds rather than microseconds.
+ *
+ * For the same reason a disabled account gets `bad-credentials` and not a reason
+ * of its own — "that account is blocked" tells a stranger they have found a real
+ * name.
+ */
+export async function attemptLocalSignIn(
+  username: string,
+  password: string,
+): Promise<LocalSignInResult> {
+  const key = normaliseUsername(username);
+  const now = Date.now();
+  const state = readSignInThrottle();
+  const verdict = evaluateSignInThrottle(state[key], now);
+  if (!verdict.allowed) {
+    return { ok: false, reason: 'throttled', waitMillis: verdict.waitMillis };
+  }
+
+  const user = await getLocalUserByUsername(key);
   if (!user || user.disabled) {
     // Still derive, so a wrong username and a wrong password take the same
     // time and cannot be told apart by how fast the till says no.
     await derive(password, crypto.getRandomValues(new Uint8Array(16)), PBKDF2_ITERATIONS);
-    return null;
+    bumpSignInThrottle(key);
+    return { ok: false, reason: 'bad-credentials' };
   }
-  return (await verifyLocalPassword(password, user)) ? user : null;
+
+  if (!(await verifyLocalPassword(password, user))) {
+    bumpSignInThrottle(key);
+    return { ok: false, reason: 'bad-credentials' };
+  }
+
+  clearSignInThrottle(key);
+
+  // The one moment the plaintext exists. One extra derive on the sign-in path,
+  // never on the hot path of a sale.
+  if (needsRehash(user)) {
+    const credentials = await hashLocalPassword(password);
+    const upgraded: LocalUser = {
+      ...user,
+      passwordHash: credentials.hash,
+      passwordSalt: credentials.salt,
+      passwordIterations: credentials.iterations,
+    };
+    await saveLocalUser(upgraded);
+    return { ok: true, user: upgraded };
+  }
+
+  return { ok: true, user };
+}
+
+/**
+ * @deprecated Prefer `attemptLocalSignIn`, which can say *why* it refused.
+ *
+ * Kept, and kept with this exact signature, because it is a public export: a
+ * consumer calling it must go on compiling. A throttled attempt reads as a wrong
+ * password here, which is the best a boolean can do.
+ */
+export async function signInLocal(username: string, password: string): Promise<LocalUser | null> {
+  const result = await attemptLocalSignIn(username, password);
+  return result.ok ? result.user : null;
+}
+
+// --- Who may be taken away ---
+
+/**
+ * Whether an account can be deleted without stranding the till.
+ *
+ * `pos-app-admin-page.tsx` already refuses to let the Support *role* be switched
+ * off, on exactly this reasoning — it is the only role that opens that page, so
+ * unticking it locks the door from the inside. The People screen had no matching
+ * rule for the last Support *account*, and only stopped you deleting yourself,
+ * so two support accounts could delete each other. What is left then is a till
+ * with a catalogue, a year of sales and nobody who can add a cashier.
+ *
+ * Pure, and takes the capability test as an argument rather than importing one,
+ * so a custom role that was granted App admin counts and so CI can assert it
+ * without a browser.
+ */
+export function canRemoveLocalUser(
+  users: readonly LocalUser[],
+  userId: string,
+  holdsAppAdmin: (role: PosLocalRole) => boolean,
+): boolean {
+  const target = users.find((u) => u.id === userId);
+  if (!target) return false;
+  if (!holdsAppAdmin(target.role) || target.disabled) return true;
+  return users.some((u) => u.id !== userId && !u.disabled && holdsAppAdmin(u.role));
+}
+
+/**
+ * Whether an account can be blocked without stranding the till.
+ *
+ * Separate from deletion because blocking is the softer of the two and gets
+ * reached for more casually, but it strands the machine just as completely:
+ * `isCommissioned` counts accounts, not enabled ones, so a till whose every
+ * account is blocked shows a sign-in form that can never succeed and never
+ * offers setup again.
+ */
+export function canDisableLocalUser(
+  users: readonly LocalUser[],
+  userId: string,
+  holdsAppAdmin: (role: PosLocalRole) => boolean,
+): boolean {
+  return canRemoveLocalUser(users, userId, holdsAppAdmin);
+}
+
+// --- The delay ladder, as this device remembers it ---
+
+/**
+ * Failed-attempt counts, in localStorage beside the session.
+ *
+ * Deliberately **not** a `local*` IndexedDB store. A new one of those has to
+ * join `factoryResetLocalStore` and the backup in the same change, and a backup
+ * that restores "aysel is delayed until 14:32" onto a replacement till is a bug,
+ * not a feature. This is device state with a fifteen-minute memory, not shop
+ * data.
+ *
+ * Mirrored in memory for the same reason `locale-preference.ts` mirrors its
+ * value: where site data is blocked the ladder still applies for this tab
+ * instead of not applying at all.
+ */
+let throttleCache: SignInThrottleState | undefined;
+
+function readSignInThrottle(): SignInThrottleState {
+  if (throttleCache) return throttleCache;
+  throttleCache = {};
+  if (typeof window === 'undefined') return throttleCache;
+  try {
+    const raw = window.localStorage.getItem(THROTTLE_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') {
+      for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+        const rec = value as Partial<SignInThrottleRecord>;
+        if (typeof rec?.failures === 'number' && typeof rec?.lastFailureAtMillis === 'number') {
+          throttleCache[key] = {
+            failures: rec.failures,
+            lastFailureAtMillis: rec.lastFailureAtMillis,
+          };
+        }
+      }
+    }
+  } catch {
+    // Blocked, or somebody edited it by hand. An empty ladder is the safe
+    // reading: it delays nobody who should not be delayed.
+  }
+  return throttleCache;
+}
+
+function writeSignInThrottle(state: SignInThrottleState): void {
+  throttleCache = state;
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(THROTTLE_KEY, JSON.stringify(state));
+  } catch {
+    // Storage blocked. The mirror above still drives this tab.
+  }
+}
+
+function bumpSignInThrottle(key: string): void {
+  const now = Date.now();
+  const state = pruneSignInThrottle(readSignInThrottle(), now);
+  state[key] = recordSignInFailure(state[key], now);
+  writeSignInThrottle(state);
+}
+
+function clearSignInThrottle(key: string): void {
+  const state = pruneSignInThrottle(readSignInThrottle(), Date.now());
+  delete state[key];
+  writeSignInThrottle(state);
+}
+
+/** How long this device would currently make the given name wait. For the form. */
+export function peekSignInThrottle(username: string): SignInThrottleVerdict {
+  return evaluateSignInThrottle(readSignInThrottle()[normaliseUsername(username)], Date.now());
 }
 
 // --- Session ---
+
+/**
+ * What the till remembers about who is signed in.
+ *
+ * Grown from the bare user id it used to be. The id alone could not answer two
+ * questions the register kept getting wrong: whether the password has been
+ * changed since this session was minted, and how long ago anybody last touched
+ * the machine. Both now travel with it.
+ *
+ * `credentialStamp` is a prefix of the stored password hash. It is already a
+ * hash, so a prefix of it reveals nothing a reader of this record did not
+ * already have — and it changes whenever the password does, which is the whole
+ * job. Resetting a cashier's password from the People screen now ends their
+ * session on the next check instead of leaving it live until somebody reloads.
+ */
+export interface LocalSessionRecord {
+  userId: string;
+  issuedAtMillis: number;
+  lastSeenAtMillis: number;
+  credentialStamp: string;
+}
+
+/** Sixteen base64 characters of the stored hash. Enough to notice a change. */
+export function credentialStampOf(user: LocalUser): string {
+  return user.passwordHash.slice(0, 16);
+}
+
+/**
+ * Read the stored record, tolerating the bare user id every till in the field
+ * has on disk right now.
+ *
+ * Pure and exported so CI can hold the upgrade path still. Without the
+ * bare-string branch, every existing till would sign its cashier out the first
+ * morning after this release — which is precisely the kind of "a change of
+ * software stopped the queue" this codebase keeps refusing to ship.
+ */
+export function parseLocalSession(raw: string | null): LocalSessionRecord | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed[0] !== '{') {
+    return { userId: trimmed, issuedAtMillis: 0, lastSeenAtMillis: 0, credentialStamp: '' };
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as Partial<LocalSessionRecord>;
+    if (!parsed || typeof parsed.userId !== 'string' || !parsed.userId) return null;
+    return {
+      userId: parsed.userId,
+      issuedAtMillis: typeof parsed.issuedAtMillis === 'number' ? parsed.issuedAtMillis : 0,
+      lastSeenAtMillis: typeof parsed.lastSeenAtMillis === 'number' ? parsed.lastSeenAtMillis : 0,
+      credentialStamp: typeof parsed.credentialStamp === 'string' ? parsed.credentialStamp : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readLocalSession(): LocalSessionRecord | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return parseLocalSession(window.localStorage.getItem(SESSION_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalSession(record: LocalSessionRecord): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(record));
+  } catch {
+    // Storage blocked. The cashier stays signed in for this session only.
+  }
+}
 
 /**
  * The signed-in user id, kept in localStorage.
  *
  * Surviving a restart is the point: a till that has to be signed into again
  * after every power cut is a till whose password ends up on a sticky note
- * beside the screen. Sign-out is explicit, and the record here is only an id —
- * it grants nothing on its own, because the account it names is on the same
- * disk anyway.
+ * beside the screen. Sign-out is explicit, and the record here still grants
+ * nothing on its own, because the account it names is on the same disk anyway.
  */
 export function readLocalSessionId(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return window.localStorage.getItem(SESSION_KEY);
-  } catch {
-    return null;
-  }
+  return readLocalSession()?.userId ?? null;
 }
 
 export function writeLocalSessionId(userId: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(SESSION_KEY, userId);
-  } catch {
-    // Storage blocked. The cashier stays signed in for this session only.
-  }
+  const now = Date.now();
+  writeLocalSession({
+    userId,
+    issuedAtMillis: now,
+    lastSeenAtMillis: now,
+    // Stamped by `startLocalSession` where the account is in hand. Callers that
+    // only have an id get an empty stamp, which `restoreLocalSession` reads as
+    // "nothing to compare" rather than as a mismatch.
+    credentialStamp: '',
+  });
+}
+
+/** Start a session for an account, stamping the credential it was minted against. */
+export function startLocalSession(user: LocalUser): void {
+  const now = Date.now();
+  writeLocalSession({
+    userId: user.id,
+    issuedAtMillis: now,
+    lastSeenAtMillis: now,
+    credentialStamp: credentialStampOf(user),
+  });
+}
+
+/** Note that somebody is still at the till. Drives the idle lock, nothing else. */
+export function touchLocalSession(): void {
+  const record = readLocalSession();
+  if (!record) return;
+  writeLocalSession({ ...record, lastSeenAtMillis: Date.now() });
+}
+
+/** When the till was last touched, or 0 when that is not known. */
+export function readLocalSessionLastSeen(): number {
+  return readLocalSession()?.lastSeenAtMillis ?? 0;
 }
 
 /**
@@ -233,7 +527,10 @@ export function writeLocalSessionId(userId: string): void {
  *
  * Named `signInId`, never `sessionId` — `Order.sessionId` already means a cloud
  * shift, and one word doing two jobs is how the two get wired together by
- * mistake.
+ * mistake. Kept in a key of its own rather than folded into the session record
+ * above, because the idle lock must be able to end a session without minting a
+ * new one: a lock that changed this id would send the cashier back to the
+ * drawer-count screen every time they came back from serving a customer.
  */
 export function readLocalSignInId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -264,14 +561,33 @@ export function clearLocalSession(): void {
   }
 }
 
-/** Resolve the stored session to a live account, or null if it no longer exists. */
+/**
+ * Resolve the stored session to a live account, or null if it no longer applies.
+ *
+ * Three ways it stops applying: the account is gone, the account has been
+ * blocked, or its password has been changed since this session was minted. The
+ * third is new — before it, resetting a cashier's password left them working at
+ * the till until somebody happened to reload the page.
+ *
+ * A record carrying no stamp is one written before this release, or by
+ * `writeLocalSessionId`. It is honoured and then re-stamped, so an existing till
+ * upgrades on its next check instead of signing everybody out.
+ */
 export async function restoreLocalSession(): Promise<LocalUser | null> {
-  const id = readLocalSessionId();
-  if (!id) return null;
-  const user = await getLocalUser(id);
+  const record = readLocalSession();
+  if (!record) return null;
+  const user = await getLocalUser(record.userId);
   if (!user || user.disabled) {
     clearLocalSession();
     return null;
+  }
+  const stamp = credentialStampOf(user);
+  if (record.credentialStamp && record.credentialStamp !== stamp) {
+    clearLocalSession();
+    return null;
+  }
+  if (record.credentialStamp !== stamp) {
+    writeLocalSession({ ...record, credentialStamp: stamp });
   }
   return user;
 }

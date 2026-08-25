@@ -21,6 +21,9 @@ import {
 } from '../ui/icons';
 import { getPosDeviceId, getPosDeviceLabel, setPosDeviceLabel } from './pos-device';
 import {
+  readIdleLockMinutes,
+  writeIdleLockMinutes,
+  IDLE_LOCK_CHOICES,
   readScannerGapMs,
   resolvePosStorageMode,
   writeScannerGapMs,
@@ -127,6 +130,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
   const [gapMs, setGapMs] = useState(40);
+  const [idleLock, setIdleLock] = useState(0);
   // Derived, not chosen -- see `resolvePosStorageMode`.
   const storageMode: PosStorageMode = resolvePosStorageMode(Boolean(firebase));
 
@@ -134,11 +138,13 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
     setDeviceId(getPosDeviceId());
     setLabel(getPosDeviceLabel());
     setGapMs(readScannerGapMs());
+    setIdleLock(readIdleLockMinutes());
   }, []);
 
   const save = () => {
     setPosDeviceLabel(label);
     writeScannerGapMs(gapMs);
+    writeIdleLockMinutes(idleLock);
     toast({ title: t('pos.settings.saved') });
   };
 
@@ -237,6 +243,31 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
                 style={{ fontFamily: 'ui-monospace, monospace' }}
               />
             </label>
+
+            {/*
+              A device preference, beside the scanner gap, because it is a fact
+              about where the machine stands rather than about the shop. Off
+              everywhere until somebody switches it on, and only on a till that
+              runs on its own -- a cloud register signs out through Firebase Auth
+              and has no local password to unlock with.
+            */}
+            {local.standalone ? (
+              <label className="cpos-field">
+                <span className="cpos-field__label">{t('pos.settings.idleLock')}</span>
+                <Select
+                  value={String(idleLock)}
+                  onChange={(e) => setIdleLock(Number(e.target.value))}
+                  options={IDLE_LOCK_CHOICES.map((m) => ({
+                    value: String(m),
+                    label:
+                      m === 0
+                        ? t('pos.settings.idleLockNever')
+                        : t('pos.settings.idleLockMinutes', { count: m }),
+                  }))}
+                />
+                <FieldDescription>{t('pos.settings.idleLockHelp')}</FieldDescription>
+              </label>
+            ) : null}
           </section>
 
           {showShop ? (

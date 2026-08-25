@@ -111,6 +111,8 @@ Rules, indexes, and `collections.ts` move together.
 
 **Routing rule — which manual gets a change.** Anything reached at `/pos*`, plus the register-facing parts of `/admin/pos` (the two switches, receipt wording, recent sales, the licence table), belongs in `pos-manual.html`. Everything else belongs in `user-manual.html`. The boundary case is deliberate: `licences-you-have-sold` lives at `/admin/pos` inside the admin panel but documents the register's back office, so it is in the POS manual.
 
+**The two manuals stamp two different products.** `user-manual.html`'s four `intro.version` stamps track `package.json`; `pos-manual.html`'s four track `pos/package.json`, the standalone till's own version. `check-manuals.mjs` enforces both, in English and in all three overlays. Do not "fix" a POS-manual stamp to match the library — that is the drift, not the repair.
+
 **The shell rule.** Everything outside the `DOC:HEAD`, `DOC` and `MANUAL` fences is the **shared shell and is byte-identical across both manuals** — CSS, sprite, markup, `resolved()`, the renderer. Change it in one file, copy it to the other, run `node scripts/check-manuals.mjs`. The `TOKENS` fence inside `<style>` is shared with `docs/index.html` as well. Do **not** refactor this into a build step: the shell has changed twice in its life while the content changes every release, so a build step taxes the frequent operation to protect against the rare one, and it would falsify the property that `docs/*.html` *is* the source. If a **third** manual is ever proposed, revisit that decision.
 
 Per-file values live in exactly two fences: `DOC:HEAD` (the `<title>` and meta description) and `DOC` (the per-locale subtitle, and the sibling link shown in the header, on the intro cards and in the empty-search state).
@@ -167,18 +169,19 @@ back into `PosTopbar` — the bar’s job is to say which screen you are on.
 `DEFAULT_ADMIN_NAV` against its dispatcher; the register’s `items` array and the `switch (head)` in
 `PosRoot` can still drift silently. Keep them in step by hand.
 
-**Standalone mode (v11.0.0).** `<CaspianStoreProvider standalone>` boots the whole tree with **no Firebase project**: catalogue, staff, sales and receipt numbers live in IndexedDB and the till contacts nothing. Four rules hold it together:
+**Standalone mode (v11.0.0) is a separate product — see [pos/CLAUDE.md](pos/CLAUDE.md).** `<CaspianStoreProvider standalone>` boots the whole tree with **no Firebase project**: catalogue, staff, sales and receipt numbers live in IndexedDB and the till contacts nothing. The deployable product is [pos/](pos/), a Vite PWA that consumes this library through `file:..`. It carries **its own version** (`pos/package.json`, started at 1.0.0), its own [pos/CHANGELOG.md](pos/CHANGELOG.md), and a release cycle that ends at `git push` — no library bump, no `vX.Y.Z` tag, no GitHub Release, no Discussion.
 
-1. **`standalone` is explicit, never inferred.** A missing or broken `firebaseConfig` throws at mount as it always did. Falling back automatically would mean a real shop whose credentials broke came up as an empty local register taking sales into a database nobody knows about — a failure that looks like a working till.
-2. **`useCaspianFirebase()` / `useCaspianCollections()` stay strict** and throw in standalone. Ninety-odd storefront and admin call sites need a real project; widening their return type would push a null check into every one of them to serve a handful of screens. Those few use `useCaspianFirebaseOptional()`, `useCaspianCollectionsOptional()` and `useCaspianStandalone()`.
-3. **`PosStorageAdapter` ([src/pos/storage/types.ts](src/pos/storage/types.ts)) is the only seam.** `PosLocalAdapter` is an implementation of it, not a second copy of the register. Every register screen is written against the interface — keep it that way, and do not branch on the mode inside a screen.
-4. **The mode is a property of the deployment, not a per-device toggle.** `resolvePosStorageMode` ignores the stored preference on purpose, and the `/pos/settings` radio is read-only. A per-device switch was a trap: a cloud shop that picked "this computer only" got a register backed by an empty local catalogue with no way to fill it, because the local back office is part of a standalone deployment.
+The four rules that hold standalone together, the `clearPosDb` / `factoryResetLocalStore` distinction, the `PosLocalRole` ≠ `UserRole` rule and the `priceLocalSale` rule all live in [pos/CLAUDE.md](pos/CLAUDE.md) now, so there is one source of truth. Read it before touching the till.
 
-Local roles (`PosLocalRole = 'superadmin' | 'admin' | 'staff'`) are **deliberately not** the cloud `UserRole`, which is mirrored into Auth custom claims and named in `firestore.rules`. The two models answer different questions; keep them apart.
+**Which checklist a change follows.** You need this *before* you know which file to read, so it is here rather than there. A change is a **standalone** change when it touches only:
 
-The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/standalone/price-local-sale.ts) as a pure function, split out of the IndexedDB transaction so it can be checked in CI without a browser — `scripts/check-standalone.mjs` does exactly that. Anything that changes what a customer is charged goes there, with a matching assertion.
+- `src/pos/standalone/**`, [src/pos/storage/local-adapter.ts](src/pos/storage/local-adapter.ts), `pos/**`
+- [scripts/check-standalone.mjs](scripts/check-standalone.mjs), `.github/workflows/standalone-smoke.yml`
+- [docs/pos-manual.html](docs/pos-manual.html)
 
-**Standalone data is not rebuildable.** `clearPosDb` wipes only the five cloud stores (caches and outboxes whose truth is in Firestore). The seven `local*` stores hold a shop's only copy of its catalogue, staff, trading history and drawer counts; erasing them is `factoryResetLocalStore`, a separate call. Never widen `clearPosDb` to cover them. A new `local*` store joins `factoryResetLocalStore` and the backup in the same change — `local-backup.ts` records what it cost the one time roles were left out of the backup.
+…plus, additively and gated so a cloud register cannot tell the difference, these five shared files: `src/pos/index.ts` / `src/index.ts` (exporting standalone symbols), `src/i18n/messages.ts` + locales (`pos.*` keys only standalone screens read), [src/pos/pos-root.tsx](src/pos/pos-root.tsx) (mounting a gate that no-ops outside standalone), [src/pos/pos-settings-page.tsx](src/pos/pos-settings-page.tsx) (controls behind `local.standalone`), and [src/pos/pos-preferences.ts](src/pos/pos-preferences.ts) (preferences only standalone reads).
+
+Anything that changes behaviour for a **cloud-backed** register — any other file under `src/pos/`, or anything outside those lists — is a library change and follows the [Pre-Commit Checklist](#pre-commit-checklist) below. A change that does both needs both bumps and says so in its commit body.
 
 **Server Component boundary.** The library emits `"use client"` directives in client-heavy files (providers, contexts, interactive components, admin pages). Consumers mount the provider tree from a Server Component parent; the library *is* the client boundary. When adding a new component that uses React state/effects/refs, put `"use client"` at the top — match the surrounding files.
 
@@ -210,6 +213,7 @@ The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/s
 - **Do NOT include `Co-Authored-By` lines in commit messages.** Never add co-author trailers for Claude or any AI assistant. This overrides any default behaviour.
 - **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
+- **Standalone-till changes run their own cycle**, defined in [pos/CLAUDE.md](pos/CLAUDE.md): bump `pos/package.json`, write `pos/CHANGELOG.md`, update `docs/pos-manual.html`, commit, push. They never bump the library, never add a root `CHANGELOG.md` entry, and never tag, release or announce. The boundary that decides whether a change qualifies is in Architecture, above the checklist.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
 - **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
 - **The register ships as a PWA, and only as a PWA.** There is no desktop app and no `.exe`.
@@ -222,6 +226,8 @@ The money arithmetic lives in [src/pos/standalone/price-local-sale.ts](src/pos/s
 ---
 
 ## Pre-Commit Checklist
+
+**Standalone-till changes do not use this checklist.** If the change stays inside the standalone boundary in Architecture above, follow [pos/CLAUDE.md](pos/CLAUDE.md) instead: bump `pos/package.json`, write [pos/CHANGELOG.md](pos/CHANGELOG.md), update [docs/pos-manual.html](docs/pos-manual.html), commit, push — and nothing else. No root bump, no root changelog entry, no `npm pack`, no tag, no Release, no Discussion. Everything below is for library changes.
 
 Follow these steps **in order** before every `git commit`. If a step fails, fix it and re-run from that step.
 
@@ -285,7 +291,7 @@ Then update [CHANGELOG.md](CHANGELOG.md): add a new `## vX.Y.Z — <short summar
 
 Never omit the heading, rename it, or fold it into `### Notes`. The comment block at the top of [CHANGELOG.md](CHANGELOG.md) documents this rule in-tree.
 
-**Bump the manuals' version stamp too.** `MANUAL.en.intro.version` in **both** `docs/user-manual.html` and `docs/pos-manual.html` must read `v` + the new `package.json` version. `scripts/check-manuals.mjs` fails CI otherwise — it exists because that string sat at `v10.0.0` through two releases with nothing checking it.
+**Bump the user manual's version stamp too.** All four `intro.version` stamps in `docs/user-manual.html` — English plus the `az`/`ru`/`tr` overlays — must read `v` + the new `package.json` version. `scripts/check-manuals.mjs` fails CI otherwise; it exists because that string sat at `v10.0.0` through two releases with nothing checking it. **`docs/pos-manual.html` is not yours to restamp**: its four stamps track `pos/package.json`, because the till versions separately and a shop running it never installs this library.
 
 **No lock file to sync** — this repo does not commit `package-lock.json`. (If that changes, run `npm install --package-lock-only`.)
 

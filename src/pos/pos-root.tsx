@@ -6,6 +6,7 @@ import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosLocalSession } from './standalone/local-session-context';
+import { PosLockGate } from './standalone/pos-lock-gate';
 import { usePosRoles } from './standalone/role-context';
 import type { PosLocalCapability } from './standalone/types';
 import { PosAppAdminPage } from './standalone/admin/pos-app-admin-page';
@@ -71,7 +72,16 @@ export function PosShell({ children }: { children: ReactNode }) {
                 page that had just bounced to the register.
               */}
               <PosShopSettingsProvider>
-                <PosShellChrome>{children}</PosShellChrome>
+                {/*
+                  Inside the auto-backup provider, not above it and emphatically
+                  not in `PosGuard`: a lock screen mounted at the guard unmounts
+                  everything below it, and a till locked overnight would stop
+                  taking the automatic backups that are the one thing it should
+                  be doing while nobody is looking.
+                */}
+                <PosLockGate>
+                  <PosShellChrome>{children}</PosShellChrome>
+                </PosLockGate>
               </PosShopSettingsProvider>
             </PosAutoBackupProvider>
           </PosOpenSaleProvider>

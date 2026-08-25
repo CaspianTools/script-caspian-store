@@ -17,7 +17,28 @@ export {
   setPosDeviceLabel,
   nextPosSaleId,
 } from './pos-device';
-export { readScannerGapMs, writeScannerGapMs, resolvePosStorageMode } from './pos-preferences';
+export {
+  readScannerGapMs,
+  writeScannerGapMs,
+  resolvePosStorageMode,
+  readIdleLockMinutes,
+  writeIdleLockMinutes,
+  IDLE_LOCK_CHOICES,
+  DEFAULT_IDLE_LOCK_MINUTES,
+} from './pos-preferences';
+export { PosLockGate } from './standalone/pos-lock-gate';
+export {
+  evaluateSignInThrottle,
+  recordSignInFailure,
+  pruneSignInThrottle,
+  throttleWaitSeconds,
+  SIGN_IN_FREE_ATTEMPTS,
+  SIGN_IN_DELAY_LADDER_MS,
+  SIGN_IN_THROTTLE_FORGET_MS,
+  type SignInThrottleRecord,
+  type SignInThrottleState,
+  type SignInThrottleVerdict,
+} from './standalone/sign-in-throttle';
 export {
   PosAdapterProvider,
   usePosAdapter,
@@ -232,9 +253,21 @@ export {
   writeLocalSignInId,
   normaliseUsername,
   localCryptoAvailable,
+  attemptLocalSignIn,
+  needsRehash,
+  canRemoveLocalUser,
+  canDisableLocalUser,
+  parseLocalSession,
+  credentialStampOf,
+  startLocalSession,
+  touchLocalSession,
+  readLocalSessionLastSeen,
+  peekSignInThrottle,
   MIN_LOCAL_PASSWORD_LENGTH,
   type LocalCredentials,
   type CreateLocalUserResult,
+  type LocalSignInResult,
+  type LocalSessionRecord,
 } from './standalone/local-auth';
 
 export {

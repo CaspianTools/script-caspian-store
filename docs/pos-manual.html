@@ -662,9 +662,10 @@ const MANUAL = {
       "title": "Caspian register manual",
       "body": [
         "This manual covers the point-of-sale register on its own: putting it in, plugging the hardware in, handing the keys to your cashiers, working a day at the counter, and winding a till down again when the time comes. Every screen described here was opened in the software and checked before it was written down.",
-        "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here."
+        "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here.",
+        "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade."
       ],
-      "version": "v13.4.0"
+      "version": "v1.0.0"
     },
     "parts": [
       {
@@ -1117,6 +1118,42 @@ const MANUAL = {
               "If the browser blocks stored site data, the language still applies for the current session but is forgotten when the page is reloaded. The other settings on this screen behave worse: the register name, the scanner speed and where sales are stored are not kept at all, and go back to their usual values as soon as you leave the Settings screen.",
               "The register's own menu across the top shows only two items, Register and Settings, plus a link to the admin panel for administrators and a button to leave the register.",
               "There is no shift report anywhere in the product, and no per-till sales report either, so do not expect the register name to turn up in one. The name is printed on receipts and nowhere else: it is not stored with the sale, so the Point of sale page in the admin panel cannot tell you which till took which sale. A printed receipt is the only place the name appears."
+            ]
+          },
+          {
+            "id": "locking-the-screen-when-unused",
+            "title": "Locking the screen when the till is left alone",
+            "audience": "owner",
+            "route": "/pos/settings",
+            "summary": "A till that runs on its own can cover its screen after a few quiet minutes and ask for the cashier's password again. It is off in every shop until somebody switches it on, it belongs to the computer rather than to the shop, and it does not sign anybody out — the open sale, the cashier's name and the drawer count all survive it.",
+            "steps": [
+              "Sign in and open Settings from the menu.",
+              "Find \"Lock the screen when unused\" in the box with this till's name and id.",
+              "Pick Never, or 1, 5, 15, 30 or 60 minutes. Never is where every till starts.",
+              "Press Save at the bottom. This setting is one of the ones the Save button covers.",
+              "Test it: leave the till alone for the time you picked and the screen should cover itself."
+            ],
+            "fields": [
+              {
+                "name": "Lock the screen when unused",
+                "what": "How long the till may sit untouched before it covers the screen. A scan, a key press, a tap or a scroll all count as touching it. Saved by the Save button, and remembered on this computer only."
+              },
+              {
+                "name": "Unlock",
+                "what": "On the lock screen. The same password the cashier signs in with, and the same short wait after several wrong tries."
+              },
+              {
+                "name": "Sign in as somebody else",
+                "what": "Also on the lock screen. This one really does sign out, so the next cashier is asked to count the drawer if your shop has that switched on."
+              }
+            ],
+            "notes": [
+              "Off everywhere until you switch it on. A shop that upgrades and never opens this screen sees no change at all.",
+              "It belongs to the computer, not to the shop and not to the person. A till behind the counter in sight of the owner can leave it off while one in a stockroom has it on, and the next cashier to sign in on a machine inherits whatever that machine is set to.",
+              "Locking is not signing out. The sale on screen is still there when the password is typed, and the cashier is not asked to count the drawer again — that only happens on a fresh sign-in.",
+              "The lock only exists on a till that runs with no website behind it. A register backed by a website signs in through the website, and there is no local password for it to ask for.",
+              "It does not protect the machine from somebody who takes it away. Anything on the disk is still on the disk; this stops the person who walks past an unattended counter, and that is all it claims.",
+              "Only the register is covered. The rest of the computer, and any other browser tab, are untouched."
             ]
           },
           {
@@ -2319,6 +2356,7 @@ const MANUAL = {
               "The Add person window shows a line of help under the role menu. For Cashier, Admin and Support it is a sentence; for the others it currently prints its own internal label instead, such as pos.admin.people.roleHelp.storekeeper. That is a rough edge in the wording only - the role is applied as chosen.",
               "The role menu can list two entries called Cashier. They are identical; App admin marks the second as a duplicate kept for accounts already holding it.",
               "A role that does not hold \"Sell at the till\" cannot get into the register at all, whatever else you give it - so check \"Roles on a till with no website\" before handing somebody Storekeeper or Accountant.",
+              "The till will not let you delete or block the last account that can open App admin. It says so and does nothing instead — the alternative is a machine with a catalogue, a year of sales and nobody able to add a cashier.",
               "This screen is only on a till that runs on its own. Seeing it needs \"See people\"; the role menu, the password reset, Block and Delete all need \"Add and edit people\" as well and are hidden without it."
             ]
           },
@@ -2820,9 +2858,10 @@ const MANUAL = {
       "title": "Caspian kassa təlimatı",
       "body": [
         "Bu təlimat yalnız kassanı əhatə edir: onun quraşdırılmasını, avadanlığın qoşulmasını, kassirlərə açarların verilməsini, piştaxtada bir iş gününü və vaxtı çatanda kassanın bağlanmasını. Burada təsvir olunan hər ekran proqramda açılıb və yazılmazdan əvvəl yoxlanılıb.",
-        "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir."
+        "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir.",
+        "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır."
       ],
-      "version": "v13.4.0"
+      "version": "v1.0.0"
     },
     "parts": [
       {
@@ -3978,9 +4017,10 @@ const MANUAL = {
       "title": "Руководство по кассе Caspian",
       "body": [
         "Это руководство описывает только кассу: её установку, подключение оборудования, выдачу доступа кассирам, рабочий день за прилавком и закрытие кассы, когда придёт время. Каждый экран, описанный здесь, был открыт в программе и проверен перед тем, как о нём написали.",
-        "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь."
+        "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь.",
+        "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат."
       ],
-      "version": "v13.4.0"
+      "version": "v1.0.0"
     },
     "parts": [
       {
@@ -5136,9 +5176,10 @@ const MANUAL = {
       "title": "Caspian kasa kılavuzu",
       "body": [
         "Bu kılavuz yalnızca satış noktası kasasını anlatır: kurulumunu, donanımın bağlanmasını, kasiyerlere yetki verilmesini, tezgâhta bir iş gününü ve vakti geldiğinde bir kasanın kapatılmasını. Burada anlatılan her ekran yazılımda açıldı ve yazılmadan önce doğrulandı.",
-        "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür."
+        "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür.",
+        "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır."
       ],
-      "version": "v13.4.0"
+      "version": "v1.0.0"
     },
     "parts": [
       {

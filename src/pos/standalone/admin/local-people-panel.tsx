@@ -7,11 +7,16 @@ import { Select } from '../../../ui/select';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
-import { setLocalPassword, MIN_LOCAL_PASSWORD_LENGTH } from '../local-auth';
+import {
+  canDisableLocalUser,
+  canRemoveLocalUser,
+  setLocalPassword,
+  MIN_LOCAL_PASSWORD_LENGTH,
+} from '../local-auth';
 import { deleteLocalUser, listLocalUsers, saveLocalUser } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
-import { can as canBuiltIn, type LocalUser, type PosLocalRole } from '../types';
+import type { LocalUser, PosLocalRole } from '../types';
 import { fieldLabel, muted, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
@@ -31,7 +36,9 @@ export function LocalPeoplePanel() {
   const [users, setUsers] = useState<LocalUser[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
-  const isSupport = canBuiltIn(session.user?.role, 'appAdmin.view');
+  const isSupport = can(session.user?.role, 'appAdmin.view');
+  /** The live test, handed to the pure last-account guards below. */
+  const holdsAppAdmin = (role: PosLocalRole) => can(role, 'appAdmin.view');
   // Seeing the staff list and changing it are separate grants, so a role can be
   // given the roster to check a rota against without also being handed the
   // password resets.
@@ -59,6 +66,12 @@ export function LocalPeoplePanel() {
   };
 
   const toggleDisabled = async (user: LocalUser) => {
+    // Only blocking needs the guard. Letting somebody back in cannot strand the
+    // till, and refusing it would be a way to make the situation permanent.
+    if (!user.disabled && !canDisableLocalUser(users ?? [], user.id, holdsAppAdmin)) {
+      toast({ title: t('pos.admin.people.lastSupport') });
+      return;
+    }
     await saveLocalUser({ ...user, disabled: !user.disabled });
     await refresh();
   };
@@ -74,6 +87,14 @@ export function LocalPeoplePanel() {
   };
 
   const remove = async (user: LocalUser) => {
+    // The People screen only ever stopped you deleting yourself, so two Support
+    // accounts could delete each other and leave a till with a catalogue, a
+    // year of sales and nobody able to add a cashier. App admin already refuses
+    // to let the Support *role* be switched off for the same reason.
+    if (!canRemoveLocalUser(users ?? [], user.id, holdsAppAdmin)) {
+      toast({ title: t('pos.admin.people.lastSupport') });
+      return;
+    }
     if (!window.confirm(t('pos.admin.people.confirmDelete', { name: user.displayName }))) return;
     await deleteLocalUser(user.id);
     await refresh();

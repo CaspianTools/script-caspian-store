@@ -46,6 +46,17 @@ if (errors.length) {
 
 const text = Object.fromEntries(ALL.map((f) => [f, readFileSync(join(DOCS, f), 'utf8')]));
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+const posPkg = JSON.parse(readFileSync(join(ROOT, 'pos', 'package.json'), 'utf8'));
+
+// The two manuals stamp two different products. The store manual carries the
+// library's version; the register manual carries the standalone till's, which
+// versions and ships on its own (see pos/CLAUDE.md). A shop running the till
+// never installs the library, so stamping it with the library's number told
+// that reader nothing true.
+const VERSION_SOURCE = {
+  'user-manual.html': ['package.json', pkg.version],
+  'pos-manual.html': ['pos/package.json', posPkg.version],
+};
 
 const FENCES = [
   ['DOC:HEAD', /<!-- DOC:HEAD:START[\s\S]*?<!-- DOC:HEAD:END -->/g],
@@ -148,12 +159,20 @@ for (const f of MANUALS) {
   }
   idsByFile[f] = sectionIds;
 
-  const want = 'v' + pkg.version;
-  if (en.intro?.version !== want) {
-    fail(
-      `docs/${f}: MANUAL.en.intro.version is ${JSON.stringify(en.intro?.version)}, expected "${want}" ` +
-        `to match package.json. Bump it alongside the version (Pre-Commit Checklist step 5).`,
-    );
+  // C4 — the footer stamp, in English and in all three overlays. Only the
+  // English one was ever checked, and the other three rot exactly the same way:
+  // an az reader was told "v10.0.0" long after en said otherwise.
+  const [source, sourceVersion] = VERSION_SOURCE[f];
+  const want = 'v' + sourceVersion;
+  for (const lang of ['en', ...LOCALES]) {
+    const intro = M[lang]?.intro;
+    if (!intro) continue;
+    if (intro.version !== want) {
+      fail(
+        `docs/${f}: MANUAL.${lang}.intro.version is ${JSON.stringify(intro.version)}, expected ` +
+          `"${want}" to match ${source}. Bump all four stamps alongside the version.`,
+      );
+    }
   }
 
   // C5 — overlay integrity. A stale overlay renders as authoritative; an absent
@@ -237,5 +256,6 @@ const counts = MANUALS.map((f) => {
 const shellLines = stripped[MANUALS[0]].split('\n').length;
 console.log(
   `[check-manuals] OK — shell identical (${shellLines} lines), tokens identical across all 3 files, ` +
-    `${counts.join(', ')}, 4 locales at parity, v${pkg.version} matches package.json.`,
+    `${counts.join(', ')}, 4 locales at parity, user-manual v${pkg.version} matches package.json, ` +
+    `pos-manual v${posPkg.version} matches pos/package.json.`,
 );

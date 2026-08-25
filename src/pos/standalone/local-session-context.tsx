@@ -11,14 +11,16 @@ import {
 } from 'react';
 import { useCaspianStandalone } from '../../provider/caspian-store-provider';
 import {
+  attemptLocalSignIn,
   clearLocalSession,
   createLocalUser,
   isCommissioned,
   readLocalSignInId,
   restoreLocalSession,
-  signInLocal,
-  writeLocalSessionId,
+  startLocalSession,
+  touchLocalSession,
   writeLocalSignInId,
+  type LocalSignInResult,
 } from './local-auth';
 import { newLocalId } from './local-db';
 import type { LocalUser, PosLocalRole } from './types';
@@ -52,7 +54,23 @@ export interface PosLocalSessionValue {
    * and merely unreachable.
    */
   storageFailed: boolean;
+  /**
+   * True when the till has locked itself after sitting idle.
+   *
+   * Not the same as signed out, and the difference is load-bearing. The account
+   * stays, `signInId` stays, and the open ticket stays; only the screen is
+   * covered until the password is typed again. A lock that signed the cashier
+   * out would send them back through the drawer-count gate every time they
+   * turned round to serve somebody.
+   */
+  locked: boolean;
   signIn: (username: string, password: string) => Promise<boolean>;
+  /** Like `signIn`, but says why it refused — including how long to wait. */
+  attemptSignIn: (username: string, password: string) => Promise<LocalSignInResult>;
+  /** Cover the screen without ending the session. */
+  lock: () => void;
+  /** Uncover it. Same password, same delay ladder, same `signInId`. */
+  unlock: (password: string) => Promise<LocalSignInResult>;
   signOut: () => void;
   /** Create the first account — the Technical Support one. Refuses once any account exists. */
   commission: (input: {
@@ -72,11 +90,25 @@ const INERT: PosLocalSessionValue = {
   commissioned: false,
   standalone: false,
   storageFailed: false,
+  locked: false,
   signIn: async () => false,
+  attemptSignIn: async () => ({ ok: false, reason: 'bad-credentials' }),
+  lock: () => undefined,
+  unlock: async () => ({ ok: false, reason: 'bad-credentials' }),
   signOut: () => undefined,
   commission: async () => ({ ok: false, reason: 'not-standalone' }),
   refresh: async () => undefined,
 };
+
+/**
+ * How often the provider re-checks that the signed-in account still applies.
+ *
+ * Blocking somebody used to take effect only when the page happened to reload,
+ * which on a till that stays open all day meant "not today". A minute is slow
+ * enough that this is a rounding error against IndexedDB and fast enough that an
+ * owner who has just blocked a leaver can watch it happen.
+ */
+const LIVENESS_INTERVAL_MS = 60_000;
 
 /**
  * The sign-in id for a session that was restored rather than freshly entered.
@@ -113,6 +145,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
   const [signInId, setSignInId] = useState<string | null>(null);
   const [commissioned, setCommissioned] = useState(false);
   const [storageFailed, setStorageFailed] = useState(false);
+  const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(standalone);
 
   const refresh = useCallback(async () => {
@@ -123,6 +156,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       setSignInId(restored ? adoptSignInId() : null);
       setCommissioned(hasAccounts);
       setStorageFailed(false);
+      if (!restored) setLocked(false);
     } catch {
       setStorageFailed(true);
     } finally {
@@ -148,9 +182,9 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
         setCommissioned(hasAccounts);
         setStorageFailed(false);
       } catch {
-        // Blocked or unavailable storage. Treat as "not commissioned" so the
-        // screen tells someone to fix it, rather than looping on a sign-in
-        // form that can never succeed.
+        // Blocked or unavailable storage. Say so, rather than reporting "no
+        // accounts" -- which is indistinguishable from a brand-new machine and
+        // put a trading shop in front of the setup form.
         if (alive) {
           setUser(null);
           setSignInId(null);
@@ -166,24 +200,88 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [standalone]);
 
+  /**
+   * Re-check the stored session while the till is open.
+   *
+   * `restoreLocalSession` is what notices a blocked account or a password that
+   * has been reset, and nothing was calling it after mount. On a timer *and* on
+   * visibilitychange, because a till that has been in the background all
+   * afternoon should catch up the moment somebody looks at it rather than up to
+   * a minute later.
+   */
+  useEffect(() => {
+    if (!standalone || !user) return;
+    let alive = true;
+    const check = () => {
+      restoreLocalSession()
+        .then((live) => {
+          if (!alive) return;
+          if (!live) {
+            setUser(null);
+            setSignInId(null);
+            setLocked(false);
+          }
+        })
+        .catch(() => {
+          // A failed read here is not evidence the account is gone, and signing
+          // a working cashier out on a transient error is the worse mistake.
+        });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check();
+    };
+    const timer = window.setInterval(check, LIVENESS_INTERVAL_MS);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [standalone, user]);
+
+  const attemptSignIn = useCallback(async (username: string, password: string) => {
+    const result = await attemptLocalSignIn(username, password);
+    if (!result.ok) return result;
+    const minted = newLocalId();
+    startLocalSession(result.user);
+    writeLocalSignInId(minted);
+    setUser(result.user);
+    setSignInId(minted);
+    setLocked(false);
+    return result;
+  }, []);
+
   const signIn = useCallback(
-    async (username: string, password: string) => {
-      const found = await signInLocal(username, password);
-      if (!found) return false;
-      const minted = newLocalId();
-      writeLocalSessionId(found.id);
-      writeLocalSignInId(minted);
-      setUser(found);
-      setSignInId(minted);
-      return true;
+    async (username: string, password: string) => (await attemptSignIn(username, password)).ok,
+    [attemptSignIn],
+  );
+
+  const lock = useCallback(() => setLocked(true), []);
+
+  /**
+   * Same password and the same delay ladder as the front door, but the session
+   * is not re-minted: `signInId` survives, so the opening-cash gate does not ask
+   * again. Signing in as somebody else is a separate button that does sign out.
+   */
+  const unlock = useCallback(
+    async (password: string): Promise<LocalSignInResult> => {
+      if (!user) return { ok: false, reason: 'bad-credentials' };
+      const result = await attemptLocalSignIn(user.username, password);
+      if (result.ok) {
+        setUser(result.user);
+        touchLocalSession();
+        setLocked(false);
+      }
+      return result;
     },
-    [],
+    [user],
   );
 
   const signOut = useCallback(() => {
     clearLocalSession();
     setUser(null);
     setSignInId(null);
+    setLocked(false);
   }, []);
 
   const commission = useCallback(
@@ -193,11 +291,12 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       const created = await createLocalUser({ ...input, role });
       if (!created.ok) return { ok: false as const, reason: created.reason };
       const minted = newLocalId();
-      writeLocalSessionId(created.user.id);
+      startLocalSession(created.user);
       writeLocalSignInId(minted);
       setUser(created.user);
       setSignInId(minted);
       setCommissioned(true);
+      setLocked(false);
       return { ok: true as const };
     },
     [],
@@ -213,7 +312,11 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
             commissioned,
             standalone,
             storageFailed,
+            locked,
             signIn,
+            attemptSignIn,
+            lock,
+            unlock,
             signOut,
             commission,
             refresh,
@@ -226,7 +329,11 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       loading,
       commissioned,
       storageFailed,
+      locked,
       signIn,
+      attemptSignIn,
+      lock,
+      unlock,
       signOut,
       commission,
       refresh,

@@ -104,3 +104,41 @@ export function readNavRail(): boolean {
 export function writeNavRail(value: boolean): void {
   write(RAIL_KEY, value ? '1' : '0');
 }
+
+/* ------------------------------------------------------------- idle lock */
+
+const IDLE_LOCK_KEY = 'caspian:pos:idleLockMinutes';
+
+/** Off. A change of software must never be the reason a queue stops. */
+export const DEFAULT_IDLE_LOCK_MINUTES = 0;
+
+/** What the settings screen offers. `0` is never, and it is where every till starts. */
+export const IDLE_LOCK_CHOICES: readonly number[] = [0, 1, 5, 15, 30, 60];
+
+/**
+ * How long the till may sit untouched before it covers the screen.
+ *
+ * A device preference, beside the scanner gap and the theme, because it is a
+ * fact about where the machine stands: a till behind a counter in sight of the
+ * owner all day wants this off, and one in a stockroom nobody watches wants it
+ * on. The shop has no single answer.
+ *
+ * Zero -- never -- is the default and the value every existing till reads back,
+ * so nothing changes for anybody who does not go and switch it on. The lock
+ * covers the screen without ending the session: the account, the sign-in id and
+ * the open ticket all survive it, because a lock that signed the cashier out
+ * would send them back through the drawer-count gate every time they turned
+ * round to serve somebody.
+ */
+export function readIdleLockMinutes(): number {
+  const raw = Number(read(IDLE_LOCK_KEY));
+  if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_IDLE_LOCK_MINUTES;
+  // Clamped the way the scanner gap is: a stored value nothing can produce
+  // through the UI still has to behave, and an eight-hour lock is the same as
+  // no lock while being much harder to diagnose.
+  return Math.min(60, Math.max(1, Math.round(raw)));
+}
+
+export function writeIdleLockMinutes(value: number): void {
+  write(IDLE_LOCK_KEY, String(value > 0 ? Math.min(60, Math.max(1, Math.round(value))) : 0));
+}

@@ -152,6 +152,23 @@ const tr: MessageDict = {
   'pos.admin.people.deleteNote':
     'Birini engellemek, kaydettiği satışlarda adını korur. Silmek de korur, ama hesabı yeniden oluşturmadan onu geri alamazsınız.',
 
+  // POS — gecikme, ekran kilidi ve hesapların korunması
+  'pos.local.throttled':
+    'Çok fazla deneme oldu. {seconds} saniye bekleyip yeniden deneyin — bu arada yapılan denemeler sayılmıyor.',
+  'pos.lock.title': 'Bu kasa kilitli',
+  'pos.lock.body':
+    'Bir süre kullanılmadığı için kendini kilitledi. Devam etmek için parolanızı yazın — açık kalan satış hâlâ duruyor.',
+  'pos.lock.unlock': 'Kilidi aç',
+  'pos.lock.wrongPassword': 'Bu hesabın parolası bu değil.',
+  'pos.lock.someoneElse': 'Başka biri olarak giriş yap',
+  'pos.settings.idleLock': 'Kullanılmadığında ekranı kilitle',
+  'pos.settings.idleLockNever': 'Asla',
+  'pos.settings.idleLockMinutes': '{count} dakika',
+  'pos.settings.idleLockHelp':
+    'Parola yeniden yazılana kadar ekranı örter. Kimsenin oturumunu kapatmaz: açık satış, kasiyer ve çekmecedeki para sayımı yerinde kalır. Burada bir süre seçilene kadar kapalıdır ve yalnızca bu bilgisayar için geçerlidir.',
+  'pos.admin.people.lastSupport':
+    'App admin\'i açabilen son hesap bu. Önce o rolü başka birine verin, yoksa bu kasada kasiyer ekleyebilecek kimse kalmaz.',
+
   // POS — scanning
   'pos.scan.placeholder': 'Barkod veya stok kodu okutun ya da yazın',
   'pos.scan.hint': 'USB veya Bluetooth okuyucu kurulum gerektirmeden çalışır — sadece okutun.',

@@ -32,6 +32,20 @@ if (!existsSync(entry)) {
 const lib = await import(pathToFileURL(entry).href);
 
 const {
+  hashLocalPassword,
+  verifyLocalPassword,
+  needsRehash,
+  parseLocalSession,
+  credentialStampOf,
+  canRemoveLocalUser,
+  canDisableLocalUser,
+  evaluateSignInThrottle,
+  recordSignInFailure,
+  pruneSignInThrottle,
+  throttleWaitSeconds,
+  SIGN_IN_FREE_ATTEMPTS,
+  SIGN_IN_DELAY_LADDER_MS,
+  SIGN_IN_THROTTLE_FORGET_MS,
   canAccess,
   parseAmount,
   summariseSoldLines,
@@ -73,16 +87,37 @@ const {
 
 let passed = 0;
 let failed = 0;
+/**
+ * Collected so an async check can be awaited before the summary is printed.
+ *
+ * The helper used to call `fn()` and catch synchronously, which meant an async
+ * check reported "ok" the instant it started and its rejection landed nowhere.
+ * The PBKDF2 checks below are the first async ones here, and a guard that
+ * cannot fail is worse than no guard at all.
+ */
+const pending = [];
+const pass = (name) => {
+  passed++;
+  console.log('  ok  ' + name);
+};
+const fail = (name, error) => {
+  failed++;
+  console.error('  FAIL  ' + name);
+  console.error('        ' + (error && error.message ? error.message : error));
+};
 const check = (name, fn) => {
+  let result;
   try {
-    fn();
-    passed++;
-    console.log('  ok  ' + name);
+    result = fn();
   } catch (error) {
-    failed++;
-    console.error('  FAIL  ' + name);
-    console.error('        ' + (error && error.message ? error.message : error));
+    fail(name, error);
+    return;
   }
+  if (result && typeof result.then === 'function') {
+    pending.push(result.then(() => pass(name), (error) => fail(name, error)));
+    return;
+  }
+  pass(name);
 };
 
 // --------------------------------------------------------------- roles
@@ -1074,6 +1109,192 @@ check('the name the till writes is the name the pruner recognises', () => {
 check('the open sale is stored under one key per till', () => {
   assert.equal(OPEN_SALE_KEY, 'current');
 });
+
+
+// ------------------------------------------------------------------ passwords
+//
+// crypto.subtle is present in Node 18+, so the PBKDF2 path is genuinely
+// checkable here. Six derives at 600k iterations is a few seconds; keep it to
+// these, and never add a seventh casually.
+
+check('a password verifies against its own hash and nothing else', async () => {
+  const creds = await hashLocalPassword('correct horse');
+  const user = {
+    passwordHash: creds.hash,
+    passwordSalt: creds.salt,
+    passwordIterations: creds.iterations,
+  };
+  assert.equal(await verifyLocalPassword('correct horse', user), true);
+  assert.equal(await verifyLocalPassword('correct horsf', user), false, 'one character off must fail');
+  assert.equal(await verifyLocalPassword('', user), false);
+});
+
+check('the salt is per user, not per install', async () => {
+  // A constant salt is invisible to the type checker and to every screen: two
+  // people who pick the same password would simply have the same stored hash.
+  const a = await hashLocalPassword('same password');
+  const b = await hashLocalPassword('same password');
+  assert.notEqual(a.salt, b.salt);
+  assert.notEqual(a.hash, b.hash);
+});
+
+check('the iteration count stored on the account is the one that is used', async () => {
+  // The regression that would silently lock out every existing account the day
+  // the cost is raised. `passwordIterations` exists precisely so old accounts
+  // keep working; if verification ever reads the constant instead, this fails.
+  const creds = await hashLocalPassword('shop password');
+  const raised = { ...creds, iterations: creds.iterations + 1 };
+  const user = {
+    passwordHash: raised.hash,
+    passwordSalt: raised.salt,
+    passwordIterations: raised.iterations,
+  };
+  assert.equal(await verifyLocalPassword('shop password', user), false,
+    'a mismatched iteration count must not still verify');
+});
+
+check('needsRehash notices an account below the current cost, and only then', () => {
+  assert.equal(needsRehash({ passwordIterations: 1 }), true);
+  assert.equal(needsRehash({ passwordIterations: 600_000 }), false);
+  assert.equal(needsRehash({ passwordIterations: 900_000 }), false);
+});
+
+// ------------------------------------------------------------- delay ladder
+//
+// Every instant is an explicit `now`, never Date.now(): the same discipline the
+// opening-cash block keeps, and for the same reason.
+
+const T0 = 1_700_000_000_000;
+
+check('the first three failures cost nothing', () => {
+  assert.equal(SIGN_IN_FREE_ATTEMPTS, 3);
+  let rec;
+  for (let i = 0; i < SIGN_IN_FREE_ATTEMPTS; i++) {
+    rec = recordSignInFailure(rec, T0);
+    const v = evaluateSignInThrottle(rec, T0);
+    assert.equal(v.allowed, true, `attempt ${i + 1} should not be delayed`);
+    assert.equal(v.waitMillis, 0);
+  }
+});
+
+check('the fourth failure starts the ladder and it climbs to a ceiling', () => {
+  let rec;
+  for (let i = 0; i < 4; i++) rec = recordSignInFailure(rec, T0);
+  assert.equal(evaluateSignInThrottle(rec, T0).waitMillis, SIGN_IN_DELAY_LADDER_MS[0]);
+
+  const ceiling = SIGN_IN_DELAY_LADDER_MS[SIGN_IN_DELAY_LADDER_MS.length - 1];
+  for (let i = 0; i < 20; i++) rec = recordSignInFailure(rec, T0);
+  const v = evaluateSignInThrottle(rec, T0);
+  assert.equal(v.allowed, false);
+  assert.equal(v.waitMillis, ceiling, 'the ladder must stop, never grow without bound');
+});
+
+check('the wait counts down, and never becomes a lockout', () => {
+  let rec;
+  for (let i = 0; i < 4; i++) rec = recordSignInFailure(rec, T0);
+  const full = SIGN_IN_DELAY_LADDER_MS[0];
+  assert.equal(evaluateSignInThrottle(rec, T0 + 1000).waitMillis, full - 1000);
+  assert.equal(evaluateSignInThrottle(rec, T0 + full).allowed, true,
+    'once the wait is served the attempt must be allowed -- there is no locked state');
+});
+
+check('a quiet spell forgets the count entirely', () => {
+  let rec;
+  for (let i = 0; i < 8; i++) rec = recordSignInFailure(rec, T0);
+  assert.equal(evaluateSignInThrottle(rec, T0 + SIGN_IN_THROTTLE_FORGET_MS).failures, 0);
+  // And the next failure starts again from one rather than resuming at eight.
+  assert.equal(recordSignInFailure(rec, T0 + SIGN_IN_THROTTLE_FORGET_MS).failures, 1);
+});
+
+check('pruning drops stale buckets and keeps live ones', () => {
+  const state = {
+    stale: { failures: 9, lastFailureAtMillis: T0 },
+    live: { failures: 2, lastFailureAtMillis: T0 + SIGN_IN_THROTTLE_FORGET_MS },
+  };
+  const pruned = pruneSignInThrottle(state, T0 + SIGN_IN_THROTTLE_FORGET_MS + 1);
+  assert.deepEqual(Object.keys(pruned), ['live']);
+});
+
+check('the ladder cannot tell whether the account exists', () => {
+  // It takes a record and a clock and nothing else. If it ever grew a lookup,
+  // a throttle that fired only for real names would hand back exactly the
+  // username oracle the dummy derive in signInLocal exists to close.
+  const rec = { failures: 5, lastFailureAtMillis: T0 };
+  assert.deepEqual(evaluateSignInThrottle(rec, T0), evaluateSignInThrottle({ ...rec }, T0));
+  assert.equal(throttleWaitSeconds(4200), 5, 'a part second still reads as a whole one');
+  assert.equal(throttleWaitSeconds(1), 1);
+});
+
+// ----------------------------------------------------------------- sessions
+
+check('the old bare-id session record still reads', () => {
+  // Every till in the field has one of these on disk. Without this branch they
+  // would all sign out on the morning after the upgrade.
+  assert.deepEqual(parseLocalSession('abc123'), {
+    userId: 'abc123',
+    issuedAtMillis: 0,
+    lastSeenAtMillis: 0,
+    credentialStamp: '',
+  });
+  assert.equal(parseLocalSession(null), null);
+  assert.equal(parseLocalSession(''), null);
+  assert.equal(parseLocalSession('{not json'), null);
+  assert.equal(parseLocalSession('{"issuedAtMillis":1}'), null, 'a record with no user is no record');
+});
+
+check('a session record round-trips, and the stamp follows the password', () => {
+  const record = {
+    userId: 'u1',
+    issuedAtMillis: T0,
+    lastSeenAtMillis: T0 + 5,
+    credentialStamp: 'abcdefghijklmnop',
+  };
+  assert.deepEqual(parseLocalSession(JSON.stringify(record)), record);
+  assert.equal(credentialStampOf({ passwordHash: 'abcdefghijklmnopqrstuvwx' }), 'abcdefghijklmnop');
+  assert.notEqual(
+    credentialStampOf({ passwordHash: 'ZZZZZZZZZZZZZZZZqrstuvwx' }),
+    credentialStampOf({ passwordHash: 'abcdefghijklmnopqrstuvwx' }),
+    'a changed password must change the stamp, or a reset would not end the session',
+  );
+});
+
+// -------------------------------------------------- the last way in
+//
+// App admin already refuses to switch the Support role off. These are the same
+// rule for the last Support account, which the People screen never had.
+
+check('the last account that can open App admin cannot be removed', () => {
+  const holds = (role) => role === 'superadmin';
+  const users = [
+    { id: 'a', role: 'superadmin' },
+    { id: 'b', role: 'staff' },
+  ];
+  assert.equal(canRemoveLocalUser(users, 'a', holds), false);
+  assert.equal(canRemoveLocalUser(users, 'b', holds), true, 'a cashier is never the last way in');
+  assert.equal(canDisableLocalUser(users, 'a', holds), false);
+
+  const two = [...users, { id: 'c', role: 'superadmin' }];
+  assert.equal(canRemoveLocalUser(two, 'a', holds), true);
+
+  const otherBlocked = [{ id: 'a', role: 'superadmin' }, { id: 'c', role: 'superadmin', disabled: true }];
+  assert.equal(canRemoveLocalUser(otherBlocked, 'a', holds), false,
+    'a blocked account is not a way in, so it cannot be the spare');
+
+  assert.equal(canRemoveLocalUser(users, 'nobody', holds), false);
+});
+
+check('a custom role granted App admin counts as a way in', () => {
+  // The whole reason the capability test is an argument rather than an import:
+  // the static built-in map knows seven ids and would not see this one.
+  const holds = (role) => role === 'superadmin' || role === 'shop-owner';
+  const users = [
+    { id: 'a', role: 'superadmin' },
+    { id: 'b', role: 'shop-owner' },
+  ];
+  assert.equal(canRemoveLocalUser(users, 'a', holds), true);
+});
+
+await Promise.all(pending);
 
 if (failed) {
   console.error(`\n[check-standalone] ${failed} check(s) failed.`);

@@ -8,6 +8,7 @@ import { EyeIcon, EyeOffIcon, LockIcon, ShoppingCartIcon } from '../../ui/icons'
 import { cn } from '../../utils/cn';
 import { usePosLocalSession } from './local-session-context';
 import { localCryptoAvailable, MIN_LOCAL_PASSWORD_LENGTH } from './local-auth';
+import { throttleWaitSeconds } from './sign-in-throttle';
 
 /**
  * Sign-in for a standalone till, the one-time setup that precedes it, and the
@@ -194,7 +195,7 @@ function hasEdgeSpace(password: string): boolean {
 
 function SignInForm() {
   const t = useT();
-  const { signIn } = usePosLocalSession();
+  const { attemptSignIn } = usePosLocalSession();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -209,8 +210,17 @@ function SignInForm() {
     setBusy(true);
     setError('');
     try {
-      const ok = await signIn(username.trim(), password);
-      if (!ok) setError(t('pos.local.badCredentials'));
+      const result = await attemptSignIn(username.trim(), password);
+      if (!result.ok) {
+        // A refusal says which of the two it is. "Wrong password" while the
+        // till is silently ignoring the attempt is how somebody ends up typing
+        // it eight more times and making the wait longer.
+        setError(
+          result.reason === 'throttled'
+            ? t('pos.local.throttled', { seconds: throttleWaitSeconds(result.waitMillis) })
+            : t('pos.local.badCredentials'),
+        );
+      }
     } catch {
       setError(t('pos.local.storageBlocked'));
     } finally {

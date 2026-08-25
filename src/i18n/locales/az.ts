@@ -165,6 +165,23 @@ const az: MessageDict = {
   'pos.admin.people.deleteNote':
     'Bir adamı bağlamaq onun vurduğu satışlarda adını saxlayır. Silmək də saxlayır, ancaq hesabı yenidən yaratmadan onu geri buraxa bilməzsiniz.',
 
+  // POS — gecikmə, ekran kilidi və hesabların qorunması
+  'pos.local.throttled':
+    'Çox cəhd oldu. {seconds} saniyə gözləyin, sonra yenidən yoxlayın — bu arada edilən cəhdlər sayılmır.',
+  'pos.lock.title': 'Bu kassa kilidlidir',
+  'pos.lock.body':
+    'İşlədilmədiyi üçün özü kilidləndi. Davam etmək üçün şifrənizi yazın — açıq qalan satış hələ də yerindədir.',
+  'pos.lock.unlock': 'Kilidi aç',
+  'pos.lock.wrongPassword': 'Bu hesabın şifrəsi belə deyil.',
+  'pos.lock.someoneElse': 'Başqası kimi daxil ol',
+  'pos.settings.idleLock': 'İşlədilməyəndə ekranı kilidlə',
+  'pos.settings.idleLockNever': 'Heç vaxt',
+  'pos.settings.idleLockMinutes': '{count} dəqiqə',
+  'pos.settings.idleLockHelp':
+    'Şifrə yenidən yazılana qədər ekranı örtür. Heç kimi çıxarmır: açıq satış, kassir və kassadakı pulun sayı yerində qalır. Burada vaxt seçilməyincə söndürülüdür və yalnız bu kompüterə aiddir.',
+  'pos.admin.people.lastSupport':
+    'App admin-i aça bilən sonuncu hesab budur. Əvvəlcə həmin rolu başqasına verin, yoxsa bu kassada kassir əlavə edə bilən adam qalmayacaq.',
+
   // POS — scanning
   'pos.scan.placeholder': 'Barkod və ya SKU skan edin ya da yazın',
   'pos.scan.hint': 'USB və ya Bluetooth skaner heç bir quraşdırma olmadan işləyir — sadəcə skan edin.',

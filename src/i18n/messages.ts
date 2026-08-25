@@ -1694,6 +1694,17 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.settings.printer': 'Receipt printer',
   'pos.settings.printerBrowser': 'Browser print dialog',
   'pos.settings.printerBrowserHelp': 'Works with any printer your computer already has installed.',
+  'pos.lock.title': 'This till is locked',
+  'pos.lock.body':
+    'It locked itself after sitting unused. Type your password to carry on — the sale you had open is still here.',
+  'pos.lock.unlock': 'Unlock',
+  'pos.lock.wrongPassword': 'That is not the password for this account.',
+  'pos.lock.someoneElse': 'Sign in as somebody else',
+  'pos.settings.idleLock': 'Lock the screen when unused',
+  'pos.settings.idleLockNever': 'Never',
+  'pos.settings.idleLockMinutes': '{count, plural, one {# minute} other {# minutes}}',
+  'pos.settings.idleLockHelp':
+    'Covers the screen until the password is typed again. It does not sign anyone out: the open sale, the cashier and the drawer count all survive it. Off unless you pick a time here, and it applies to this computer only.',
   'pos.settings.scannerGap': 'Scanner speed',
   'pos.settings.scannerGapHelp':
     'Maximum milliseconds between keystrokes still treated as a scan. Raise it if scans arrive split; lower it if fast typing is mistaken for a scan.',
@@ -1990,6 +2001,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.local.signIn': 'Sign in',
   'pos.local.signingIn': 'Signing in…',
   'pos.local.badCredentials': 'That username and password do not match an account on this till.',
+  'pos.local.throttled':
+    'Too many tries. Wait {seconds} seconds, then try again — the till is not counting the tries in between.',
   'pos.local.showPassword': 'Show the password',
   'pos.local.hidePassword': 'Hide the password',
   'pos.local.capsLock': 'Caps lock is on.',
@@ -2128,6 +2141,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.admin.people.disabled': 'blocked',
   'pos.admin.people.you': 'you',
   'pos.admin.people.confirmDelete': 'Delete the account for {name}?',
+  'pos.admin.people.lastSupport':
+    'This is the last account that can open App admin. Give somebody else that role first, or this till would have nobody who can add a cashier.',
   'pos.admin.people.deleteNote':
     'Blocking somebody keeps their name on the sales they rang. Deleting them does too, but you cannot let them back in without making the account again.',
 
