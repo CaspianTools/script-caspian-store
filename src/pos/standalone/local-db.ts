@@ -20,7 +20,9 @@ import {
   STORE_LOCAL_ROLES,
   STORE_LOCAL_SALES,
   STORE_LOCAL_SETTINGS,
+  STORE_LOCAL_SHIFTS,
   STORE_LOCAL_SUPPLIERS,
+  STORE_LOCAL_TERMINALS,
   STORE_LOCAL_USERS,
   STORE_TICKET,
   idbDelete,
@@ -342,6 +344,18 @@ export interface LocalCommitInput {
   cashierId: string;
   cashierName: string;
   committedAtMillis: number;
+  /**
+   * Which counter rang it, and which turn at that counter.
+   *
+   * Resolved by the caller rather than looked up here, so this module keeps no
+   * dependency on the roster or the shift store -- `local-terminals.ts` and
+   * `local-shifts.ts` import from here, and a lookup in this direction would
+   * close the loop. Absent on a till with no roster or with shifts switched
+   * off, which is every till until an owner sets one up.
+   */
+  terminalId?: string;
+  terminalName?: string;
+  shiftId?: string;
 }
 
 export async function commitLocalSale(
@@ -429,6 +443,12 @@ export async function commitLocalSale(
         cashierId: input.cashierId,
         cashierName: input.cashierName,
         stockShortfall: priced.stockShortfall,
+        // Spread rather than assigned, so a till with no roster writes a sale
+        // with no `terminalId` key at all rather than one holding `undefined` --
+        // which IndexedDB stores faithfully and the CSV then renders as the word.
+        ...(input.terminalId ? { terminalId: input.terminalId } : {}),
+        ...(input.terminalName ? { terminalName: input.terminalName } : {}),
+        ...(input.shiftId ? { shiftId: input.shiftId } : {}),
       };
       await idbPut(tx, STORE_LOCAL_SALES, committed);
 
@@ -1183,6 +1203,8 @@ export async function factoryResetLocalStore(): Promise<void> {
     STORE_LOCAL_RECEIPTS,
     STORE_LOCAL_CATEGORIES,
     STORE_LOCAL_SUPPLIERS,
+    STORE_LOCAL_TERMINALS,
+    STORE_LOCAL_SHIFTS,
     // The sale somebody was part-way through. `clearPosDb` deliberately spares
     // it, so without this line nothing on the machine would ever erase it and a
     // till handed on to a new owner would offer them the last shop's basket.

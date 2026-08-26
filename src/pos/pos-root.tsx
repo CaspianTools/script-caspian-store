@@ -11,6 +11,12 @@ import { usePosRoles } from './standalone/role-context';
 import type { PosLocalCapability } from './standalone/types';
 import { PosAppAdminPage } from './standalone/admin/pos-app-admin-page';
 import { PosOpeningCashGate } from './standalone/pos-opening-cash-gate';
+import { PosShiftGate } from './standalone/pos-shift-gate';
+import { PosShiftPage } from './standalone/pos-shift-page';
+import { PosShiftStrip } from './standalone/pos-shift-strip';
+import { PosShiftProvider } from './standalone/shift-context';
+import { PosTerminalClaimGate } from './standalone/pos-terminal-claim-gate';
+import { PosTerminalProvider } from './standalone/terminal-context';
 import { LocalStorePanel } from './standalone/admin/local-store-panel';
 import { LocalProductPage } from './standalone/admin/local-product-page';
 import { LocalReceiveStockPage } from './standalone/admin/local-receive-stock-page';
@@ -73,15 +79,30 @@ export function PosShell({ children }: { children: ReactNode }) {
               */}
               <PosShopSettingsProvider>
                 {/*
-                  Inside the auto-backup provider, not above it and emphatically
-                  not in `PosGuard`: a lock screen mounted at the guard unmounts
-                  everything below it, and a till locked overnight would stop
-                  taking the automatic backups that are the one thing it should
-                  be doing while nobody is looking.
+                  Which counter this machine is, and whose turn is open at it.
+                  Both do nothing at all outside standalone mode, and the shift
+                  provider is inside the terminal one because a shift belongs to
+                  a counter.
+
+                  Above `PosShellChrome` for the reason the shop settings are:
+                  the strip the register draws and the gates that can replace it
+                  are both below this, and a provider mounted lower would re-read
+                  storage on every navigation between them.
                 */}
-                <PosLockGate>
-                  <PosShellChrome>{children}</PosShellChrome>
-                </PosLockGate>
+                <PosTerminalProvider>
+                  <PosShiftProvider>
+                    {/*
+                      Inside the auto-backup provider, not above it and emphatically
+                      not in `PosGuard`: a lock screen mounted at the guard unmounts
+                      everything below it, and a till locked overnight would stop
+                      taking the automatic backups that are the one thing it should
+                      be doing while nobody is looking.
+                    */}
+                    <PosLockGate>
+                      <PosShellChrome>{children}</PosShellChrome>
+                    </PosLockGate>
+                  </PosShiftProvider>
+                </PosTerminalProvider>
               </PosShopSettingsProvider>
             </PosAutoBackupProvider>
           </PosOpenSaleProvider>
@@ -271,10 +292,27 @@ export function PosRoot(): ReactNode {
   // A cloud till has no local shop record and no drawer log, so the gate is not
   // merely inert there; it is meaningless, and skipping the wrapper keeps that
   // path exactly as it was.
+  //
+  // The nesting order is the design. Name this counter, then open a shift at
+  // it, then sell: a shift belongs to a terminal, so asking for the float first
+  // would ask a question with nowhere to file the answer. The opening-cash gate
+  // stays innermost and stands down when shifts are on -- the float IS the
+  // drawer declaration, and asking both would put one question to a cashier
+  // twice and leave two different answers on file.
   const register = standalone ? (
-    <PosOpeningCashGate>
-      <PosRegister />
-    </PosOpeningCashGate>
+    <PosTerminalClaimGate>
+      <PosShiftGate>
+        <PosOpeningCashGate>
+          {/*
+            Mounted here rather than inside `PosRegister`, which is a shared
+            file a cloud register renders and therefore outside the standalone
+            boundary. It draws nothing until a shift is open.
+          */}
+          <PosShiftStrip />
+          <PosRegister />
+        </PosOpeningCashGate>
+      </PosShiftGate>
+    </PosTerminalClaimGate>
   ) : (
     <PosRegister />
   );
@@ -312,6 +350,13 @@ export function PosRoot(): ReactNode {
       return opens('sales.view') ? <LocalSalesPage /> : register;
     case 'people':
       return opens('people.view') ? <LocalPeoplePage /> : register;
+    case 'shift':
+      // Gated on `register` rather than on a capability of its own: opening and
+      // closing your own turn is part of selling, and a cashier who can ring a
+      // sale has to be able to finish one. Deliberately absent from the sidebar
+      // -- the icon map lives in `pos-sidebar.tsx`, outside the standalone
+      // boundary -- so it is reached from the strip on the register instead.
+      return opens('register') ? <PosShiftPage /> : register;
     case 'app-admin':
       return opens('appAdmin.view') ? <PosAppAdminPage /> : register;
     default:

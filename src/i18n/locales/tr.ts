@@ -425,6 +425,163 @@ const tr: MessageDict = {
   'pos.appAdmin.recovery.mintedFor': 'Şu anki kod {name} hesabına ait, {date} tarihinde yapıldı.',
   'pos.appAdmin.recovery.help':
     'Yeni bir kod oluşturmak eskisini anında geçersiz kılar. Kod bir kez gösterilir; sonrasında kasa yalnızca şifrelenmiş bir kopya tutar ve onu kuran kişi dahil kimse geri okuyamaz.',
+
+  // --- Kasalar ve vardiyalar (tek başına çalışan kasa v1.3.0) ---
+  'pos.appAdmin.section.terminals': 'Kasalar',
+  'pos.appAdmin.terminals.intro':
+    'Bu dükkândaki kasalar ve her birine hangi bilgisayarın baktığı. Adlandırıldıklarında satış nerede yapıldığını söyler ve vardiya kasa başına sayılabilir.',
+  'pos.appAdmin.shifts.title': 'Vardiya tut',
+  'pos.appAdmin.shifts.help':
+    'Kasiyer çekmecedeki parayla vardiyayı açar, onun üzerine satar ve sonunda sayarak kapatır. Vardiya sırasında konan ve alınan para da yazılır, böylece beklenen tutar gerçek olur.',
+  'pos.appAdmin.shifts.needTerminal':
+    'Önce Kasalar sayfasında bir kasa adlandırın. Vardiya bir kasaya aittir, henüz açılacak yer yok.',
+  'pos.appAdmin.shifts.turnedOn': 'Kasiyerler vardiya açıp kapatacak',
+  'pos.appAdmin.shifts.turnedOff': 'Bu dükkânda vardiyalar kapalı',
+  'pos.appAdmin.openingCash.superseded':
+    'Vardiyalar açıkken bunu vardiya hallediyor. Kasiyerin vardiyayı açarken yazdığı tutar zaten çekmece sayımıdır, o yüzden bir daha sorulmaz.',
+
+  'pos.terminal.addTitle': 'Kasa ekle',
+  'pos.terminal.addHelp':
+    'Dükkânda nasıl anılıyorsa öyle adlandırın — “Ön kasa”, “Kiosk 2”. Orada duran bilgisayara yazılacak bir eşleme kodu alırsınız.',
+  'pos.terminal.name': 'Ad',
+  'pos.terminal.namePlaceholder': 'örn. Ön kasa',
+  'pos.terminal.add': 'Ekle',
+  'pos.terminal.addFailed': 'Bu bilgisayara kaydedilemedi. Yeniden deneyin.',
+  'pos.terminal.renameFailed': 'Adı değiştirilemedi. Yeniden deneyin.',
+  'pos.terminal.codeFor': '{name} için eşleme kodu',
+  'pos.terminal.codeOnce':
+    'Bir kez gösterilir. Yazın ve o kasadaki bilgisayara götürün — burada yalnızca şifrelenmiş hâli tutulur, kimse bu makineden kodu geri okuyamaz. Kaybolursa yenisini üretin.',
+  'pos.terminal.codeDone': 'Yazdım',
+  'pos.terminal.codeFailed': 'Yeni kod üretilemedi. Yeniden deneyin.',
+  'pos.terminal.listTitle': 'Kasalar',
+  'pos.terminal.noSync':
+    'Bu liste bu bilgisayarda durur. Tek başına çalışan kasalar birbiriyle hiç konuşmaz, bu yüzden başka bir makinede tutulmuş bir kasa burada hâlâ boş görünür — o makinenin yedeği geri yüklenene kadar.',
+  'pos.terminal.empty': 'Henüz kasa yok. Yukarıdan ekleyin.',
+  'pos.terminal.colName': 'Ad',
+  'pos.terminal.colClaimed': 'Bakan',
+  'pos.terminal.colActions': 'İşlemler',
+  'pos.terminal.free': 'Tutulmamış',
+  'pos.terminal.thisMachine': 'Bu bilgisayar',
+  'pos.terminal.otherMachine': 'Başka bilgisayar',
+  'pos.terminal.newCode': 'Yeni kod',
+  'pos.terminal.confirmNewCode':
+    '{name} için yeni eşleme kodu üretilsin mi? Eskisi hemen çalışmaz olur. Zaten eşlenmiş bir bilgisayar eşli kalır.',
+  'pos.terminal.remove': 'Kaldır',
+  'pos.terminal.confirmRemove':
+    '{name} kaldırılsın mı? Orada yapılmış satışlar bu adı korur, kayıtlarınız etkilenmez.',
+  'pos.terminal.confirmRemoveClaimed':
+    '{name} kaldırılsın mı? Ona eşlenmiş başka bir bilgisayar var ve bunu öğrenmeyecek — biri onu yeniden eşleyene kadar satmaya devam eder. Orada yapılmış satışlar adı korur.',
+  'pos.terminal.removeShiftOpen':
+    'O kasada açık bir vardiya var. Çekmecenin sayılması için önce onu kapatın.',
+  'pos.terminal.removed': 'Kasa kaldırıldı',
+  'pos.terminal.removeFailed': 'Kaldırılamadı. Yeniden deneyin.',
+
+  'pos.terminal.claim.title': 'Bu hangi kasa?',
+  'pos.terminal.claim.body':
+    'Bu dükkân kasalarını adlandırmış. Bu bilgisayarın durduğu kasanın eşleme kodunu yazın — bunu yalnızca bir kez yaparsınız.',
+  'pos.terminal.claim.code': 'Eşleme kodu',
+  'pos.terminal.claim.placeholder': 'CSPT1-XXXXX-XXXXX',
+  'pos.terminal.claim.pair': 'Bu bilgisayarı eşle',
+  'pos.terminal.claim.pairing': 'Eşleniyor…',
+  'pos.terminal.claim.done': 'Bu bilgisayar artık {name}',
+  'pos.terminal.claim.malformed':
+    'Bu bir eşleme koduna benzemiyor. Kod CSPT1 ile başlar, ardından on karakter gelir.',
+  'pos.terminal.claim.noMatch': 'Bu koda sahip bir kasa yok. Kontrol edip yeniden deneyin.',
+  'pos.terminal.claim.taken':
+    'O kasaya zaten başka bir bilgisayar eşlenmiş. Kasalara bakan kişiden onu serbest bırakmasını isteyin ya da başka bir kod kullanın.',
+  'pos.terminal.claim.whereFrom':
+    'Kod, kasaların adlandırıldığı bilgisayarda Uygulama yönetimi → Kasalar sayfasından gelir.',
+  'pos.settings.terminal': 'Kasa',
+  'pos.settings.terminalHelp':
+    'Bu bilgisayarın hangi kasaya baktığı. Başkasına taşımak için Uygulama yönetimi → Kasalar altında serbest bırakın ve yeniden eşleyin.',
+
+  'pos.shift.openTitle': 'Vardiyanı aç',
+  'pos.shift.openBody': 'Şu anda çekmecede ne varsa sayın ve toplamı yazın.',
+  'pos.shift.float': 'Çekmecedeki nakit',
+  'pos.shift.floatHint':
+    'Yalnızca kâğıt para ve bozukluk. Vardiya sonundaki sayımınız bu rakamla karşılaştırılır.',
+  'pos.shift.open': 'Vardiyayı aç',
+  'pos.shift.opening': 'Açılıyor…',
+  'pos.shift.opened': 'Vardiya açık, {amount} ile başlıyor',
+  'pos.shift.openFailed': 'Bu bilgisayara kaydedilemedi. Yeniden deneyin.',
+  'pos.shift.needFloat': 'Önce tutarı yazın',
+  'pos.shift.elsewhere': 'Kasanın geri kalanı çalışıyor. Yalnızca satış bunu bekliyor.',
+  'pos.shift.notANumber': 'Bu bir tutar değil. Rakamlar ve tek bir ondalık ayırıcı.',
+  'pos.shift.tooLarge': 'Bu hiçbir çekmecenin alacağından fazla. Rakamı kontrol edin.',
+  'pos.shift.noDecimal': 'Ondalık ayırıcı yok. {suggestion} mu demek istediniz?',
+  'pos.shift.emptyDrawer':
+    'Boş çekmece. Yalnızca kartla çalışan bir kasa için normal — değilse yeniden sayın.',
+  'pos.shift.handoverTitle': 'Bu çekmecede başkası var',
+  'pos.shift.handoverBody':
+    '{name} adlı kişinin {terminal} kasasında hâlâ açık bir vardiyası var. Sizinki başlamadan önce kapatılıp sayılmalı — bir çekmecede iki vardiya olursa hiçbirinin hesabı verilemez.',
+  'pos.shift.handoverGo': 'Onun vardiyasını kapat',
+  'pos.shift.handoverHint':
+    'Mümkünse onu çağırın. Kayda geçen rakam, sayanın verdiği rakamdır.',
+
+  'pos.shift.strip.sales': '{count, plural, one {# satış} other {# satış}}',
+  'pos.shift.strip.drawer': 'Çekmecede olmalı',
+  'pos.shift.strip.manage': 'Vardiya',
+
+  'pos.shift.pageTitle': 'Bu vardiya',
+  'pos.shift.pageSubtitle': 'Ne toplandı, ne hareket etti ve nasıl kapatılır.',
+  'pos.shift.notEnabled':
+    'Bu dükkân vardiya tutmuyor. Uygulama yönetimi → Genel altından açın.',
+  'pos.shift.noneOpen': 'Bu bilgisayarda açık vardiya yok.',
+  'pos.shift.noTerminalTitle': 'Bu kasanın yeri yok',
+  'pos.shift.noTerminalBody':
+    'Vardiyalar açık, ama listeden bütün kasalar kaldırılmış, bu yüzden vardiya açacak yer yok. Kasalara bakan kişiden Uygulama yönetimi altında bir kasa eklemesini ya da vardiyaları kapatmasını isteyin.',
+  'pos.shift.backToRegister': 'Kasaya dön',
+  'pos.shift.cashIn': 'Para konuldu',
+  'pos.shift.cashOut': 'Para alındı',
+  'pos.shift.amount': 'Tutar',
+  'pos.shift.reason': 'Ne için',
+  'pos.shift.reasonPlaceholder': 'örn. sütçüye ödendi',
+  'pos.shift.record': 'Kaydet',
+  'pos.shift.movements': 'Çekmeceye giren ve çıkan',
+  'pos.shift.noReason': 'Sebep yazılmamış',
+  'pos.shift.movementFailed': 'Kaydedilemedi. Yeniden deneyin.',
+  'pos.shift.close': 'Vardiyayı kapat',
+  'pos.shift.closeConfirm': 'Kapat',
+  'pos.shift.closeBody':
+    'Çekmeceyi sayın ve toplamı yazın. Fark her hâlükârda kaydedilir — eksik çekmece bir gerçektir, bir ret değil.',
+  'pos.shift.counted': 'Sayılan',
+  'pos.shift.expected': 'Olması gereken',
+  'pos.shift.closed': 'Vardiya kapatıldı',
+  'pos.shift.closeFailed': 'Vardiya kapatılamadı. Yeniden deneyin.',
+  'pos.shift.print': 'Yazdır',
+  'pos.shift.varianceExact': 'Tam',
+  'pos.shift.varianceShort': 'Eksik',
+  'pos.shift.varianceOver': 'Fazla',
+  'pos.shift.zTitle': 'Vardiya raporu',
+  'pos.shift.zSubtitle': 'Bu vardiyada ne toplandı ve sayım nasıl çıktı.',
+
+  'pos.shift.report.cashier': 'Kasiyer',
+  'pos.shift.report.terminal': 'Kasa',
+  'pos.shift.report.day': 'Gün',
+  'pos.shift.report.opened': 'Açılış',
+  'pos.shift.report.closed': 'Kapanış',
+  'pos.shift.report.float': 'Açılış nakiti',
+  'pos.shift.report.saleCount': 'Satış sayısı',
+  'pos.shift.report.salesTotal': 'Toplam toplanan',
+  'pos.shift.report.movedIn': 'Konulan',
+  'pos.shift.report.movedOut': 'Alınan',
+  'pos.shift.report.expected': 'Çekmecede olmalı',
+  'pos.shift.report.counted': 'Sayılan',
+  'pos.shift.report.tender.cash': 'Bunun nakit kısmı',
+  'pos.shift.report.tender.card': 'Bunun kart kısmı',
+  'pos.shift.report.tender.other': 'Bunun diğer kısmı',
+
+  'pos.shift.list.title': 'Vardiyalar',
+  'pos.shift.list.empty': 'Henüz vardiya yok.',
+  'pos.shift.list.colDay': 'Gün',
+  'pos.shift.list.colCashier': 'Kasiyer',
+  'pos.shift.list.colTerminal': 'Kasa',
+  'pos.shift.list.colSales': 'Toplanan',
+  'pos.shift.list.colVariance': 'Fark',
+  'pos.shift.list.colActions': 'İşlemler',
+  'pos.shift.list.stillOpen': 'Hâlâ açık',
+  'pos.shift.list.view': 'Gör',
+  'pos.shift.list.hide': 'Gizle',
 };
 
 export default tr;

@@ -173,8 +173,8 @@ in Firestore, and `clearPosDb` wipes four of them. It spares `openTicket` on
 purpose: a support engineer clearing a stuck queue must not wipe the sale the
 cashier is standing there ringing up.
 
-The **twelve** `local*` stores are the opposite. They hold a shop's only copy of
-its catalogue, staff, trading history, stock lots and drawer counts; erasing them
+The **fourteen** `local*` stores are the opposite. They hold a shop's only copy of
+its catalogue, staff, trading history, stock lots, counters and drawer counts; erasing them
 is `factoryResetLocalStore`, a separate call. Never widen `clearPosDb` to cover
 them. A new `local*` store joins `factoryResetLocalStore` and the backup in the
 same change — `local-backup.ts` records what it cost the one time roles were left

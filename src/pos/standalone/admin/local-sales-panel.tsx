@@ -5,16 +5,19 @@ import { useT } from '../../../i18n/locale-context';
 import { Button } from '../../../ui/button';
 import { Select } from '../../../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
-import { ReceiptIcon } from '../../../ui/icons';
+import { CashDrawerIcon, ReceiptIcon } from '../../../ui/icons';
+import { cn } from '../../../utils/cn';
 import { toCsv, type CsvCell } from '../../../utils/csv';
 import { listLocalOpeningCash, listLocalSales, readLocalShopSettings } from '../local-db';
 import { saveTextFile } from '../local-backup';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
+import { usePosShopSettings } from '../shop-settings-context';
 import type { LocalOpeningCash, LocalSale } from '../types';
 import { actions, fieldLabel, muted, row, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
+import { LocalShiftsPanel } from './local-shifts-panel';
 
 type Range = 'today' | 'week' | 'month' | 'all';
 
@@ -105,8 +108,23 @@ export function LocalSalesPanel() {
   const takings = visible.reduce((sum, s) => sum + s.total, 0);
 
   const exportCsv = () => {
+    // `terminal` and `shift` are appended rather than slotted in beside the
+    // cashier, so a spreadsheet somebody built against the old export keeps
+    // working: every column it knows about is still in the position it was.
+    // Both are empty on sales rung before the shop named a counter.
     const rows: CsvCell[][] = [
-      ['receiptNumber', 'dateTime', 'cashier', 'items', 'subtotal', 'discount', 'total', 'payment'],
+      [
+        'receiptNumber',
+        'dateTime',
+        'cashier',
+        'items',
+        'subtotal',
+        'discount',
+        'total',
+        'payment',
+        'terminal',
+        'shift',
+      ],
     ];
     for (const s of visible) {
       rows.push([
@@ -118,6 +136,8 @@ export function LocalSalesPanel() {
         s.discount,
         s.total,
         s.tenders.map((x) => x.kind).join('+'),
+        s.terminalName ?? '',
+        s.shiftId ?? '',
       ]);
     }
     saveTextFile(`caspian-sales-${range}.csv`, toCsv(rows), 'text/csv');
@@ -308,13 +328,51 @@ export function LocalSalesPanel() {
 /** The same panel as the screen it now has to itself. */
 export function LocalSalesPage() {
   const t = useT();
+  const { settings } = usePosShopSettings();
+  const [tab, setTab] = useState<'sales' | 'shifts'>('sales');
+
+  // The tabs appear only once a shop is running shifts. A till that is not
+  // gets exactly the screen it had before, with no second tab to wonder about.
+  const showShifts = settings.shiftsEnabled;
+
   return (
     <PosAdminPage
       icon={<ReceiptIcon size={19} />}
       title={t('pos.admin.section.sales')}
       subtitle={t('pos.sales.subtitle')}
     >
-      <LocalSalesPanel />
+      {/*
+        The same strip the store screens use, and for the same reason given on
+        `StoreScreenNav`: a second sidebar entry for a screen an owner opens
+        once a week is a bigger menu on a till that argues for a small one.
+      */}
+      {showShifts ? (
+        <nav className="cpos-segmented" aria-label={t('pos.admin.section.sales')}>
+          <button
+            type="button"
+            className={cn('cpos-segmented__btn', tab === 'sales' && 'cpos-segmented__btn--on')}
+            aria-current={tab === 'sales' ? 'page' : undefined}
+            onClick={() => setTab('sales')}
+          >
+            <span className="cpos-segmented__icon">
+              <ReceiptIcon size={16} />
+            </span>
+            <span>{t('pos.admin.section.sales')}</span>
+          </button>
+          <button
+            type="button"
+            className={cn('cpos-segmented__btn', tab === 'shifts' && 'cpos-segmented__btn--on')}
+            aria-current={tab === 'shifts' ? 'page' : undefined}
+            onClick={() => setTab('shifts')}
+          >
+            <span className="cpos-segmented__icon">
+              <CashDrawerIcon size={16} />
+            </span>
+            <span>{t('pos.shift.list.title')}</span>
+          </button>
+        </nav>
+      ) : null}
+      {showShifts && tab === 'shifts' ? <LocalShiftsPanel /> : <LocalSalesPanel />}
     </PosAdminPage>
   );
 }

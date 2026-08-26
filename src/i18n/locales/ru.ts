@@ -430,6 +430,164 @@ const ru: MessageDict = {
   'pos.appAdmin.recovery.mintedFor': 'Текущий код принадлежит {name}, создан {date}.',
   'pos.appAdmin.recovery.help':
     'Новый код сразу отключает старый. Код показывается один раз; дальше касса хранит только зашифрованную копию, которую не прочитает никто, включая того, кто её устанавливал.',
+
+  // --- Кассы и смены (автономная касса v1.3.0) ---
+  'pos.appAdmin.section.terminals': 'Кассы',
+  'pos.appAdmin.terminals.intro':
+    'Кассы этого магазина и то, какой компьютер отвечает за каждую. Когда они названы, продажа показывает, где её пробили, а смену можно посчитать по кассе.',
+  'pos.appAdmin.shifts.title': 'Вести смены',
+  'pos.appAdmin.shifts.help':
+    'Кассир открывает смену с наличными в ящике, продаёт и в конце закрывает её по пересчёту. Деньги, вложенные и вынутые за смену, тоже записываются, поэтому ожидаемая сумма получается настоящей.',
+  'pos.appAdmin.shifts.needTerminal':
+    'Сначала назовите кассу на странице «Кассы». Смена относится к кассе, а открывать её пока негде.',
+  'pos.appAdmin.shifts.turnedOn': 'Кассиры будут открывать и закрывать смену',
+  'pos.appAdmin.shifts.turnedOff': 'Смены в этом магазине выключены',
+  'pos.appAdmin.openingCash.superseded':
+    'Пока идут смены, это делает смена. Сумма, которую кассир вводит при открытии, и есть пересчёт ящика, поэтому второй раз её не спрашивают.',
+
+  'pos.terminal.addTitle': 'Добавить кассу',
+  'pos.terminal.addHelp':
+    'Назовите так, как её называют в магазине, — «Передняя касса», «Киоск 2». Вы получите код привязки, который нужно ввести на компьютере, стоящем там.',
+  'pos.terminal.name': 'Название',
+  'pos.terminal.namePlaceholder': 'например, Передняя касса',
+  'pos.terminal.add': 'Добавить',
+  'pos.terminal.addFailed': 'Не удалось сохранить на этом компьютере. Попробуйте ещё раз.',
+  'pos.terminal.renameFailed': 'Не удалось переименовать. Попробуйте ещё раз.',
+  'pos.terminal.codeFor': 'Код привязки для «{name}»',
+  'pos.terminal.codeOnce':
+    'Показывается один раз. Запишите его и отнесите на компьютер у этой кассы — здесь хранится только зашифрованная копия, и прочитать код с этой машины не сможет никто. Если он потеряется, создайте новый.',
+  'pos.terminal.codeDone': 'Я записал',
+  'pos.terminal.codeFailed': 'Не удалось создать новый код. Попробуйте ещё раз.',
+  'pos.terminal.listTitle': 'Кассы',
+  'pos.terminal.noSync':
+    'Этот список живёт на этом компьютере. Автономные кассы никогда не общаются между собой, поэтому касса, занятая на другой машине, здесь по-прежнему числится свободной — пока не восстановят резервную копию с неё.',
+  'pos.terminal.empty': 'Касс пока нет. Добавьте выше.',
+  'pos.terminal.colName': 'Название',
+  'pos.terminal.colClaimed': 'Отвечает',
+  'pos.terminal.colActions': 'Действия',
+  'pos.terminal.free': 'Не занята',
+  'pos.terminal.thisMachine': 'Этот компьютер',
+  'pos.terminal.otherMachine': 'Другой компьютер',
+  'pos.terminal.newCode': 'Новый код',
+  'pos.terminal.confirmNewCode':
+    'Создать новый код привязки для «{name}»? Старый перестанет работать сразу. Уже привязанный компьютер останется привязанным.',
+  'pos.terminal.remove': 'Удалить',
+  'pos.terminal.confirmRemove':
+    'Удалить «{name}»? Пробитые там продажи сохраняют это название, записи не пострадают.',
+  'pos.terminal.confirmRemoveClaimed':
+    'Удалить «{name}»? К ней привязан другой компьютер, и он об этом не узнает — он продолжит продавать, пока его не привяжут заново. Пробитые там продажи сохраняют название.',
+  'pos.terminal.removeShiftOpen':
+    'На этой кассе открыта смена. Сначала закройте её, чтобы ящик пересчитали.',
+  'pos.terminal.removed': 'Касса удалена',
+  'pos.terminal.removeFailed': 'Не удалось удалить. Попробуйте ещё раз.',
+
+  'pos.terminal.claim.title': 'Какая это касса?',
+  'pos.terminal.claim.body':
+    'В этом магазине кассы названы. Введите код привязки той, у которой стоит этот компьютер, — это делается один раз.',
+  'pos.terminal.claim.code': 'Код привязки',
+  'pos.terminal.claim.placeholder': 'CSPT1-XXXXX-XXXXX',
+  'pos.terminal.claim.pair': 'Привязать этот компьютер',
+  'pos.terminal.claim.pairing': 'Привязка…',
+  'pos.terminal.claim.done': 'Теперь этот компьютер — «{name}»',
+  'pos.terminal.claim.malformed':
+    'Это не похоже на код привязки. Он начинается с CSPT1, дальше идут десять знаков.',
+  'pos.terminal.claim.noMatch': 'Кассы с таким кодом нет. Проверьте и попробуйте ещё раз.',
+  'pos.terminal.claim.taken':
+    'К этой кассе уже привязан другой компьютер. Попросите того, кто следит за кассами, освободить её, или используйте другой код.',
+  'pos.terminal.claim.whereFrom':
+    'Код берётся в «Управление приложением → Кассы» на том компьютере, где кассы были названы.',
+  'pos.settings.terminal': 'Касса',
+  'pos.settings.terminalHelp':
+    'За какую кассу отвечает этот компьютер. Чтобы перевести его на другую, освободите её в «Управление приложением → Кассы» и привяжите заново.',
+
+  'pos.shift.openTitle': 'Откройте смену',
+  'pos.shift.openBody': 'Пересчитайте, что сейчас в ящике, и введите сумму.',
+  'pos.shift.float': 'Наличные в ящике',
+  'pos.shift.floatHint':
+    'Только купюры и монеты. С этой суммой сверят ваш пересчёт в конце смены.',
+  'pos.shift.open': 'Открыть смену',
+  'pos.shift.opening': 'Открывается…',
+  'pos.shift.opened': 'Смена открыта, начальная сумма {amount}',
+  'pos.shift.openFailed': 'Не удалось сохранить на этом компьютере. Попробуйте ещё раз.',
+  'pos.shift.needFloat': 'Сначала введите сумму',
+  'pos.shift.elsewhere': 'Всё остальное на кассе работает. Ждёт только продажа.',
+  'pos.shift.notANumber': 'Это не сумма. Цифры и одна десятичная точка.',
+  'pos.shift.tooLarge': 'Это больше, чем помещается в любой ящик. Проверьте цифру.',
+  'pos.shift.noDecimal': 'Нет десятичной точки. Вы имели в виду {suggestion}?',
+  'pos.shift.emptyDrawer':
+    'Пустой ящик. Нормально для кассы только с картами — иначе пересчитайте.',
+  'pos.shift.handoverTitle': 'На этом ящике работает другой человек',
+  'pos.shift.handoverBody':
+    'У {name} ещё открыта смена на кассе «{terminal}». Её нужно закрыть и пересчитать, прежде чем начнётся ваша: две смены на одном ящике — и ни за одну нельзя ответить.',
+  'pos.shift.handoverGo': 'Закрыть его смену',
+  'pos.shift.handoverHint':
+    'Позовите его, если получится. В записи попадёт та сумма, которую посчитали.',
+
+  'pos.shift.strip.sales':
+    '{count, plural, one {# продажа} few {# продажи} other {# продаж}}',
+  'pos.shift.strip.drawer': 'Должно быть в ящике',
+  'pos.shift.strip.manage': 'Смена',
+
+  'pos.shift.pageTitle': 'Текущая смена',
+  'pos.shift.pageSubtitle': 'Что собрано, что двигалось и как её закрыть.',
+  'pos.shift.notEnabled':
+    'В этом магазине смены не ведутся. Включите их в «Управление приложением → Общие».',
+  'pos.shift.noneOpen': 'На этом компьютере нет открытой смены.',
+  'pos.shift.noTerminalTitle': 'У этой кассы нет места',
+  'pos.shift.noTerminalBody':
+    'Смены включены, но все кассы удалены из списка, поэтому смену негде открыть. Попросите того, кто следит за кассами, добавить кассу в «Управление приложением» или выключить смены.',
+  'pos.shift.backToRegister': 'Вернуться к кассе',
+  'pos.shift.cashIn': 'Внесение',
+  'pos.shift.cashOut': 'Изъятие',
+  'pos.shift.amount': 'Сумма',
+  'pos.shift.reason': 'За что',
+  'pos.shift.reasonPlaceholder': 'например, расплатились за молоко',
+  'pos.shift.record': 'Записать',
+  'pos.shift.movements': 'Внесения и изъятия',
+  'pos.shift.noReason': 'Причина не указана',
+  'pos.shift.movementFailed': 'Не удалось записать. Попробуйте ещё раз.',
+  'pos.shift.close': 'Закрыть смену',
+  'pos.shift.closeConfirm': 'Закрыть',
+  'pos.shift.closeBody':
+    'Пересчитайте ящик и введите сумму. Разница записывается в любом случае — недостача это факт, а не отказ.',
+  'pos.shift.counted': 'Посчитано',
+  'pos.shift.expected': 'Должно быть',
+  'pos.shift.closed': 'Смена закрыта',
+  'pos.shift.closeFailed': 'Не удалось закрыть смену. Попробуйте ещё раз.',
+  'pos.shift.print': 'Распечатать',
+  'pos.shift.varianceExact': 'Ровно',
+  'pos.shift.varianceShort': 'Недостача',
+  'pos.shift.varianceOver': 'Излишек',
+  'pos.shift.zTitle': 'Отчёт по смене',
+  'pos.shift.zSubtitle': 'Что смена собрала и как сошёлся пересчёт.',
+
+  'pos.shift.report.cashier': 'Кассир',
+  'pos.shift.report.terminal': 'Касса',
+  'pos.shift.report.day': 'День',
+  'pos.shift.report.opened': 'Открыта',
+  'pos.shift.report.closed': 'Закрыта',
+  'pos.shift.report.float': 'Начальные наличные',
+  'pos.shift.report.saleCount': 'Продаж',
+  'pos.shift.report.salesTotal': 'Собрано всего',
+  'pos.shift.report.movedIn': 'Внесено',
+  'pos.shift.report.movedOut': 'Изъято',
+  'pos.shift.report.expected': 'Должно быть в ящике',
+  'pos.shift.report.counted': 'Посчитано',
+  'pos.shift.report.tender.cash': 'Из них наличными',
+  'pos.shift.report.tender.card': 'Из них картой',
+  'pos.shift.report.tender.other': 'Из них прочим',
+
+  'pos.shift.list.title': 'Смены',
+  'pos.shift.list.empty': 'Смен пока нет.',
+  'pos.shift.list.colDay': 'День',
+  'pos.shift.list.colCashier': 'Кассир',
+  'pos.shift.list.colTerminal': 'Касса',
+  'pos.shift.list.colSales': 'Собрано',
+  'pos.shift.list.colVariance': 'Разница',
+  'pos.shift.list.colActions': 'Действия',
+  'pos.shift.list.stillOpen': 'Ещё открыта',
+  'pos.shift.list.view': 'Смотреть',
+  'pos.shift.list.hide': 'Скрыть',
 };
 
 export default ru;

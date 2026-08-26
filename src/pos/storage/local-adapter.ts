@@ -6,6 +6,8 @@ import {
   readLocalShopSettings,
   searchLocalProducts,
 } from '../standalone/local-db';
+import { openLocalShift } from '../standalone/local-shifts';
+import { claimedLocalTerminal } from '../standalone/local-terminals';
 import type { LocalSale } from '../standalone/types';
 import type { PosCommittedSale, PosSaleDraft, PosSoldLine, PosStorageAdapter } from './types';
 
@@ -63,10 +65,20 @@ export class PosLocalAdapter implements PosStorageAdapter {
   async commitSale(draft: PosSaleDraft): Promise<PosCommittedSale> {
     const who = this.identity();
     const settings = await readLocalShopSettings();
+    const deviceId = draft.deviceId || this.deviceId;
+
+    // Read here rather than taken from a React context, because the identity
+    // seam above is the only one `pos-adapter-context.tsx` offers and widening
+    // it would be a change to a file outside the standalone boundary. Both are
+    // absent on a till whose owner has named no counter, which is every till
+    // until somebody sets one up -- so neither read can refuse a sale.
+    const terminal = await claimedLocalTerminal(deviceId);
+    const shift = settings.shiftsEnabled ? await openLocalShift(deviceId) : null;
+
     const { sale, duplicate } = await commitLocalSale(
       {
         saleId: draft.saleId,
-        deviceId: draft.deviceId || this.deviceId,
+        deviceId,
         lines: draft.lines.map((line) => ({
           productId: line.productId,
           name: line.name,
@@ -82,6 +94,8 @@ export class PosLocalAdapter implements PosStorageAdapter {
         cashierId: draft.capturedByUid || who.uid,
         cashierName: draft.capturedByName || who.name,
         committedAtMillis: draft.capturedAtMillis ?? Date.now(),
+        ...(terminal ? { terminalId: terminal.id, terminalName: terminal.name } : {}),
+        ...(shift ? { shiftId: shift.id } : {}),
       },
       settings.receiptPrefix,
     );

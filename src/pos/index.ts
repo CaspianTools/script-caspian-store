@@ -141,6 +141,56 @@ export {
   type OpeningCashGate,
   type OpeningCashGateInput,
 } from './standalone/opening-cash';
+export {
+  TERMINAL_CODE_PREFIX,
+  TERMINAL_CODE_SYMBOLS,
+  formatTerminalCode,
+  normaliseTerminalCode,
+  isTerminalCodeShaped,
+  mintTerminalCode,
+} from './standalone/terminal-code';
+export {
+  evaluateShiftGate,
+  openShiftForDevice,
+  type ShiftGate,
+  type ShiftGateInput,
+} from './standalone/shift-gate';
+export {
+  summariseShift,
+  salesForShift,
+  shiftVariance,
+  type ShiftTotals,
+} from './standalone/shift-totals';
+export {
+  listLocalTerminals,
+  getLocalTerminal,
+  claimedLocalTerminal,
+  createLocalTerminal,
+  renameLocalTerminal,
+  regenerateLocalTerminalCode,
+  claimLocalTerminal,
+  releaseLocalTerminal,
+  deleteLocalTerminal,
+  type ClaimTerminalResult,
+  type DeleteTerminalResult,
+} from './standalone/local-terminals';
+export {
+  openLocalShift,
+  getLocalShift,
+  listLocalShifts,
+  startLocalShift,
+  recordLocalCashMovement,
+  summariseLocalShift,
+  closeLocalShift,
+  type StartShiftResult,
+  type CloseShiftResult,
+} from './standalone/local-shifts';
+export {
+  PosTerminalProvider,
+  usePosTerminal,
+  type PosTerminalValue,
+} from './standalone/terminal-context';
+export { PosShiftProvider, usePosShift, type PosShiftValue } from './standalone/shift-context';
 export { LocalSalesPanel, LocalSalesPage } from './standalone/admin/local-sales-panel';
 export { LocalStorePanel } from './standalone/admin/local-store-panel';
 export { LocalProductPage } from './standalone/admin/local-product-page';
@@ -206,6 +256,9 @@ export {
   type LocalStockReceiptLine,
   type LocalCategory,
   type LocalSupplier,
+  type LocalTerminal,
+  type LocalShift,
+  type LocalCashMovement,
 } from './standalone/types';
 export {
   localStoreAvailable,

@@ -23,6 +23,115 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.3.0 — Counters, and a drawer that can be counted
+
+A shop with more than one till could not say which one a sale came from, and no
+till could be counted at the end of a turn. Both are here now, and both are off
+until somebody switches them on.
+
+The shape of it: a shop names its counters, each computer is paired to one with
+a code typed once, and a cashier opens a shift with what is in the drawer, sells
+against it, records anything paid in or out, and closes it against a count.
+
+This finishes something the till deliberately stopped short of. `LocalOpeningCash`
+has always refused to compute a variance, and said why: an expected figure built
+from the opening float plus the day's cash is wrong the first time anybody takes
+a note out to pay a delivery, "and a wrong variance is what shops discipline
+staff on". Recording money in and out is the missing half, so the figure a
+cashier is now measured against is one that can be defended.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+Nothing is stored differently, no account is touched, and every till carries on
+exactly as it did until an owner names a counter. A shop that never opens App
+admin will not notice this release.
+
+### Added
+
+- **Counters, under App admin.** Name the tills the way the shop does — "Front
+  counter", "Kiosk 2" — rename them, and remove them. Each one produces a
+  pairing code, shown once and stored only in the scrambled form a password is
+  stored in, so nobody can read it back off the machine afterwards.
+- **A till says which counter it is.** Once a shop has named any, a computer that
+  has been paired to none asks for a code before it will sell. One code, typed
+  once. Everything else on the till stays reachable while it asks — a cashier
+  looking up a price, or an owner fixing the catalogue, is not made to pair
+  anything first.
+- **Shifts.** A cashier opens one with the cash in the drawer, and the sale
+  screen carries a quiet strip saying whose turn it is, which counter, and what
+  should be in the drawer. **Cash in** and **Cash out** record the money that is
+  not a sale, each with a reason and the name of whoever recorded it. **Close**
+  asks for the count, shows what should be there and the difference *before*
+  anything is committed, and then produces the shift's report — printable, from
+  the browser.
+- **A short drawer never blocks the close.** The difference is recorded whatever
+  it is. A till that refused to let a cashier finish on a short drawer would only
+  teach cashiers to make the number fit.
+- **Sales say where they were rung.** Every sale now carries its counter and its
+  shift, and both appear in the sales export as two new columns at the end — at
+  the end deliberately, so a spreadsheet built against the old export goes on
+  working. Sales rung before a shop named its counters have both columns empty.
+- **A Shifts tab under Sales**, listing every turn worked with its difference,
+  and opening one shows the whole report. It appears only once a shop is running
+  shifts.
+- 24 new assertions in `scripts/check-standalone.mjs`, covering the pairing
+  code's shape and its letter folding, the PBKDF2 round-trip with a
+  one-character variant failing, change handed back not being counted as cash
+  taken, a card sale moving the takings but not the drawer, movements in both
+  directions, the sign of a variance, a hundred odd amounts not drifting by a
+  cent, and all five answers the shift gate can give.
+
+### Changed
+
+- **Turning shifts on takes over the opening-cash question.** That older switch
+  stays on the same page, greyed, saying so. The float typed when a shift opens
+  *is* the drawer count, and asking both would put one question to a cashier
+  twice and leave two different answers on file.
+- **Shifts cannot be switched on until a counter has a name.** The switch is
+  greyed with the reason beside it rather than hidden. A shift belongs to a
+  counter, and one with nowhere to belong would have to invent a counter out of
+  the machine's internal id — the sort of placeholder that survives into a
+  shop's records.
+- **A till whose last counter was removed says so.** Nothing stops an owner
+  emptying the roster while shifts are on, and refusing would mean a shop could
+  not tidy its own list. The register says there is nowhere to open a shift and
+  what to do about it, rather than showing a cashier a float box whose Open
+  button could only ever fail.
+- **The backup carries the counters and the shifts**, and is version 5. A
+  version 4 file restores into this release exactly as before; a version 5 file
+  is refused by an older build rather than read with the drawer counts silently
+  dropped. Restoring deliberately does **not** put the claims back — the machine
+  doing the restoring is a different machine, or the same one with a fresh
+  identity, so it is asked for a code of its own rather than quietly believing
+  it is a counter it has never been paired to.
+- **Settings shows which counter this computer is**, read-only, once the shop has
+  named one. Re-pointing a till mid-day would put the rest of a shift's sales
+  under the wrong name, so the way to move one is to free it under App admin and
+  pair again.
+
+### Known gaps, stated plainly
+
+- **The list of counters does not sync, and cannot.** Two standalone tills never
+  speak to each other — there is no server between them — so a counter claimed
+  on the machine in the stockroom still shows as free on the one at the front.
+  The list travels between tills the only way anything does: inside a backup.
+  The manual says this in as many words rather than leaving a shop hunting for a
+  sync that does not exist.
+- **The register still cannot open a cash drawer.** There is no kick pulse and
+  no setting for one. That has not changed and is not going to.
+- **There is a report per shift and still no report per day.** Adding several
+  shifts together is spreadsheet work, from the sales export.
+- **The pairing code is not a lock.** It stops two tills quietly agreeing they
+  are the same counter. Anybody standing at that keyboard can already wipe the
+  machine through the browser's own settings, and the code changes nothing about
+  that.
+- **The seven new manual sections are English only for now.** The screens
+  themselves are translated into Azerbaijani, Russian and Turkish in full — all
+  123 new strings — but the manual pages describing them fall back to English
+  with the "not translated yet" notice, which is the honest state rather than a
+  machine translation presented as authoritative.
+
 ## v1.2.0 — App admin becomes the page a shop is handed
 
 App admin was four settings and a role editor. It is the screen whoever installs

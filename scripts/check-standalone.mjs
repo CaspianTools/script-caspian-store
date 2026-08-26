@@ -94,6 +94,17 @@ const {
   RECOVERY_CODE_SYMBOLS,
   hasRecoveryCode,
   DEFAULT_LOCAL_SHOP_SETTINGS,
+  formatTerminalCode,
+  normaliseTerminalCode,
+  isTerminalCodeShaped,
+  mintTerminalCode,
+  TERMINAL_CODE_PREFIX,
+  TERMINAL_CODE_SYMBOLS,
+  evaluateShiftGate,
+  openShiftForDevice,
+  summariseShift,
+  salesForShift,
+  shiftVariance,
 } = lib;
 
 let passed = 0;
@@ -1448,6 +1459,258 @@ check('an ordinary password is allowed', () => {
   assert.equal(passwordIsWeak('kupfer-lantern-9', 'aysel'), false);
   assert.equal(passwordIsWeak('aysel2026!', 'aysel'), false, 'containing the name is not being it');
   assert.equal(passwordIsWeak('', 'aysel'), true, 'nothing at all is not a password');
+});
+
+console.log('\nthe code that names a counter');
+
+check('a minted code is shaped, prefixed and grouped for reading aloud', () => {
+  const code = mintTerminalCode();
+  assert.equal(isTerminalCodeShaped(code), true);
+  assert.match(code, /^CSPT1-[0-9A-Z]{5}-[0-9A-Z]{5}$/, 'prefix then two groups of five');
+  assert.equal(normaliseTerminalCode(code).length, TERMINAL_CODE_SYMBOLS);
+});
+
+check('a recovery code typed into the pairing box is refused on shape', () => {
+  // Not merely reported as the wrong pairing code: the two are different
+  // lengths and carry different prefixes, so the shape check catches it before
+  // any PBKDF2 derive is paid for.
+  assert.equal(isTerminalCodeShaped(mintRecoveryCode()), false);
+  assert.equal(isRecoveryCodeShaped(mintTerminalCode()), false, 'and the other way round');
+  assert.notEqual(TERMINAL_CODE_PREFIX, RECOVERY_CODE_PREFIX);
+});
+
+check('handwriting is folded the way the recovery code folds it', () => {
+  const payload = 'ABCDE01234';
+  const code = formatTerminalCode(payload);
+  assert.equal(normaliseTerminalCode(code), payload);
+  assert.equal(normaliseTerminalCode(code.toLowerCase()), payload, 'case is not a difference');
+  assert.equal(normaliseTerminalCode(payload), payload, 'nor is leaving the prefix off');
+  assert.equal(
+    normaliseTerminalCode(' cspt1 abcde 01234 \n'),
+    payload,
+    'nor spaces, nor the newline a paste brings with it',
+  );
+  assert.equal(
+    normaliseTerminalCode('CSPT1-ABCDE-0O234'),
+    'ABCDE00234',
+    'an O written where the paper said 0 folds back',
+  );
+  assert.equal(normaliseTerminalCode('CSPT1-ABCDE-0I234'), 'ABCDE01234', 'and I and L onto 1');
+});
+
+check('a pairing code round-trips through the hashing a password uses', async () => {
+  const code = mintTerminalCode();
+  const payload = normaliseTerminalCode(code);
+  const stored = await hashLocalPassword(payload);
+  assert.equal(await verifyStoredCredentials(payload, stored), true);
+  // One character different is a different counter, not a near miss.
+  const variant = (payload[0] === 'A' ? 'B' : 'A') + payload.slice(1);
+  assert.equal(await verifyStoredCredentials(variant, stored), false);
+});
+
+check('an empty or pasted-sentence box is refused before any derive', () => {
+  assert.equal(isTerminalCodeShaped(''), false);
+  assert.equal(isTerminalCodeShaped('   '), false);
+  assert.equal(isTerminalCodeShaped('please open the till'), false);
+  assert.equal(isTerminalCodeShaped('CSPT1-ABCDE'), false, 'half a code is not a code');
+});
+
+console.log('\nwhat a shift took');
+
+const shiftOf = (openingFloat, movements = []) => ({ openingFloat, movements });
+const saleOf = (total, tenders, shiftId = 's1') => ({ total, tenders, shiftId });
+const cash = (amount, tendered) => ({ kind: 'cash', amount, ...(tendered ? { tendered } : {}) });
+
+check('expected cash is the float plus what went into the drawer', () => {
+  const totals = summariseShift(shiftOf(100), [
+    saleOf(14, [cash(14, 20)]),
+    saleOf(6.5, [cash(6.5)]),
+  ]);
+  assert.equal(totals.expectedCash, 120.5);
+  assert.equal(totals.cashTaken, 20.5);
+  assert.equal(totals.salesTotal, 20.5);
+  assert.equal(totals.saleCount, 2);
+});
+
+check('change handed back is not counted as cash taken', () => {
+  // The drawer nets the applied amount. Counting `tendered` would say the shift
+  // took six pounds more than it did, every time anybody paid with a note.
+  const totals = summariseShift(shiftOf(0), [saleOf(14, [cash(14, 20)])]);
+  assert.equal(totals.cashTaken, 14, 'not 20');
+  assert.equal(totals.expectedCash, 14);
+});
+
+check('a card sale moves the takings but not the drawer', () => {
+  const totals = summariseShift(shiftOf(50), [
+    saleOf(30, [{ kind: 'card', amount: 30 }]),
+    saleOf(10, [cash(10)]),
+  ]);
+  assert.equal(totals.expectedCash, 60, 'the float plus the tenner, and not the card sale');
+  assert.equal(totals.salesTotal, 40);
+  assert.deepEqual(totals.totalsByTender, { card: 30, cash: 10 });
+});
+
+check('a split tender lands in both columns', () => {
+  const totals = summariseShift(shiftOf(0), [saleOf(50, [cash(20), { kind: 'card', amount: 30 }])]);
+  assert.deepEqual(totals.totalsByTender, { cash: 20, card: 30 });
+  assert.equal(totals.expectedCash, 20);
+});
+
+check('money paid out of the drawer is subtracted, and paid in is added', () => {
+  // This is the whole reason a variance can be computed at all. Without it the
+  // expected figure is wrong the first time anybody pays a delivery out of the
+  // till, and a wrong variance is what shops discipline staff on.
+  const totals = summariseShift(
+    shiftOf(100, [
+      { kind: 'out', amount: 12.4, reason: 'milkman' },
+      { kind: 'in', amount: 50, reason: 'float top-up' },
+      { kind: 'out', amount: 7.6, reason: 'window cleaner' },
+    ]),
+    [saleOf(20, [cash(20)])],
+  );
+  assert.equal(totals.movementsOut, 20);
+  assert.equal(totals.movementsIn, 50);
+  assert.equal(totals.expectedCash, 150, '100 + 20 + 50 - 20');
+});
+
+check('a movement that arrived negative is taken at its magnitude', () => {
+  // `kind` carries the direction. A minus key slipped into the amount box must
+  // not quietly reverse the movement it claims to be.
+  const totals = summariseShift(shiftOf(100, [{ kind: 'out', amount: -10, reason: 'slip' }]), []);
+  assert.equal(totals.expectedCash, 90, 'still out, not in');
+});
+
+check('a shift with no sales expects exactly its float', () => {
+  const totals = summariseShift(shiftOf(75.25), []);
+  assert.equal(totals.expectedCash, 75.25);
+  assert.equal(totals.saleCount, 0);
+  assert.deepEqual(totals.totalsByTender, {});
+});
+
+check('a long day of odd amounts does not drift by a cent', () => {
+  // The reason the sums run in minor units. Summing 0.10 as a float a hundred
+  // times lands just under 10, and a drawer that will not balance is somebody
+  // answering for money.
+  const sales = Array.from({ length: 100 }, () => saleOf(0.1, [cash(0.1)]));
+  const totals = summariseShift(shiftOf(0), sales);
+  assert.equal(totals.expectedCash, 10);
+  assert.equal(totals.salesTotal, 10);
+});
+
+check('only the sales stamped with this shift count towards it', () => {
+  const rows = [
+    saleOf(10, [cash(10)], 's1'),
+    saleOf(99, [cash(99)], 's2'),
+    { total: 5, tenders: [cash(5)] },
+  ];
+  const mine = salesForShift(rows, 's1');
+  assert.equal(mine.length, 1, 'another shift and an unstamped sale are not mine');
+  assert.equal(summariseShift(shiftOf(0), mine).expectedCash, 10);
+});
+
+check('variance is counted minus expected, and negative means short', () => {
+  assert.equal(shiftVariance(118.5, 120.5), -2, 'two pounds missing reads as minus two');
+  assert.equal(shiftVariance(122.5, 120.5), 2, 'and a surplus reads as plus');
+  assert.equal(shiftVariance(120.5, 120.5), 0, 'an exact count is exactly zero');
+  assert.equal(shiftVariance(0.3, 0.1 + 0.2), 0, 'and float crumbs do not render as a variance');
+});
+
+console.log('\nwhether the register opens');
+
+const aTerminal = { id: 't1', name: 'Front counter' };
+const anOpenShift = {
+  id: 's1',
+  cashierId: 'u1',
+  deviceId: 'd1',
+  status: 'open',
+  openedAtMillis: 10,
+};
+
+check('shifts switched off short-circuit everything', () => {
+  const gate = evaluateShiftGate({ required: false, open: null, terminal: null, cashierId: null });
+  assert.equal(gate.required, false);
+});
+
+check('nobody signed in belongs to the sign-in screen, not to this gate', () => {
+  const gate = evaluateShiftGate({
+    required: true,
+    open: null,
+    terminal: aTerminal,
+    cashierId: null,
+  });
+  assert.equal(gate.reason, 'no-cashier');
+});
+
+check('a device that has claimed no counter has nowhere to hang a shift', () => {
+  const gate = evaluateShiftGate({ required: true, open: null, terminal: null, cashierId: 'u1' });
+  assert.equal(gate.reason, 'no-terminal');
+});
+
+check('no shift open asks for one', () => {
+  const gate = evaluateShiftGate({
+    required: true,
+    open: null,
+    terminal: aTerminal,
+    cashierId: 'u1',
+  });
+  assert.equal(gate.reason, 'none-open');
+});
+
+check('an open shift belonging to somebody else is a handover, and names whose', () => {
+  const gate = evaluateShiftGate({
+    required: true,
+    open: anOpenShift,
+    terminal: aTerminal,
+    cashierId: 'u2',
+  });
+  assert.equal(gate.reason, 'other-cashier');
+  assert.equal(gate.shift.id, 's1', 'the screen needs it to offer a Close button');
+});
+
+check('an open shift belonging to this cashier opens the register', () => {
+  const gate = evaluateShiftGate({
+    required: true,
+    open: anOpenShift,
+    terminal: aTerminal,
+    cashierId: 'u1',
+  });
+  assert.equal(gate.satisfied, true);
+  assert.equal(gate.shift.id, 's1');
+});
+
+check('the gate never compares sign-ins, so a lunch break does not end a shift', () => {
+  // Deliberately unlike the opening-cash gate, which is per sign-in. Somebody
+  // who locks the screen, or signs out to let a colleague check a price, is
+  // still working the same turn -- and ending it underneath them would close a
+  // drawer nobody counted. There is no signInId in the gate input at all.
+  const gate = evaluateShiftGate({
+    required: true,
+    open: { ...anOpenShift, signInId: 'long-gone' },
+    terminal: aTerminal,
+    cashierId: 'u1',
+  });
+  assert.equal(gate.satisfied, true);
+});
+
+check('only an open shift on THIS device is found', () => {
+  const rows = [
+    { id: 'a', status: 'closed', deviceId: 'd1', openedAtMillis: 50 },
+    { id: 'b', status: 'open', deviceId: 'd2', openedAtMillis: 40 },
+    { id: 'c', status: 'open', deviceId: 'd1', openedAtMillis: 30 },
+  ];
+  assert.equal(openShiftForDevice(rows, 'd1').id, 'c', 'not the closed one, not the other till');
+  assert.equal(openShiftForDevice(rows, 'd3'), null);
+});
+
+check('the newest wins if a restored backup left two open', () => {
+  // Should not happen -- the gate refuses to open a second -- but a backup can
+  // legitimately carry a shift left open on the machine it came from, and the
+  // cashier standing here needs something they can close.
+  const rows = [
+    { id: 'old', status: 'open', deviceId: 'd1', openedAtMillis: 10 },
+    { id: 'new', status: 'open', deviceId: 'd1', openedAtMillis: 20 },
+  ];
+  assert.equal(openShiftForDevice(rows, 'd1').id, 'new');
 });
 
 await Promise.all(pending);

@@ -1982,6 +1982,165 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.appAdmin.openingCash.turnedOn': 'Cashiers will be asked for the opening cash',
   'pos.appAdmin.openingCash.turnedOff': 'Cashiers will not be asked for the opening cash',
   'pos.appAdmin.openingCash.saveFailed': 'That could not be saved. Try again.',
+
+  // --- Terminals and shifts (standalone till v1.3.0) ---
+  //
+  // The roster is deliberately described as living on THIS till everywhere it
+  // is mentioned. Two standalone tills never speak, so a shop that reads
+  // "claimed" as shop-wide would go looking for a sync that does not exist.
+  'pos.appAdmin.section.terminals': 'Counters',
+  'pos.appAdmin.terminals.intro':
+    'The counters in this shop, and which computer answers to each. Naming them lets a sale say where it was rung and lets a shift be counted per counter.',
+  'pos.appAdmin.shifts.title': 'Run shifts',
+  'pos.appAdmin.shifts.help':
+    'A cashier opens a shift with the cash in the drawer, sells against it, and closes it against a count. Money paid in or out during the shift is recorded, so the expected figure is a real one.',
+  'pos.appAdmin.shifts.needTerminal':
+    'Name a counter first, on the Counters page. A shift belongs to a counter, so there is nowhere to open one yet.',
+  'pos.appAdmin.shifts.turnedOn': 'Cashiers will open and close a shift',
+  'pos.appAdmin.shifts.turnedOff': 'Shifts are off for this shop',
+  'pos.appAdmin.openingCash.superseded':
+    'Handled by shifts while they are on. The opening float a cashier types when they open a shift is the drawer count, so this is not asked as well.',
+
+  'pos.terminal.addTitle': 'Add a counter',
+  'pos.terminal.addHelp':
+    'Name it the way the shop does — "Front counter", "Kiosk 2". You get a pairing code to type on the computer that stands there.',
+  'pos.terminal.name': 'Name',
+  'pos.terminal.namePlaceholder': 'e.g. Front counter',
+  'pos.terminal.add': 'Add it',
+  'pos.terminal.addFailed': 'That could not be saved to this computer. Try again.',
+  'pos.terminal.renameFailed': 'That could not be renamed. Try again.',
+  'pos.terminal.codeFor': 'Pairing code for {name}',
+  'pos.terminal.codeOnce':
+    'Shown once. Write it down and take it to the computer at that counter — only a scrambled form is kept here, so nobody can read it back off this machine. If it goes missing, make a new one.',
+  'pos.terminal.codeDone': 'I have written it down',
+  'pos.terminal.codeFailed': 'A new code could not be made. Try again.',
+  'pos.terminal.listTitle': 'Counters',
+  'pos.terminal.noSync':
+    'This list lives on this computer. Tills that run on their own never talk to each other, so a counter claimed on another machine still shows as free here until a backup from it is restored.',
+  'pos.terminal.empty': 'No counters yet. Add one above.',
+  'pos.terminal.colName': 'Name',
+  'pos.terminal.colClaimed': 'Answering',
+  'pos.terminal.colActions': 'Actions',
+  'pos.terminal.free': 'Not claimed',
+  'pos.terminal.thisMachine': 'This computer',
+  'pos.terminal.otherMachine': 'Another computer',
+  'pos.terminal.newCode': 'New code',
+  'pos.terminal.confirmNewCode':
+    'Make a new pairing code for {name}? The old one stops working straight away. A computer already paired to it stays paired.',
+  'pos.terminal.remove': 'Remove',
+  'pos.terminal.confirmRemove':
+    'Remove {name}? Sales already rung there keep its name, so your records are unaffected.',
+  'pos.terminal.confirmRemoveClaimed':
+    'Remove {name}? Another computer is paired to it and will not find out — it will go on selling until somebody pairs it again. Sales already rung there keep its name.',
+  'pos.terminal.removeShiftOpen':
+    'A shift is open at that counter. Close it first, so the drawer gets counted.',
+  'pos.terminal.removed': 'Counter removed',
+  'pos.terminal.removeFailed': 'That could not be removed. Try again.',
+
+  'pos.terminal.claim.title': 'Which counter is this?',
+  'pos.terminal.claim.body':
+    'This shop has named its counters. Type the pairing code for the one this computer stands at — you only do this once.',
+  'pos.terminal.claim.code': 'Pairing code',
+  'pos.terminal.claim.placeholder': 'CSPT1-XXXXX-XXXXX',
+  'pos.terminal.claim.pair': 'Pair this computer',
+  'pos.terminal.claim.pairing': 'Pairing…',
+  'pos.terminal.claim.done': 'This computer is now {name}',
+  'pos.terminal.claim.malformed':
+    'That does not look like a pairing code. It starts with CSPT1 and has ten more characters after it.',
+  'pos.terminal.claim.noMatch': 'No counter has that code. Check it and try again.',
+  'pos.terminal.claim.taken':
+    'Another computer is already paired to that counter. Ask whoever looks after the tills to free it, or use a different code.',
+  'pos.terminal.claim.whereFrom':
+    'The code came from App admin → Counters, on the computer where the counters were named.',
+  'pos.settings.terminal': 'Counter',
+  'pos.settings.terminalHelp':
+    'Which counter this computer answers to. To move it to another one, free it under App admin → Counters and pair again.',
+
+  'pos.shift.openTitle': 'Open your shift',
+  'pos.shift.openBody': 'Count what is in the drawer now and type the total.',
+  'pos.shift.float': 'Cash in the drawer',
+  'pos.shift.floatHint':
+    'Notes and coins only. This is the figure your count at the end of the shift is measured against.',
+  'pos.shift.open': 'Open the shift',
+  'pos.shift.opening': 'Opening…',
+  'pos.shift.opened': 'Shift open, starting with {amount}',
+  'pos.shift.openFailed': 'That could not be saved to this computer. Try again.',
+  'pos.shift.needFloat': 'Type the amount first',
+  'pos.shift.elsewhere':
+    'Everything else on the till still works. Only selling waits for this.',
+  'pos.shift.notANumber': 'That is not an amount. Digits and one decimal point.',
+  'pos.shift.tooLarge': 'That is more than any drawer holds. Check the figure.',
+  'pos.shift.noDecimal': 'No decimal point. Did you mean {suggestion}?',
+  'pos.shift.emptyDrawer': 'An empty drawer. Fine for a card-only counter — otherwise, count again.',
+  'pos.shift.handoverTitle': 'Somebody else is on this drawer',
+  'pos.shift.handoverBody':
+    '{name} still has a shift open at {terminal}. It has to be closed and counted before yours can start — two shifts on one drawer means neither can be answered for.',
+  'pos.shift.handoverGo': 'Close their shift',
+  'pos.shift.handoverHint': 'Fetch them if you can. Whoever counts it is the figure on record.',
+
+  'pos.shift.strip.sales': '{count, plural, one {# sale} other {# sales}}',
+  'pos.shift.strip.drawer': 'Should be in the drawer',
+  'pos.shift.strip.manage': 'Shift',
+
+  'pos.shift.pageTitle': 'This shift',
+  'pos.shift.pageSubtitle': 'What it has taken, what has moved, and the way to close it.',
+  'pos.shift.notEnabled': 'This shop does not run shifts. Turn them on under App admin → General.',
+  'pos.shift.noneOpen': 'No shift is open on this computer.',
+  'pos.shift.noTerminalTitle': 'This till has no counter',
+  'pos.shift.noTerminalBody':
+    'Shifts are on, but every counter has been removed from the list, so there is nowhere to open one. Ask whoever looks after the tills to add a counter under App admin, or to turn shifts off.',
+  'pos.shift.backToRegister': 'Back to the register',
+  'pos.shift.cashIn': 'Cash in',
+  'pos.shift.cashOut': 'Cash out',
+  'pos.shift.amount': 'Amount',
+  'pos.shift.reason': 'What for',
+  'pos.shift.reasonPlaceholder': 'e.g. paid the milkman',
+  'pos.shift.record': 'Record it',
+  'pos.shift.movements': 'Money in and out',
+  'pos.shift.noReason': 'No reason given',
+  'pos.shift.movementFailed': 'That could not be recorded. Try again.',
+  'pos.shift.close': 'Close the shift',
+  'pos.shift.closeConfirm': 'Close it',
+  'pos.shift.closeBody':
+    'Count the drawer and type the total. The difference is recorded either way — a short drawer is a fact, not a refusal.',
+  'pos.shift.counted': 'Counted',
+  'pos.shift.expected': 'Should be there',
+  'pos.shift.closed': 'Shift closed',
+  'pos.shift.closeFailed': 'The shift could not be closed. Try again.',
+  'pos.shift.print': 'Print this',
+  'pos.shift.varianceExact': 'Exact',
+  'pos.shift.varianceShort': 'Short by',
+  'pos.shift.varianceOver': 'Over by',
+  'pos.shift.zTitle': 'Shift report',
+  'pos.shift.zSubtitle': 'What this shift took, and how the count came out.',
+
+  'pos.shift.report.cashier': 'Cashier',
+  'pos.shift.report.terminal': 'Counter',
+  'pos.shift.report.day': 'Day',
+  'pos.shift.report.opened': 'Opened',
+  'pos.shift.report.closed': 'Closed',
+  'pos.shift.report.float': 'Opening cash',
+  'pos.shift.report.saleCount': 'Sales',
+  'pos.shift.report.salesTotal': 'Taken in total',
+  'pos.shift.report.movedIn': 'Paid in',
+  'pos.shift.report.movedOut': 'Paid out',
+  'pos.shift.report.expected': 'Should be in the drawer',
+  'pos.shift.report.counted': 'Counted',
+  'pos.shift.report.tender.cash': 'Of that, cash',
+  'pos.shift.report.tender.card': 'Of that, card',
+  'pos.shift.report.tender.other': 'Of that, other',
+
+  'pos.shift.list.title': 'Shifts',
+  'pos.shift.list.empty': 'No shifts yet.',
+  'pos.shift.list.colDay': 'Day',
+  'pos.shift.list.colCashier': 'Cashier',
+  'pos.shift.list.colTerminal': 'Counter',
+  'pos.shift.list.colSales': 'Taken',
+  'pos.shift.list.colVariance': 'Difference',
+  'pos.shift.list.colActions': 'Actions',
+  'pos.shift.list.stillOpen': 'Still open',
+  'pos.shift.list.view': 'View',
+  'pos.shift.list.hide': 'Hide',
   'pos.storage.title': 'Where sales are stored',
   'pos.storage.cloud': 'Cloud',
   'pos.storage.cloudHelp':

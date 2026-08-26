@@ -58,15 +58,28 @@ export function formatRecoveryCode(payload: string): string {
  * copied exactly.
  */
 export function normaliseRecoveryCode(typed: string): string {
-  const folded = typed
-    .toUpperCase()
-    .replace(/O/g, '0')
-    .replace(/[IL]/g, '1')
-    .replace(/[^0-9A-Z]/g, '');
+  const folded = foldCodeSymbols(typed);
   const withoutPrefix = folded.startsWith(RECOVERY_CODE_PREFIX)
     ? folded.slice(RECOVERY_CODE_PREFIX.length)
     : folded;
   return withoutPrefix;
+}
+
+/**
+ * The folding half of the rule above, without the prefix.
+ *
+ * Shared with `terminal-code.ts`, which is the till's other written-down code
+ * and wants the identical handwriting forgiveness against a different prefix.
+ * Factored out rather than copied so the two can never drift: a fix to what a
+ * shop might reasonably type has to reach both, and one alphabet with two
+ * readers is what makes that automatic.
+ */
+export function foldCodeSymbols(typed: string): string {
+  return typed
+    .toUpperCase()
+    .replace(/O/g, '0')
+    .replace(/[IL]/g, '1')
+    .replace(/[^0-9A-Z]/g, '');
 }
 
 /**

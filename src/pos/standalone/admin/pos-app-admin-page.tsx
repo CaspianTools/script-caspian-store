@@ -8,6 +8,7 @@ import {
   LockIcon,
   ShieldIcon,
   SlidersIcon,
+  StoreIcon,
   UsersIcon,
 } from '../../../ui/icons';
 import { FieldDescription } from '../../../ui/field-description';
@@ -30,6 +31,8 @@ import { usePosLicense } from '../../license/use-pos-license';
 import { PosLicenseSection } from '../../license/pos-license-section';
 import { CASPIAN_POS_VERSION } from '../pos-version';
 import { LocalPeoplePanel } from './local-people-panel';
+import { listLocalTerminals } from '../local-terminals';
+import { LocalTerminalsPanel } from './local-terminals-panel';
 import { PosSwitch, PosSwitchRow } from './pos-switch';
 import {
   BUILTIN_ROLES,
@@ -57,7 +60,14 @@ const DUPLICATE_IDS: readonly PosLocalRole[] = ['cashier'];
 /** The two permissions that open this page, and so can never be given up here. */
 const DOOR_CAPABILITIES: readonly PosLocalCapability[] = ['appAdmin.view', 'appAdmin.roles'];
 
-type Section = 'general' | 'roles' | 'people' | 'install' | 'recovery' | 'licence';
+type Section =
+  | 'general'
+  | 'roles'
+  | 'people'
+  | 'terminals'
+  | 'install'
+  | 'recovery'
+  | 'licence';
 
 /**
  * Addresses that used to be their own pane.
@@ -79,6 +89,11 @@ const NAV: { value: Section; labelKey: string; icon: (size: number) => React.Rea
   },
   { value: 'roles', labelKey: 'pos.appAdmin.section.roles', icon: (s) => <ShieldIcon size={s} /> },
   { value: 'people', labelKey: 'pos.appAdmin.section.people', icon: (s) => <UsersIcon size={s} /> },
+  {
+    value: 'terminals',
+    labelKey: 'pos.appAdmin.section.terminals',
+    icon: (s) => <StoreIcon size={s} />,
+  },
   {
     value: 'install',
     labelKey: 'pos.appAdmin.section.install',
@@ -104,9 +119,18 @@ export function PosAppAdminPage() {
   // built its own App admin role and left the staff out of it gets what it
   // asked for instead of a pane it cannot use.
   const maySeePeople = can(session.user?.role, 'people.edit');
+  // Same rule for the counters: gated on the capability, never on a role id, so
+  // a shop that built its own App admin role and left `terminals.edit` out of
+  // it gets what it asked for rather than a pane it cannot use.
+  const maySeeTerminals = can(session.user?.role, 'terminals.edit');
   const nav = useMemo(
-    () => NAV.filter((item) => item.value !== 'people' || maySeePeople),
-    [maySeePeople],
+    () =>
+      NAV.filter(
+        (item) =>
+          (item.value !== 'people' || maySeePeople) &&
+          (item.value !== 'terminals' || maySeeTerminals),
+      ),
+    [maySeePeople, maySeeTerminals],
   );
 
   const param = searchParams?.get('section') ?? '';
@@ -148,6 +172,8 @@ export function PosAppAdminPage() {
             <RolesSection />
           ) : current === 'people' ? (
             <PeopleSection />
+          ) : current === 'terminals' ? (
+            <TerminalsSection />
           ) : current === 'install' ? (
             <InstallSection />
           ) : current === 'recovery' ? (
@@ -188,6 +214,29 @@ function GeneralSection() {
   const { settings, loading, save } = usePosShopSettings();
   const [saveFailed, setSaveFailed] = useState(false);
 
+  // Whether any counter has been named yet, which is what the shifts switch
+  // waits for. Read here rather than through `PosTerminalProvider`: this pane
+  // is reachable on a till where that provider is mounted, but the roster can
+  // grow on the Terminals pane next door without the provider hearing about it
+  // -- IndexedDB fires no storage event.
+  const [hasTerminals, setHasTerminals] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    listLocalTerminals()
+      .then((rows) => {
+        if (alive) setHasTerminals(rows.length > 0);
+      })
+      .catch(() => {
+        // Storage unreachable. Leaves the switch disabled with its reason
+        // showing, which is the safe direction: shifts a shop cannot see the
+        // counters for would ask a cashier to open one against nothing.
+        if (alive) setHasTerminals(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const FEATURES = [
     { key: 'categoriesEnabled', labelKey: 'pos.appAdmin.features.categories' },
     { key: 'suppliersEnabled', labelKey: 'pos.appAdmin.features.suppliers' },
@@ -224,9 +273,41 @@ function GeneralSection() {
       <div className="cpos-muted">{t('pos.appAdmin.general.intro')}</div>
 
       <div>
+        {/*
+          Cannot be switched on until the shop has named a counter: a shift
+          belongs to a terminal, and one with nowhere to belong would have to
+          invent a counter out of the device id -- the sort of placeholder that
+          survives into a shop's records. Disabled with the reason said out
+          loud, rather than hidden, so an owner who has heard the feature exists
+          finds out what it is waiting for.
+        */}
+        <PosSwitchRow
+          title={t('pos.appAdmin.shifts.title')}
+          description={
+            hasTerminals ? t('pos.appAdmin.shifts.help') : t('pos.appAdmin.shifts.needTerminal')
+          }
+          checked={settings.shiftsEnabled}
+          disabled={!hasTerminals && !settings.shiftsEnabled}
+          onChange={(next) =>
+            void choose(
+              { shiftsEnabled: next },
+              t(next ? 'pos.appAdmin.shifts.turnedOn' : 'pos.appAdmin.shifts.turnedOff'),
+            )
+          }
+        />
+
+        {/*
+          Superseded rather than removed while shifts are on: the shift's
+          opening float IS the drawer declaration, so asking both would put one
+          question to a cashier twice and leave two different answers on file.
+          The row stays visible saying so, because a setting that vanishes when
+          another is flipped reads as a setting that has been lost.
+        */}
         <PosSwitchRow
           title={t('pos.appAdmin.openingCash.title')}
+          description={settings.shiftsEnabled ? t('pos.appAdmin.openingCash.superseded') : undefined}
           checked={settings.requireOpeningCash}
+          disabled={settings.shiftsEnabled}
           onChange={(next) =>
             void choose(
               { requireOpeningCash: next },
@@ -604,6 +685,26 @@ function PeopleSection() {
  * "where did the Install button go?" had no screen to go and look at. Here it
  * always says which of the four it is.
  */
+/**
+ * The counters the shop has, and the codes that pair a machine to one.
+ *
+ * Here rather than on the Store screen because it is handover work: whoever
+ * installs the tills names the counters and hands over the slips of paper, and
+ * this is the page they are handed. A cashier never opens it.
+ */
+function TerminalsSection() {
+  const t = useT();
+  return (
+    <>
+      <section className="cpos-section">
+        <h2 className="cpos-section__title">{t('pos.appAdmin.section.terminals')}</h2>
+        <div className="cpos-muted">{t('pos.appAdmin.terminals.intro')}</div>
+      </section>
+      <LocalTerminalsPanel />
+    </>
+  );
+}
+
 function InstallSection() {
   const t = useT();
   const { canInstall, promptInstall, isIOS, isStandalone } = useInstallPrompt();

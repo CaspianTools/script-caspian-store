@@ -582,6 +582,163 @@ const az: MessageDict = {
   'pos.appAdmin.openingCash.turnedOff': 'Kassirlərdən başlanğıc nağd pul soruşulmayacaq',
   'pos.appAdmin.openingCash.saveFailed': 'Yadda saxlanılmadı. Yenidən cəhd edin.',
 
+  // --- Kassalar və növbələr (müstəqil kassa v1.3.0) ---
+  'pos.appAdmin.section.terminals': 'Kassalar',
+  'pos.appAdmin.terminals.intro':
+    'Bu mağazadakı kassalar və hər birinə hansı kompüterin cavab verdiyi. Adlandırsanız, satış harada vurulduğunu göstərir və növbə kassa üzrə hesablanır.',
+  'pos.appAdmin.shifts.title': 'Növbələr işlət',
+  'pos.appAdmin.shifts.help':
+    'Kassir çekmecedəki pulla növbəni açır, onun üzərinə satır və sonda sayaraq bağlayır. Növbə ərzində çekmeceyə qoyulan və götürülən pul da yazılır, ona görə gözlənilən məbləğ həqiqi olur.',
+  'pos.appAdmin.shifts.needTerminal':
+    'Əvvəlcə Kassalar səhifəsində bir kassa adlandırın. Növbə kassaya bağlıdır, hələ açılası yer yoxdur.',
+  'pos.appAdmin.shifts.turnedOn': 'Kassirlər növbə açıb bağlayacaq',
+  'pos.appAdmin.shifts.turnedOff': 'Bu mağazada növbələr söndürülüb',
+  'pos.appAdmin.openingCash.superseded':
+    'Növbələr işlədiyi müddətdə bunu növbə həll edir. Kassir növbəni açanda yazdığı məbləğ elə çekmecenin sayımıdır, ona görə ikinci dəfə soruşulmur.',
+
+  'pos.terminal.addTitle': 'Kassa əlavə et',
+  'pos.terminal.addHelp':
+    'Mağazada necə deyirsinizsə, elə adlandırın — “Ön kassa”, “Kiosk 2”. Həmin yerdəki kompüterdə yazılacaq qoşulma kodu alacaqsınız.',
+  'pos.terminal.name': 'Ad',
+  'pos.terminal.namePlaceholder': 'məsələn, Ön kassa',
+  'pos.terminal.add': 'Əlavə et',
+  'pos.terminal.addFailed': 'Bu kompüterdə yadda saxlanılmadı. Yenidən cəhd edin.',
+  'pos.terminal.renameFailed': 'Adı dəyişmək alınmadı. Yenidən cəhd edin.',
+  'pos.terminal.codeFor': '{name} üçün qoşulma kodu',
+  'pos.terminal.codeOnce':
+    'Bir dəfə göstərilir. Yazın və həmin kassadakı kompüterə aparın — burada yalnız şifrələnmiş forması saxlanılır, heç kim onu bu maşından geri oxuya bilməz. İtsə, yenisini yaradın.',
+  'pos.terminal.codeDone': 'Yazdım',
+  'pos.terminal.codeFailed': 'Yeni kod yaradılmadı. Yenidən cəhd edin.',
+  'pos.terminal.listTitle': 'Kassalar',
+  'pos.terminal.noSync':
+    'Bu siyahı bu kompüterdə yaşayır. Müstəqil işləyən kassalar bir-biri ilə heç vaxt danışmır, ona görə başqa maşında tutulmuş kassa buradan hələ də boş görünür — o maşının ehtiyat nüsxəsi bərpa olunana qədər.',
+  'pos.terminal.empty': 'Hələ kassa yoxdur. Yuxarıdan əlavə edin.',
+  'pos.terminal.colName': 'Ad',
+  'pos.terminal.colClaimed': 'Cavab verən',
+  'pos.terminal.colActions': 'Əməliyyatlar',
+  'pos.terminal.free': 'Tutulmayıb',
+  'pos.terminal.thisMachine': 'Bu kompüter',
+  'pos.terminal.otherMachine': 'Başqa kompüter',
+  'pos.terminal.newCode': 'Yeni kod',
+  'pos.terminal.confirmNewCode':
+    '{name} üçün yeni qoşulma kodu yaradılsın? Köhnəsi dərhal işləməyəcək. Artıq qoşulmuş kompüter qoşulu qalır.',
+  'pos.terminal.remove': 'Sil',
+  'pos.terminal.confirmRemove':
+    '{name} silinsin? Orada artıq vurulmuş satışlar onun adını saxlayır, qeydlərinizə toxunulmur.',
+  'pos.terminal.confirmRemoveClaimed':
+    '{name} silinsin? Başqa kompüter ona qoşulub və bundan xəbər tutmayacaq — kimsə onu yenidən qoşana qədər satmağa davam edəcək. Orada vurulmuş satışlar adını saxlayır.',
+  'pos.terminal.removeShiftOpen':
+    'Həmin kassada açıq növbə var. Əvvəlcə onu bağlayın ki, çekmece sayılsın.',
+  'pos.terminal.removed': 'Kassa silindi',
+  'pos.terminal.removeFailed': 'Silinmədi. Yenidən cəhd edin.',
+
+  'pos.terminal.claim.title': 'Bu hansı kassadır?',
+  'pos.terminal.claim.body':
+    'Bu mağaza kassalarını adlandırıb. Bu kompüterin dayandığı kassanın qoşulma kodunu yazın — bunu yalnız bir dəfə edirsiniz.',
+  'pos.terminal.claim.code': 'Qoşulma kodu',
+  'pos.terminal.claim.placeholder': 'CSPT1-XXXXX-XXXXX',
+  'pos.terminal.claim.pair': 'Bu kompüteri qoş',
+  'pos.terminal.claim.pairing': 'Qoşulur…',
+  'pos.terminal.claim.done': 'Bu kompüter indi {name}',
+  'pos.terminal.claim.malformed':
+    'Bu qoşulma koduna oxşamır. Kod CSPT1 ilə başlayır və ardınca on simvol gəlir.',
+  'pos.terminal.claim.noMatch': 'Bu kodla kassa yoxdur. Yoxlayıb yenidən cəhd edin.',
+  'pos.terminal.claim.taken':
+    'Həmin kassaya artıq başqa kompüter qoşulub. Kassalara baxan adamdan onu boşaltmasını xahiş edin və ya başqa kod işlədin.',
+  'pos.terminal.claim.whereFrom':
+    'Kod kassaların adlandırıldığı kompüterdə Proqram idarəsi → Kassalar səhifəsindən gəlir.',
+  'pos.settings.terminal': 'Kassa',
+  'pos.settings.terminalHelp':
+    'Bu kompüterin hansı kassaya cavab verdiyi. Başqasına keçirmək üçün Proqram idarəsi → Kassalar bölməsində onu boşaldın və yenidən qoşun.',
+
+  'pos.shift.openTitle': 'Növbəni aç',
+  'pos.shift.openBody': 'İndi çekmecedə nə varsa sayın və cəmini yazın.',
+  'pos.shift.float': 'Çekmecedəki nağd pul',
+  'pos.shift.floatHint':
+    'Yalnız kağız pul və qəpik. Növbənin sonundakı sayımınız bu rəqəmlə tutuşdurulur.',
+  'pos.shift.open': 'Növbəni aç',
+  'pos.shift.opening': 'Açılır…',
+  'pos.shift.opened': 'Növbə açıqdır, {amount} ilə başlayır',
+  'pos.shift.openFailed': 'Bu kompüterdə yadda saxlanılmadı. Yenidən cəhd edin.',
+  'pos.shift.needFloat': 'Əvvəlcə məbləği yazın',
+  'pos.shift.elsewhere': 'Kassanın qalan hər yeri işləyir. Yalnız satış bunu gözləyir.',
+  'pos.shift.notANumber': 'Bu məbləğ deyil. Rəqəmlər və bir onluq nöqtə.',
+  'pos.shift.tooLarge': 'Bu heç bir çekmecenin tutduğundan çoxdur. Rəqəmi yoxlayın.',
+  'pos.shift.noDecimal': 'Onluq nöqtə yoxdur. {suggestion} nəzərdə tutmusunuz?',
+  'pos.shift.emptyDrawer':
+    'Boş çekmece. Yalnız kartla işləyən kassa üçün normaldır — yoxsa yenidən sayın.',
+  'pos.shift.handoverTitle': 'Bu çekmecede başqası var',
+  'pos.shift.handoverBody':
+    '{name} adlı işçinin {terminal} kassasında hələ açıq növbəsi var. Sizinki başlamazdan əvvəl o bağlanıb sayılmalıdır — bir çekmecede iki növbə olsa, heç birinə cavab vermək olmur.',
+  'pos.shift.handoverGo': 'Onun növbəsini bağla',
+  'pos.shift.handoverHint':
+    'Mümkünsə onu çağırın. Qeydə düşən rəqəm kimin saydığıdırsa, odur.',
+
+  'pos.shift.strip.sales': '{count, plural, one {# satış} other {# satış}}',
+  'pos.shift.strip.drawer': 'Çekmecede olmalıdır',
+  'pos.shift.strip.manage': 'Növbə',
+
+  'pos.shift.pageTitle': 'Bu növbə',
+  'pos.shift.pageSubtitle': 'Nə yığılıb, nə hərəkət edib və bağlamağın yolu.',
+  'pos.shift.notEnabled':
+    'Bu mağaza növbə işlətmir. Proqram idarəsi → Ümumi bölməsindən yandırın.',
+  'pos.shift.noneOpen': 'Bu kompüterdə açıq növbə yoxdur.',
+  'pos.shift.noTerminalTitle': 'Bu kassanın yeri yoxdur',
+  'pos.shift.noTerminalBody':
+    'Növbələr yanılıdır, amma siyahıdan bütün kassalar silinib, ona görə növbə açmağa yer qalmayıb. Kassalara baxan adamdan Proqram idarəsində kassa əlavə etməsini və ya növbələri söndürməsini xahiş edin.',
+  'pos.shift.backToRegister': 'Kassaya qayıt',
+  'pos.shift.cashIn': 'Pul qoyuldu',
+  'pos.shift.cashOut': 'Pul götürüldü',
+  'pos.shift.amount': 'Məbləğ',
+  'pos.shift.reason': 'Nə üçün',
+  'pos.shift.reasonPlaceholder': 'məsələn, süd gətirənə ödənildi',
+  'pos.shift.record': 'Yaz',
+  'pos.shift.movements': 'Çekmeceyə giriş və çıxış',
+  'pos.shift.noReason': 'Səbəb yazılmayıb',
+  'pos.shift.movementFailed': 'Yazılmadı. Yenidən cəhd edin.',
+  'pos.shift.close': 'Növbəni bağla',
+  'pos.shift.closeConfirm': 'Bağla',
+  'pos.shift.closeBody':
+    'Çekmecenı sayın və cəmini yazın. Fərq hər halda qeyd olunur — əskik çekmece faktdır, imtina deyil.',
+  'pos.shift.counted': 'Sayıldı',
+  'pos.shift.expected': 'Olmalıdır',
+  'pos.shift.closed': 'Növbə bağlandı',
+  'pos.shift.closeFailed': 'Növbə bağlanmadı. Yenidən cəhd edin.',
+  'pos.shift.print': 'Çap et',
+  'pos.shift.varianceExact': 'Dəqiq',
+  'pos.shift.varianceShort': 'Əskik',
+  'pos.shift.varianceOver': 'Artıq',
+  'pos.shift.zTitle': 'Növbə hesabatı',
+  'pos.shift.zSubtitle': 'Bu növbədə nə yığılıb və sayım necə çıxıb.',
+
+  'pos.shift.report.cashier': 'Kassir',
+  'pos.shift.report.terminal': 'Kassa',
+  'pos.shift.report.day': 'Gün',
+  'pos.shift.report.opened': 'Açılıb',
+  'pos.shift.report.closed': 'Bağlanıb',
+  'pos.shift.report.float': 'Başlanğıc nağd pul',
+  'pos.shift.report.saleCount': 'Satış sayı',
+  'pos.shift.report.salesTotal': 'Ümumi yığılan',
+  'pos.shift.report.movedIn': 'Qoyulan',
+  'pos.shift.report.movedOut': 'Götürülən',
+  'pos.shift.report.expected': 'Çekmecede olmalıdır',
+  'pos.shift.report.counted': 'Sayıldı',
+  'pos.shift.report.tender.cash': 'Bundan nağd',
+  'pos.shift.report.tender.card': 'Bundan kart',
+  'pos.shift.report.tender.other': 'Bundan digər',
+
+  'pos.shift.list.title': 'Növbələr',
+  'pos.shift.list.empty': 'Hələ növbə yoxdur.',
+  'pos.shift.list.colDay': 'Gün',
+  'pos.shift.list.colCashier': 'Kassir',
+  'pos.shift.list.colTerminal': 'Kassa',
+  'pos.shift.list.colSales': 'Yığılan',
+  'pos.shift.list.colVariance': 'Fərq',
+  'pos.shift.list.colActions': 'Əməliyyatlar',
+  'pos.shift.list.stillOpen': 'Hələ açıqdır',
+  'pos.shift.list.view': 'Bax',
+  'pos.shift.list.hide': 'Gizlət',
+
   // POS — opening cash
   'pos.openingCash.title': 'Çekmecedə nə qədər pul var?',
   'pos.openingCash.body':

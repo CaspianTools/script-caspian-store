@@ -32,6 +32,8 @@ import {
   writeLocalRoles,
   writeLocalShopSettings,
 } from './local-db';
+import { listLocalShifts } from './local-shifts';
+import { listLocalTerminals } from './local-terminals';
 import {
   STORE_LOCAL_COUNTERS,
   STORE_LOCAL_LOTS,
@@ -39,6 +41,8 @@ import {
   STORE_LOCAL_OPENING_CASH,
   STORE_LOCAL_RECEIPTS,
   STORE_LOCAL_SALES,
+  STORE_LOCAL_SHIFTS,
+  STORE_LOCAL_TERMINALS,
   idbGet,
   idbGetAll,
   idbPut,
@@ -49,11 +53,13 @@ import type {
   LocalOpeningCash,
   LocalProduct,
   LocalSale,
+  LocalShift,
   LocalShopSettings,
   LocalStockLot,
   LocalStockMovement,
   LocalStockReceipt,
   LocalSupplier,
+  LocalTerminal,
   LocalUser,
   RoleDefinition,
 } from './types';
@@ -75,8 +81,14 @@ import type {
  * category and supplier lists. Same rule again: a v3 file restores fine and
  * simply has no stock history to put back, and a v4 file is refused by a v3
  * reader rather than being read with the new half quietly dropped.
+ *
+ * v5 added the counters the shop named and the shifts worked at them. Same rule
+ * a fourth time: a v4 file restores fine and simply has no roster to put back,
+ * and a v5 file is refused by a v4 reader rather than being read with the
+ * drawer counts silently dropped. Losing a closed shift loses the only record
+ * of what a cashier counted and what it came to against expectation.
  */
-export const LOCAL_BACKUP_VERSION = 4;
+export const LOCAL_BACKUP_VERSION = 5;
 
 export interface LocalBackup {
   format: 'caspian-standalone-till';
@@ -116,6 +128,21 @@ export interface LocalBackup {
   stockReceipts?: LocalStockReceipt[];
   categories?: LocalCategory[];
   suppliers?: LocalSupplier[];
+  /**
+   * The counters the shop has named. Absent before v5.
+   *
+   * This is the roster's only way between two standalone tills -- there is no
+   * wire between them -- so it is carried deliberately, pairing-code hashes and
+   * all. Carrying those hashes is correct rather than a leak, for the reason the
+   * recovery hash is carried: fifty bits behind PBKDF2 is not grindable the way
+   * a six-character password is, and a shop restoring onto a replacement machine
+   * should find the codes it wrote down still work.
+   *
+   * `claimedByDeviceId` is deliberately NOT put back -- see `restoreLocalBackup`.
+   */
+  terminals?: LocalTerminal[];
+  /** Shifts worked at those counters, open and closed. Absent before v5. */
+  shifts?: LocalShift[];
 }
 
 /** Read whole, because the backup is the one place that wants every row. */
@@ -139,6 +166,8 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     stockReceipts,
     categories,
     suppliers,
+    terminals,
+    shifts,
   ] = await Promise.all([
     readLocalShopSettings(),
     peekLocalReceiptCounter(),
@@ -153,6 +182,8 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     listLocalStockReceipts(Number.MAX_SAFE_INTEGER),
     listLocalCategories(),
     listLocalSuppliers(),
+    listLocalTerminals(),
+    listLocalShifts(),
   ]);
   return {
     format: 'caspian-standalone-till',
@@ -170,6 +201,8 @@ export async function buildLocalBackup(): Promise<LocalBackup> {
     stockReceipts,
     categories,
     suppliers,
+    terminals,
+    shifts,
   };
 }
 
@@ -231,6 +264,10 @@ export interface RestoreResult {
   stockReceipts: number;
   categories: number;
   suppliers: number;
+  /** Counters put back. Zero for anything older than v5. */
+  terminals: number;
+  /** Shifts put back. Zero for anything older than v5. */
+  shifts: number;
 }
 
 /**
@@ -287,6 +324,39 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
   for (const category of backup.categories ?? []) await saveLocalCategory(category);
   for (const supplier of backup.suppliers ?? []) await saveLocalSupplier(supplier);
 
+  // The roster upserts like a vocabulary, but with the claim stripped. The
+  // machine doing the restoring is a different machine -- or the same one with
+  // its storage wiped, which mints a fresh device id and comes to the same
+  // thing -- so the claim in the file is about a device that is not this one.
+  // Putting it back would leave this till believing a counter was already taken
+  // and refusing to pair with it, or believing it already held one it had never
+  // been paired to. Clearing it costs somebody typing a code they have written
+  // down; keeping it costs two tills answering to one counter.
+  let terminalsRestored = 0;
+  for (const terminal of backup.terminals ?? []) {
+    const { claimedAtMillis: _dropped, ...rest } = terminal;
+    // eslint-disable-next-line no-await-in-loop
+    await posTx(STORE_LOCAL_TERMINALS, 'readwrite', (tx) =>
+      idbPut(tx, STORE_LOCAL_TERMINALS, { ...rest, claimedByDeviceId: '' }),
+    );
+    terminalsRestored++;
+  }
+
+  // Append-only, like sales and drawer declarations, and for the same reason: a
+  // shift is a record of what somebody counted, and an older copy must not
+  // overwrite a closed one already on this machine.
+  let shiftsRestored = 0;
+  for (const shift of backup.shifts ?? []) {
+    // eslint-disable-next-line no-await-in-loop
+    const wrote = await posTx(STORE_LOCAL_SHIFTS, 'readwrite', async (tx) => {
+      const existing = await idbGet<LocalShift>(tx, STORE_LOCAL_SHIFTS, shift.id);
+      if (existing) return false;
+      await idbPut(tx, STORE_LOCAL_SHIFTS, shift);
+      return true;
+    });
+    if (wrote) shiftsRestored++;
+  }
+
   // Last, once both halves are in: the products came back wholesale and the
   // batches came back append-only, and those two rules disagree the moment
   // this till has traded since the backup was taken.
@@ -310,6 +380,8 @@ export async function restoreLocalBackup(backup: LocalBackup): Promise<RestoreRe
     stockReceipts,
     categories: backup.categories?.length ?? 0,
     suppliers: backup.suppliers?.length ?? 0,
+    terminals: terminalsRestored,
+    shifts: shiftsRestored,
     reconciled,
   };
 }

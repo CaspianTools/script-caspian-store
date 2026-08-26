@@ -12,7 +12,7 @@
  */
 
 export const DB_NAME = 'caspian-pos';
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
@@ -66,6 +66,21 @@ export const STORE_LOCAL_MOVEMENTS = 'localStockMovements';
 export const STORE_LOCAL_RECEIPTS = 'localStockReceipts';
 export const STORE_LOCAL_CATEGORIES = 'localCategories';
 export const STORE_LOCAL_SUPPLIERS = 'localSuppliers';
+/**
+ * The shop's counters, and each cashier's turn at one.
+ *
+ * Added at version 6, and `local*` for the reason the rest are: a standalone
+ * till has nowhere else holding either. A roster nobody can rebuild is a shop
+ * that has to walk round naming its counters again; a shift nobody can rebuild
+ * is a drawer count with no record of who took it, which is the one figure this
+ * pair exists to keep.
+ *
+ * The roster does not travel over a wire, because a standalone till has none.
+ * It travels in the backup, which is why `claimedByDeviceId` is cleared on
+ * restore -- see `local-backup.ts`.
+ */
+export const STORE_LOCAL_TERMINALS = 'localTerminals';
+export const STORE_LOCAL_SHIFTS = 'localShifts';
 
 export type StoreName =
   | typeof STORE_QUEUE
@@ -84,7 +99,9 @@ export type StoreName =
   | typeof STORE_LOCAL_MOVEMENTS
   | typeof STORE_LOCAL_RECEIPTS
   | typeof STORE_LOCAL_CATEGORIES
-  | typeof STORE_LOCAL_SUPPLIERS;
+  | typeof STORE_LOCAL_SUPPLIERS
+  | typeof STORE_LOCAL_TERMINALS
+  | typeof STORE_LOCAL_SHIFTS;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -181,6 +198,18 @@ export function openPosDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_LOCAL_SUPPLIERS)) {
         db.createObjectStore(STORE_LOCAL_SUPPLIERS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_TERMINALS)) {
+        // No index. The roster is the handful of counters in one shop, and
+        // every read of it wants all of them.
+        db.createObjectStore(STORE_LOCAL_TERMINALS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_LOCAL_SHIFTS)) {
+        const shifts = db.createObjectStore(STORE_LOCAL_SHIFTS, { keyPath: 'id' });
+        // The gate asks "is one open on this device?" on every register mount,
+        // which is the only read frequent enough to want an index.
+        shifts.createIndex('by-device', 'deviceId');
+        shifts.createIndex('by-openedAt', 'openedAtMillis');
       }
     };
     req.onsuccess = () => {

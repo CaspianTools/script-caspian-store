@@ -37,6 +37,7 @@ import { usePosChrome } from './theme/pos-chrome-context';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseSection } from './license/pos-license-section';
 import { usePosLocalSession } from './standalone/local-session-context';
+import { usePosTerminal } from './standalone/terminal-context';
 import { usePosRoles } from './standalone/role-context';
 import { LocalShopPanel } from './standalone/admin/local-shop-panel';
 import { LocalBackupPanel } from './standalone/admin/local-backup-panel';
@@ -108,6 +109,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const firebase = useCaspianFirebaseOptional();
   const { themeMode, setThemeMode } = usePosChrome();
   const local = usePosLocalSession();
+  const { terminal } = usePosTerminal();
   const { can } = usePosRoles();
 
   // The shop's own details and its backup used to be two tabs of a back office
@@ -249,6 +251,21 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
           </section>
 
           <section id="pos-settings-device" className="cpos-section">
+            {/*
+              Which counter this machine answers to, read-only and only once the
+              shop has named one. A cashier cannot change it here on purpose:
+              re-pointing a till at a different counter mid-day would put the
+              rest of a shift's sales under the wrong name, and the way to move
+              one is to release it on the Terminals page and pair again.
+            */}
+            {local.standalone && terminal ? (
+              <label className="cpos-field">
+                <span className="cpos-field__label">{t('pos.settings.terminal')}</span>
+                <input className="cpos-input" value={terminal.name} readOnly />
+                <FieldDescription>{t('pos.settings.terminalHelp')}</FieldDescription>
+              </label>
+            ) : null}
+
             <label className="cpos-field">
               <span className="cpos-field__label">{t('pos.settings.deviceLabel')}</span>
               <input

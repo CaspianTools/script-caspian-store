@@ -1241,7 +1241,12 @@ export const POS_STYLESHEET = String.raw`
   .cpos-signin__lang { margin-bottom: 16px; }
 }
 
-/* ---------------------------------------------------- opening cash */
+/* --------------------------------------- gate cards inside .cpos-main */
+/* .cpos-gate is the neutral name for this card; .cpos-opencash is the original
+   one and stays because the opening-cash screen and the manual both use it.
+   Aliased rather than duplicated: three screens now render the same card --
+   declare the drawer, name this counter, open a shift -- and a second copy of
+   these rules is a second place for them to drift. */
 /* Content inside .cpos-main, and emphatically not a guard screen: the sidebar,
    the top bar and every other route stay mounted and operable behind it, so it
    carries no 100dvh canvas and no fixed positioning.
@@ -1252,7 +1257,7 @@ export const POS_STYLESHEET = String.raw`
    anything rendered inside .cpos-main. (.cpos-modal is named there only because
    it is position: fixed and so sits outside the shell it was opened from.)
    Both were checked rather than forgotten. */
-.cpos-opencash {
+.cpos-opencash, .cpos-gate {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1266,8 +1271,8 @@ export const POS_STYLESHEET = String.raw`
   box-shadow: var(--cpos-sh-lg);
   animation: cpos-fade-up var(--cpos-dur-slow) var(--cpos-ease-out) both;
 }
-.cpos-opencash__head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
-.cpos-opencash__mark {
+.cpos-opencash__head, .cpos-gate__head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.cpos-opencash__mark, .cpos-gate__mark {
   display: grid;
   place-items: center;
   width: 52px;
@@ -1277,14 +1282,14 @@ export const POS_STYLESHEET = String.raw`
   color: var(--cpos-brand-fg);
   box-shadow: 0 8px 22px var(--cpos-brand-glow);
 }
-.cpos-opencash__h { margin: 0; font-size: 20px; font-weight: 750; letter-spacing: -0.02em; }
-.cpos-opencash__sub { margin: 0; font-size: 13.5px; color: var(--cpos-fg-muted); line-height: 1.55; }
+.cpos-opencash__h, .cpos-gate__h { margin: 0; font-size: 20px; font-weight: 750; letter-spacing: -0.02em; }
+.cpos-opencash__sub, .cpos-gate__sub { margin: 0; font-size: 13.5px; color: var(--cpos-fg-muted); line-height: 1.55; }
 
 /* The figure is the whole screen, so it is sized like one. Tabular numerals and
    end alignment mean a slipped extra zero pushes the whole run sideways, where
    the eye catches it, instead of nudging one glyph inside a proportional run.
    The max() keeps it clear of the --cpos-touch floor even if that token grows. */
-.cpos-opencash__amount {
+.cpos-opencash__amount, .cpos-gate__amount {
   min-height: max(var(--cpos-touch), 64px);
   padding: 0 18px;
   font-size: 30px;
@@ -1293,7 +1298,7 @@ export const POS_STYLESHEET = String.raw`
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
-.cpos-opencash__echo {
+.cpos-opencash__echo, .cpos-gate__echo {
   align-self: flex-end;
   font-size: 13px;
   font-weight: 650;
@@ -1302,14 +1307,65 @@ export const POS_STYLESHEET = String.raw`
 }
 /* A typed zero is a real answer -- a card-only counter opens empty -- but it
    reads quieter than a counted figure so it never looks like the default. */
-.cpos-opencash__echo--zero { color: var(--cpos-fg-subtle); }
-.cpos-opencash__foot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.cpos-opencash__echo--zero, .cpos-gate__echo--zero { color: var(--cpos-fg-subtle); }
+.cpos-opencash__foot, .cpos-gate__foot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 
 @media (max-width: 640px) {
-  .cpos-opencash { margin: 12px auto; padding: 22px 18px; gap: 15px; border-radius: var(--cpos-r-lg); }
-  .cpos-opencash__mark { width: 46px; height: 46px; }
-  .cpos-opencash__amount { padding: 0 14px; font-size: 26px; }
+  .cpos-opencash, .cpos-gate { margin: 12px auto; padding: 22px 18px; gap: 15px; border-radius: var(--cpos-r-lg); }
+  .cpos-opencash__mark, .cpos-gate__mark { width: 46px; height: 46px; }
+  .cpos-opencash__amount, .cpos-gate__amount { padding: 0 14px; font-size: 26px; }
 }
+
+/* ---------------------------------------------------- the shift strip */
+/* Sits above the sale screen while a shift is open. Deliberately quiet: it is
+   the one thing on the register that is not the sale, and a cashier reads it
+   twice a day. Wraps rather than scrolls, because a till in portrait would
+   otherwise hide the Close button off the right-hand edge -- which is the
+   control somebody is looking for when they are trying to go home. */
+.cpos-shiftstrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-lg);
+  background: var(--cpos-surface-2);
+  color: var(--cpos-fg-muted);
+  font-size: 13px;
+}
+.cpos-shiftstrip__who { font-weight: 650; color: var(--cpos-fg); }
+.cpos-shiftstrip__fig { font-variant-numeric: tabular-nums; }
+.cpos-shiftstrip__fig b { font-weight: 700; color: var(--cpos-fg); }
+/* Pushes the buttons to the end on a wide till and lets them fall in line on a
+   narrow one, without a second flex container to keep in step. */
+.cpos-shiftstrip__spacer { flex: 1 1 auto; }
+.cpos-shiftstrip__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------------------------------------------------- the shift report */
+/* One table of figures, used for the X-report on an open shift and the Z-report
+   on a closed one. The two are the same rows; only the count and the variance
+   are absent while it is open. */
+.cpos-zreport { display: flex; flex-direction: column; gap: 6px; }
+.cpos-zreport__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--cpos-border);
+  font-size: 14px;
+}
+.cpos-zreport__row:last-child { border-bottom: 0; }
+.cpos-zreport__row b { font-variant-numeric: tabular-nums; }
+/* The two rows somebody is actually looking for. */
+.cpos-zreport__row--total { font-weight: 700; font-size: 15.5px; }
+.cpos-zreport__row--total b { font-size: 17px; }
+/* Colour is never the only signal -- the figure carries its own sign, and the
+   row beside it is labelled "over" or "short" in words. */
+.cpos-zreport__row--short b { color: var(--cpos-danger); }
+.cpos-zreport__row--over b { color: var(--cpos-warning); }
 
 /* ---------------------------------------------------- guard screens */
 /* These render above PosShell, so they carry their own full-height canvas. */

@@ -665,7 +665,7 @@ const MANUAL = {
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here.",
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade."
       ],
-      "version": "v1.2.0"
+      "version": "v1.3.0"
     },
     "parts": [
       {
@@ -776,14 +776,16 @@ const MANUAL = {
             "id": "no-cash-drawer",
             "title": "There is no cash drawer support",
             "audience": "owner",
-            "summary": "This is the question most shop owners ask first, so it gets its own page rather than a line buried in a list. The software cannot open a cash drawer. It does not send the pulse that pops a drawer, it has no drawer setting, and it has no end-of-day reconciliation screen anywhere in the product. There is exactly one cash figure it can be asked to record, the count at the start of a day, and even that is written down and never checked against anything.",
+            "summary": "This is the question most shop owners ask first, so it gets its own page rather than a line buried in a list. The software cannot open a cash drawer: it does not send the pulse that pops one, and it has no setting for one. What it can do, on a till that runs on its own, is count the drawer — a cashier opens a shift with what is in it, the till follows the cash through the day, and the closing count is measured against what should be there.",
             "notes": [
-              "The register cannot open a drawer. There is no kick pulse, no drawer command and no setting for one. Nothing you can configure will change this.",
+              "The register still cannot open a drawer. There is no kick pulse, no drawer command and no setting for one. Nothing you can configure will change this.",
               "If you want a drawer that opens by itself, buy one that plugs into your card terminal and let the terminal open it, or buy one the cashier opens by hand. Both are ordinary ways to run a counter, and neither needs anything from this software.",
-              "There is no cash-up, no shift, no counted-cash box and no variance report, and nothing in the product opens or closes a till session. One thing did change: a till that runs on its own can be set to ask the cashier what is in the drawer at the start of a day - see \"Asking cashiers what is in the drawer\". It is off until somebody switches it on, it records the figure and nothing else, and nothing is ever compared against it.",
-              "There is no Z-report and no end-of-day report of any kind. The closest things are the recent-sales table on the Point of sale page in the admin panel, which shows the last fifty counter sales, and the spreadsheet export, which gives you everything.",
-              "Because there is no shift, a sale is never tied to a session. It is tied to the cashier's account and to the till's device id. Those are what you have to work with if you reconcile cash by hand.",
-              "Do not confuse any of this with the register's own Settings page. That page is real and it does work, but it covers this till's name, its language, its scanner speed and its printer - not cash handling."
+              "Shifts arrived in v1.3.0 and only on a till that runs on its own. A cashier opens one with the cash in the drawer, money paid in or out during the day is recorded as it happens, and the closing count is set against what should be there. See \"Opening a shift\", \"Money in and out of the drawer\" and \"Closing a shift and counting the drawer\".",
+              "Shifts are off until you switch them on, and you cannot switch them on until you have named at least one counter - see \"Naming the counters in your shop\". A shop that never does either goes on exactly as before.",
+              "The older, simpler option is still there. If you only want the figure at the start of a day written down and never checked, leave shifts off and use \"Asking cashiers what is in the drawer\" instead. Turning shifts on takes that question over, so nobody is asked twice.",
+              "A till wired to a website has none of this. Shifts, counters and the closing count are all on the standalone till only; a register backed by a website has no cash-up, no shift and no variance report, and a sale there is tied to the cashier and the till's device id and nothing else.",
+              "There is a report per shift, and still no report per day. Closing a shift gives you its own figures, printable from the browser. Adding several shifts together into a day is something you do in a spreadsheet, from the sales export.",
+              "Do not confuse any of this with the register's own Settings page. That page covers this till's name, its language, its scanner speed and its printer - not cash handling."
             ]
           }
         ]
@@ -1159,6 +1161,66 @@ const MANUAL = {
               "The lock only exists on a till that runs with no website behind it. A register backed by a website signs in through the website, and there is no local password for it to ask for.",
               "It does not protect the machine from somebody who takes it away. Anything on the disk is still on the disk; this stops the person who walks past an unattended counter, and that is all it claims.",
               "Only the register is covered. The rest of the computer, and any other browser tab, are untouched."
+            ]
+          },
+          {
+            "id": "naming-your-terminals",
+            "title": "Naming the counters in your shop",
+            "audience": "owner",
+            "route": "/pos/app-admin?section=terminals",
+            "summary": "A shop with more than one till can give each counter a name — \"Front counter\", \"Kiosk 2\" — so a sale says where it was rung and a shift can be counted per counter. Naming a counter produces a pairing code, which you type once on the computer that stands there. A shop that never names one carries on exactly as before.",
+            "steps": [
+              "Sign in with an account that can open App admin. Out of the box that is Technical Support and nothing else.",
+              "Open App admin from the bottom of the menu, then Counters.",
+              "Type the name the shop actually uses for that counter and press \"Add it\".",
+              "Write the pairing code down on paper. It is shown once and cannot be read back off the machine afterwards.",
+              "Press \"I have written it down\", and repeat for each counter.",
+              "Take each slip of paper to the computer at that counter and follow \"Telling a till which counter it is\"."
+            ],
+            "fields": [
+              {
+                "name": "Name",
+                "what": "What the shop calls that counter. It is frozen onto every sale rung there, so a counter you later remove still leaves its old sales readable."
+              },
+              {
+                "name": "Answering",
+                "what": "Which computer is paired to that counter, as far as THIS machine knows. \"This computer\", \"Another computer\", or \"Not claimed\"."
+              },
+              {
+                "name": "New code",
+                "what": "Replaces the pairing code when the paper goes missing. The old code stops working at once. A computer already paired stays paired."
+              },
+              {
+                "name": "Remove",
+                "what": "Takes the counter off the list. Refused while a shift is open at it, so the drawer always gets counted first."
+              }
+            ],
+            "notes": [
+              "The list of counters lives on the computer you are typing on. Tills that run on their own never talk to each other, so a counter claimed on the machine in the stockroom still shows as \"Not claimed\" here. That is not a fault and there is no sync coming — a standalone till has no server to sync through.",
+              "The way the list reaches a second till is the backup. Take a backup on the machine where you named the counters and restore it on the other one, and the names travel with it. The claims deliberately do not: the restoring machine is asked for a code of its own.",
+              "The pairing code stops two tills quietly agreeing they are the same counter. It is not a lock on the machine. Anybody standing at that keyboard can already wipe the till through the browser's own settings, and the code changes nothing about that.",
+              "Removing a counter never touches sales. Every sale rung there keeps the name it was stamped with, so last month's takings still read \"Front counter\" after the counter itself is gone.",
+              "Removing one that another computer is paired to does not reach that computer. It goes on selling under the old name until somebody pairs it again."
+            ]
+          },
+          {
+            "id": "claiming-a-terminal",
+            "title": "Telling a till which counter it is",
+            "audience": "owner",
+            "route": "/pos",
+            "summary": "Once a shop has named its counters, a till that has not been paired to one asks which it is before it will sell. You type the pairing code for that counter, once, and it never asks again. Everything else on the till — the stock room, the sales list, Settings — stays reachable while it asks.",
+            "steps": [
+              "Open the register on the computer that stands at that counter.",
+              "The screen asks \"Which counter is this?\".",
+              "Type the pairing code from the slip of paper. Case does not matter, the dashes do not matter, and the letters people confuse with digits are folded back for you.",
+              "Press \"Pair this computer\". The till says which counter it now is and gets out of the way."
+            ],
+            "notes": [
+              "You are asked once per computer. Clearing the browser's site data mints a new machine identity, so a till whose data has been wiped is asked again.",
+              "The code starts with CSPT1. A recovery code, which starts with CSPR1, is refused here in so many words rather than reported as a wrong pairing code — the two are different things and a shop should not have to work that out.",
+              "\"Another computer is already paired to that counter\" means what it says on this machine's copy of the list. Free it under App admin → Counters, or use a different counter's code.",
+              "Only selling waits for this. A cashier who has come to look up a price, or an owner fixing the catalogue, can use the rest of the till without pairing anything.",
+              "To move a till to a different counter, free it under App admin → Counters and pair it again. There is deliberately no way to re-point a till from Settings mid-day: doing so would put the rest of a shift's sales under the wrong name."
             ]
           },
           {
@@ -1573,6 +1635,81 @@ const MANUAL = {
               "There is no way to correct a figure once it is saved. Like a sale, it is written once and never edited: no edit button, no delete, no second attempt. If you typed the wrong number, tell the owner, because the correction has to live outside the software.",
               "If saving fails the screen says so and keeps what you typed. Press the button again. The sale screen does not appear until the figure is stored.",
               "This is a shop-wide setting, not something you can turn off at the counter. Only a Support account can change it, on the Opening cash page inside App admin."
+            ]
+          },
+          {
+            "id": "opening-a-shift",
+            "title": "Opening a shift",
+            "audience": "staff",
+            "route": "/pos",
+            "summary": "In a shop that runs shifts, the till asks what is in the drawer before it will sell. Count the notes and coins, type the total, and the shift is open. That figure is what your count at the end is measured against, so it is worth counting properly.",
+            "steps": [
+              "Sign in as usual.",
+              "The till asks for the cash in the drawer, and shows which counter you are at and whose shift this will be.",
+              "Count the drawer and type the total. Use the decimal point — the till shows the amount back to you underneath so you can check it.",
+              "Press \"Open the shift\". The sale screen appears with a thin strip across the top showing your name, the counter and what should be in the drawer."
+            ],
+            "notes": [
+              "Only selling waits for this. Everything else on the till is reachable while the question is on screen.",
+              "Zero is a real answer for a counter that only takes cards, and the till says so rather than treating it as a slip. If your drawer is not empty, count again.",
+              "A shift is not a sign-in. Locking the screen over a break, or signing out so a colleague can check a price, leaves your shift open and running — it ends when somebody closes it and counts.",
+              "A shift that runs past midnight keeps the day it started on. A night shift belongs to the evening it began, not to two half-days.",
+              "If somebody else's shift is still open on that drawer, the till says whose and offers to close theirs. Two shifts on one drawer means neither can be answered for, so there is no way to start a second."
+            ]
+          },
+          {
+            "id": "money-in-and-out-of-the-drawer",
+            "title": "Money in and out of the drawer",
+            "audience": "staff",
+            "route": "/pos/shift",
+            "summary": "Cash leaves the till for reasons that are not sales — paying a delivery, a bank drop — and comes back for reasons that are not sales either. Record each one as it happens, and the figure you are counted against at the end of the shift stays honest.",
+            "steps": [
+              "Press \"Shift\" on the strip above the sale screen.",
+              "Press \"Cash in\" or \"Cash out\".",
+              "Type the amount and say what it was for. Both are required.",
+              "Press \"Record it\". The expected figure on the strip moves at once."
+            ],
+            "notes": [
+              "This is the whole reason a closing count means anything. Without it, the till would expect the opening float plus the day's takings, and would be wrong the first time anybody paid a delivery out of the drawer — and a wrong figure is what people get blamed over.",
+              "Say what it was for in words somebody will understand next week. \"Paid the milkman\" is worth more than \"expense\".",
+              "The direction is the button you pressed, never a minus sign in the amount box. Typing a negative does not reverse it.",
+              "Every entry is kept with the shift and appears on its report, with your name against it.",
+              "Nothing here is a refund. This till has no returns screen, and money handed back to a customer is not a sale going backwards — see \"What the register cannot do\"."
+            ]
+          },
+          {
+            "id": "closing-a-shift",
+            "title": "Closing a shift and counting the drawer",
+            "audience": "staff",
+            "route": "/pos/shift",
+            "summary": "At the end of your turn, count what is actually in the drawer and type it in. The till shows what should be there, and the difference, before you commit to anything. Then it closes the shift and shows the report.",
+            "steps": [
+              "Press \"Shift\" on the strip above the sale screen.",
+              "Press \"Close the shift\".",
+              "Count the drawer and type the total.",
+              "Read what the till says should be there, and the difference underneath it. Recount now if it looks wrong — this is the last moment it costs nothing.",
+              "Press \"Close it\". The report appears, and can be printed with the browser's print button."
+            ],
+            "fields": [
+              {
+                "name": "Should be there",
+                "what": "The opening cash, plus the cash taken in sales, plus anything paid in, minus anything paid out. Card takings are not part of it — they never went into the drawer."
+              },
+              {
+                "name": "Counted",
+                "what": "What you actually found. Notes and coins only."
+              },
+              {
+                "name": "Short by / Over by / Exact",
+                "what": "The difference between the two, said in words as well as shown in colour."
+              }
+            ],
+            "notes": [
+              "A short drawer never stops you closing. The till records the difference and lets you finish — a till that refused would only teach cashiers to make the number fit.",
+              "Once closed, a shift is not editable, by anybody. A miscount is put right by a cash movement on the next shift, so the figure on file is the one that was actually given.",
+              "The figures are frozen at the moment you close. Nothing that happens afterwards changes what the report says.",
+              "There is no automatic printing. The report prints through the browser, which is the only printing this till has.",
+              "The next cashier opens their own shift with their own count. Handing over means closing yours first."
             ]
           },
           {
@@ -2329,6 +2466,26 @@ const MANUAL = {
             ]
           },
           {
+            "id": "terminals-on-this-till",
+            "title": "Counters and shifts on a till that runs on its own",
+            "audience": "owner",
+            "route": "/pos/app-admin?section=general",
+            "summary": "Both features are switched on from App admin, and both are off in every shop until somebody switches them on. Counters come first: shifts cannot be turned on until at least one counter has a name, because a shift belongs to a counter.",
+            "steps": [
+              "Open App admin → Counters and name at least one counter.",
+              "Pair each computer to its counter with the code — see \"Telling a till which counter it is\".",
+              "Open App admin → General and turn \"Run shifts\" on. Until a counter exists, the switch is greyed with the reason next to it.",
+              "Tell the cashiers. From the next sign-in they will be asked for the cash in the drawer."
+            ],
+            "notes": [
+              "Turning shifts on takes over the opening-cash question. That older switch stays visible on the same page, greyed, saying so — the float typed when a shift opens is the drawer count, and asking twice would put two different answers on file.",
+              "Turning shifts off again leaves every closed shift where it is. They stay readable under Sales → Shifts.",
+              "Neither feature reaches a second till by itself. The list of counters travels in a backup and nowhere else, and the \"Run shifts\" switch is per till because each machine keeps its own settings.",
+              "The counters list is shop data, so it is in the backup along with the pairing codes' scrambled form. The claim — which computer answers to which counter — is deliberately left out, so a restored machine is asked for a code rather than quietly believing it is a counter it has never been paired to.",
+              "Both switches are on the page whoever installs the till hands over. A cashier never opens App admin."
+            ]
+          },
+          {
             "id": "sales-on-this-till",
             "title": "The Sales screen: what this till has taken",
             "audience": "owner",
@@ -2699,6 +2856,26 @@ const MANUAL = {
             ]
           },
           {
+            "id": "shift-records",
+            "title": "Reading back the shifts",
+            "audience": "owner",
+            "route": "/pos/sales",
+            "summary": "Every shift that has been worked is listed under Sales, newest first, with the day, the cashier, the counter, what it took and how the count came out. Opening one shows the full report — the same one the cashier saw when they closed it.",
+            "steps": [
+              "Open Sales from the menu. The tab strip appears once your shop is running shifts.",
+              "Press \"Shifts\".",
+              "Read down the Difference column. \"Exact\" is a drawer that balanced; anything else is signed, so a shortfall is unmistakable.",
+              "Press \"View\" on a row to see the whole report."
+            ],
+            "notes": [
+              "The tabs only appear once shifts are on. A shop that does not run them sees the sales list exactly as it was.",
+              "Nothing here can be edited. That is the point of it: a screen that could adjust a variance would be a screen that could make one disappear.",
+              "A shift still open shows a dash in the Difference column rather than a zero. Nobody has counted it yet, and a zero would read as a drawer that balanced.",
+              "The sales export carries the counter and the shift against every sale, in two columns at the end. Sales rung before your shop named its counters have both columns empty.",
+              "Adding shifts together into a day, or a week, is spreadsheet work. There is no report in the till that does it."
+            ]
+          },
+          {
             "id": "do-you-have-licensing",
             "title": "Do you have licensing at all?",
             "audience": "owner",
@@ -2935,7 +3112,7 @@ const MANUAL = {
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir.",
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır."
       ],
-      "version": "v1.2.0"
+      "version": "v1.3.0"
     },
     "parts": [
       {
@@ -4099,7 +4276,7 @@ const MANUAL = {
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь.",
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат."
       ],
-      "version": "v1.2.0"
+      "version": "v1.3.0"
     },
     "parts": [
       {
@@ -5263,7 +5440,7 @@ const MANUAL = {
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür.",
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır."
       ],
-      "version": "v1.2.0"
+      "version": "v1.3.0"
     },
     "parts": [
       {

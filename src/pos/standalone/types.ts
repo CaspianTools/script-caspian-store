@@ -61,7 +61,8 @@ export type PosLocalCapability =
   | 'settings.shop'
   | 'settings.backup'
   | 'appAdmin.view'
-  | 'appAdmin.roles';
+  | 'appAdmin.roles'
+  | 'terminals.edit';
 
 /** Every capability, grouped the way the sidebar groups the screens they open. */
 export const CAPABILITY_GROUPS: ReadonlyArray<{
@@ -89,6 +90,7 @@ export const CAPABILITY_GROUPS: ReadonlyArray<{
       'settings.backup',
       'appAdmin.view',
       'appAdmin.roles',
+      'terminals.edit',
     ],
   },
 ];
@@ -181,7 +183,7 @@ export const BUILTIN_ROLES: RoleDefinition[] = [
     id: 'superadmin',
     name: 'Support',
     enabled: true,
-    capabilities: [...MANAGER_CAPABILITIES, 'appAdmin.view', 'appAdmin.roles'],
+    capabilities: [...MANAGER_CAPABILITIES, 'appAdmin.view', 'appAdmin.roles', 'terminals.edit'],
     builtIn: true,
   },
 ];
@@ -543,6 +545,19 @@ export interface LocalSale {
   cashierName: string;
   /** Lines whose stock went negative. Recorded, never blocking. */
   stockShortfall: Array<{ productId: string; sizeKey: string; requested: number; available: number }>;
+  /**
+   * Which counter rang it, and which turn at that counter.
+   *
+   * All three optional, and absent on every sale written before terminals
+   * existed. A sale is never refused for want of them: a till with no roster
+   * has no terminal to stamp, and one with shifts switched off has no shift.
+   * The name is frozen beside the id for the reason `LocalOpeningCash` freezes
+   * `deviceLabel` -- a terminal an owner later removes must still leave its
+   * sales readable as "Front counter" rather than as a dangling id.
+   */
+  terminalId?: string;
+  terminalName?: string;
+  shiftId?: string;
 }
 
 /**
@@ -604,6 +619,127 @@ export interface LocalOpeningCash {
   utcOffsetMinutes: number;
 }
 
+/**
+ * One counter in the shop.
+ *
+ * The roster is shop data, held on every till and travelling the only way
+ * anything travels between standalone tills: the backup file. There is no wire
+ * between two of them, so a claim recorded here is this machine's claim and
+ * nothing more -- till B does not learn that till A answers to "Front counter",
+ * and cannot. That is a limit of a register with no server, not a gap to be
+ * closed later by syncing, and the manual says so plainly.
+ *
+ * Deliberately not `PosDevice`, which is the cloud register's dormant registry:
+ * that one is a Firestore document written by an admin elsewhere, this one is a
+ * row a till holds about itself and its siblings.
+ */
+export interface LocalTerminal {
+  id: string;
+  /** What the shop calls it: "Front counter", "Kiosk 2". */
+  name: string;
+  /**
+   * The pairing code, hashed exactly the way a password is -- same three
+   * fields, same PBKDF2, same reason. The code is read off paper and typed on a
+   * tablet by whoever sets a counter up; only its scrambled form is kept, so a
+   * stolen backup does not hand somebody the codes.
+   */
+  codeHash: string;
+  codeSalt: string;
+  codeIterations: number;
+  /**
+   * The device answering to this terminal ON THIS MACHINE, or empty when free.
+   *
+   * Cleared when a backup is restored: the restoring machine is a different
+   * machine, or the same one with its storage wiped and a fresh device id, and
+   * either way the claim it carries is about a device that is not this one.
+   * Leaving it would quietly point a second till at an occupied counter.
+   */
+  claimedByDeviceId: string;
+  claimedAtMillis?: number;
+  createdAtMillis: number;
+}
+
+/**
+ * Money in or out of the drawer during a shift, other than a sale.
+ *
+ * This is the record that makes a variance defensible. Without it the expected
+ * figure is opening float plus cash taken, which is wrong the first time
+ * anybody pays a delivery out of the till -- and a wrong variance is what shops
+ * discipline staff on. `LocalOpeningCash` declined to compute one for exactly
+ * that reason; this is the missing half, not a change of mind.
+ */
+export interface LocalCashMovement {
+  id: string;
+  kind: 'in' | 'out';
+  /** Major units, always positive. The direction is `kind`, never a sign. */
+  amount: number;
+  /** Why: "float top-up", "paid the milkman", "bank drop". */
+  reason: string;
+  byUserId: string;
+  /** Frozen, so a renamed or deleted account still names who moved it. */
+  byUserName: string;
+  atMillis: number;
+}
+
+/**
+ * One cashier's turn at one counter.
+ *
+ * Named `LocalShift` and keyed by `shiftId` rather than borrowing `PosSession`
+ * and `Order.sessionId`, which are the cloud register's server-written shift.
+ * The two answer the same question in different products and must not be wired
+ * together by a shared name -- the same rule that produced `signInId` over
+ * `sessionId` and `requireOpeningCash` over `requireShift`.
+ *
+ * Money fields are major units, like `LocalSale`; the arithmetic that produces
+ * them accumulates in minor units in `shift-totals.ts`, like `priceLocalSale`.
+ *
+ * Closed shifts are never edited. A miscount is corrected by a cash movement on
+ * the next shift, not by rewriting this row, so the figure an owner reads is
+ * the figure the cashier actually gave.
+ */
+export interface LocalShift {
+  id: string;
+  terminalId: string;
+  /** Frozen at open, so removing the terminal does not orphan the shift. */
+  terminalName: string;
+  cashierId: string;
+  /** Frozen at open, for the reason `LocalOpeningCash.cashierName` is. */
+  cashierName: string;
+  deviceId: string;
+  /**
+   * Which sign-in opened it. Compared by equality, never by time, so the rule
+   * survives an NTP correction or a hand-set clock -- as on `LocalOpeningCash`.
+   */
+  signInId: string;
+  status: 'open' | 'closed';
+  openedAtMillis: number;
+  /** Major units. Zero is valid: a card-only counter opens empty. */
+  openingFloat: number;
+  /** `YYYY-MM-DD` local, frozen at open. Never recomputed at close -- a shift
+   * that runs past midnight belongs to the day it started. */
+  businessDay: string;
+  /** `getTimezoneOffset()` at open -- minutes local is BEHIND UTC. */
+  utcOffsetMinutes: number;
+  movements: LocalCashMovement[];
+  closedAtMillis?: number;
+  /** What the cashier counted. Absent while the shift is open. */
+  countedCash?: number;
+  /**
+   * Opening float + cash taken + movements in − movements out.
+   *
+   * No refund term, because this till cannot make one: `priceLocalSale` clamps
+   * a total at zero, so there is no negative sale to subtract. A permanently
+   * zero "refunds" line on the Z-report would imply a returns screen the
+   * manual is explicit does not exist.
+   */
+  expectedCash?: number;
+  /** `countedCash − expectedCash`. Negative means the drawer is short. */
+  variance?: number;
+  totalsByTender?: Record<string, number>;
+  salesTotal?: number;
+  saleCount?: number;
+}
+
 /** Shop-wide settings on a standalone till. The local twin of `SiteSettings.pos`. */
 export interface LocalShopSettings {
   shopName: string;
@@ -628,6 +764,21 @@ export interface LocalShopSettings {
    * that name would invite someone to wire the two together.
    */
   requireOpeningCash: boolean;
+  /**
+   * Whether a cashier must open a shift before the register will sell, and
+   * close it against a counted drawer when they finish.
+   *
+   * Off by default and off on every till that upgrades into this release, for
+   * the reason `requireOpeningCash` gives above. It cannot be switched on until
+   * the shop has named at least one counter: a shift belongs to a terminal, and
+   * one with nowhere to belong would have to invent a counter out of the device
+   * id, which is the sort of placeholder that survives into a shop's records.
+   *
+   * When this is on, `requireOpeningCash` is not asked -- the shift's opening
+   * float IS the drawer declaration, and putting both in front of a cashier
+   * would ask the same question twice with two different answers on file.
+   */
+  shiftsEnabled: boolean;
   /**
    * The optional screens, switched on per shop by whoever installed the till.
    *
@@ -691,6 +842,7 @@ export const DEFAULT_LOCAL_SHOP_SETTINGS: LocalShopSettings = {
   roundCashTo: 0,
   showTaxOnReceipt: false,
   requireOpeningCash: false,
+  shiftsEnabled: false,
   categoriesEnabled: false,
   suppliersEnabled: false,
   lotTrackingEnabled: false,
