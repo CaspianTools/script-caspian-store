@@ -1,6 +1,6 @@
 {
   "name": "caspian-pos-pwa",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "The offline Caspian POS, as an installable web app. Bundles the standalone till; talks to nothing. Not part of the npm package.",
   "type": "module",

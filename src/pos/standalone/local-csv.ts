@@ -22,7 +22,40 @@
 import { csvToRecords, parseCsv, toCsv, type CsvCell } from '../../utils/csv';
 import { joinList, joinStock, parseBool, parseList, parseNumber, parseStock } from '../../services/import-export/helpers';
 import { makeLocalProduct } from './local-db';
+import { DEFAULT_SIZE_KEY } from './lot-allocation';
 import type { LocalProduct } from './types';
+
+/**
+ * A bare count is the sizeless bucket.
+ *
+ * `parseStock` wants `size:quantity` and skips any part without a colon, so a
+ * shop that typed a plain `12` -- which is what the item form now asks for, and
+ * what most shops mean -- imported an item with no stock at all and no warning.
+ * Widening the shared helper would change the cloud import too, so the leniency
+ * lives here, on the standalone side of the boundary.
+ */
+function parseLocalStock(cell: string | undefined): Record<string, number> {
+  const raw = (cell ?? '').trim();
+  if (raw && !raw.includes(':')) {
+    const count = Number(raw);
+    if (Number.isInteger(count) && count >= 0) return { [DEFAULT_SIZE_KEY]: count };
+  }
+  return parseStock(cell);
+}
+
+/**
+ * The other half of that, so the sentinel never reaches a spreadsheet either.
+ *
+ * `_default` is an internal key for "this item has no sizes", and an owner who
+ * opened the export had no way to know that. An item that holds nothing else
+ * writes its count plainly; anything with sizes keeps the `size:quantity` form.
+ * `parseLocalStock` reads both, so the round-trip still reproduces the record.
+ */
+function joinLocalStock(stock: Record<string, number>): string {
+  const keys = Object.keys(stock);
+  if (keys.length === 1 && keys[0] === DEFAULT_SIZE_KEY) return String(stock[DEFAULT_SIZE_KEY]);
+  return joinStock(stock);
+}
 
 export interface LocalColumnMeta {
   header: string;
@@ -46,8 +79,8 @@ export const LOCAL_PRODUCT_COLUMNS: LocalColumnMeta[] = [
   { header: 'sizes', sample: 'S;M;L', help: 'Separated by semicolons. Leave blank if the item has no sizes.' },
   {
     header: 'stock',
-    sample: 'S:3;M:5;L:0',
-    help: 'Per size, as size:quantity. For an item with no sizes use _default:12.',
+    sample: '12',
+    help: 'A plain count for an item with no sizes. Per size, write size:quantity separated by semicolons - S:3;M:5;L:0.',
   },
   { header: 'isActive', sample: 'true', help: 'false hides the item from the till without deleting it.' },
   { header: 'imageUrl', sample: '', help: 'Optional. Only shown if the till has the picture available.' },
@@ -79,7 +112,7 @@ export function localProductsToCsv(products: LocalProduct[]): string {
       p.price,
       p.category,
       joinList(p.sizes),
-      joinStock(p.stock),
+      joinLocalStock(p.stock),
       p.isActive ? 'true' : 'false',
       p.imageUrl,
       p.description,
@@ -155,7 +188,7 @@ export function planLocalProductImport(text: string, existing: LocalProduct[]): 
         barcode: record.barcode ?? '',
         category: record.category ?? '',
         sizes: parseList(record.sizes),
-        stock: parseStock(record.stock),
+        stock: parseLocalStock(record.stock),
         isActive: parseBool(record.isActive, true),
         imageUrl: (record.imageUrl ?? '').trim(),
         description: (record.description ?? '').trim(),

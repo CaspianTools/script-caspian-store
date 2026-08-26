@@ -272,6 +272,33 @@ check('unknown columns from a cloud export are ignored', () => {
   assert.equal(plan.rows[0].product.price, 4.25);
 });
 
+// A plain count is what the item form asks for and what most shops mean. The
+// shared `parseStock` skips any part without a colon, so before v1.6.0 a `12`
+// here imported an item with no stock and said nothing about it.
+check('a bare stock count imports as the sizeless bucket', () => {
+  const csv = [
+    LOCAL_PRODUCT_COLUMNS.map((c) => c.header).join(','),
+    ',Sock,,,3.00,,,12,',
+    ',Shirt,,,9.00,,S;M,S:3;M:5,',
+    ',Junk,,,1.00,,,twelve,',
+  ].join('\n');
+  const plan = planLocalProductImport(csv, []);
+  assert.equal(plan.errors.length, 0, 'none of these rows is malformed');
+  assert.deepEqual(plan.rows[0].product.stock, { _default: 12 });
+  assert.deepEqual(plan.rows[1].product.stock, { S: 3, M: 5 }, 'the per-size form still parses');
+  assert.deepEqual(plan.rows[2].product.stock, {}, 'a count that is not a number buys nothing');
+});
+
+check('a sizeless count exports plainly, so _default never reaches a spreadsheet', () => {
+  const csv = localProductsToCsv(products);
+  assert.ok(
+    !csv.includes('_default'),
+    'the sentinel is an internal key, not something to show an owner',
+  );
+  assert.ok(csv.includes(',12,'), 'the sizeless item writes its count plainly');
+  assert.ok(csv.includes('S:3;M:5'), 'an item with sizes keeps the per-size form');
+});
+
 check('template carries a header and one sample line', () => {
   const lines = localProductTemplateCsv().trim().split(/\r?\n/);
   assert.equal(lines.length, 2);

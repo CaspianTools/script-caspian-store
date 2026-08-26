@@ -212,6 +212,13 @@ not "fix" it by widening its colours, and do not reach for it under `src/pos/`.
 `PosField` renders exactly that. `.cpos-field__control` wraps a control that
 carries an adornment (the password reveal button).
 
+**A group of related boxes is one field, not several.** Where one label covers a
+run of controls whose number is not known until render — the per-size stock
+counts on the item form — use `PosField asDiv` around a `.cpos-row` of nested
+`PosField`s, and put the group's help text inside it. `asDiv` exists for exactly
+this: a `<label>` wrapping several controls sends every click to the first one.
+It needs no new class — `.cpos-field` is a column with a gap, so it nests.
+
 ---
 
 ## 4. The layout primitives

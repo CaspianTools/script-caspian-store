@@ -6,17 +6,35 @@ import { useToast } from '../../../../ui/toast';
 import { FieldDescription } from '../../../../ui/field-description';
 import { PosCheck, PosField, PosSelect } from '../../ui/pos-field';
 import { listLocalCategories, makeLocalProduct, saveLocalProduct } from '../../local-db';
+import { DEFAULT_SIZE_KEY } from '../../lot-allocation';
 import { usePosShopSettings } from '../../shop-settings-context';
 import type { LocalCategory, LocalProduct } from '../../types';
 
-const BLANK = {
+interface Draft {
+  name: string;
+  price: string;
+  sku: string;
+  barcode: string;
+  category: string;
+  sizes: string;
+  /**
+   * The count per stock bucket, held as typed rather than as a number, so a box
+   * somebody has just cleared stays cleared instead of snapping back to `0`
+   * under their cursor.
+   */
+  stock: Record<string, string>;
+  description: string;
+  tracksLots: boolean;
+}
+
+const BLANK: Draft = {
   name: '',
   price: '',
   sku: '',
   barcode: '',
   category: '',
   sizes: '',
-  stock: '',
+  stock: {},
   description: '',
   tracksLots: false,
 };
@@ -40,7 +58,7 @@ export interface LocalProductFormProps {
  *
  * Lifted out of `LocalProductFormDialog` in v1.4.0 so that Quick add and the
  * edit dialog render the same thing. Two copies of this would be two copies of
- * the price parse and the `size:qty` parse -- and two screens that eventually
+ * the price parse and the stock rules -- and two screens that eventually
  * disagree about what somebody typed.
  */
 export function LocalProductForm({
@@ -54,7 +72,7 @@ export function LocalProductForm({
   const { settings } = usePosShopSettings();
   const editingId = product?.id ?? null;
 
-  const [draft, setDraft] = useState(() =>
+  const [draft, setDraft] = useState<Draft>(() =>
     product
       ? {
           name: product.name,
@@ -63,9 +81,9 @@ export function LocalProductForm({
           barcode: product.barcode,
           category: product.category,
           sizes: product.sizes.join(';'),
-          stock: Object.entries(product.stock)
-            .map(([k, v]) => `${k}:${v}`)
-            .join(';'),
+          stock: Object.fromEntries(
+            Object.entries(product.stock).map(([key, count]) => [key, String(count)]),
+          ),
           description: product.description,
           tracksLots: product.tracksLots,
         }
@@ -84,17 +102,70 @@ export function LocalProductForm({
     };
   }, [settings.categoriesEnabled]);
 
+  const sizeKeys = draft.sizes
+    .split(/[;,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  /**
+   * Which counts this item can hold, in the order they are shown.
+   *
+   * The counter never asks a cashier for a size. `usePosTicket` fills one in
+   * only when the item has exactly one, and every other sale is priced with no
+   * size and comes off `DEFAULT_SIZE_KEY` -- so that is the bucket the register
+   * actually draws down, and it is hidden only when a single size shadows it.
+   * Offering the sizes alone is how an item with three of them ended up with
+   * stock in S, M and L and a shelf figure going negative on the first sale.
+   */
+  const stockKeys = sizeKeys.length === 1 ? sizeKeys : [DEFAULT_SIZE_KEY, ...sizeKeys];
+
+  /**
+   * Buckets this item arrived holding stock in. Frozen at mount rather than read
+   * off the live draft: a box whose presence depended on its own value being
+   * above zero vanished under the cursor the moment somebody backspaced it
+   * empty, taking the field they were editing with it.
+   */
+  const [arrivedWithStock] = useState(() =>
+    Object.entries(product?.stock ?? {})
+      .filter(([, count]) => count > 0)
+      .map(([key]) => key),
+  );
+
+  /**
+   * A count sitting under a size this item no longer lists -- renamed, or
+   * dropped while it still held stock. Shown so nothing is both invisible and
+   * non-zero; the same posture as `categoryOptions` below. Typing the size back
+   * into Sizes moves it into `stockKeys` and it stops being shown twice.
+   */
+  const unlistedKeys = arrivedWithStock.filter((key) => !stockKeys.includes(key));
+
+  const setStock = (key: string, value: string) =>
+    setDraft({ ...draft, stock: { ...draft.stock, [key]: value } });
+
   const save = async () => {
     const price = Number(draft.price);
     if (!draft.name.trim() || !Number.isFinite(price) || price < 0) {
       toast({ title: t('pos.admin.products.invalid'), variant: 'destructive' });
       return;
     }
+
     const stock: Record<string, number> = {};
-    for (const part of draft.stock.split(/[;,]/)) {
-      const [size, qty] = part.split(':');
-      if (size?.trim() && Number.isFinite(Number(qty))) stock[size.trim()] = Number(qty);
+    for (const key of [...stockKeys, ...unlistedKeys]) {
+      const typed = (draft.stock[key] ?? '').trim();
+      const count = typed === '' ? 0 : Number(typed);
+      // Refused, not dropped. The box this replaced parsed `size:qty` and threw
+      // away whatever did not match, so a plain `12` saved nothing at all and
+      // correcting a shelf figure to `13` silently wiped the count that was
+      // there. A shop had no way to tell either had happened.
+      if (!Number.isInteger(count) || count < 0) {
+        toast({ title: t('pos.admin.products.stockInvalid'), variant: 'destructive' });
+        return;
+      }
+      // A listed bucket is written even at zero -- "none left" is a fact worth
+      // recording. An unlisted one survives only while it still holds something.
+      if (count > 0 || stockKeys.includes(key)) stock[key] = count;
     }
+
     const saved = makeLocalProduct({
       ...(product ?? {}),
       ...(editingId ? { id: editingId } : {}),
@@ -103,10 +174,7 @@ export function LocalProductForm({
       sku: draft.sku,
       barcode: draft.barcode,
       category: draft.category,
-      sizes: draft.sizes
-        .split(/[;,]/)
-        .map((s) => s.trim())
-        .filter(Boolean),
+      sizes: sizeKeys,
       stock,
       description: draft.description,
       tracksLots: draft.tracksLots,
@@ -128,6 +196,25 @@ export function LocalProductForm({
       ? [{ value: draft.category, label: draft.category }]
       : []),
   ];
+
+  const stockBox = (key: string, unlisted: boolean) => (
+    <PosField
+      key={key}
+      label={key === DEFAULT_SIZE_KEY ? t('pos.admin.products.stockNoSize') : key}
+      help={unlisted ? t('pos.admin.products.stockUnlisted') : undefined}
+      style={{ flex: '0 1 120px' }}
+    >
+      <input
+        className="cpos-input"
+        value={draft.stock[key] ?? ''}
+        inputMode="numeric"
+        placeholder="0"
+        onChange={(e) => setStock(key, e.target.value)}
+      />
+    </PosField>
+  );
+
+  const onlyKey = stockKeys.length === 1 && unlistedKeys.length === 0 ? stockKeys[0] : null;
 
   return (
     <form
@@ -195,28 +282,47 @@ export function LocalProductForm({
             onChange={(e) => setDraft({ ...draft, sizes: e.target.value })}
           />
         </PosField>
-        {/*
-          Absent for an item received in batches. For one of those,
-          `LocalProduct.stock` is a projection of the batches, and a figure typed
-          here would be written by a transaction that never touches them --
-          leaving the shelf saying one thing and the batches another, with the
-          register selling against the wrong one. Stock reaches a batched item
-          through Receive stock and Adjust stock, and nowhere else.
-        */}
-        {draft.tracksLots ? null : (
-          <PosField label={t('pos.admin.products.stock')} style={{ flex: '1 1 140px' }}>
+      </div>
+
+      {/*
+        Absent for an item received in batches. For one of those,
+        `LocalProduct.stock` is a projection of the batches, and a figure typed
+        here would be written by a transaction that never touches them --
+        leaving the shelf saying one thing and the batches another, with the
+        register selling against the wrong one. Stock reaches a batched item
+        through Receive stock and Adjust stock, and nowhere else.
+      */}
+      {draft.tracksLots ? (
+        <FieldDescription>{t('pos.admin.products.stockByBatch')}</FieldDescription>
+      ) : onlyKey !== null ? (
+        // In a `.cpos-row` even though it is alone: `.cpos-form` is a column, so
+        // a flex basis on a direct child of it would size the field's height.
+        <div className="cpos-row">
+          <PosField
+            label={t('pos.admin.products.stock')}
+            help={t('pos.admin.products.stockHelp')}
+            style={{ flex: '0 1 120px' }}
+          >
             <input
               className="cpos-input"
-              value={draft.stock}
-              placeholder="_default:12"
-              onChange={(e) => setDraft({ ...draft, stock: e.target.value })}
+              value={draft.stock[onlyKey] ?? ''}
+              inputMode="numeric"
+              placeholder="0"
+              onChange={(e) => setStock(onlyKey, e.target.value)}
             />
           </PosField>
-        )}
-      </div>
-      <FieldDescription>
-        {t(draft.tracksLots ? 'pos.admin.products.stockByBatch' : 'pos.admin.products.stockHelp')}
-      </FieldDescription>
+        </div>
+      ) : (
+        <PosField asDiv label={t('pos.admin.products.stock')}>
+          <div className="cpos-row">
+            {stockKeys.map((key) => stockBox(key, false))}
+            {unlistedKeys.map((key) => stockBox(key, true))}
+          </div>
+          <FieldDescription>
+            {t('pos.admin.products.stockHelp')} {t('pos.admin.products.stockNoSizeHelp')}
+          </FieldDescription>
+        </PosField>
+      )}
 
       <PosField
         label={t('pos.admin.products.description')}

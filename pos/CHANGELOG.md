@@ -23,6 +23,47 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.6.0 — Stock you can type a number into
+
+Putting stock on an item did not work, and there was nothing on screen to say so.
+
+The In stock box wanted a private syntax — `size:count`, semicolon-separated —
+and threw away anything that did not match it. A shop that typed `12`, which is
+what the box looks like it wants, saved an item with no stock at all. Worse, an
+item with no sizes showed `_default:12` as its value when you opened it to edit,
+so correcting a shelf figure to `13` wiped the twelve that were there. Neither
+failure said anything: no message, no warning, just a Stock column reading 0.
+
+It is boxes with numbers in them now.
+
+### Changed
+
+- **The In stock field is a number box.** An item with no sizes gets one box. An
+  item with sizes gets one box per size, plus a **No size** box.
+- **The No size box is the one the counter uses, and it now says so.** The
+  register never asks a cashier which size, so a sale of an item with several
+  sizes comes off the general count rather than off S, M or L. The old field
+  offered no way to put stock there, so an item with three sizes could be fully
+  stocked on paper and go negative on its first sale. The per-size counts are for
+  your own records until the counter learns to ask.
+- **A count that is not a whole number is refused**, with a message, instead of
+  being dropped on the floor.
+- **A size you have since removed keeps its box** while it still holds stock, so
+  a renamed size cannot leave a count that is both invisible and non-zero. Set it
+  to 0 to clear it.
+- **A spreadsheet import accepts a plain count** in the `stock` column as well as
+  the per-size form, and the template now shows the plain one.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers. No
+data moves and no setting changes. Stock already recorded is read and shown
+exactly as before — it is only the way you type it that changed.
+
+Worth knowing afterwards: any item a shop *thought* it had stocked through the
+old box has a count of 0, because nothing was ever saved. Those are worth a look
+on the Store screen.
+
 ## v1.5.0 — Scanners that used to do nothing, and a way to see why
 
 A shop plugged a scanner in, put a barcode on a product, scanned it — and the

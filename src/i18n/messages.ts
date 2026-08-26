@@ -2297,7 +2297,13 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.admin.products.sizes': 'Sizes',
   'pos.admin.products.stock': 'In stock',
   'pos.admin.products.stockHelp':
-    'Write the count per size, like S:3;M:5. For an item with no sizes write _default:12.',
+    'How many are on the shelf right now. Once you start taking deliveries in through Receive stock, this keeps itself up to date.',
+  'pos.admin.products.stockNoSize': 'No size',
+  'pos.admin.products.stockNoSizeHelp':
+    'The counter never asks which size, so a sale of an item with several sizes comes off “No size”. The per-size counts are for your own records.',
+  'pos.admin.products.stockUnlisted':
+    'No longer one of this item’s sizes. Set it to 0 to clear it.',
+  'pos.admin.products.stockInvalid': 'A stock count must be a whole number, 0 or more.',
   'pos.admin.products.add': 'Add it',
   'pos.admin.products.update': 'Save changes',
   'pos.admin.products.saved': 'Item saved',
