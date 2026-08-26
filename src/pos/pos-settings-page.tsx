@@ -28,6 +28,7 @@ import {
   type PosThemeMode,
 } from './pos-preferences';
 import type { PosStorageMode } from './storage/types';
+import { PosScannerTest } from './hardware/pos-scanner-test';
 import { PosStorageHealthCard } from './pos-storage-health-card';
 import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosChrome } from './theme/pos-chrome-context';
@@ -303,6 +304,8 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
               />
               <FieldDescription>{t('pos.settings.printerBrowserHelp')}</FieldDescription>
             </label>
+
+            <PosScannerTest onGapChange={setGapMs} />
           </section>
 
           <div className="cpos-actions">

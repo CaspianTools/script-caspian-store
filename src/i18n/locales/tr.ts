@@ -184,6 +184,7 @@ const tr: MessageDict = {
   'pos.scan.matchedById': 'Ürün kimliğiyle eşleşti',
   'pos.scan.multipleMatches': '{count, plural, one {# ürün eşleşiyor} other {# ürün eşleşiyor}}',
   'pos.scan.chooseMatch': 'Hangisi?',
+  'pos.scan.reading': 'Okunuyor… {code}',
 
   // POS — ticket
   'pos.ticket.title': 'Mevcut satış',
@@ -283,7 +284,42 @@ const tr: MessageDict = {
   'pos.settings.printerBrowserHelp': 'Bilgisayarınızda kurulu herhangi bir yazıcıyla çalışır.',
   'pos.settings.scannerGap': 'Okuyucu hızı',
   'pos.settings.scannerGapHelp':
-    'Okutma sayılan tuş vuruşları arasındaki en fazla milisaniye. Okutmalar bölünüyorsa artırın; hızlı yazma okutma sanılıyorsa azaltın.',
+    'Tarama sayılan tuş vuruşları arasındaki en yüksek milisaniye. Okumalar bölünüyorsa artırın; hızlı yazma tarama sanılıyorsa azaltın. Tahmin etmek yerine aşağıdaki testi çalıştırın.',
+  'pos.scannerTest.title': 'Okuyucuyu test edin',
+  'pos.scannerTest.help':
+    'Düğmeye basın, sonra herhangi bir barkodu okutun. Bu, kasaya tam olarak neyin ulaştığını gösterir — yanlış ayarlanmış bir okuyucuyu bu bilgisayarla hiç konuşmayan bir okuyucudan ayırmanın tek yolu budur.',
+  'pos.scannerTest.start': 'Okuyucuyu test et',
+  'pos.scannerTest.again': 'Yeniden test et',
+  'pos.scannerTest.stop': 'Durdur',
+  'pos.scannerTest.listening': 'Şimdi bir şey okutun. Bekleniyor…',
+  'pos.scannerTest.silentTitle': 'Kasaya hiçbir şey ulaşmadı',
+  'pos.scannerTest.silentHelp':
+    'Tek bir tuş bile gelmedi. Kasa iyi durumda — okuyucu bu bilgisayara yazmıyor. Bir metin düzenleyici açıp oraya okutun: orada da bir şey çıkmıyorsa okuyucu klavye (HID) modunda değildir, eşleşmemiştir ya da çalışmıyordur. Kılavuzunda klavye modu için bir kurulum barkodu bulunur.',
+  'pos.scannerTest.code': 'Okunan kod',
+  'pos.scannerTest.characters': '{count, plural, one {# karakter} other {# karakter}}',
+  'pos.scannerTest.speed': 'En uzun aralık',
+  'pos.scannerTest.ms': '{ms} ms',
+  'pos.scannerTest.speedHint': 'Ayar {gap} ms',
+  'pos.scannerTest.ending': 'Bitiş',
+  'pos.scannerTest.endingEnter': 'Enter',
+  'pos.scannerTest.endingTab': 'Tab',
+  'pos.scannerTest.endingNone': 'Yok',
+  'pos.scannerTest.endingGoodHint': 'Kasa kodun bittiğini biliyor',
+  'pos.scannerTest.endingNoneHint': 'Bunun yerine kısa bir duraklamadan sonra alınır',
+  'pos.scannerTest.endingNoneHelp':
+    'Bu okuyucu kodun sonunda hiçbir şey göndermiyor. Kasa bunu kabul eder — kodu kısa bir duraklamadan sonra alır — ama Enter gönderen bir okuyucu daha hızlıdır ve kodu ikiye bölünemez. Çoğu okuyucunun kılavuzunda Enter sonekini açan bir kurulum barkodu vardır.',
+  'pos.scannerTest.tooSlow':
+    'Bu okuyucu kasanın beklediğinden yavaş yazıyor: karakterler arasında {measured} ms, ayar ise {gap} ms. Okumalar ikiye bölünüyor ya da hiç gelmiyor.',
+  'pos.scannerTest.useGap': 'Okuyucu hızını {ms} ms yap',
+  'pos.scannerTest.gapSaved': 'Okuyucu hızı {ms} ms olarak ayarlandı.',
+  'pos.scannerTest.tooShort':
+    'Kasa {min} karakterden kısa hiçbir şeyi dikkate almaz; böylece rastgele tuşlar satışa dönüşmez. Daha uzun bir kod kullanın.',
+  'pos.scannerTest.modifiers':
+    'Bu okuyucu yazarken {keys} tuşunu basılı tutuyor. Buna ihtiyaç duyan karakterler yine de geçer, ama düz klavye çıkışına ayarlı bir okuyucu daha güvenlidir.',
+  'pos.scannerTest.matched': 'Bu kod kataloğunuzdaki “{name}” ürünü.',
+  'pos.scannerTest.noMatch':
+    'Okuyucu çalışıyor ama kataloğunuzda bu koda sahip bir şey yok. Numaranın ürünün Kod kutusuna değil, Barkod kutusuna yazıldığını kontrol edin.',
+  'pos.scannerTest.allGood': 'Bu okuyucu, kasanın şu anki ayarlarıyla tam olarak çalışıyor.',
   'pos.settings.save': 'Kaydet',
   'pos.settings.saved': 'Ayarlar kaydedildi',
   'pos.settings.appVersion': 'Kasa sürümü {version}',

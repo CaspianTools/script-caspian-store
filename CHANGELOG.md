@@ -16,6 +16,72 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v13.6.0 — Scanners the register was silently refusing
+
+A shop connected a barcode scanner, added a product, scanned it, and the register
+did nothing at all. The keyboard wedge in
+[src/pos/hardware/use-barcode-scanner.ts](src/pos/hardware/use-barcode-scanner.ts)
+had four ways to reject a real scan and every one of them failed silently, so
+four different faults — three of them ours — presented at the counter as one dead
+screen.
+
+This lands for both registers. The standalone till ships it as
+[pos/CHANGELOG.md](pos/CHANGELOG.md) v1.5.0.
+
+### Consumer action required on upgrade
+
+Reinstall. Nothing is stored differently, no provider prop changed, and no export
+was renamed or removed.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v13.6.0
+```
+
+### Fixed
+
+- **A scanner that sends no terminator now completes a scan.** The buffer was
+  flushed only by Enter or Tab, so a scanner shipped with its suffix disabled
+  filled it with nothing to ever empty it. A burst now also flushes after
+  `IDLE_FLUSH_MS` (150 ms) of quiet. Safe by construction: the existing
+  `gap > gapMs` rule means the buffer can only ever hold characters that arrived
+  faster than a person types, so no cashier keystroke can fall into it.
+- **AltGr no longer discards the scan.** Windows reports AltGr as `ctrlKey +
+  altKey`, and the handler dropped every key with a modifier held. On the az, tr
+  and ru layouts this library ships for, a scanner emitting a character that
+  needs AltGr lost the entire code.
+- **Key auto-repeat can no longer be flushed as a barcode.** A held-down key
+  repeats fast enough to be indistinguishable from a scanner; `event.repeat` now
+  clears the buffer.
+
+### Added
+
+- **`<PosScannerTest>`** in the Scanner section of both register settings pages —
+  [pos-settings-page.tsx](src/pos/pos-settings-page.tsx) and the standalone
+  [pos-local-settings-page.tsx](src/pos/standalone/admin/pos-local-settings-page.tsx).
+  It arms a one-burst keydown listener and reports what actually reached the till:
+  the code and its length, the worst inter-character gap against the saved
+  `scanGapMs`, the terminator, any modifiers held, and whether
+  `adapter.lookupByCode` matches a product. Where the fix is a number it offers a
+  button that writes it through `writeScannerGapMs`. When no key arrives inside
+  20 s it says so, which is the one case that is not the library's fault. Not
+  exported from the barrels — it is a screen, not a building block.
+- **`BarcodeScannerApi.pending`**, the burst read so far. `PosRegister` renders it
+  under the scan box, so a scanner that types but never terminates is visibly
+  doing something. Additive; existing callers are unaffected.
+- **`MIN_SCAN_LENGTH`** is exported from
+  [use-barcode-scanner.ts](src/pos/hardware/use-barcode-scanner.ts) so the test
+  panel can name the same threshold the wedge enforces.
+
+### Changed
+
+- `pos.settings.scannerGapHelp` now points at the test instead of inviting a
+  guess. New `pos.scan.reading` and `pos.scannerTest.*` keys, in English plus all
+  three overlays.
+- [docs/pos-manual.html](docs/pos-manual.html) gains **"When you scan and nothing
+  happens"** and documents the new control on the Settings page. The new section
+  is English-only on purpose: an absent overlay renders under a visible "not
+  translated yet" notice, which is the safe half of the overlay rule.
+
 ## v13.5.0 — The register's version, and where Install lives
 
 Mostly a standalone-till release (see [pos/CHANGELOG.md](pos/CHANGELOG.md) for

@@ -27,7 +27,23 @@ export const POS_BARCODE_FORMATS = [
 export const DEFAULT_SCAN_GAP_MS = 40;
 
 /** Shortest string accepted as a scan. Below this, stray keystrokes win. */
-const MIN_SCAN_LENGTH = 4;
+export const MIN_SCAN_LENGTH = 4;
+
+/**
+ * Quiet time after the last character before a burst that never terminated is
+ * taken as a whole scan.
+ *
+ * Plenty of scanners leave the factory with their suffix switched off, and
+ * until v13.6.0 those filled the buffer with nothing to ever empty it: the till
+ * sat doing nothing at all, which at a counter is indistinguishable from a
+ * scanner that was never plugged in. Safe because of the gap rule in the
+ * handler — the buffer can only hold characters that arrived faster than a
+ * person types, so there is nothing here for a cashier's keystrokes to fall
+ * into. The cost is that a scanner with no suffix can split one slow code into
+ * two, which is why `pos-scanner-test.tsx` still tells a shop to switch the
+ * suffix on.
+ */
+const IDLE_FLUSH_MS = 150;
 
 export interface BarcodeScannerOptions {
   /** Called with the decoded payload. Fires for HID, camera, and manual entry alike. */
@@ -53,6 +69,15 @@ export interface BarcodeScannerApi {
   cameraSupported: boolean;
   /** Set when the camera could not start — permission, no device, or decode failure. */
   cameraError: string | null;
+  /**
+   * The characters read so far in the burst in progress; empty between scans.
+   *
+   * Rendered at the register so that a scanner which types but never terminates
+   * is visibly doing *something*. Nothing is focused on the register at rest, so
+   * those characters otherwise land nowhere on screen and a shop cannot tell a
+   * misconfigured scanner from a dead one.
+   */
+  pending: string;
   startCamera: () => Promise<void>;
   stopCamera: () => void;
   /** Feed a code in from a text input. Same path as a scan. */
@@ -84,7 +109,8 @@ function getDetectorCtor(): BarcodeDetectorCtor | null {
  * exactly why it is the default path and why it must work before anything
  * else does. The listener is on `document` and stays out of the way of normal
  * typing by timing: characters arriving faster than `gapMs` apart accumulate
- * into a buffer, and Enter (or Tab) flushes it. Slow, human-paced characters
+ * into a buffer, and Enter (or Tab) — or, for a scanner sending no suffix at
+ * all, `IDLE_FLUSH_MS` of quiet — flushes it. Slow, human-paced characters
  * reset the buffer and are left alone, so a cashier can still type into the
  * search box without every keystroke being swallowed.
  *
@@ -106,6 +132,7 @@ export function useBarcodeScanner({
   const frameRef = useRef<number | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [pending, setPending] = useState('');
   const cameraSupported = getDetectorCtor() !== null;
 
   // Keep the latest callback without re-registering the listener on every
@@ -122,11 +149,37 @@ export function useBarcodeScanner({
 
     let buffer = '';
     let lastKeyAt = 0;
+    let idle: ReturnType<typeof setTimeout> | null = null;
+
+    const cancelIdle = () => {
+      if (idle !== null) {
+        clearTimeout(idle);
+        idle = null;
+      }
+    };
+
+    const reset = () => {
+      cancelIdle();
+      buffer = '';
+      setPending('');
+    };
+
+    const flush = () => {
+      cancelIdle();
+      const code = buffer;
+      buffer = '';
+      setPending('');
+      if (code.length >= MIN_SCAN_LENGTH) onScanRef.current(code);
+    };
 
     const handler = (event: KeyboardEvent) => {
-      // A scanner never holds a modifier. Skipping these leaves Ctrl+C,
-      // Cmd+V and every real shortcut working normally.
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      // A scanner never holds a modifier — except that Windows reports AltGr as
+      // Ctrl+Alt, so a scanner emitting a character that needs AltGr on the
+      // active layout arrives with both set and must not be thrown away. That
+      // is not a corner case on the layouts this till ships for. Skipping the
+      // rest leaves Ctrl+C, Cmd+V and every real shortcut working normally.
+      const altGr = event.ctrlKey && event.altKey;
+      if ((event.ctrlKey || event.metaKey || event.altKey) && !altGr) return;
 
       // A dialog owns the keyboard while it is open.
       //
@@ -149,30 +202,44 @@ export function useBarcodeScanner({
 
       if (event.key === 'Enter' || event.key === 'Tab') {
         if (buffer.length >= MIN_SCAN_LENGTH) {
-          const code = buffer;
-          buffer = '';
           // Stop the Enter from also submitting whatever form has focus —
           // the scan is the action, and a double-submit at a till means a
           // double sale.
           event.preventDefault();
-          onScanRef.current(code);
+          flush();
           return;
         }
-        buffer = '';
+        reset();
         return;
       }
 
       // Printable single characters only: ignore Shift, arrows, F-keys.
       if (event.key.length !== 1) return;
 
+      // A held-down key repeats fast enough to be indistinguishable from a
+      // scanner, and the idle flush below would post the result as a barcode.
+      // Nothing else in the burst tells the two apart.
+      if (event.repeat) {
+        reset();
+        return;
+      }
+
       // Too slow to be a scanner — this is a person typing. Start over so
       // their keystrokes never accumulate into a phantom scan.
       if (gap > gapMs) buffer = '';
       buffer += event.key;
+      setPending(buffer);
+
+      cancelIdle();
+      idle = setTimeout(flush, IDLE_FLUSH_MS);
     };
 
     document.addEventListener('keydown', handler, true);
-    return () => document.removeEventListener('keydown', handler, true);
+    return () => {
+      cancelIdle();
+      setPending('');
+      document.removeEventListener('keydown', handler, true);
+    };
   }, [disabled, gapMs]);
 
   // --- Camera ---
@@ -256,6 +323,7 @@ export function useBarcodeScanner({
     cameraActive,
     cameraSupported,
     cameraError,
+    pending,
     startCamera,
     stopCamera,
     submitManual,

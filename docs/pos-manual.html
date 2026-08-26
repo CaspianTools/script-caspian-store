@@ -665,7 +665,7 @@ const MANUAL = {
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here.",
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade."
       ],
-      "version": "v1.4.0"
+      "version": "v1.5.0"
     },
     "parts": [
       {
@@ -747,7 +747,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "USB or Bluetooth barcode scanner",
-                "what": "Works with no setup, no driver, no pairing step and no permission box. Almost every shop scanner sold behaves like a very fast keyboard: it types the number and presses Enter. That is exactly what the register listens for."
+                "what": "Works with no setup, no driver, no pairing step and no permission box. Almost every shop scanner sold behaves like a very fast keyboard: it types the number and presses Enter. That is exactly what the register listens for. Since v1.5.0 a scanner that sends no Enter is accepted too, on the pause after the last character. If a scanner does nothing at all, see \"When you scan and nothing happens\"."
               },
               {
                 "name": "The device camera",
@@ -770,6 +770,49 @@ const MANUAL = {
               "Typing the code by hand always works, on every browser and every device. It is the fallback for a scuffed label and it never fails for a technical reason.",
               "A scan has to be at least four characters long or it is ignored as a stray keypress. That rule applies only to scanning. A code you type into the box and send with the button is accepted at any length.",
               "Two tills can scan the same item at the same moment without any conflict. Stock is worked out on the server, one sale at a time."
+            ]
+          },
+          {
+            "id": "when-you-scan-and-nothing-happens",
+            "title": "When you scan and nothing happens",
+            "audience": "owner",
+            "route": "/pos/settings",
+            "summary": "You have plugged a scanner in, put a barcode on a product, and scanning does nothing at all - no number on screen, no message, no line on the sale. Four different faults look exactly like that, and the register can tell you which one you have. Open Settings, pick Scanner, press \"Test scanner\" and scan anything.",
+            "steps": [
+              "From the register, press Settings in the menu down the left, then Scanner.",
+              "Press \"Test scanner\". The page says it is waiting.",
+              "Scan any barcode. It does not have to be one of yours.",
+              "Read the three boxes it fills in, and the messages underneath them."
+            ],
+            "fields": [
+              {
+                "name": "\"Nothing reached this till\"",
+                "what": "Not one key press arrived, so the fault is between the scanner and the computer rather than in the register. Open a text editor and scan into that: if nothing appears there either, the scanner is not in keyboard mode, is not paired, or is not powered. Scanner manuals carry a setup barcode that puts them into keyboard mode - it may be called HID or keyboard wedge."
+              },
+              {
+                "name": "Code read",
+                "what": "What actually arrived, and how many characters it was. Anything shorter than four characters is ignored on purpose, so that a stray key press can never become a sale."
+              },
+              {
+                "name": "Slowest gap",
+                "what": "The longest pause between two characters, in milliseconds, set against the \"Scanner speed\" setting. A scanner slower than that setting has its codes chopped up, and short ones disappear altogether. When it is too slow the page offers a button that writes the right number for you."
+              },
+              {
+                "name": "Ending",
+                "what": "Enter, Tab or None. Most scanners press Enter after the number, which tells the register the code has finished. One that sends nothing still works - the register takes the code after a short pause instead - but it is slower, and a long code can be split in two. Most scanner manuals have a setup barcode that switches the Enter on, and it is worth doing."
+              },
+              {
+                "name": "The catalogue line",
+                "what": "The last message says whether that exact code is on one of your products. \"Nothing in your catalogue has this code\" means the scanner is fine and the product is not: the number has probably gone into the product's Code box rather than its Barcode box."
+              }
+            ],
+            "notes": [
+              "The test takes the keyboard over while it waits, so nothing else on the page can be typed into until it has read something or twenty seconds have passed. Press Stop to end it early.",
+              "It only reads. It adds nothing to a sale and changes nothing in your catalogue, so it is safe to run while the shop is trading.",
+              "A scanner that holds down Ctrl, Alt or AltGr while it types is reported as well. Those scans do get through, but a scanner set to plain keyboard output is the safer setting.",
+              "If the test says the scanner is fine and the till still does nothing, check which screen you are on. The register listens for a scanner on the Register screen and on Receive stock. The Store, Sales, People and Settings screens do not, so a scan there goes nowhere.",
+              "A screen asking you to name this counter, or to count the drawer, is standing in front of the register rather than on top of it. The sale screen underneath is not open yet, and a scan does nothing until you have answered it.",
+              "None of this covers camera scanning, which fails in its own way - see \"Hardware that works, and hardware that does not\"."
             ]
           },
           {
@@ -1018,7 +1061,7 @@ const MANUAL = {
               "Pick a section from the index down the left of the page. On a till that runs on its own only that section is shown, and the web address changes with it - so a reload, or a bookmark, comes back to the same place.",
               "Pick your language under Language. It changes straight away; there is no Save for this one.",
               "Under \"This till\", give the machine a name such as Front counter. This name is printed on your receipts. Press Save at the foot of that section.",
-              "Under Scanner, if scans arrive broken in half raise \"Scanner speed\"; if your own typing is being mistaken for a scan, lower it. The normal value is 40. Press Save at the foot of that section."
+              "Under Scanner, press \"Test scanner\" and scan any barcode. It reports what reached this till, and offers the right \"Scanner speed\" when the saved one is wrong. The normal value is 40, and the Save button at the foot of that section is for changing it by hand."
             ],
             "fields": [
               {
@@ -1051,11 +1094,15 @@ const MANUAL = {
               },
               {
                 "name": "Scanner speed",
-                "what": "Under Scanner. A number between 10 and 300: the largest gap in milliseconds between two key presses that still counts as one scan rather than typing. Normal value 40."
+                "what": "Under Scanner. A number between 10 and 300: the largest gap in milliseconds between two key presses that still counts as one scan rather than typing. Normal value 40. Do not guess at it - the test below measures your own scanner and offers the number."
               },
               {
                 "name": "Receipt printer",
                 "what": "Under Scanner. A menu with one entry, \"Browser print dialog\", and it is greyed out. It is the only way receipts print in this version."
+              },
+              {
+                "name": "Test the scanner",
+                "what": "Under Scanner, below the Save button. Press \"Test scanner\" and scan anything: the page then reports the code it read, the slowest gap between two characters against the setting above, whether the scanner pressed Enter at the end, and whether that code is on a product. Where the answer is a number it offers a button that writes it for you. See \"When you scan and nothing happens\"."
               },
               {
                 "name": "Your account",
@@ -1074,6 +1121,7 @@ const MANUAL = {
               "The language you pick here is remembered by this browser, and it also changes the language of the admin panel and the shop pages when you open them in this same browser. It does not change anything for your customers or for other computers.",
               "If your site puts the language in the web address, an extra line appears under the menu saying your choice is stored but will not change what you see. That is the site’s own routing winning, and it is not a fault.",
               "A new scanner speed is picked up when you go back to the Register screen. Values outside 10 to 300 are pulled back into range, and clearing the box puts it back to 40.",
+              "The scanner test reads and reports; it never adds anything to a sale and never changes your catalogue, so it is safe to run in the middle of a trading day. While it waits it does take the keyboard over, so nothing else on the page can be typed into until it has read something or twenty seconds have passed - press Stop to end it early.",
               "The device id is created by this browser the first time the register is opened. Clearing your browser data or using a different browser or a private window creates a new one, and the till is then treated as a different register.",
               "The register name is printed on receipts. It appears in a row labelled \"Register\", just under the \"Served by\" line. While the box is empty - which is how every till starts - that row is left off the receipt altogether. So fill it in if you want to be able to tell which till took a sale.",
               "The name is used in those two places only: this page and the printed receipt. The sale saved in your records carries the device id, not the name. That means there is no list of your sales grouped by till name, and renaming a till does not change anything already printed.",
@@ -3256,7 +3304,7 @@ const MANUAL = {
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir.",
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır."
       ],
-      "version": "v1.4.0"
+      "version": "v1.5.0"
     },
     "parts": [
       {
@@ -3337,7 +3385,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "USB və ya Bluetooth barkod skaneri",
-                "what": "Heç bir quraşdırma, sürücü, qoşulma addımı və icazə pəncərəsi olmadan işləyir. Satılan demək olar ki, bütün mağaza skanerləri çox sürətli klaviatura kimi davranır: nömrəni yazır və Enter basır. Kassa məhz bunu dinləyir."
+                "what": "Heç bir quraşdırma, sürücü, qoşulma addımı və icazə pəncərəsi olmadan işləyir. Satılan demək olar ki, bütün mağaza skanerləri çox sürətli klaviatura kimi davranır: nömrəni yazır və Enter basır. Kassa məhz bunu dinləyir. v1.5.0-dan Enter göndərməyən skaner də qəbul olunur - son simvoldan sonrakı fasilədə. Skaner ümumiyyətlə heç nə etmirsə, \"When you scan and nothing happens\" bölməsinə baxın."
               },
               {
                 "name": "Cihaz kamerası",
@@ -4351,7 +4399,7 @@ const MANUAL = {
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь.",
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат."
       ],
-      "version": "v1.4.0"
+      "version": "v1.5.0"
     },
     "parts": [
       {
@@ -4432,7 +4480,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "USB- или Bluetooth-сканер штрихкодов",
-                "what": "Работает без установки, без драйвера, без сопряжения и без запроса разрешений. Почти все продаваемые магазинные сканеры ведут себя как очень быстрая клавиатура: набирают номер и нажимают Enter. Именно это касса и слушает."
+                "what": "Работает без установки, без драйвера, без сопряжения и без запроса разрешений. Почти все продаваемые магазинные сканеры ведут себя как очень быстрая клавиатура: набирают номер и нажимают Enter. Именно это касса и слушает. С версии 1.5.0 принимается и сканер, который Enter не отправляет, - по паузе после последнего символа. Если сканер не делает вообще ничего, см. раздел \"When you scan and nothing happens\"."
               },
               {
                 "name": "Камера устройства",
@@ -5446,7 +5494,7 @@ const MANUAL = {
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür.",
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır."
       ],
-      "version": "v1.4.0"
+      "version": "v1.5.0"
     },
     "parts": [
       {
@@ -5527,7 +5575,7 @@ const MANUAL = {
             "fields": [
               {
                 "name": "USB veya Bluetooth barkod tarayıcı",
-                "what": "Kurulum, sürücü, eşleştirme ve izin penceresi olmadan çalışır. Satılan neredeyse bütün mağaza tarayıcıları çok hızlı bir klavye gibi davranır: numarayı yazar ve Enter'a basar. Kasanın dinlediği tam olarak budur."
+                "what": "Kurulum, sürücü, eşleştirme ve izin penceresi olmadan çalışır. Satılan neredeyse bütün mağaza tarayıcıları çok hızlı bir klavye gibi davranır: numarayı yazar ve Enter'a basar. Kasanın dinlediği tam olarak budur. 1.5.0 sürümünden beri Enter göndermeyen bir tarayıcı da kabul edilir - son karakterden sonraki duraklamayla. Tarayıcı hiçbir şey yapmıyorsa \"When you scan and nothing happens\" bölümüne bakın."
               },
               {
                 "name": "Cihaz kamerası",

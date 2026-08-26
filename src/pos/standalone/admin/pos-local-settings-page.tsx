@@ -28,6 +28,7 @@ import {
   writeScannerGapMs,
   type PosThemeMode,
 } from '../../pos-preferences';
+import { PosScannerTest } from '../../hardware/pos-scanner-test';
 import { PosStorageHealthCard } from '../../pos-storage-health-card';
 import { usePosChrome } from '../../theme/pos-chrome-context';
 import { CASPIAN_POS_VERSION } from '../pos-version';
@@ -372,6 +373,8 @@ export function PosLocalSettingsPage({ className }: { className?: string }) {
                   {t('pos.settings.save')}
                 </button>
               </div>
+
+              <PosScannerTest onGapChange={setGapMs} />
             </section>
           ) : null}
 

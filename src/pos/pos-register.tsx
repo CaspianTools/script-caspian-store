@@ -494,6 +494,18 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
           </button>
         </form>
 
+        {/*
+          Nothing is focused on this screen at rest, so a scanner's characters
+          land nowhere a cashier can see them. That made a scanner sending no
+          Enter, and one typing too slowly to be recognised, look exactly like a
+          scanner that was not plugged in. Now the burst shows as it arrives.
+        */}
+        {scanner.pending ? (
+          <div className="cpos-note cpos-note--brand" role="status">
+            {t('pos.scan.reading', { code: scanner.pending })}
+          </div>
+        ) : null}
+
         <div className="cpos-row" style={{ alignItems: 'center' }}>
           {scanner.cameraSupported ? (
             <button

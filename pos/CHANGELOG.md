@@ -23,6 +23,63 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.5.0 — Scanners that used to do nothing, and a way to see why
+
+A shop plugged a scanner in, put a barcode on a product, scanned it — and the
+till did nothing at all. No number on screen, no message, no line on the sale.
+
+There were four separate reasons that all looked like that, and the till gave a
+shop no way to tell them apart. Three of them are now fixed outright, and the
+fourth — a scanner that is not talking to the computer at all, which is not the
+till's fault and never was — now says so on screen instead of looking like a dead
+register.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers. No
+data moves and no setting changes.
+
+If your scanner *still* does nothing after the update, that is what the new test
+under **Settings → Scanner** is for: press **Test scanner**, scan anything, and it
+will name the fault and — where the answer is a number — offer a button that
+writes it for you.
+
+### Fixed
+
+- **A scanner that sends no Enter now works.** Plenty of scanners leave the
+  factory with that suffix switched off. The till only ever finished a scan on
+  Enter or Tab, so those filled its buffer with nothing to empty it and the
+  screen never moved. A code now completes on the short pause after the last
+  character as well. A scanner set to send Enter is still quicker and cannot be
+  split in two, so the manual says to switch it on where you can.
+- **A scanner slower than the speed setting no longer loses whole scans.** That
+  part is unchanged — a slow scanner still needs the right number — but the
+  number is now measured rather than guessed at, and the till offers it.
+- **Scanners that hold AltGr are no longer thrown away.** Windows reports AltGr
+  as Ctrl+Alt, and the till dropped any keystroke with a modifier held. On an
+  Azerbaijani, Turkish or Russian keyboard layout that silently lost the whole
+  scan.
+- **A held-down key can no longer be read as a barcode.** Key repeat arrives fast
+  enough to look exactly like a scanner, so it now clears the buffer instead.
+
+### Added
+
+- **Test the scanner**, under **Settings → Scanner**. Press it, scan anything, and
+  it reports what actually reached this till: the code, its length, the slowest
+  gap between two characters against your speed setting, whether the scanner
+  pressed Enter at the end, whether it held any modifier keys, and whether that
+  code is on one of your products. When the speed setting is wrong it offers a
+  button that sets it. When nothing arrived at all it says so plainly, and points
+  at the scanner rather than at the till.
+- **The register shows a scan as it arrives.** Nothing is focused on the sale
+  screen at rest, so a scanner's characters used to land nowhere you could see
+  them. A line now reads *Reading… 590123* while the code comes in.
+
+### Changed
+
+- The **Scanner speed** help text no longer suggests guessing. It points at the
+  test.
+
 ## v1.4.0 — One look, one way to add things, and a page behind every record
 
 The till has looked like two products since it was built. The screens a cashier

@@ -1611,6 +1611,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.scan.matchedById': 'Matched by product id',
   'pos.scan.multipleMatches': '{count, plural, one {# product matches} other {# products match}}',
   'pos.scan.chooseMatch': 'Which one?',
+  'pos.scan.reading': 'Reading… {code}',
   'pos.ticket.title': 'Current sale',
   'pos.ticket.empty': 'Scan an item to start a sale.',
   'pos.ticket.item': 'Item',
@@ -1707,7 +1708,42 @@ export const DEFAULT_MESSAGES: MessageDict = {
     'Covers the screen until the password is typed again. It does not sign anyone out: the open sale, the cashier and the drawer count all survive it. Off unless you pick a time here, and it applies to this computer only.',
   'pos.settings.scannerGap': 'Scanner speed',
   'pos.settings.scannerGapHelp':
-    'Maximum milliseconds between keystrokes still treated as a scan. Raise it if scans arrive split; lower it if fast typing is mistaken for a scan.',
+    'Maximum milliseconds between keystrokes still treated as a scan. Raise it if scans arrive split; lower it if fast typing is mistaken for a scan. Run the test below rather than guessing at it.',
+  'pos.scannerTest.title': 'Test the scanner',
+  'pos.scannerTest.help':
+    'Press the button, then scan any barcode. This reports exactly what reached this till, which is the only way to tell a badly set up scanner from one that is not talking to this computer at all.',
+  'pos.scannerTest.start': 'Test scanner',
+  'pos.scannerTest.again': 'Test again',
+  'pos.scannerTest.stop': 'Stop',
+  'pos.scannerTest.listening': 'Scan something now. Waiting…',
+  'pos.scannerTest.silentTitle': 'Nothing reached this till',
+  'pos.scannerTest.silentHelp':
+    'Not one keystroke arrived. The till is fine — the scanner is not typing into this computer. Open a text editor and scan into it: if nothing appears there either, the scanner is not in keyboard (HID) mode, is not paired, or is not powered. Its manual will have a setup barcode for keyboard mode.',
+  'pos.scannerTest.code': 'Code read',
+  'pos.scannerTest.characters': '{count, plural, one {# character} other {# characters}}',
+  'pos.scannerTest.speed': 'Slowest gap',
+  'pos.scannerTest.ms': '{ms} ms',
+  'pos.scannerTest.speedHint': 'The setting is {gap} ms',
+  'pos.scannerTest.ending': 'Ending',
+  'pos.scannerTest.endingEnter': 'Enter',
+  'pos.scannerTest.endingTab': 'Tab',
+  'pos.scannerTest.endingNone': 'None',
+  'pos.scannerTest.endingGoodHint': 'The till knows the code has finished',
+  'pos.scannerTest.endingNoneHint': 'Taken after a short pause instead',
+  'pos.scannerTest.endingNoneHelp':
+    'This scanner sends nothing at the end of a code. The till accepts that — it takes the code after a short pause — but a scanner set to send Enter is quicker and cannot be split in two. Most scanners have a setup barcode in their manual to switch the Enter suffix on.',
+  'pos.scannerTest.tooSlow':
+    'This scanner types slower than the till expects: {measured} ms between characters, against a setting of {gap} ms. Scans arrive broken in half, or not at all.',
+  'pos.scannerTest.useGap': 'Set scanner speed to {ms} ms',
+  'pos.scannerTest.gapSaved': 'Scanner speed set to {ms} ms.',
+  'pos.scannerTest.tooShort':
+    'The till ignores anything shorter than {min} characters, so that stray keystrokes are never read as a sale. Use a longer code.',
+  'pos.scannerTest.modifiers':
+    'This scanner holds down {keys} while it types. Characters that need it still get through, but a scanner set to plain keyboard output is safer.',
+  'pos.scannerTest.matched': 'This code is “{name}” in your catalogue.',
+  'pos.scannerTest.noMatch':
+    'The scanner works, but nothing in your catalogue has this code. Check the number went into the product’s Barcode box rather than its Code box.',
+  'pos.scannerTest.allGood': 'This scanner works with the till exactly as it is set up now.',
   'pos.settings.save': 'Save',
   'pos.settings.saved': 'Settings saved',
   'pos.settings.appVersion': 'Register version {version}',

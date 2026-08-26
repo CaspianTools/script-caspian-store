@@ -197,6 +197,7 @@ const az: MessageDict = {
   'pos.scan.matchedById': 'Məhsul identifikatoru üzrə tapıldı',
   'pos.scan.multipleMatches': '{count, plural, one {# məhsul uyğun gəlir} other {# məhsul uyğun gəlir}}',
   'pos.scan.chooseMatch': 'Hansı?',
+  'pos.scan.reading': 'Oxunur… {code}',
 
   // POS — ticket
   'pos.ticket.title': 'Cari satış',
@@ -296,7 +297,42 @@ const az: MessageDict = {
   'pos.settings.printerBrowserHelp': 'Kompüterinizdə artıq quraşdırılmış istənilən printerlə işləyir.',
   'pos.settings.scannerGap': 'Skaner sürəti',
   'pos.settings.scannerGapHelp':
-    'Skan sayılan düymələr arasındakı maksimum millisaniyə. Skanlar bölünürsə artırın; sürətli yazı skan kimi qəbul edilirsə azaldın.',
+    'Skan sayılan düymələr arasındakı maksimum millisaniyə. Skanlar bölünürsə artırın; sürətli yazı skan kimi qəbul edilirsə azaldın. Təxmin etmək əvəzinə aşağıdakı yoxlamanı işə salın.',
+  'pos.scannerTest.title': 'Skaneri yoxlayın',
+  'pos.scannerTest.help':
+    'Düyməyə basın, sonra istənilən barkodu skan edin. Bu, kassaya tam olaraq nəyin çatdığını göstərir — səhv qurulmuş skaneri bu kompüterlə ümumiyyətlə danışmayan skanerdən ayırmağın yeganə yolu budur.',
+  'pos.scannerTest.start': 'Skaneri yoxla',
+  'pos.scannerTest.again': 'Yenidən yoxla',
+  'pos.scannerTest.stop': 'Dayandır',
+  'pos.scannerTest.listening': 'İndi nəyisə skan edin. Gözlənilir…',
+  'pos.scannerTest.silentTitle': 'Kassaya heç nə çatmadı',
+  'pos.scannerTest.silentHelp':
+    'Bir dənə də düymə gəlmədi. Kassa qaydasındadır — skaner bu kompüterə yazmır. Mətn redaktoru açın və oraya skan edin: orada da heç nə görünmürsə, skaner klaviatura (HID) rejimində deyil, qoşulmayıb və ya işləmir. Təlimatında klaviatura rejimi üçün quraşdırma barkodu olacaq.',
+  'pos.scannerTest.code': 'Oxunan kod',
+  'pos.scannerTest.characters': '{count, plural, one {# simvol} other {# simvol}}',
+  'pos.scannerTest.speed': 'Ən yavaş fasilə',
+  'pos.scannerTest.ms': '{ms} ms',
+  'pos.scannerTest.speedHint': 'Tənzimləmə {gap} ms-dir',
+  'pos.scannerTest.ending': 'Sonluq',
+  'pos.scannerTest.endingEnter': 'Enter',
+  'pos.scannerTest.endingTab': 'Tab',
+  'pos.scannerTest.endingNone': 'Yoxdur',
+  'pos.scannerTest.endingGoodHint': 'Kassa kodun bitdiyini bilir',
+  'pos.scannerTest.endingNoneHint': 'Əvəzinə qısa fasilədən sonra götürülür',
+  'pos.scannerTest.endingNoneHelp':
+    'Bu skaner kodun sonunda heç nə göndərmir. Kassa bunu qəbul edir — kodu qısa fasilədən sonra götürür — amma Enter göndərən skaner daha sürətlidir və kodu iki yerə bölə bilmir. Əksər skanerlərin təlimatında Enter sonluğunu qoşmaq üçün quraşdırma barkodu var.',
+  'pos.scannerTest.tooSlow':
+    'Bu skaner kassanın gözlədiyindən yavaş yazır: simvollar arasında {measured} ms, tənzimləmə isə {gap} ms. Skanlar yarıya bölünür və ya ümumiyyətlə gəlmir.',
+  'pos.scannerTest.useGap': 'Skaner sürətini {ms} ms et',
+  'pos.scannerTest.gapSaved': 'Skaner sürəti {ms} ms olaraq təyin edildi.',
+  'pos.scannerTest.tooShort':
+    'Kassa {min} simvoldan qısa olan hər şeyi nəzərə almır ki, təsadüfi düymələr satış kimi oxunmasın. Daha uzun kod işlədin.',
+  'pos.scannerTest.modifiers':
+    'Bu skaner yazarkən {keys} düyməsini basılı saxlayır. Ona ehtiyacı olan simvollar yenə keçir, amma sadə klaviatura rejiminə qurulmuş skaner daha etibarlıdır.',
+  'pos.scannerTest.matched': 'Bu kod kataloqunuzda «{name}» məhsuludur.',
+  'pos.scannerTest.noMatch':
+    'Skaner işləyir, amma kataloqunuzda bu koda uyğun heç nə yoxdur. Nömrənin məhsulun Kod xanasına deyil, Barkod xanasına yazıldığını yoxlayın.',
+  'pos.scannerTest.allGood': 'Bu skaner kassa ilə indiki tənzimləmələrdə tam işləyir.',
   'pos.settings.save': 'Yadda saxla',
   'pos.settings.saved': 'Tənzimləmələr yadda saxlanıldı',
   'pos.settings.appVersion': 'Kassa versiyası {version}',
