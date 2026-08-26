@@ -14,8 +14,8 @@ interface HelpSection {
 
 /**
  * In-admin Help & documentation: an operator handbook for running the store —
- * catalog, orders, plugins, settings, roles — plus the in-person register and
- * Instagram channel integrations. A sticky table-of-contents sidebar (scroll-spy
+ * catalog, orders, plugins, settings, roles — plus the Instagram channel
+ * integration. A sticky table-of-contents sidebar (scroll-spy
  * + click-to-jump) and a search box make it navigable. Content is read-only prose
  * (hard-coded English, like the other admin pages) and brand-neutral so it reads
  * correctly across rebranded forks. Section text is read from the DOM for search,
@@ -171,7 +171,7 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <ul>
         <li>
-          Accounts have a <b>role</b>: <b>admin</b> (full access), <b>staff</b> (POS / inventory, no admin
+          Accounts have a <b>role</b>: <b>admin</b> (full access), <b>staff</b> (inventory, no admin
           settings), or <b>customer</b>.
         </li>
         <li>
@@ -179,51 +179,7 @@ const HELP_SECTIONS: HelpSection[] = [
           auto-promoted to admin. Otherwise grant it from the command line (the <code>grant-admin</code>{' '}
           script) or via the setup wizard.
         </li>
-        <li>
-          <b>Cashiers</b> need the <b>staff</b> role (Users → set the role menu to Staff). Staff can ring up
-          sales at <code>/pos</code> and read the catalog, but can’t change store settings.
-        </li>
       </ul>
-    ),
-  },
-  {
-    id: 'pos',
-    title: 'Point of sale (in-person register)',
-    body: (
-      <>
-        <p>
-          The <b>register</b> is built in. It runs in this same app at <code>/pos</code> — there is
-          nothing extra to install. Turn it on under <b>Sales → Point of sale</b>.
-        </p>
-        <ol>
-          <li>
-            Give each cashier the <b>staff</b> role (Users → pick <b>Staff</b> from the role menu).
-            Staff can ring up sales and read the catalog, but cannot reach the admin panel or change
-            settings.
-          </li>
-          <li>
-            Put a <b>barcode</b> on your products (Products → edit → Barcode). Almost any USB or
-            Bluetooth scanner will fill that field in for you — click into it and scan.
-          </li>
-          <li>
-            Open <code>/pos</code> and scan. A hardware scanner needs no setup at all; you can also use
-            the camera (Chrome and Edge only), or type a barcode or SKU by hand.
-          </li>
-          <li>
-            Take cash, card, or a split of both. Change is worked out for you, and the receipt prints
-            through your normal printer dialog.
-          </li>
-        </ol>
-        <p>
-          Each register remembers its own name, language, and scanner settings at{' '}
-          <code>/pos/settings</code> — so one shop can run an English till at the counter and another
-          in a different language, without touching the website.
-        </p>
-        <p>
-          Prices, discounts, and stock are worked out on the server rather than by the till, so a sale
-          records what a product actually costs even if someone tampers with the browser.
-        </p>
-      </>
     ),
   },
   {
@@ -383,7 +339,7 @@ export function AdminHelpPage({ className }: AdminHelpPageProps): ReactNode {
       <style>{HELP_STYLES}</style>
       <div className="cs-help__head">
         <h1>Help &amp; documentation</h1>
-        <p>Run the store, open the in-person register, and go live with the Instagram channel.</p>
+        <p>Run the store and go live with the Instagram channel.</p>
       </div>
 
       <div className="cs-help__layout">

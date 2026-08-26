@@ -664,7 +664,7 @@ const MANUAL = {
         "Everything you need to run your shop, written for the person running it rather than the person who built it. Every screen described here was checked against the software itself.",
         "The list on the left is grouped. Click a group to open it, and the group you are reading opens itself as you go. The search box at the top narrows the whole manual as you type and marks what matched. Steps are the part you follow; \"What you fill in\" is the reference; \"Worth knowing\" is where the traps and the limits are."
       ],
-      "version": "v13.6.0"
+      "version": "v14.0.0"
     },
     "parts": [
       {
@@ -1905,11 +1905,10 @@ const MANUAL = {
             "id": "selling-in-person",
             "title": "Selling in person: the register has its own manual",
             "audience": "owner",
-            "route": "/admin/pos",
-            "summary": "This shop can also sell at a counter, using a barcode register at the address /pos. That whole side of the product - installing it, the hardware, giving cashiers access, ringing up a sale, receipts, licensing and winding a till down - is covered in a separate manual so that a cashier can be handed one document and nothing else.",
+            "summary": "This shop can also sell at a counter, using a barcode register. That whole side of the product - installing it, the hardware, giving cashiers access, ringing up a sale, receipts, licensing and winding a till down - is covered in a separate manual so that a cashier can be handed one document and nothing else.",
             "steps": [
               "Open pos-manual.html, in the same folder as this file.",
-              "To switch the register on, open Sales, then Point of sale in the admin panel."
+              "There is nothing to switch on here. The register used to be a page of this website, turned on under Sales, then Point of sale; store version 14.0.0 removed that page and the shop software no longer serves a register at all. The register manual explains how a till is set up now."
             ],
             "notes": [
               "The register manual is the file pos-manual.html, next to this one. There is a link to it in the bar at the top of this page.",
@@ -1929,19 +1928,19 @@ const MANUAL = {
             "id": "roles-and-what-each-can-reach",
             "title": "The three account roles",
             "audience": "owner",
-            "summary": "Every account on your site holds exactly one of three roles: Customer, Staff, or Admin. Customer is what everyone gets when they sign up. Staff is the till role, made for cashiers. Admin is you, the owner, with the run of the admin panel. The role decides which screens the person can open, and nothing else in the site changes it.",
+            "summary": "Every account on your site holds exactly one of three roles: Customer, Staff, or Admin. Customer is what everyone gets when they sign up. Staff is the counter role, made for cashiers. Admin is you, the owner, with the run of the admin panel. The role decides which screens the person can open, and nothing else in the site changes it.",
             "steps": [
-              "Customer is the starting role. A customer can shop, keep a cart and wishlist, save delivery addresses, and see their own orders. They cannot open any page under /admin, and they cannot open the till at /pos.",
-              "Staff is the cashier role. A staff account can open the till at /pos, ring up sales, and see the products it needs to do that. It cannot open the admin panel at all - every /admin page shows an Access denied screen instead.",
-              "Admin can open everything: the whole admin panel, all settings, and the till as well. An owner working the counter does not need a second account.",
+              "Customer is the starting role. A customer can shop, keep a cart and wishlist, save delivery addresses, and see their own orders. They cannot open any page under /admin.",
+              "Staff is the cashier role. A staff account can see the products a person working a counter needs, and nothing else: it cannot open the admin panel at all, and every /admin page shows an Access denied screen instead.",
+              "Admin can open everything: the whole admin panel and all settings.",
               "The very first admin is made by the person who installs the site. On the Access denied screen there is a Claim admin role button. It only works while the store has no admin at all. Once one admin exists, the button refuses, and further admins are made from the Users screen.",
               "If you lose all access, the same Access denied screen offers two fallbacks it prints on the page: the grant-admin command line tool, and editing the person's record directly in the Firebase console."
             ],
             "notes": [
-              "Staff accounts only get into the till if the point-of-sale feature is switched on for the store. If it is off, the till shows \"Register is switched off\" to everyone, staff included.",
-              "A cashier who is refused at the till is shown their own account id with a Copy id button, so they can send it to you and you can find them on the Users screen.",
+              "These three roles no longer open a till. Until store version 13.6.0 a Staff account could work a register at the address /pos on this site; version 14.0.0 removed it. The register is a separate program now, with its own sign-in and its own roles, and it does not read these.",
+              "Anyone refused at an admin page is shown their own account id with a Copy id button, so they can send it to you and you can find them on the Users screen.",
               "Changing someone's role does not always take effect on their device instantly. Their sign-in token can keep the old role for up to about an hour. After you demote someone, ask them to sign out and sign back in if you need it to bite immediately.",
-              "There is no fourth role and no way to invent one. There is no per-screen permission editor - Staff either reaches the till or it does not, and nothing about the admin panel can be opened up to Staff.",
+              "There is no fourth role and no way to invent one, and there is no per-screen permission editor: nothing about the admin panel can be opened up to Staff. The separate register program has a role editor of its own, which is one of the things that makes it separate.",
               "The register itself has its own manual. Open pos-manual.html, in the same folder as this file."
             ]
           },
@@ -3619,7 +3618,7 @@ const MANUAL = {
   },
   "az": {
     "intro": {
-      "version": "v13.6.0"
+      "version": "v14.0.0"
     },
     "parts": [
       {
@@ -4815,10 +4814,10 @@ const MANUAL = {
           {
             "id": "selling-in-person",
             "title": "Şəxsən satış: kassanın öz təlimatı var",
-            "summary": "Bu mağaza həm də piştaxtada, /pos ünvanındakı barkod kassası ilə satış edə bilər. Məhsulun həmin tərəfi - quraşdırılması, avadanlıq, kassirlərə giriş verilməsi, satışın rəsmiləşdirilməsi, qəbzlər, lisenziya və kassanın bağlanması - ayrıca təlimatda toplanıb ki, kassirə yalnız bir sənəd vermək mümkün olsun.",
+            "summary": "Bu mağaza həm də piştaxtada barkod kassası ilə satış edə bilər. Məhsulun həmin tərəfi - quraşdırılması, avadanlıq, kassirlərə giriş verilməsi, satışın rəsmiləşdirilməsi, qəbzlər, lisenziya və kassanın bağlanması - ayrıca təlimatda toplanıb ki, kassirə yalnız bir sənəd vermək mümkün olsun.",
             "steps": [
               "Bu faylla eyni qovluqdakı pos-manual.html sənədini açın.",
-              "Kassanı işə salmaq üçün idarə panelində Satış, sonra Kassa bölməsini açın."
+              "Burada işə salınacaq bir şey yoxdur. Kassa əvvəllər bu saytın bir səhifəsi idi və Satış, sonra Kassa bölməsindən qoşulurdu; mağaza proqramının 14.0.0 versiyası həmin səhifəni sildi və proqram artıq ümumiyyətlə kassa vermir. Kassanın indi necə qurulduğu kassa təlimatında yazılıb."
             ],
             "notes": [
               "Kassa təlimatı bu faylın yanındakı pos-manual.html sənədidir. Bu səhifənin yuxarı zolağında ona keçid var.",
@@ -4836,19 +4835,19 @@ const MANUAL = {
           {
             "id": "roles-and-what-each-can-reach",
             "title": "Hesabların üç rolu",
-            "summary": "Saytınızdakı hər hesabın mütləq üç roldan biri olur: Müştəri (Customer), İşçi (Staff) və ya Admin. Qeydiyyatdan keçən hər kəs Müştəri kimi başlayır. İşçi kassa rolu, yəni kassirlər üçündür. Admin isə sizsiniz — mağaza sahibi kimi idarə panelinin bütün bölmələrinə girişiniz var. Rol yalnız o adamın hansı ekranları aça biləcəyini müəyyən edir; saytda başqa heç nə bunu dəyişmir.",
+            "summary": "Saytınızdakı hər hesabın mütləq üç roldan biri olur: Müştəri (Customer), İşçi (Staff) və ya Admin. Qeydiyyatdan keçən hər kəs Müştəri kimi başlayır. İşçi piştaxta rolu, yəni kassirlər üçündür. Admin isə sizsiniz — mağaza sahibi kimi idarə panelinin bütün bölmələrinə girişiniz var. Rol yalnız o adamın hansı ekranları aça biləcəyini müəyyən edir; saytda başqa heç nə bunu dəyişmir.",
             "steps": [
-              "Müştəri başlanğıc roldur. Müştəri alış-veriş edə, səbət və arzu siyahısı saxlaya, çatdırılma ünvanlarını yadda saxlaya və öz sifarişlərinə baxa bilər. /admin altındakı heç bir səhifəni, /pos ünvanındakı kassanı da aça bilmir.",
-              "İşçi kassir rolu deməkdir. İşçi hesabı /pos ünvanındakı kassanı aça, satış keçirə və bunun üçün lazım olan məhsulları görə bilər. İdarə panelinə isə ümumiyyətlə girə bilmir — hər /admin səhifəsinin əvəzinə «Giriş qadağandır» (Access denied) ekranı çıxır.",
-              "Admin hər şeyi aça bilər: bütün idarə panelini, bütün tənzimləmələri, üstəlik kassanı da. Prilavkada özü dayanan sahibə ikinci hesab lazım deyil.",
+              "Müştəri başlanğıc roldur. Müştəri alış-veriş edə, səbət və arzu siyahısı saxlaya, çatdırılma ünvanlarını yadda saxlaya və öz sifarişlərinə baxa bilər. /admin altındakı heç bir səhifəni aça bilmir.",
+              "İşçi kassir rolu deməkdir. İşçi hesabı piştaxtada dayanan adama lazım olan məhsulları görür, başqa heç nəyi yox: idarə panelinə ümumiyyətlə girə bilmir və hər /admin səhifəsinin əvəzinə «Giriş qadağandır» (Access denied) ekranı çıxır.",
+              "Admin hər şeyi aça bilər: bütün idarə panelini və bütün tənzimləmələri.",
               "İlk admini saytı quraşdıran adam yaradır. «Giriş qadağandır» ekranında Admin rolunu götür (Claim admin role) düyməsi var. O, yalnız mağazada heç bir admin yoxdursa işləyir. Bir admin yarandıqdan sonra düymə imtina edir və sonrakı adminlər İstifadəçilər (Users) ekranından təyin olunur.",
               "Bütün girişi itirsəniz, elə həmin «Giriş qadağandır» ekranı iki çıxış yolunu səhifədə yazır: grant-admin komanda sətri aləti və şəxsin qeydini birbaşa Firebase konsolunda redaktə etmək."
             ],
             "notes": [
-              "İşçi hesabları kassaya yalnız mağazada kassa (point-of-sale) funksiyası aktiv olanda girə bilir. Söndürülübsə, kassa hər kəsə — işçilərə də — «Kassa söndürülüb» (Register is switched off) yazısını göstərir.",
-              "Kassada imtina edilən kassirə öz hesab identifikatoru və Identifikatoru kopyala (Copy id) düyməsi göstərilir; kassir onu sizə göndərir, siz də İstifadəçilər ekranında həmin adamı tapırsınız.",
+              "Bu üç rol artıq heç bir kassanı açmır. Mağaza proqramının 13.6.0 versiyasına qədər İşçi hesabı bu saytdakı /pos ünvanında kassada işləyə bilirdi; 14.0.0 versiyası onu sildi. Kassa indi ayrıca proqramdır: öz girişi və öz rolları var, bunları isə oxumur.",
+              "İdarə panelində imtina edilən adama öz hesab identifikatoru və Identifikatoru kopyala (Copy id) düyməsi göstərilir; o, bunu sizə göndərir, siz də İstifadəçilər ekranında həmin adamı tapırsınız.",
               "Rolu dəyişdirmək o adamın cihazında həmişə dərhal işə düşmür. Giriş tokeni köhnə rolu təxminən bir saatadək saxlaya bilər. Kiminsə rolunu aşağı salandan sonra dəyişikliyin dərhal qüvvəyə minməsi lazımdırsa, ondan hesabdan çıxıb yenidən daxil olmağı xahiş edin.",
-              "Dördüncü rol yoxdur və yaratmaq da mümkün deyil. Ekran-ekran icazə redaktoru da yoxdur — İşçi ya kassaya çıxır, ya çıxmır; idarə panelinin heç bir hissəsini İşçi üçün açmaq olmur.",
+              "Dördüncü rol yoxdur və yaratmaq da mümkün deyil. Ekran-ekran icazə redaktoru da yoxdur: idarə panelinin heç bir hissəsini İşçi üçün açmaq olmur. Ayrıca kassa proqramının isə öz rol redaktoru var — onu ayrı edən şeylərdən biri də budur.",
               "Kassanın özünün ayrıca təlimatı var. Bu faylla eyni qovluqdakı pos-manual.html sənədini açın."
             ]
           },
@@ -6459,7 +6458,7 @@ const MANUAL = {
   },
   "ru": {
     "intro": {
-      "version": "v13.6.0"
+      "version": "v14.0.0"
     },
     "parts": [
       {
@@ -7655,10 +7654,10 @@ const MANUAL = {
           {
             "id": "selling-in-person",
             "title": "Продажи за прилавком: у кассы есть отдельное руководство",
-            "summary": "Этот магазин может продавать и за прилавком, через кассу со сканером штрихкодов по адресу /pos. Вся эта часть продукта - установка, оборудование, доступ для кассиров, оформление продажи, чеки, лицензии и закрытие кассы - вынесена в отдельное руководство, чтобы кассиру можно было дать один документ и ничего больше.",
+            "summary": "Этот магазин может продавать и за прилавком, через кассу со сканером штрихкодов. Вся эта часть продукта - установка, оборудование, доступ для кассиров, оформление продажи, чеки, лицензии и закрытие кассы - вынесена в отдельное руководство, чтобы кассиру можно было дать один документ и ничего больше.",
             "steps": [
               "Откройте файл pos-manual.html в той же папке, что и этот файл.",
-              "Чтобы включить кассу, откройте в панели администратора Продажи, затем Касса."
+              "Здесь нечего включать. Раньше касса была страницей этого сайта и включалась в разделе Продажи, затем Касса; версия 14.0.0 программы магазина убрала эту страницу, и программа больше не отдаёт кассу вообще. Как касса настраивается теперь, написано в руководстве по кассе."
             ],
             "notes": [
               "Руководство по кассе - это файл pos-manual.html рядом с этим. Ссылка на него есть в верхней панели этой страницы.",
@@ -7676,19 +7675,19 @@ const MANUAL = {
           {
             "id": "roles-and-what-each-can-reach",
             "title": "Три роли учётных записей",
-            "summary": "У каждой учётной записи на сайте ровно одна из трёх ролей: Клиент (Customer), Сотрудник (Staff) или Администратор (Admin). Клиент — то, что получают все при регистрации. Сотрудник — кассовая роль, она сделана для кассиров. Администратор — это вы, владелец, у которого открыта вся админ-панель. Роль определяет, какие экраны человек может открыть, и больше ничто на сайте на это не влияет.",
+            "summary": "У каждой учётной записи на сайте ровно одна из трёх ролей: Клиент (Customer), Сотрудник (Staff) или Администратор (Admin). Клиент — то, что получают все при регистрации. Сотрудник — прилавочная роль, она сделана для кассиров. Администратор — это вы, владелец, у которого открыта вся админ-панель. Роль определяет, какие экраны человек может открыть, и больше ничто на сайте на это не влияет.",
             "steps": [
-              "Клиент — стартовая роль. Он может покупать, вести корзину и список желаний, сохранять адреса доставки и смотреть свои заказы. Страницы раздела /admin ему недоступны, кассу /pos он тоже открыть не может.",
-              "Сотрудник — роль кассира. С такой учётной записью можно открыть кассу по адресу /pos, пробивать продажи и видеть товары, которые для этого нужны. В админ-панель он не попадёт вообще — на любой странице /admin появится экран «Доступ запрещён» (Access denied).",
-              "Администратор открывает всё: всю админ-панель, все настройки и кассу тоже. Владельцу, который сам стоит за прилавком, вторая учётная запись не нужна.",
+              "Клиент — стартовая роль. Он может покупать, вести корзину и список желаний, сохранять адреса доставки и смотреть свои заказы. Страницы раздела /admin ему недоступны.",
+              "Сотрудник — роль кассира. С такой учётной записью видны товары, которые нужны человеку за прилавком, и больше ничего: в админ-панель он не попадёт вообще, и на любой странице /admin появится экран «Доступ запрещён» (Access denied).",
+              "Администратор открывает всё: всю админ-панель и все настройки.",
               "Самого первого администратора назначает тот, кто устанавливает сайт. На экране «Доступ запрещён» есть кнопка «Забрать роль администратора» (Claim admin role). Она срабатывает, только пока в магазине нет ни одного администратора. Как только администратор появился, кнопка отказывает, а следующих администраторов назначают на экране «Пользователи» (Users).",
               "Если вы потеряли доступ полностью, тот же экран «Доступ запрещён» предлагает два запасных пути и печатает их прямо на странице: консольную команду grant-admin и правку записи человека вручную в консоли Firebase."
             ],
             "notes": [
-              "Сотрудники попадают на кассу, только если в магазине включена функция кассы (point-of-sale). Если она выключена, касса всем, включая сотрудников, показывает «Касса выключена» (Register is switched off).",
-              "Кассиру, которого касса не пустила, показывают его собственный идентификатор учётной записи и кнопку «Копировать id» (Copy id) — он может прислать его вам, а вы найдёте человека на экране «Пользователи».",
+              "Эти три роли больше не открывают кассу. До версии 13.6.0 программы магазина учётная запись Сотрудника могла работать за кассой по адресу /pos на этом сайте; версия 14.0.0 её убрала. Касса теперь отдельная программа: у неё свой вход и свои роли, а эти она не читает.",
+              "Тому, кого не пустили в админ-панель, показывают его собственный идентификатор учётной записи и кнопку «Копировать id» (Copy id) — он может прислать его вам, а вы найдёте человека на экране «Пользователи».",
               "Смена роли не всегда срабатывает на устройстве человека сразу. Его токен входа может держать старую роль примерно до часа. Если после понижения роли нужно, чтобы изменение подействовало немедленно, попросите человека выйти из учётной записи и войти заново.",
-              "Четвёртой роли нет, и придумать её нельзя. Настройки прав по отдельным экранам тоже нет: сотрудник либо попадает на кассу, либо нет, а открыть ему что-то в админ-панели невозможно.",
+              "Четвёртой роли нет, и придумать её нельзя. Настройки прав по отдельным экранам тоже нет: открыть сотруднику что-то в админ-панели невозможно. У отдельной кассовой программы редактор ролей есть — это одна из причин, по которым она отдельная.",
               "У самой кассы есть отдельное руководство. Откройте файл pos-manual.html в той же папке."
             ]
           },
@@ -9299,7 +9298,7 @@ const MANUAL = {
   },
   "tr": {
     "intro": {
-      "version": "v13.6.0"
+      "version": "v14.0.0"
     },
     "parts": [
       {
@@ -10495,10 +10494,10 @@ const MANUAL = {
           {
             "id": "selling-in-person",
             "title": "Yüz yüze satış: kasanın kendi kılavuzu var",
-            "summary": "Bu mağaza /pos adresindeki barkodlu kasa ile tezgâhta da satış yapabilir. Ürünün o tarafı - kurulumu, donanım, kasiyerlere erişim verme, satışın kaydı, fişler, lisanslama ve bir kasanın kapatılması - ayrı bir kılavuzda toplandı; böylece kasiyere tek bir belge verilebiliyor.",
+            "summary": "Bu mağaza barkodlu kasa ile tezgâhta da satış yapabilir. Ürünün o tarafı - kurulumu, donanım, kasiyerlere erişim verme, satışın kaydı, fişler, lisanslama ve bir kasanın kapatılması - ayrı bir kılavuzda toplandı; böylece kasiyere tek bir belge verilebiliyor.",
             "steps": [
               "Bu dosyayla aynı klasördeki pos-manual.html dosyasını açın.",
-              "Kasayı açmak için yönetim panelinde Satış, ardından Kasa bölümünü açın."
+              "Burada açılacak bir şey yok. Kasa eskiden bu sitenin bir sayfasıydı ve Satış, ardından Kasa altından açılıyordu; mağaza yazılımının 14.0.0 sürümü o sayfayı kaldırdı ve yazılım artık hiçbir kasa sunmuyor. Bir kasanın şimdi nasıl kurulduğu kasa kılavuzunda anlatılıyor."
             ],
             "notes": [
               "Kasa kılavuzu, bu dosyanın yanındaki pos-manual.html dosyasıdır. Bu sayfanın üst çubuğunda ona bir bağlantı var.",
@@ -10516,19 +10515,19 @@ const MANUAL = {
           {
             "id": "roles-and-what-each-can-reach",
             "title": "Üç hesap rolü",
-            "summary": "Sitenizdeki her hesap, üç rolden tam olarak birine sahiptir: Müşteri (Customer), Personel (Staff) veya Yönetici (Admin). Kayıt olan herkes Müşteri olarak başlar. Personel, kasiyerler için hazırlanmış kasa rolüdür. Yönetici ise sizsiniz, yani mağaza sahibi; yönetim panelinin tamamı size açıktır. Rol, kişinin hangi ekranları açabileceğini belirler ve sitede bunu değiştiren başka hiçbir ayar yoktur.",
+            "summary": "Sitenizdeki her hesap, üç rolden tam olarak birine sahiptir: Müşteri (Customer), Personel (Staff) veya Yönetici (Admin). Kayıt olan herkes Müşteri olarak başlar. Personel, kasiyerler için hazırlanmış tezgâh rolüdür. Yönetici ise sizsiniz, yani mağaza sahibi; yönetim panelinin tamamı size açıktır. Rol, kişinin hangi ekranları açabileceğini belirler ve sitede bunu değiştiren başka hiçbir ayar yoktur.",
             "steps": [
-              "Müşteri başlangıç rolüdür. Müşteri alışveriş yapabilir, sepetini ve istek listesini tutabilir, teslimat adreslerini kaydedebilir ve kendi siparişlerini görebilir. /admin altındaki hiçbir sayfayı açamaz, /pos adresindeki kasayı da açamaz.",
-              "Personel kasiyer rolüdür. Personel hesabı /pos adresindeki kasayı açabilir, satış yapabilir ve bunun için gereken ürünleri görebilir. Yönetim panelini hiç açamaz; her /admin sayfasında karşısına Erişim reddedildi (Access denied) ekranı çıkar.",
-              "Yönetici her şeyi açabilir: yönetim panelinin tamamını, tüm ayarları ve kasayı da. Tezgahın başında duran bir mağaza sahibinin ikinci bir hesaba ihtiyacı yoktur.",
+              "Müşteri başlangıç rolüdür. Müşteri alışveriş yapabilir, sepetini ve istek listesini tutabilir, teslimat adreslerini kaydedebilir ve kendi siparişlerini görebilir. /admin altındaki hiçbir sayfayı açamaz.",
+              "Personel kasiyer rolüdür. Personel hesabı, tezgâhta duran birinin ihtiyaç duyduğu ürünleri görür, başka bir şey değil: yönetim panelini hiç açamaz ve her /admin sayfasında karşısına Erişim reddedildi (Access denied) ekranı çıkar.",
+              "Yönetici her şeyi açabilir: yönetim panelinin tamamını ve tüm ayarları.",
               "İlk yöneticiyi, siteyi kuran kişi oluşturur. Erişim reddedildi ekranında bir Yönetici rolünü al (Claim admin role) düğmesi bulunur. Bu düğme yalnızca mağazada hiç yönetici yokken çalışır. Bir yönetici oluştuktan sonra düğme işlemi reddeder; sonraki yöneticiler Kullanıcılar (Users) ekranından atanır.",
               "Tüm erişiminizi kaybederseniz, aynı Erişim reddedildi ekranı sayfada iki çıkış yolu yazar: grant-admin komut satırı aracı ve kişinin kaydını doğrudan Firebase konsolundan düzenlemek."
             ],
             "notes": [
-              "Personel hesapları kasaya yalnızca mağazada satış noktası (point-of-sale) özelliği açıksa girebilir. Kapalıysa kasa, personel dahil herkese \"Register is switched off\" yazısını gösterir.",
-              "Kasada reddedilen bir kasiyere kendi hesap kimliği ve bir Kimliği kopyala (Copy id) düğmesi gösterilir; böylece kimliği size gönderir, siz de kişiyi Kullanıcılar ekranında bulabilirsiniz.",
+              "Bu üç rol artık bir kasa açmıyor. Mağaza yazılımının 13.6.0 sürümüne kadar bir Personel hesabı bu sitedeki /pos adresinde kasada çalışabiliyordu; 14.0.0 sürümü bunu kaldırdı. Kasa artık ayrı bir programdır: kendi girişi ve kendi rolleri vardır, bunları ise okumaz.",
+              "Yönetim panelinde reddedilen kişiye kendi hesap kimliği ve bir Kimliği kopyala (Copy id) düğmesi gösterilir; böylece kimliği size gönderir, siz de kişiyi Kullanıcılar ekranında bulabilirsiniz.",
               "Birinin rolünü değiştirmek, o kişinin cihazında her zaman anında etkili olmaz. Oturum açma jetonu eski rolü yaklaşık bir saate kadar taşıyabilir. Birinin yetkisini düşürdükten sonra değişikliğin hemen geçerli olmasını istiyorsanız, oturumu kapatıp yeniden açmasını isteyin.",
-              "Dördüncü bir rol yoktur ve yeni bir rol oluşturulamaz. Ekran bazında yetki düzenleyici de yoktur; Personel ya kasaya erişir ya erişmez, yönetim panelinin hiçbir bölümü Personele açılamaz.",
+              "Dördüncü bir rol yoktur ve yeni bir rol oluşturulamaz. Ekran bazında yetki düzenleyici de yoktur; yönetim panelinin hiçbir bölümü Personele açılamaz. Ayrı kasa programının kendi rol düzenleyicisi vardır — onu ayrı kılan şeylerden biri de budur.",
               "Kasanın kendi kılavuzu var. Bu dosyayla aynı klasördeki pos-manual.html dosyasını açın."
             ]
           },

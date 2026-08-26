@@ -134,7 +134,6 @@ export const DEFAULT_ADMIN_NAV: AdminNavItem[] = [
     children: [
       { href: '/admin/orders', label: 'Orders', labelKey: 'admin.nav.orders', icon: <ReceiptIcon size={ICON_SIZE} /> },
       { href: '/admin/reviews', label: 'Reviews', labelKey: 'admin.nav.reviews', icon: <StarIcon size={ICON_SIZE} /> },
-      { href: '/admin/pos', label: 'Point of sale', labelKey: 'admin.nav.pos', icon: <ShoppingCartIcon size={ICON_SIZE} /> },
     ],
   },
   {

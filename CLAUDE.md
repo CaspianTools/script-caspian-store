@@ -55,7 +55,6 @@ Plus exports: `./styles.css` (side-effect CSS, imported once at app root), `./fi
 - [src/services/](src/services/) — Firestore/service-layer functions
 - [src/i18n/](src/i18n/) — LocaleProvider, message tables, formatters, switcher
 - [src/theme/](src/theme/) — theme presets + picker. Each preset lives in its own folder under [src/theme/themes/<id>/index.ts](src/theme/themes/) exporting a single `CatalogTheme` default; [src/theme/catalog.ts](src/theme/catalog.ts) is a barrel that imports each one and assembles `THEME_CATALOG`. To modify a preset, change only its folder — the per-theme `version: string` field combined with [`useThemeUpdateTracker`](src/theme/theme-update-tracker.ts) is what makes the admin Appearance page show an `Updated` pill on only the touched cards. Bumping a theme's version is the contract; if you change tokens/thumbnail/copy without bumping, admins won't see the badge
-- [src/pos/](src/pos/) — the register. `standalone/` inside it is the no-Firebase mode (see below); `storage/` holds the `PosStorageAdapter` seam and its implementations; `theme/` holds the register’s own design system (see below)
 - [src/shipping/](src/shipping/) — shipping plugin catalog + per-plugin implementations
 - [src/payments/](src/payments/) — payment plugin catalog + per-plugin implementations (v2.0+)
 - [src/email/](src/email/) — email provider plugin catalog (metadata-only; server `send` impls live in `functions-email/`) (v3.0+)
@@ -109,9 +108,9 @@ Rules, indexes, and `collections.ts` move together.
 | [docs/user-manual.html](docs/user-manual.html) | **The store** — catalog, orders, people, content, settings. |
 | [docs/pos-manual.html](docs/pos-manual.html) | **The register** — install → hardware → cashiers → the counter → records → winding down. |
 
-**Routing rule — which manual gets a change.** Anything reached at `/pos*`, plus the register-facing parts of `/admin/pos` (the two switches, receipt wording, recent sales, the licence table), belongs in `pos-manual.html`. Everything else belongs in `user-manual.html`. The boundary case is deliberate: `licences-you-have-sold` lives at `/admin/pos` inside the admin panel but documents the register's back office, so it is in the POS manual.
+**Routing rule — which manual gets a change.** Anything the till renders belongs in `pos-manual.html`; everything this package renders belongs in `user-manual.html`. The rule used to need a tie-breaker for `/admin/pos`, which sat in the admin panel but documented the register's back office. That screen is gone from this package, so the two manuals now split exactly where the two products do: `apps/pos/` owns one, `src/` owns the other.
 
-**The two manuals stamp two different products.** `user-manual.html`'s four `intro.version` stamps track `package.json`; `pos-manual.html`'s four track `pos/package.json`, the standalone till's own version. `check-manuals.mjs` enforces both, in English and in all three overlays. Do not "fix" a POS-manual stamp to match the library — that is the drift, not the repair.
+**The two manuals stamp two different products.** `user-manual.html`'s four `intro.version` stamps track `package.json`; `pos-manual.html`'s four track `apps/pos/package.json`, the standalone till's own version. `check-manuals.mjs` enforces both, in English and in all three overlays. Do not "fix" a POS-manual stamp to match the library — that is the drift, not the repair.
 
 **The shell rule.** Everything outside the `DOC:HEAD`, `DOC` and `MANUAL` fences is the **shared shell and is byte-identical across both manuals** — CSS, sprite, markup, `resolved()`, the renderer. Change it in one file, copy it to the other, run `node scripts/check-manuals.mjs`. The `TOKENS` fence inside `<style>` is shared with `docs/index.html` as well. Do **not** refactor this into a build step: the shell has changed twice in its life while the content changes every release, so a build step taxes the frequent operation to protect against the rare one, and it would falsify the property that `docs/*.html` *is* the source. If a **third** manual is ever proposed, revisit that decision.
 
@@ -136,68 +135,49 @@ Two hard constraints, both learned the expensive way:
 
 1. **Document only what the code renders.** Until v10.0.0 the in-admin help page described a `Settings → API keys` screen, a `Locations` page, and a separate desktop POS app. None existed. Before writing a step, open the component and confirm the control is there. A type definition, a Firestore field, or a code comment is *not* evidence that a user-facing screen exists.
 2. **Deliberate gaps must stay visible.** Where the UI ships a disabled control or a "coming in a later release" affordance (currently: the local-storage option and the non-browser printer transports at `/pos/settings`), the manual says so plainly. Never document a placeholder as if it works. The same applies to whole missing features — no returns screen, no shift, no cash drawer, no offline queue — and to enforcement that does not enforce: a POS licence problem never blocks a sale, because `commitPosSale` does not consult licence state at all.
-3. **Do not trust this repo's own docs as evidence either.** v10.2.0 found `scaffold/create.mjs` claiming `--pos-only` "seeds the storefront-off feature flag" (it does not — it only implies `--with-pos`), and `INSTALL.md`, the scaffolder's generated README and the in-admin help page all routing owners to a "POS → Shops → Edit" screen that has never existed in this package. Verify against `src/`, not against prose.
+3. **Do not trust this repo's own docs as evidence either.** v10.2.0 found `scaffold/create.mjs` claiming `--pos-only` "seeds the storefront-off feature flag" when it did not, and `INSTALL.md`, the scaffolder's generated README and the in-admin help page all routing owners to a "POS → Shops → Edit" screen that has never existed in this package. Verify against the code, not against prose.
 
-**The register’s design system (v12.1.0).** The till is styled with classes, not inline styles, and
-the sheet is a string in [src/pos/theme/pos-stylesheet.ts](src/pos/theme/pos-stylesheet.ts) that
-`PosStyleScope` renders into the tree. Four things to know:
+**The register is not in this package.** The standalone till lives in
+[apps/pos/](apps/pos/) — its own Vite app, its own `package.json`, its own
+[CHANGELOG.md](apps/pos/CHANGELOG.md), its own design system, its own release
+cycle. Nothing under `src/` imports from it, it is not in `package.json#files`,
+and a shop running it never installs anything from npm. The dependency runs one
+way: `apps/pos` consumes this library through `file:../..`, and nothing here
+imports from there. The one thing this side still knows about the till is its
+version number, and that exception is spelled out below.
 
-1. **It is not in `globals.css`, and must not be moved there.** That file ships as a passthrough the
-   consumer imports once at their app root. Every other component is inline-styled, so a consumer who
-   never added that import still gets a working storefront — moving the register onto classes in that
-   file would have made the import load-bearing, and a shop upgrading would have opened the till to
-   unstyled HTML. Releases must never require a consumer hand-edit.
-2. **`PosStyleScope` dedupes through React context, not a module flag.** `PosGuard` and `PosShell` are
-   both public exports and either can be mounted alone, so both carry it; the normal arrangement nests
-   them. A module-level flag would leak between requests on a shared server.
-3. **Tokens are `--cpos-*` on `:root`, and brand hues are derived, never restated.** `--cpos-brand` is
-   whatever `--caspian-primary` resolves to, tinted with `color-mix()` behind an `@supports` fallback.
-   The old chrome hardcoded `rgba(26,115,232,0.25)` — the RGB of the default blue — in four places, and
-   those glows stayed blue on every other theme. Tokens live at the document root because `DropdownMenu`,
-   `Dialog` and the toast stack all portal into `document.body`.
-4. **Dark mode is `:root[data-cpos-theme="dark"]`**, written by `PosChromeProvider`. It is a device
-   preference in `pos-preferences.ts`, beside the scanner gap, for the same reason: one counter faces a
-   window and another is in a stockroom, and the shop has no opinion about either.
-5. **The register has its own switch, and [`<Switch>`](src/ui/switch.tsx) is not it.** `.cpos-switch`
-   (rendered by [src/pos/standalone/admin/pos-switch.tsx](src/pos/standalone/admin/pos-switch.tsx)) is
-   built to the 44px touch floor and resolves through the `--cpos-*` tokens. The library's `<Switch>`
-   is 38×22 and hardcodes `rgba(0,0,0,0.22)` and `#fff`, so on a till in dark mode it is near-black on
-   near-black; it stays correct on the always-light admin and storefront surfaces that use it. Don't
-   reach for `<Switch>` under `src/pos/`, and don't "fix" it by widening its colours — the two surfaces
-   have different floors.
+That boundary used to be a table in this file listing six shared files a
+standalone change was allowed to touch, policed by whoever remembered to read
+it. It is a directory now. If the change is under `apps/pos/`, it is a till
+change; if it is anywhere else, it is a library change. There is no third case
+and no permitted overlap.
 
-The nav lives in [src/pos/pos-sidebar.tsx](src/pos/pos-sidebar.tsx), not the top bar. The old comment on
-`PosShell` argued a sidebar costs pixels the sale needs; that was true of the admin panel’s fixed column,
-but the bar it defended had grown to six links plus a search box, two dropdowns, a status pill and an
-install button, and `flexWrap` stacked all of it into two or three rows on a narrow till. Do not move nav
-back into `PosTopbar` — the bar’s job is to say which screen you are on.
+**[apps/pos/CLAUDE.md](apps/pos/CLAUDE.md) is the only source of truth for the
+till** — the `--cpos-*` design system and why it is not in `globals.css`, the
+`PosStorageAdapter` seam, `PosLocalRole` versus `UserRole`, the
+`clearPosDb` / `factoryResetLocalStore` distinction, `priceLocalSale`, the
+sidebar, the two unguarded nav arrays, and the bump-changelog-commit-push cycle a
+till change follows. **Read it for anything to do with the register, and change
+nothing about the till from here.**
 
-**There is no guard on the POS nav.** `check-scaffold-routes.mjs` protects the admin panel’s
-`DEFAULT_ADMIN_NAV` against its dispatcher; the register’s `items` array and the `switch (head)` in
-`PosRoot` can still drift silently. Keep them in step by hand. The same is true one level down, inside
-[pos-app-admin-page.tsx](src/pos/standalone/admin/pos-app-admin-page.tsx): its `NAV` array and the
-ternary chain that renders the panes are two halves of one thing with nothing checking they agree.
+**The cloud-backed register is switched off for the time being.** This library
+routes no `/pos`, exports no register, and has no `/admin/pos` to turn one on;
+the scaffolder no longer emits the route, the manifest, the worker or the
+`--with-pos` / `--pos-only` flags. The pieces that a live store would miss if
+they vanished are deliberately left in place: `firebase/functions-pos/`, the POS
+collections in [firebase/firestore.rules](firebase/firestore.rules), and
+`listPosOrders` — an in-person order is still an `Order`, and rules already
+deployed must keep working. The cloud register's own screens went to
+[apps/pos/src/cloud-admin/](apps/pos/src/cloud-admin/), where they type-check and
+nothing mounts them.
 
-**Two version constants, both generated by [tsup.config.ts](tsup.config.ts), both committed.**
-`CASPIAN_STORE_VERSION` ([src/version.ts](src/version.ts)) tracks the root `package.json`;
-`CASPIAN_POS_VERSION` ([src/pos/standalone/pos-version.ts](src/pos/standalone/pos-version.ts)) tracks
-`pos/package.json`, because the standalone till versions separately and a shop running it never installs
-this package. `/pos/settings` prints whichever one applies to the mode it is in. Neither file is
-hand-edited, and only the first is exported.
-
-**Standalone mode (v11.0.0) is a separate product — see [pos/CLAUDE.md](pos/CLAUDE.md).** `<CaspianStoreProvider standalone>` boots the whole tree with **no Firebase project**: catalogue, staff, sales and receipt numbers live in IndexedDB and the till contacts nothing. The deployable product is [pos/](pos/), a Vite PWA that consumes this library through `file:..`. It carries **its own version** (`pos/package.json`, started at 1.0.0), its own [pos/CHANGELOG.md](pos/CHANGELOG.md), and a release cycle that ends at `git push` — no library bump, no `vX.Y.Z` tag, no GitHub Release, no Discussion.
-
-The four rules that hold standalone together, the `clearPosDb` / `factoryResetLocalStore` distinction, the `PosLocalRole` ≠ `UserRole` rule and the `priceLocalSale` rule all live in [pos/CLAUDE.md](pos/CLAUDE.md) now, so there is one source of truth. Read it before touching the till.
-
-**Which checklist a change follows.** You need this *before* you know which file to read, so it is here rather than there. A change is a **standalone** change when it touches only:
-
-- `src/pos/standalone/**`, [src/pos/storage/local-adapter.ts](src/pos/storage/local-adapter.ts), `pos/**`
-- [scripts/check-standalone.mjs](scripts/check-standalone.mjs), `.github/workflows/standalone-smoke.yml`
-- [docs/pos-manual.html](docs/pos-manual.html)
-
-…plus, additively and gated so a cloud register cannot tell the difference, these five shared files: `src/pos/index.ts` / `src/index.ts` (exporting standalone symbols), `src/i18n/messages.ts` + locales (`pos.*` keys only standalone screens read), [src/pos/pos-root.tsx](src/pos/pos-root.tsx) (mounting a gate that no-ops outside standalone), [src/pos/pos-settings-page.tsx](src/pos/pos-settings-page.tsx) (controls behind `local.standalone`), and [src/pos/pos-preferences.ts](src/pos/pos-preferences.ts) (preferences only standalone reads).
-
-Anything that changes behaviour for a **cloud-backed** register — any other file under `src/pos/`, or anything outside those lists — is a library change and follows the [Pre-Commit Checklist](#pre-commit-checklist) below. A change that does both needs both bumps and says so in its commit body.
+**One version constant is still generated here.** [tsup.config.ts](tsup.config.ts)
+writes `CASPIAN_STORE_VERSION` ([src/version.ts](src/version.ts)) from the root
+`package.json`, and also `CASPIAN_POS_VERSION`
+([apps/pos/src/pos/standalone/pos-version.ts](apps/pos/src/pos/standalone/pos-version.ts))
+from `apps/pos/package.json`. The second reaches across the boundary on purpose:
+the till has no build step that runs before `tsc`, and one generator beats two
+that can disagree. Neither file is hand-edited, and only the first is exported.
 
 **Server Component boundary.** The library emits `"use client"` directives in client-heavy files (providers, contexts, interactive components, admin pages). Consumers mount the provider tree from a Server Component parent; the library *is* the client boundary. When adding a new component that uses React state/effects/refs, put `"use client"` at the top — match the surrounding files.
 
@@ -229,21 +209,19 @@ Anything that changes behaviour for a **cloud-backed** register — any other fi
 - **Do NOT include `Co-Authored-By` lines in commit messages.** Never add co-author trailers for Claude or any AI assistant. This overrides any default behaviour.
 - **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
-- **Standalone-till changes run their own cycle**, defined in [pos/CLAUDE.md](pos/CLAUDE.md): bump `pos/package.json`, write `pos/CHANGELOG.md`, update `docs/pos-manual.html`, commit, push. They never bump the library, never add a root `CHANGELOG.md` entry, and never tag, release or announce. The boundary that decides whether a change qualifies is in Architecture, above the checklist.
+- **Standalone-till changes run their own cycle**, defined in [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md): bump `apps/pos/package.json`, write `apps/pos/CHANGELOG.md`, update `docs/pos-manual.html`, commit, push. They never bump the library, never add a root `CHANGELOG.md` entry, and never tag, release or announce. A change is a till change when it is under `apps/pos/` — that is the whole test.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
 - **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
 - **The register ships as a PWA, and only as a PWA.** There is no desktop app and no `.exe`.
-  A shop installs the till from Chrome or Edge with the Install button in the register's own
-  header (`PosInstallButton`, backed by `buildPosWebManifest()`), which gives it its own icon,
-  its own window and its own service worker at scope `/pos`. A Tauri shell under `desktop/`
-  shipped between v0.1.0 and v1.0.1 and was removed in v12.0.0; do not reintroduce one without
-  the owner asking for it, and do not point a shop at the old `desktop/v*` releases.
+  A Tauri shell shipped between v0.1.0 and v1.0.1 and was removed in v12.0.0; do not reintroduce
+  one without the owner asking for it, and do not point a shop at the old `desktop/v*` releases.
+  How a shop actually installs it is [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md)'s to say.
 
 ---
 
 ## Pre-Commit Checklist
 
-**Standalone-till changes do not use this checklist.** If the change stays inside the standalone boundary in Architecture above, follow [pos/CLAUDE.md](pos/CLAUDE.md) instead: bump `pos/package.json`, write [pos/CHANGELOG.md](pos/CHANGELOG.md), update [docs/pos-manual.html](docs/pos-manual.html), commit, push — and nothing else. No root bump, no root changelog entry, no `npm pack`, no tag, no Release, no Discussion. Everything below is for library changes.
+**Standalone-till changes do not use this checklist.** If the change is under `apps/pos/`, follow [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md) instead: bump `apps/pos/package.json`, write [apps/pos/CHANGELOG.md](apps/pos/CHANGELOG.md), update [docs/pos-manual.html](docs/pos-manual.html), commit, push — and nothing else. No root bump, no root changelog entry, no `npm pack`, no tag, no Release, no Discussion. Everything below is for library changes.
 
 Follow these steps **in order** before every `git commit`. If a step fails, fix it and re-run from that step.
 
@@ -261,13 +239,13 @@ Runs the Firestore + Storage rules-behavior tests in [firebase/rules.test.mjs](f
 
 **Requires:** `firebase-tools` on PATH (or via `npx firebase`), and a JRE (Firebase emulators are Java-based; Java 17+ recommended). Skip locally and rely on CI if you don't have Java installed — the workflow at [.github/workflows/rules.yml](.github/workflows/rules.yml) runs this on every PR that touches `firebase/*.rules`.
 
-**Do not add Jest / Vitest / Playwright for component or unit tests** without asking first. The rules tests are a narrow, deliberately scoped exception, as is [scripts/check-standalone.mjs](scripts/check-standalone.mjs) — plain `node:assert` against the built ESM, no runner and no dependency, in the same family as the other `scripts/check-*.mjs` guards.
+**Do not add Jest / Vitest / Playwright for component or unit tests** without asking first. The rules tests are a narrow, deliberately scoped exception, as is the till's own `check-standalone.mjs` — plain `node:assert` against a built bundle, no runner and no dependency, in the same family as the other `scripts/check-*.mjs` guards.
+
+The till's behaviour guard lives with the till and is **N/A for a library change** unless you touched [src/utils/csv.ts](src/utils/csv.ts) or [src/services/import-export/helpers.ts](src/services/import-export/helpers.ts), which its CSV round-trip is built on. If you did, run it:
 
 ```bash
-npm run build && node scripts/check-standalone.mjs
+cd apps/pos && npm run check
 ```
-
-Covers the standalone till's money arithmetic and its CSV round-trip. Both are pure by design; the IndexedDB layer around them needs a browser and is checked by hand.
 
 ### 3. Type-check
 
@@ -307,7 +285,7 @@ Then update [CHANGELOG.md](CHANGELOG.md): add a new `## vX.Y.Z — <short summar
 
 Never omit the heading, rename it, or fold it into `### Notes`. The comment block at the top of [CHANGELOG.md](CHANGELOG.md) documents this rule in-tree.
 
-**Bump the user manual's version stamp too.** All four `intro.version` stamps in `docs/user-manual.html` — English plus the `az`/`ru`/`tr` overlays — must read `v` + the new `package.json` version. `scripts/check-manuals.mjs` fails CI otherwise; it exists because that string sat at `v10.0.0` through two releases with nothing checking it. **`docs/pos-manual.html` is not yours to restamp**: its four stamps track `pos/package.json`, because the till versions separately and a shop running it never installs this library.
+**Bump the user manual's version stamp too.** All four `intro.version` stamps in `docs/user-manual.html` — English plus the `az`/`ru`/`tr` overlays — must read `v` + the new `package.json` version. `scripts/check-manuals.mjs` fails CI otherwise; it exists because that string sat at `v10.0.0` through two releases with nothing checking it. **`docs/pos-manual.html` is not yours to restamp**: its four stamps track `apps/pos/package.json`, because the till versions separately and a shop running it never installs this library.
 
 **No lock file to sync** — this repo does not commit `package-lock.json`. (If that changes, run `npm install --package-lock-only`.)
 

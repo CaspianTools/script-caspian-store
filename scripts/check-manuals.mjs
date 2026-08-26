@@ -46,16 +46,16 @@ if (errors.length) {
 
 const text = Object.fromEntries(ALL.map((f) => [f, readFileSync(join(DOCS, f), 'utf8')]));
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-const posPkg = JSON.parse(readFileSync(join(ROOT, 'pos', 'package.json'), 'utf8'));
+const posPkg = JSON.parse(readFileSync(join(ROOT, 'apps', 'pos', 'package.json'), 'utf8'));
 
 // The two manuals stamp two different products. The store manual carries the
 // library's version; the register manual carries the standalone till's, which
-// versions and ships on its own (see pos/CLAUDE.md). A shop running the till
+// versions and ships on its own (see apps/pos/CLAUDE.md). A shop running the till
 // never installs the library, so stamping it with the library's number told
 // that reader nothing true.
 const VERSION_SOURCE = {
   'user-manual.html': ['package.json', pkg.version],
-  'pos-manual.html': ['pos/package.json', posPkg.version],
+  'pos-manual.html': ['apps/pos/package.json', posPkg.version],
 };
 
 const FENCES = [
@@ -257,5 +257,5 @@ const shellLines = stripped[MANUALS[0]].split('\n').length;
 console.log(
   `[check-manuals] OK — shell identical (${shellLines} lines), tokens identical across all 3 files, ` +
     `${counts.join(', ')}, 4 locales at parity, user-manual v${pkg.version} matches package.json, ` +
-    `pos-manual v${posPkg.version} matches pos/package.json.`,
+    `pos-manual v${posPkg.version} matches apps/pos/package.json.`,
 );

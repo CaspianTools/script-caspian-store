@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <title>Caspian POS</title>
+
+    <!-- Manifest is generated from src/pos-manifest.ts and emitted to
+         /pos.webmanifest by the build. It pins the register install identity,
+         scope and launch handler so the till opens as its own app. -->
+    <link rel="manifest" href="/pos.webmanifest" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1020" />
+    <link rel="icon" href="/icons/192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/192x192.png" />
+
+    <!-- Google Fonts: Poppins (Azerbaijani Latin) + Inter (Cyrillic fallback). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- iOS ignores the manifest's `display`, so the only way an added-to-home
+         -screen till loses the Safari chrome is these two. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="POS" />
+
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+      /* `--cpos-bg` is the register's canvas, but it only exists once the
+         library's stylesheet is in the tree. Until React mounts, the literals
+         below stand in -- and they have to match, or a cold start flashes white
+         before the till paints itself dark. These are the light and dark values
+         of `--cpos-bg` / `--cpos-fg` from src/pos/theme/pos-stylesheet.ts;
+         keep them in step with it and with the two theme-color tags above. */
+      body {
+        margin: 0;
+        background: var(--cpos-bg, #f6f7f9);
+        color: var(--cpos-fg, #0f172a);
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: var(--cpos-bg, #0b1020);
+          color: var(--cpos-fg, #eef2f8);
+        }
+      }
+      /* Shown until React mounts. A till that looks dead for a second on a cold
+         start is a support call, so the page says something immediately. */
+      #boot {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: var(--cpos-fg-muted, #64748b);
+        font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+      #boot::before {
+        content: '';
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 999px;
+        animation: boot-spin 640ms linear infinite;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot::before {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="boot">Starting the register…</div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

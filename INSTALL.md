@@ -46,7 +46,7 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 
 ```bash
 npm install github:CaspianTools/script-caspian-store#v13.2.0 firebase
-# v13.6.0 is the current release. For other versions, see:
+# v14.0.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -277,7 +277,7 @@ v1.16.0+ ships **three codebases** so you can deploy admin triggers without havi
 - `caspian-admin` — `onUserCreate` (auto-promote first user to admin), `claimAdmin`, scheduled retention cleanup, `linkGuestOrdersOnUserCreate` (re-stamps prior guest orders to a newly-registered account that matches the same email — v9.1+), `getGuestOrder` (unauthenticated HTTPS callable that powers `<GuestOrderLookupPage />` at `/order-status` — v9.1+). **No secrets**, no provider deps. Always deployable.
 - `caspian-email` (v3.0.0+) — transactional email triggers (`runEmailOnOrderCreate`, `runEmailOnOrderUpdate`, `runEmailOnContactCreate`) + `sendTestEmail` callable. **v8.0.0+ requires Cloud Secret Manager:** before deploy, run `firebase functions:secrets:set CASPIAN_EMAIL_SENDGRID_API_KEY` and/or `CASPIAN_EMAIL_BREVO_API_KEY` (you only need the secrets for providers you actually use). Functions read the keys via `defineSecret(...)` at runtime.
 - `caspian-stripe` — `createStripeCheckoutSession`, `stripeWebhook`, `getStripeSession`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as Functions secrets.
-- `caspian-pos` (v10.0.0+) — the in-person register: `commitPosSale` (prices the whole ticket from Firestore in one transaction, applies the promo, decrements stock, allocates the receipt number, writes the order) and `getPosCatalogDelta`. **No secrets.** Scaffold it with `--with-pos`. The register cannot commit a sale without this codebase deployed.
+- `caspian-pos` (v10.0.0–v14.0.0) — the in-person register's `commitPosSale` and `getPosCatalogDelta`. **Dormant since v14.0.0** and no longer scaffolded: nothing on a generated site calls them. Kept in the package so stores that already deployed them are not broken.
 - `caspian-instagram` (v9.21.0+) — the Instagram channel for store staff: `linkInstagram` / `unlinkInstagram`, `instagramInbox` (feed + comments), `replyInstagramComment` / `setInstagramCommentHidden` / `deleteInstagramComment`, `publishInstagramMedia` (publish a product), `deleteInstagramMedia`, and a scheduled token refresh. Requires `META_APP_ID` + `META_APP_SECRET` as Functions secrets (`defineSecret`). Scaffold it with `--with-instagram`.
 
 Copy the codebases you need from `node_modules` into your project root, merge the `functions` entries into your `firebase.json`, then deploy them separately:
@@ -286,7 +286,6 @@ Copy the codebases you need from `node_modules` into your project root, merge th
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-admin ./functions-admin
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-email  ./functions-email     # skip if no email
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-stripe ./functions-stripe    # skip if no Stripe
-cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-pos    ./functions-pos       # skip if no register
 cp -R node_modules/@caspian-explorer/script-caspian-store/firebase/functions-instagram ./functions-instagram  # skip if no Instagram
 cp node_modules/@caspian-explorer/script-caspian-store/firebase/firebase.json .                          # or merge manually
 ```
@@ -355,76 +354,13 @@ This lets store staff view the store's Instagram feed, moderate comments, publis
 
 Going live also needs, **outside this repo**: one **Meta app** with **Facebook Login** + **Instagram** (register the POS loopback redirect `http://127.0.0.1:47113/`, request `instagram_basic` / `instagram_manage_comments` / `instagram_content_publish` / `instagram_manage_contents` / `pages_show_list` / `pages_read_engagement` / `business_management`, and complete **App Review** + Business Verification), and this store's Instagram as a **Professional** account linked to a **Facebook Page**. This package ships the Instagram Cloud Functions only — **there is no Instagram screen in the admin panel**. Call `linkInstagram` from your own front end to run the OAuth exchange, and store the Meta **App ID** wherever that front end keeps it.
 
-**POS codebase (v10.0.0+ — only when you use the in-person register):**
-
-```bash
-cd functions-pos && npm install && cd ..
-firebase deploy --only functions:caspian-pos
-```
-
-No secrets to set. Sales are priced entirely server-side here — the register only ever sends *what was
-scanned*, never what it costs — so a tampered browser cannot ring up a discounted sale.
-
-Then, in the admin panel:
-
-1. **Sales → Point of sale → Enable the register.**
-2. **Users →** set each cashier's role to **Staff**. Staff reach `/pos` and read the catalog; they are
-   denied every admin surface. `admin` accounts can use the register too, so an owner working the
-   counter does not need a second login.
-3. **Products → edit → Barcode.** Click into the field and scan — most USB and Bluetooth scanners type
-   the code straight in. The register matches `barcode` first, then `sku`, then the product id.
-4. Open `/pos`.
-
-**Scanners.** Any USB or Bluetooth barcode scanner that presents as a keyboard (essentially all retail
-scanners) works with no setup, driver, or permission prompt — the register recognises a scan by how
-fast the characters arrive. If scans arrive split across two lines, raise the gap in `/pos/settings`;
-if fast typing is mistaken for a scan, lower it. Camera scanning uses the browser's native
-`BarcodeDetector` and is Chromium-only; Safari and Firefox show a message and fall back to typing.
-
-**Receipts** print through the normal browser print dialog against any printer your computer already
-has installed, on an 80 mm continuous roll. Set the header and footer under **Sales → Point of sale**.
-
-**The register has its own manual.** `docs/pos-manual.html` covers the whole lifecycle for owners and cashiers — hardware, cashier access, a day at the counter, and closing a till down. Installed copy: `node_modules/@caspian-explorer/script-caspian-store/docs/pos-manual.html`.
-
-**Per-register settings** live at `/pos/settings` and apply to that computer only — its name, its
-interface language, and its scanner timing. One shop can run an English till at the counter and
-another in a different language without touching the website.
-
-**Selling register licences (v10.1.0+, optional).** Only relevant if you *distribute* this product to
-other shops. An ordinary store ignores all of this. No stock build carries a signing key, so licensing
-is **parked**: the **Licence** pane at `/pos/app-admin` says so in as many words, the warning strip never
-appears, and a till with no key sells exactly as one with a key does.
-
-```bash
-# Once, ever. Back the private key up somewhere that is not this repo.
-node scripts/generate-pos-signing-key.mjs
-
-# Paste the printed public key into BOTH:
-#   src/pos/license/public-key.ts      -> POS_LICENSE_PUBLIC_KEY
-#   caspian-pos functions environment  -> CASPIAN_POS_LICENSE_PUBLIC_KEY
-
-# Then per sale:
-node scripts/mint-pos-license.mjs --name "Acme Shop" --expires 2027-01-01
-```
-
-Send the printed `cslic1.…` key to the customer. Where they paste it depends on the mode: a standalone
-till has it at `/pos/app-admin` → **Licence**, under a Support account, where it moved in v13.0.0; a cloud
-till has no app admin to route to, so it keeps the pane at `/pos/settings` where it has always been.
-Activation binds the key to one computer, and `/admin/pos` lists what has been sold with a **Release**
-button for when a till is replaced or wiped — without that, a customer who paid you gets locked out by
-their own IT.
-
-**Be clear-eyed about what this enforces.** This library is MIT-licensed with public source, so the
-browser-side check is a speed bump, not a lock — a fork can delete it. The half with teeth is
-server-side: `activatePosLicense` re-verifies the signature and records which device claimed the
-licence, so a key used on a second machine is logged where the customer cannot edit it. Enforcement is
-**warning-only by design**: a licence problem shows a dismissible strip and never blocks a sale,
-because a shop that cannot serve a customer over paperwork is a worse outcome than an unlicensed shop.
-
-**Register-only stores.** Turn on **Register-only store** under Sales → Point of sale (or scaffold with
-`--pos-only`) and the public storefront is switched off: `/` redirects to `/pos` and storefront routes
-show a notice. `/admin`, `/login` and `/setup` stay reachable, and you can switch it back on at any
-time — it is a runtime setting, not a build-time fork.
+**POS codebase (`caspian-pos`).** Not scaffolded and not deployed. The register
+left this package in v14.0.0 — see [The register](#13-the-register) below — and
+the cloud-backed one was stood down with it, so there is no `/pos` route on a
+scaffolded site for these callables to sit behind. The functions are still in the
+package at `firebase/functions-pos/` and the Firestore rules still cover the
+collections they write, so a store that deployed them before v14.0.0 keeps
+working; nothing new points at them.
 
 ---
 
@@ -1214,173 +1150,51 @@ export async function GET(request: Request) {
 
 ---
 
-## 13. Standalone till — no website, no Firebase (v11.0.0+)
+## 13. The register
 
-Most shops running the register have an online store behind it. Many physical
-shops do not, and for those the register can run entirely on one computer:
-catalogue, staff, sales and receipt numbers all live in that machine's
-IndexedDB, and the till contacts nothing.
+**The register is a separate app and is not installed from this package.** It
+lives in [apps/pos/](apps/pos/) in the repository — a Vite PWA that a shop
+installs from Chrome or Edge and then runs on one computer, with its catalogue,
+staff, sales and receipt numbers in that machine's IndexedDB, contacting nothing.
+It carries its own version, its own changelog and its own release cycle, and a
+shop running it never installs anything from npm.
 
-Mount the provider with `standalone` and leave `firebaseConfig` off:
+- **To work on it:** [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md) is the source of
+  truth — what it is, how it is built, and the cycle a change to it follows.
+- **To run a shop with it:** [docs/pos-manual.html](docs/pos-manual.html) covers
+  the whole lifecycle for owners and cashiers — installing it, the hardware,
+  cashier access, a day at the counter, store management, the sales records, and
+  winding a till down again.
 
-```tsx
-'use client';
-import { CaspianStoreProvider, CaspianRoot } from '@caspian-explorer/script-caspian-store';
-import '@caspian-explorer/script-caspian-store/styles.css';
-
-export default function Page() {
-  return (
-    <CaspianStoreProvider standalone>
-      <CaspianRoot />
-    </CaspianStoreProvider>
-  );
-}
+```bash
+cd apps/pos
+npm install
+npm run dev        # http://localhost:5183
+npm run build      # dist/, with the entry document at /pos/
 ```
 
-That is the whole configuration. There is no project to create, no rules to
-deploy and no Cloud Functions codebase.
+**The cloud-backed register is switched off.** Until v14.0.0 this package also
+served an in-person register at `/pos` on a store's own site, gated on a
+**Sales → Point of sale** switch and backed by the `caspian-pos` Cloud Functions.
+As of v14.0.0 it routes no `/pos`, exports no register, has no `/admin/pos`, and
+the scaffolder emits none of it. `firebase/functions-pos/` and the POS Firestore
+rules are deliberately left in place so a store that deployed them before the
+change keeps working.
 
-### What a standalone till has
+### What is left in this package
 
-| Screen | What it does |
-| --- | --- |
-| First run | Creates the **Support** account. Nothing else can happen until it exists. |
-| `/pos` | The register: scan, ticket, tender, receipt — the same screen as a cloud till. |
-| `/pos/store` | The catalogue: search the stock list, add and delete items. Each row opens the item's own page. |
-| `/pos/store/<id>` | One item: its description, its stock per size, its batches, and a dated ledger of everything received, sold, returned and adjusted. Edit, receive, adjust and delete are here. |
-| `/pos/store/receive` | **Receive stock** — take a delivery in by scanner or by hand, with cost per unit and (for batched items) a batch code and expiry date. Needs the `stock.receive` capability. |
-| `/pos/store/categories` | The shop's group vocabulary. **Optional** — off unless switched on for the shop. |
-| `/pos/store/suppliers` | Who the shop buys from, with what each has delivered. **Optional** — off unless switched on for the shop. |
-| `/pos/sales` | Sales and takings, with a CSV export. |
-| `/pos/people` | The staff list: add someone, set their role, reset a password, disable or delete an account. |
-| `/pos/settings` | Appearance, language, this register's name and its scanner timing — plus a **Shop** section (shop details and receipt wording) and a **Backup** section, each shown only to a role that holds it. |
-| `/pos/app-admin` | Four panes: **Roles**, the role editor, **Opening cash**, the drawer-count switch, **Optional screens**, and **Licence**. Of the built-in roles only Support reaches it. |
+Two things, because they are provider-level and a consumer can still meet them:
 
-### The three optional screens (v13.3.0+)
-
-`categoriesEnabled`, `suppliersEnabled` and `lotTrackingEnabled` live on
-`LocalShopSettings` and are **off for every shop**, including one upgrading.
-Switch them on at **`/pos/app-admin` → Optional screens**, which only a Support
-account can open — they are an installation decision, not a shopkeeper's
-preference, and a corner shop with forty lines is not helped by discovering a
-Categories screen on its own.
-
-- **Categories** adds `/pos/store/categories` and turns an item's Group box into
-  a picker. A product stores the category *name*, not an id, so switching the
-  screen off leaves every item filed exactly where it was.
-- **Suppliers** adds `/pos/store/suppliers` and a Supplier box on a delivery.
-- **Batches and expiry dates** adds a per-item `tracksLots` tick. A batched item
-  is received with a code and a best-before date and sold earliest-date-first,
-  splitting across batches when one cannot cover a sale. Switching this off
-  hides the fields but **does not change stock behaviour** — an item already
-  marked `tracksLots` goes on drawing earliest-date-first, because a switch that
-  quietly stopped doing so would leave the shelf and the record disagreeing.
-
-`/pos/store` and everything under it, `/pos/sales`, `/pos/people` and `/pos/app-admin` exist only in this mode —
-on a cloud till those addresses fall back to `/pos`, because a mistyped URL should leave a
-cashier able to sell rather than sat on a screen with nothing behind it. `/pos` and
-`/pos/settings` render in both modes.
-
-`/pos/admin` was a back office holding four tabs until v13.0.0. Three of them became
-pages of their own and the fourth became two sections of the settings page, so the
-address is all that is left: it redirects to `/pos/sales`.
-
-### Roles and capabilities
-
-Commissioned by whoever installs the till, and separate from the cloud
-`UserRole` — these never reach Firestore and are not mirrored into any claim.
-
-A role is a set of **capabilities**, two tiers per screen: the `*.view` half decides
-whether the screen appears in the menu and resolves as a route, and the capability
-beside it decides whether that screen's controls are offered at all. The split is the
-point — it is what lets a shop show someone the takings without also handing them the
-export, or the staff list without the password resets.
-
-| Capability | Shown as |
-| --- | --- |
-| `register` | Sell at the till |
-| `store.view` / `store.edit` | See the store / Add and edit items |
-| `stock.receive` | Receive stock (v13.3.0+) |
-| `sales.view` / `sales.export` | See sales / Export sales to a spreadsheet |
-| `people.view` / `people.edit` | See people / Add and edit people |
-| `settings.view` | Open settings |
-| `settings.shop` | Change shop and receipt details |
-| `settings.backup` | Back up and restore |
-| `appAdmin.view` / `appAdmin.roles` | Open app admin / Change roles |
-
-Seven roles ship built in. `cashier` duplicates `staff` and `admin` duplicates
-`manager`, both deliberately: people can already have been given either id, and
-dropping one takes the register away from everyone holding it.
-
-| Role | Reaches |
-| --- | --- |
-| `staff` / `cashier` (Cashier) | The register, and settings. |
-| `storekeeper` (Storekeeper) | The store, and settings. |
-| `accountant` (Accountant) | Sales, including the export, and settings. |
-| `manager` / `admin` (Manager / Admin) | Everything except app admin. |
-| `superadmin` (Support) | Everything, including roles, the licence pane and other Support accounts. |
-
-Access is cumulative: an owner can still work the counter without signing out. Edit any
-of these, or invent your own, at `/pos/app-admin` → **Roles**.
-
-Every role holds `settings.view`, because `/pos/settings` answered to nobody before
-capabilities existed — a cashier could always set the theme, the scanner gap and this
-device's name. Granting it to all keeps that true; an owner can now take it away, which
-they never could before.
-
-**Upgrading a till that predates v13.0.0.** Roles were stored as six coarse *areas*.
-They are migrated to capabilities on read, and the migration only ever adds, so nobody
-loses access on upgrade. One role gains a screen it never had: `accountant` held
-`reports`, which nothing enforced anywhere, so an Accountant reached nothing at all —
-it now reaches Sales.
-
-### Three things to be deliberate about
-
-**Backups are the shop's own.** Nothing is copied off the machine — that is the
-whole point of the mode — so a failed disk takes the shop's entire trading
-history with it. `/pos/settings` → **Backup** writes a dated JSON file holding items,
-people, sales, the receipt counter and the shop record. Tell the shop to put it
-somewhere that is not that computer, and to do it weekly.
-
-**`standalone` is explicit, never inferred.** A missing or broken
-`firebaseConfig` does *not* fall back to standalone. It throws, loudly, at
-mount. Falling back would mean a real shop whose credentials broke came up as an
-empty local register and started taking sales into a database nobody knows
-about — a failure that looks exactly like a working till.
-
-**The opening-cash switch records, it does not reconcile.** `/pos/app-admin` →
-**Opening cash** is off on every till until somebody turns it on, and only a
-Support account can. With it on, the sale screen at `/pos` is replaced by a
-single field until whoever is signed in types what is in the drawer; the figure
-is stored with their name, this till and the moment, and listed on `/pos/sales`.
-Nothing is ever compared against it — there is no closing count, no expected
-figure and no variance anywhere in the product, and a wrong figure never blocks
-a sale. Every other screen stays reachable while the question is unanswered, on
-purpose: an owner must not be locked out by the switch they need to reach in
-order to turn it off. The figures travel in the backup, which goes to version 3
-because of it — a version 2 file still restores, and a version 3 file is refused
-by an older build, which is the right way round. If site data is blocked the
-shop record cannot be read, the switch reads as off and the till sells: this is
-a shrinkage control, not a security boundary.
-
-### What it deliberately does not do
-
-- **No sync to a website.** Attaching a shop link later, and pushing local
-  history up to it, is a separate release. Local is the only source of truth
-  today.
-- **No cloud reporting.** Nothing appears in an online admin panel, because
-  there isn't one.
-- **Receipts still print through the browser's print dialogue.** Direct
-  thermal printing is not in this version, in standalone or cloud mode.
-- **No cash-up and no shift.** The opening-cash switch above asks once, at the
-  start, and that is the whole of it. Nothing opens or closes a till session,
-  nothing counts the drawer at the end, and there is no Z-report.
-
-### Mixing the two
-
-`useCaspianFirebase()` and `useCaspianCollections()` throw in standalone mode
-rather than returning null, because ninety-odd storefront and admin call sites
-need a real project and a null check in each of them would serve nobody. The
-handful of screens that must work either way use
-`useCaspianFirebaseOptional()`, `useCaspianCollectionsOptional()` and
-`useCaspianStandalone()`.
+- **`standalone` on the provider.** `<CaspianStoreProvider standalone>` boots the
+  tree with no Firebase project. It is what `apps/pos` mounts, and it is
+  **explicit, never inferred**: a missing or broken `firebaseConfig` throws
+  loudly at mount rather than falling back. Falling back would mean a real shop
+  whose credentials broke came up as an empty local register and started taking
+  sales into a database nobody knows about — a failure that looks exactly like a
+  working till.
+- **The strict Firebase hooks.** `useCaspianFirebase()` and
+  `useCaspianCollections()` throw in standalone mode rather than returning null,
+  because ninety-odd storefront and admin call sites need a real project and a
+  null check in each of them would serve nobody. Anything that must work either
+  way uses `useCaspianFirebaseOptional()`, `useCaspianCollectionsOptional()` and
+  `useCaspianStandalone()`.

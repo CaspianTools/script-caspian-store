@@ -16,6 +16,93 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v14.0.0 — The register moves out
+
+The standalone till now lives in `apps/pos/`, a top-level app of its own. Its
+116 source files, its ~1,800 translated strings and its behaviour guard all left
+this package, and the cloud-backed register was stood down in the same move. The
+library serves no `/pos`, exports no register, and has no `/admin/pos`.
+
+Two products had been sharing one `src/`. The till was described everywhere as
+separate — its own version, its own changelog, its own release cycle — but it was
+stored inside the library and the line between them was a table in `CLAUDE.md`
+listing six shared files a till change was allowed to touch, policed by whoever
+remembered to read it. It is a directory now: under `apps/pos/` is a till change,
+anywhere else is a library change, and the dependency runs one way.
+
+### Consumer action required on upgrade
+
+**Only if you used the in-person register.** A store that never switched it on is
+unaffected by everything below and needs no code change.
+
+1. Reinstall:
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v14.0.0
+```
+
+2. If you imported any POS symbol — `PosGuard`, `PosInstallButton`,
+   `PosQueuePage`, `AdminPosPage`, `buildPosWebManifest`, the offline-queue
+   helpers, the standalone exports — remove those imports. They are gone from
+   both entries.
+3. If you scaffolded with `--with-pos` or `--pos-only`, drop the flags. They no
+   longer exist. Your generated `src/app/pos/`, `src/app/pos.webmanifest/`,
+   `public/sw-pos.js` and `public/pos-offline.html` are now dead files; delete
+   them at your leisure.
+4. **Do not** delete `functions-pos/` or redeploy your Firestore rules expecting
+   the POS collections to be gone. Both are deliberately left in place so an
+   existing store keeps working.
+
+A shop that wants a till runs the app in `apps/pos/` instead. It installs from
+Chrome or Edge and needs no Firebase project at all — see
+[INSTALL.md](INSTALL.md#13-the-register).
+
+### Removed
+
+- Every POS export from both public entries: the register components and guard,
+  the storage adapters, the offline queue and its types, the catalog cache, the
+  service-worker component, `buildPosWebManifest`, the licence surface, the
+  standalone symbols, and `AdminPosPage` / `AdminPosLicenses`.
+- `/pos` and `/pos/**` routing from `CaspianRoot`.
+- The **Point of sale** entry in the admin nav and its dispatcher case.
+- The `pos` topic from the in-admin help page, along with the sentences elsewhere
+  in it that pointed staff at a register this package no longer serves.
+- `--with-pos` and `--pos-only` from the scaffolder, with everything they
+  generated: the `/pos` route and layout, the register manifest route, its
+  service worker and offline page, the locale-prefixed `/pos` redirects, the
+  `deploy:pos` script and the `functions-pos` copy.
+- Every `pos.*` key from `DEFAULT_MESSAGES` (906) and from the `az` (783), `ru`
+  (531) and `tr` (531) overlays. What is left in `src/i18n/locales/` is the
+  shared `common.*` / `auth.*` surface.
+
+### Added
+
+- `joinList`, `parseList`, `joinStock`, `parseStock`, `parseBool` and
+  `parseNumber` are now public. The till's CSV round-trip has to agree with the
+  store's import/export catalog down to how a stock map is spelled, and it is a
+  separate package now — two copies of these would drift the first time one
+  changed.
+
+### Changed
+
+- `tsup.config.ts` generates `CASPIAN_POS_VERSION` into
+  `apps/pos/src/pos/standalone/pos-version.ts`, from `apps/pos/package.json`.
+  This is the one thing in the library that still knows the till exists, and it
+  is deliberate: the till has no build step that runs before `tsc`.
+- `scripts/check-standalone.mjs` moved to `apps/pos/scripts/` and runs against
+  the till's own SSR bundle rather than the library's `dist/`. All 166 checks
+  carry over unchanged. `cd apps/pos && npm run check`.
+- `scripts/mint-pos-license.mjs` and `scripts/generate-pos-signing-key.mjs`
+  moved to `apps/pos/scripts/`.
+- The `StorefrontDisabled` notice no longer links to `/pos` — a link to a route
+  this library does not serve is worse than no link.
+- `docs/pos-manual.html` stays in `docs/` and still ships in the tarball. Its
+  content belongs to the till; its location belongs here, because it shares a
+  byte-identical shell with `user-manual.html` and both are reached through the
+  picker. Its version stamps now track `apps/pos/package.json`.
+- `CLAUDE.md` no longer describes the register. It points at
+  `apps/pos/CLAUDE.md`, which is the source of truth for all of it.
+
 ## v13.6.0 — Scanners the register was silently refusing
 
 A shop connected a barcode scanner, added a product, scanned it, and the register

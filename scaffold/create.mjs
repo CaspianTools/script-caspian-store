@@ -14,12 +14,6 @@
  *     [--with-email]                # also copy firebase/functions-email/ (transactional
  *                                    #   email via SendGrid/Brevo plugins — configure at
  *                                    #   /admin/plugins/email-providers after deploy)
- *     [--with-pos]                  # also copy firebase/functions-pos/ (in-person register:
- *                                   #   server-priced sale commits, idempotent offline replay)
- *     [--pos-only]                  # implies --with-pos. NOTE: this only adds the register's
- *                                   #   Cloud Functions. It does NOT switch the storefront off --
- *                                   #   the scaffolder writes files and never touches Firestore.
- *                                   #   Register-only mode is a switch at /admin/pos, post-deploy.
  *     [--with-instagram]            # also copy firebase/functions-instagram/ (Instagram
  *                                    #   feed + comment moderation for store staff;
  *                                    #   set META_APP_ID / META_APP_SECRET then deploy)
@@ -62,8 +56,6 @@ const { positionals, values: args } = parseArgs({
     'with-stripe': { type: 'boolean', default: false },
     'with-email': { type: 'boolean', default: false },
     'with-instagram': { type: 'boolean', default: false },
-    'with-pos': { type: 'boolean', default: false },
-    'pos-only': { type: 'boolean', default: false },
     'with-functions': { type: 'boolean', default: false },
     'no-apphosting': { type: 'boolean', default: false },
   },
@@ -87,12 +79,10 @@ const includeEmail = args['with-email'];
 // onboarding by setting META_APP_ID / META_APP_SECRET and deploying caspian-instagram.
 const includeInstagram = args['with-instagram'];
 
-// --pos-only is a register-only store: no public storefront. It implies
-// --with-pos because the register cannot commit a sale without the callables,
-// and a scaffold that produced a till which refuses to sell would be worse
-// than refusing the flag.
-const posOnly = args['pos-only'];
-const includePos = args['with-pos'] || posOnly;
+// --with-pos and --pos-only were removed in v14.0.0. The register left this
+// package for `apps/pos/`, and the cloud-backed one was stood down with it, so
+// a scaffolded site has no /pos route to serve and nothing for the caspian-pos
+// callables to sit behind. A shop that wants a till deploys that app instead.
 const suppressApphosting = args['no-apphosting'];
 
 const targetDir = positionals[0];
@@ -100,7 +90,7 @@ if (!targetDir) {
   console.error(
     'Usage: node create.mjs <project-dir> [--package-tag vX.Y.Z] [--next-version <spec>]\n' +
     '                       [--use-create-next-app] [--with-stripe] [--with-email]\n' +
-    '                       [--with-instagram] [--with-pos] [--pos-only]\n' +
+    '                       [--with-instagram]\n' +
     '                       [--no-apphosting] [--force]',
   );
   process.exit(1);
@@ -196,7 +186,6 @@ const ourScripts = {
   'deploy:email': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-email',
   'deploy:stripe': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-stripe',
   'deploy:instagram': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-instagram',
-  'deploy:pos': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-pos',
   'firebase:seed': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/seed/seed.mjs',
   'grant-admin': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/seed/grant-admin.mjs',
 };
@@ -263,24 +252,12 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
-  async redirects() {
-    return [
-      // A locale-prefixed register URL must land on the real /pos route segment.
-      // Without this /az/pos falls through to the root catch-all, which serves
-      // the STOREFRONT manifest — so every non-English till would install the
-      // wrong app. The register's own language is per-device, not per-URL, so
-      // dropping the prefix here loses nothing.
-      { source: '/:locale(az|ru|tr|en)/pos', destination: '/pos', permanent: false },
-      { source: '/:locale(az|ru|tr|en)/pos/:rest*', destination: '/pos/:rest*', permanent: false },
-    ];
-  },
   async headers() {
-    // Service workers must never be served from cache, or a till can be pinned
-    // to a stale register for as long as the browser keeps the old copy.
+    // A service worker must never be served from cache, or a visitor can be
+    // pinned to a stale shop for as long as the browser keeps the old copy.
     const noStore = [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }];
     return [
       { source: '/sw.js', headers: noStore },
-      { source: '/sw-pos.js', headers: noStore },
     ];
   },
   env: {
@@ -377,7 +354,7 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 
-# Web app manifest (both installable apps: the storefront and the register).
+# Web app manifest for the installable storefront.
 # Quote the colours. dotenv treats an unquoted # as the start of a comment, so
 # NEXT_PUBLIC_BRAND_THEME_COLOR=#1d4ed8 silently reads as empty.
 NEXT_PUBLIC_BRAND_NAME=
@@ -551,12 +528,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 `);
 
 
-// Shared source for both service workers and both offline pages. Templated
-// rather than duplicated so the two workers cannot drift apart.
+// Source for the storefront's service worker and its offline page. It is
+// templated because there used to be two of each -- the shop's and the
+// register's -- and the register's went with the till in v14.0.0.
 //
-// The cache-key PREFIX matters: two workers share one CacheStorage per origin,
-// and a cleanup that deletes "every key that is not mine" would have the
-// storefront worker wipe the register's shell out from under a live till.
+// The cache-key PREFIX is what kept them apart: workers share one CacheStorage
+// per origin, and a cleanup deleting "every key that is not mine" would have
+// had the storefront wipe the register's shell out from under a live till. The
+// template survives because a second app on this origin is a real possibility
+// and this is the shape that makes one safe.
 const SW_SOURCE = `/* Caspian service worker — scope __SCOPE__ */
 const PREFIX = '__PREFIX__';
 const CACHE = PREFIX + '-v1';
@@ -671,18 +651,12 @@ import { CaspianRoot } from '@caspian-explorer/script-caspian-store';
 export default function Page() { return <CaspianRoot />; }
 `);
 
-// ---- PWA: two installable apps on one origin (v10.3.0) ----
+// ---- PWA: the storefront, installable at scope '/' ----
 //
-// The storefront installs at scope '/', the register at scope '/pos'. They are
-// separate apps on purpose: a cashier's till should launch straight into the
-// register, not into the shop with the register two taps away.
-//
-// The register needs a REAL route segment rather than the root catch-all,
-// because <link rel="manifest"> has to be correct on a cold load of /pos. The
-// catch-all is a client component dispatching on pathname, so the earliest it
-// could swap the manifest is a post-hydration effect — which loses the race
-// against the browser's own installability check, and has no equivalent at all
-// on iOS.
+// There were two apps on this origin until v14.0.0: the shop at '/' and the
+// register at '/pos', separate so a cashier's till launched straight into the
+// till. The register left this package and the cloud-backed one was stood down
+// with it, so the shop is the only installable app a scaffolded site has.
 write('src/app/_pwa-brand.ts', `/**
  * Brand values for both web manifests.
  *
@@ -731,25 +705,6 @@ export function GET() {
 }
 `);
 
-write('src/app/pos.webmanifest/route.ts', `import { buildPosWebManifest } from '@caspian-explorer/script-caspian-store/pwa';
-import { PWA_BRAND } from '../_pwa-brand';
-
-export const dynamic = 'force-static';
-
-export function GET() {
-  const manifest = buildPosWebManifest({
-    name: PWA_BRAND.name,
-    themeColor: PWA_BRAND.themeColor,
-    backgroundColor: PWA_BRAND.backgroundColor,
-  });
-  return new Response(JSON.stringify(manifest), {
-    headers: {
-      'Content-Type': 'application/manifest+json',
-      'Cache-Control': 'public, max-age=300',
-    },
-  });
-}
-`);
 
 write('src/app/icon/[size]/route.tsx', `import { ImageResponse } from 'next/og';
 import { PWA_BRAND } from '../../_pwa-brand';
@@ -795,40 +750,9 @@ export async function GET(
 }
 `);
 
-// The register's own route segment. The layout is a server component purely so
-// it can declare the register manifest; the page below it is the same one-line
-// client mount as the root catch-all.
-write('src/app/pos/layout.tsx', `import type { ReactNode } from 'react';
-
-export const metadata = {
-  title: 'Register',
-  manifest: '/pos.webmanifest',
-  appleWebApp: { capable: true, title: 'Register', statusBarStyle: 'default' as const },
-};
-
-export const viewport = {
-  themeColor: '#111111',
-  // A till is a fixed-purpose screen; a stray pinch-zoom mid-sale is a nuisance.
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-};
-
-export default function PosLayout({ children }: { children: ReactNode }) {
-  return children;
-}
-`);
-
-write('src/app/pos/[[...slug]]/page.tsx', `'use client';
-import { CaspianRoot } from '@caspian-explorer/script-caspian-store';
-export default function Page() { return <CaspianRoot />; }
-`);
-
 write('public/offline.html', OFFLINE_HTML.replace(/__TITLE__/g, 'You are offline').replace(/__BODY__/g, 'This page needs an internet connection. It will load once you are back online.'));
-write('public/pos-offline.html', OFFLINE_HTML.replace(/__TITLE__/g, 'Register is offline').replace(/__BODY__/g, 'The till has lost its internet connection. Sales cannot be completed until it returns.'));
 
 write('public/sw.js', SW_SOURCE.replace(/__PREFIX__/g, 'caspian-shell').replace(/__OFFLINE__/g, '/offline.html').replace(/__SCOPE__/g, '/'));
-write('public/sw-pos.js', SW_SOURCE.replace(/__PREFIX__/g, 'caspian-pos-shell').replace(/__OFFLINE__/g, '/pos-offline.html').replace(/__SCOPE__/g, '/pos'));
 
 write('src/app/api/setup/write-env/route.ts', `import { NextResponse } from 'next/server';
 import { writeFile, readFile } from 'node:fs/promises';
@@ -990,17 +914,9 @@ if (includeInstagram) {
     predeploy: ['npm --prefix "$RESOURCE_DIR" run build'],
   });
 }
-if (includePos) {
-  firebaseConfig.functions.push({
-    source: 'functions-pos',
-    codebase: 'caspian-pos',
-    runtime: 'nodejs22',
-    predeploy: ['npm --prefix "$RESOURCE_DIR" run build'],
-  });
-}
 write('firebase.json', JSON.stringify(firebaseConfig, null, 2) + '\n');
 
-// Always copy functions-admin; copy the other four codebases only on opt-in.
+// Always copy functions-admin; copy the other three codebases only on opt-in.
 // Per-codebase .gitignore is written inline here (not relied on from cpSync):
 // npm silently consumes `.gitignore` files in the tarball as ignore rules and
 // does NOT ship them as regular files, so the ones that live in the package's
@@ -1019,10 +935,6 @@ if (includeStripe) {
 if (includeInstagram) {
   cpSync(join(sourceFirebaseDir, 'functions-instagram'), join(root, 'functions-instagram'), { recursive: true });
   write('functions-instagram/.gitignore', 'node_modules\nlib/\n');
-}
-if (includePos) {
-  cpSync(join(sourceFirebaseDir, 'functions-pos'), join(root, 'functions-pos'), { recursive: true });
-  write('functions-pos/.gitignore', 'node_modules\nlib/\n');
 }
 
 // ---- apphosting.yaml ----

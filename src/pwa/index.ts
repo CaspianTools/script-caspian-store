@@ -13,4 +13,3 @@
  * to import from a route handler, a build script, or Node.
  */
 export { buildWebManifest, type WebManifestInput, type WebManifestIcon } from './build-manifest';
-export { buildPosWebManifest, type PosWebManifestInput } from './pos-manifest';

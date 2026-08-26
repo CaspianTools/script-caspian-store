@@ -1,6 +1,6 @@
 name: Standalone till — behaviour smoke
 
-# Guards the `local` storage mode: a register with no shop, no website and no
+# Guards the till in `apps/pos`: a register with no shop, no website and no
 # Firebase project behind it, where this machine holds the only copy of a
 # shop's catalogue, staff and takings.
 #
@@ -9,24 +9,24 @@ name: Standalone till — behaviour smoke
 # preserves a catalogue. Both are pure functions by design — the money
 # arithmetic was split out of the IndexedDB transaction into `priceLocalSale`
 # precisely so it could be checked in CI without a browser.
+#
+# The till left this package in v14.0.0, so the guard no longer runs against the
+# library's `dist/`. It runs against the till's own SSR bundle of
+# `src/check-entry.ts`, which is what `npm run check` builds.
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/pos/**'
-      - 'pos/**'
+      - 'apps/pos/**'
       - 'src/utils/csv.ts'
       - 'src/services/import-export/helpers.ts'
-      - 'scripts/check-standalone.mjs'
       - '.github/workflows/standalone-smoke.yml'
   pull_request:
     paths:
-      - 'src/pos/**'
-      - 'pos/**'
+      - 'apps/pos/**'
       - 'src/utils/csv.ts'
       - 'src/services/import-export/helpers.ts'
-      - 'scripts/check-standalone.mjs'
       - '.github/workflows/standalone-smoke.yml'
   workflow_dispatch:
 
@@ -41,11 +41,22 @@ jobs:
           node-version: 20
           # No cache — this repo doesn't commit package-lock.json by policy.
 
-      - name: Install deps
+      - name: Install library deps
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Build
+      # The till consumes the library through `file:../..`, so it needs a built
+      # `dist/` to link against before its own install.
+      - name: Build the library
         run: npm run build
 
+      - name: Install till deps
+        run: npm install --ignore-scripts --no-audit --no-fund
+        working-directory: apps/pos
+
+      - name: Type-check the till
+        run: npm run typecheck
+        working-directory: apps/pos
+
       - name: Check standalone behaviour
-        run: node scripts/check-standalone.mjs
+        run: npm run check
+        working-directory: apps/pos

@@ -35,11 +35,6 @@ import type { SiteHeaderProps } from './site-header';
 import type { SiteFooterProps } from './site-footer';
 
 import { useScriptSettings } from '../context/script-settings-context';
-import { PosGuard } from '../pos/pos-guard';
-import { PosRoot, PosShell } from '../pos/pos-root';
-import { PosLocalSessionProvider } from '../pos/standalone/local-session-context';
-import { PosRoleProvider } from '../pos/standalone/role-context';
-import { PosOpeningCashProvider } from '../pos/standalone/opening-cash-context';
 
 import { AdminGuard } from '../admin/admin-guard';
 import { AdminShell } from '../admin/admin-shell';
@@ -111,32 +106,6 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
           <AdminRoot />
         </AdminShell>
       </AdminGuard>
-    );
-  }
-
-  // Point of sale (v10.0.0). Full-screen, outside LayoutShell and AdminShell:
-  // a till has no storefront chrome and no admin sidebar. PosGuard admits
-  // `staff` as well as `admin`, and refuses outright when the feature is off.
-  if (path === '/pos' || path.startsWith('/pos/')) {
-    return (
-      <PosLocalSessionProvider>
-        <PosRoleProvider>
-          <PosGuard>
-            {/*
-              Inside the guard, because the guard has just established that
-              somebody is signed in and holds `register` -- which is the only
-              circumstance in which a drawer count has anyone to belong to.
-              Above the shell, because the top bar is where a standing count
-              would be shown, and this saves moving the provider to do it.
-            */}
-            <PosOpeningCashProvider>
-              <PosShell>
-                <PosRoot />
-              </PosShell>
-            </PosOpeningCashProvider>
-          </PosGuard>
-        </PosRoleProvider>
-      </PosLocalSessionProvider>
     );
   }
 
@@ -284,17 +253,20 @@ function inferCheckoutCancelUrl(): string {
 }
 
 /**
- * Shown for every storefront path when `features.posOnly` is on. Points at the
- * register rather than rendering a bare 404 — on a register-only install the
- * person who lands on `/` is almost always staff who typed the wrong address.
+ * Shown for every storefront path when `features.posOnly` is on, and for every
+ * path at all in `standalone` mode, where there is no Firebase project for a
+ * storefront to read.
+ *
+ * It used to point staff at `/pos`. It no longer does: the register moved out
+ * of this package into `apps/pos`, and a link to a route this library does not
+ * serve is worse than no link.
  */
 function StorefrontDisabled() {
   return (
     <div style={{ maxWidth: 520, margin: '80px auto', padding: 24, textAlign: 'center' }}>
       <h1 style={{ fontSize: 28, margin: 0 }}>This store runs at the counter</h1>
       <p style={{ color: '#666', marginTop: 8 }}>
-        Online shopping is turned off for this store. Staff can open the register at{' '}
-        <a href="/pos">/pos</a>.
+        Online shopping is turned off for this store.
       </p>
     </div>
   );
