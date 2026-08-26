@@ -3,9 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
 import { InboxIcon, ScanIcon, SearchIcon, TrashIcon } from '../../../ui/icons';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Select } from '../../../ui/select';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
 import { cn } from '../../../utils/cn';
@@ -36,7 +33,7 @@ import type {
 import { LocalProductFormDialog } from './local-product-form-dialog';
 import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
-import { field, fieldLabel } from './panel-styles';
+import { PosSelect } from '../ui/pos-field';
 
 type Mode = 'scan' | 'manual';
 
@@ -349,23 +346,22 @@ export function LocalReceiveStockPage() {
                 scanner.submitManual(manualCode);
               }}
             >
-              <div style={{ ...field, flex: '2 1 260px' }}>
-                <label style={fieldLabel}>{t('pos.scan.title')}</label>
-                <Input
+              <div className="cpos-field" style={{ flex: '2 1 260px' }}>
+                <span className="cpos-field__label">{t('pos.scan.title')}</span>
+                <input className="cpos-input"
                   value={manualCode}
                   placeholder={t('pos.scan.placeholder')}
                   onChange={(e) => setManualCode(e.target.value)}
                 />
               </div>
-              <Button type="submit">{t('pos.store.receive.addCode')}</Button>
+              <button type="submit" className="cpos-btn cpos-btn--primary">{t('pos.store.receive.addCode')}</button>
               {scanner.cameraSupported ? (
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  onClick={() => (scanner.cameraActive ? scanner.stopCamera() : scanner.startCamera())}
-                >
+                  className="cpos-btn cpos-btn--outline"
+                  onClick={() => (scanner.cameraActive ? scanner.stopCamera() : scanner.startCamera())}>
                   {t(scanner.cameraActive ? 'pos.scan.cameraStop' : 'pos.scan.camera')}
-                </Button>
+                </button>
               ) : null}
             </form>
             <FieldDescription>{t('pos.store.receive.scanHelp')}</FieldDescription>
@@ -381,9 +377,9 @@ export function LocalReceiveStockPage() {
           </>
         ) : (
           <>
-            <div style={field}>
-              <label style={fieldLabel}>{t('pos.store.receive.find')}</label>
-              <Input
+            <div className="cpos-field">
+              <span className="cpos-field__label">{t('pos.store.receive.find')}</span>
+              <input className="cpos-input"
                 value={search}
                 placeholder={t('pos.admin.products.search')}
                 onChange={(e) => setSearch(e.target.value)}
@@ -392,30 +388,29 @@ export function LocalReceiveStockPage() {
             {matches.length ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {matches.map((p) => (
-                  <Button
+                  <button
+                    type="button"
+                    className="cpos-btn cpos-btn--outline cpos-btn--sm"
                     key={p.id}
-                    variant="outline"
-                    size="sm"
                     onClick={() => {
                       addLine(p);
                       setSearch('');
-                    }}
-                  >
+                    }}>
                     {p.name}
-                  </Button>
+                  </button>
                 ))}
               </div>
             ) : null}
             <div className="cpos-actions" style={{ justifyContent: 'flex-start' }}>
-              <Button
-                variant="outline"
+              <button
+                type="button"
+                className="cpos-btn cpos-btn--outline"
                 onClick={() => {
                   setNewProductBarcode('');
                   setNewProductOpen(true);
-                }}
-              >
+                }}>
                 {t('pos.store.receive.newProduct')}
-              </Button>
+              </button>
             </div>
           </>
         )}
@@ -424,18 +419,18 @@ export function LocalReceiveStockPage() {
       <section className="cpos-section">
         <h2 className="cpos-section__title">{t('pos.store.receive.paperwork')}</h2>
         <div className="cpos-row">
-          <div style={{ ...field, flex: '1 1 180px' }}>
-            <label style={fieldLabel}>{t('pos.store.receive.reference')}</label>
-            <Input
+          <div className="cpos-field" style={{ flex: '1 1 180px' }}>
+            <span className="cpos-field__label">{t('pos.store.receive.reference')}</span>
+            <input className="cpos-input"
               value={receipt.reference}
               placeholder={t('pos.store.receive.referencePlaceholder')}
               onChange={(e) => update({ ...receipt, reference: e.target.value })}
             />
           </div>
           {settings.suppliersEnabled ? (
-            <div style={{ ...field, flex: '1 1 200px' }}>
-              <label style={fieldLabel}>{t('pos.store.supplier.one')}</label>
-              <Select
+            <div className="cpos-field" style={{ flex: '1 1 200px' }}>
+              <span className="cpos-field__label">{t('pos.store.supplier.one')}</span>
+              <PosSelect
                 value={receipt.supplierId}
                 onChange={(e) => update({ ...receipt, supplierId: e.target.value })}
                 options={[
@@ -445,9 +440,9 @@ export function LocalReceiveStockPage() {
               />
             </div>
           ) : null}
-          <div style={{ ...field, flex: '2 1 220px' }}>
-            <label style={fieldLabel}>{t('pos.store.adjust.note')}</label>
-            <Input value={receipt.note} onChange={(e) => update({ ...receipt, note: e.target.value })} />
+          <div className="cpos-field" style={{ flex: '2 1 220px' }}>
+            <span className="cpos-field__label">{t('pos.store.adjust.note')}</span>
+            <input className="cpos-input" value={receipt.note} onChange={(e) => update({ ...receipt, note: e.target.value })} />
           </div>
         </div>
       </section>
@@ -489,7 +484,7 @@ export function LocalReceiveStockPage() {
                       <td>{line.productName}</td>
                       <td>
                         {product && product.sizes.length ? (
-                          <Select
+                          <PosSelect
                             value={line.sizeKey}
                             onChange={(e) => setLine(index, { sizeKey: e.target.value })}
                             options={product.sizes.map((s) => ({ value: s, label: s }))}
@@ -499,7 +494,7 @@ export function LocalReceiveStockPage() {
                         )}
                       </td>
                       <td className="cpos-table__num">
-                        <Input
+                        <input className="cpos-input"
                           value={String(line.quantity)}
                           inputMode="numeric"
                           style={{ maxWidth: 88 }}
@@ -507,7 +502,7 @@ export function LocalReceiveStockPage() {
                         />
                       </td>
                       <td className="cpos-table__num">
-                        <Input
+                        <input className="cpos-input"
                           value={String(line.unitCost)}
                           inputMode="decimal"
                           style={{ maxWidth: 96 }}
@@ -517,7 +512,7 @@ export function LocalReceiveStockPage() {
                       {settings.lotTrackingEnabled ? (
                         <td>
                           {tracks ? (
-                            <Input
+                            <input className="cpos-input"
                               value={line.lotCode}
                               style={{ maxWidth: 120 }}
                               onChange={(e) => setLine(index, { lotCode: e.target.value })}
@@ -530,7 +525,7 @@ export function LocalReceiveStockPage() {
                       {settings.lotTrackingEnabled ? (
                         <td>
                           {tracks ? (
-                            <Input
+                            <input className="cpos-input"
                               type="date"
                               value={line.expiresOn}
                               style={{ maxWidth: 150 }}
@@ -541,9 +536,9 @@ export function LocalReceiveStockPage() {
                       ) : null}
                       <td className="cpos-table__num">{money(line.quantity * line.unitCost)}</td>
                       <td>
-                        <Button variant="ghost" size="sm" onClick={() => removeLine(index)}>
+                        <button type="button" className="cpos-btn cpos-btn--ghost cpos-btn--sm"   onClick={() => removeLine(index)}>
                           <TrashIcon size={15} />
-                        </Button>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -571,17 +566,17 @@ export function LocalReceiveStockPage() {
         </div>
 
         <div className="cpos-actions">
-          <Button variant="outline" onClick={() => push('/pos/store')}>
+          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => push('/pos/store')}>
             {t('common.cancel')}
-          </Button>
+          </button>
           {receipt.lines.length ? (
-            <Button variant="destructive" onClick={() => void discard()}>
+            <button type="button" className="cpos-btn cpos-btn--danger" onClick={() => void discard()}>
               {t('pos.store.receive.discard')}
-            </Button>
+            </button>
           ) : null}
-          <Button disabled={posting || !receipt.lines.length} onClick={() => void post()}>
+          <button type="button" className="cpos-btn cpos-btn--primary" disabled={posting || !receipt.lines.length} onClick={() => void post()}>
             {t('pos.store.receive.confirm')}
-          </Button>
+          </button>
         </div>
         <FieldDescription>{t('pos.store.receive.confirmHelp')}</FieldDescription>
       </section>

@@ -1,9 +1,13 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useCaspianNavigation } from '../provider/caspian-store-provider';
-import { useT } from '../i18n/locale-context';
-import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { useCaspianNavigation } from '../../../provider/caspian-store-provider';
+import { useT } from '../../../i18n/locale-context';
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../../../ui/dropdown-menu';
 import {
   ChevronDownIcon,
   LogOutIcon,
@@ -13,54 +17,53 @@ import {
   PlusIcon,
   SearchIcon,
   SettingsIcon,
-  ShoppingCartIcon,
   SunIcon,
   UserIcon,
   XIcon,
-} from '../ui/icons';
-import { PosConnectionPill } from './pos-connection-pill';
-import { PosInstallButton } from './pos-install-button';
-import { usePosChrome } from './theme/pos-chrome-context';
-import type { PosSaleQueue } from './offline/pos-sale-queue';
-import type { UserProfile } from '../types';
+} from '../../../ui/icons';
+import { usePosChrome } from '../../theme/pos-chrome-context';
+import { usePosLocalSession } from '../local-session-context';
+import { usePosRoles } from '../role-context';
+import { usePosQuickAdd } from '../admin/quick-add/pos-quick-add-context';
 
-export interface PosTopbarProps {
+export interface PosLocalTopbarProps {
   /** What the current screen is called, shown where a browser tab title would be. */
   title: string;
   whoIsHere: string;
   initials: string;
-  userProfile?: UserProfile | null;
-  queue?: PosSaleQueue | null;
   onExit: () => void;
 }
 
 /**
- * The bar above the sale, on a register backed by a Firebase project.
+ * The standalone till's own top bar.
  *
- * Everything that used to be navigation moved to `PosSidebar`; what is left is
- * the work of the current screen -- where you are, what you are looking for, and
- * the state of the connection.
+ * Split from `pos-topbar.tsx` in v1.4.0. That file is shared with the
+ * cloud-backed register and had grown five `local && …` branches -- a quick-add
+ * dropdown whose every entry was standalone-only, and two form dialogs a cloud
+ * register imported and could never open. pos/CLAUDE.md is explicit that a
+ * standalone feature reaching into a shared screen is the signal it wants a file
+ * of its own, so it got one, and the branches came out of the shared file rather
+ * than growing a sixth.
  *
- * A standalone till renders `PosLocalTopbar` instead, and does not come through
- * here at all. Until v1.4.0 it did, and this file carried five `local && …`
- * branches for it: a quick-add dropdown whose every entry was standalone-only,
- * and two form dialogs a cloud register imported and could never open. Those are
- * gone rather than gated harder -- pos/CLAUDE.md is explicit that a standalone
- * feature reaching into a shared screen is the signal it wants a file of its
- * own. Nothing a cloud register renders changed when they went.
+ * The bar says where you are, lets you find a product, and opens the one dialog
+ * that creates things. Navigation is the sidebar's -- see the note on
+ * `PosShellChrome` for why it is not back up here.
  */
-export function PosTopbar({
-  title,
-  whoIsHere,
-  initials,
-  userProfile,
-  queue,
-  onExit,
-}: PosTopbarProps) {
+export function PosLocalTopbar({ title, whoIsHere, initials, onExit }: PosLocalTopbarProps) {
   const { searchParams, replace } = useCaspianNavigation();
   const t = useT();
   const { compact, openDrawer, themeMode, cycleTheme } = usePosChrome();
+  const session = usePosLocalSession();
+  const { can } = usePosRoles();
+  const quickAdd = usePosQuickAdd();
   const [search, setSearch] = useState(() => searchParams?.get('q') ?? '');
+
+  const role = session.user?.role;
+  // Quick add offers nothing at all to a role that may edit neither the
+  // catalogue nor the staff, and a button that opens an empty dialog is worse
+  // than no button.
+  const mayCreate = can(role, 'store.edit') || can(role, 'people.edit');
+  const maySeeSettings = can(role, 'settings.view');
 
   const submitSearch = useCallback(
     (term: string) => {
@@ -93,6 +96,7 @@ export function PosTopbar({
 
       <div className="cpos-topbar__title">
         <h1 className="cpos-topbar__h">{title}</h1>
+        <span className="cpos-topbar__sub">{t('pos.storage.localShort')}</span>
       </div>
 
       <div className="cpos-topbar__spacer" />
@@ -131,28 +135,23 @@ export function PosTopbar({
       </form>
 
       <div className="cpos-topbar__tools">
-        <DropdownMenu
-          trigger={
-            <button type="button" className="cpos-btn cpos-btn--primary cpos-btn--sm">
-              <PlusIcon size={16} />
-              <span>{t('pos.quickAdd.title')}</span>
-            </button>
-          }
-        >
-          <DropdownMenuItem icon={<ShoppingCartIcon size={16} />} onSelect={() => replace('/pos')}>
-            {t('pos.quickAdd.newSale')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            icon={<SettingsIcon size={16} />}
-            onSelect={() => replace('/pos/settings')}
+        {/*
+          One button, not a menu. It used to be a dropdown of four shortcuts --
+          two of which were plain navigation the sidebar already carries -- and
+          picking one of them opened a different-looking form each time. The
+          dialog behind this button is the same one every Add button on every
+          screen opens.
+        */}
+        {mayCreate ? (
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--primary cpos-btn--sm"
+            onClick={() => quickAdd.open()}
           >
-            {t('pos.nav.settings')}
-          </DropdownMenuItem>
-        </DropdownMenu>
-
-        {queue ? <PosConnectionPill queue={queue} /> : null}
-        <PosInstallButton />
+            <PlusIcon size={16} />
+            <span>{t('pos.quickAdd.title')}</span>
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -179,11 +178,7 @@ export function PosTopbar({
               aria-label={whoIsHere || t('pos.nav.user')}
             >
               <span className="cpos-avatar cpos-avatar--sm">
-                {userProfile?.photoURL ? (
-                  <img src={userProfile.photoURL} alt="" />
-                ) : (
-                  initials || <UserIcon size={14} />
-                )}
+                {initials || <UserIcon size={14} />}
               </span>
               <ChevronDownIcon size={14} />
             </button>
@@ -191,17 +186,16 @@ export function PosTopbar({
         >
           <div className="cpos-menucard">
             <div className="cpos-menucard__name">{whoIsHere || t('pos.nav.user')}</div>
-            {userProfile?.email ? (
-              <div className="cpos-menucard__mail">{userProfile.email}</div>
-            ) : null}
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            icon={<SettingsIcon size={16} />}
-            onSelect={() => replace('/pos/settings')}
-          >
-            {t('pos.nav.settings')}
-          </DropdownMenuItem>
+          {maySeeSettings ? (
+            <DropdownMenuItem
+              icon={<SettingsIcon size={16} />}
+              onSelect={() => replace('/pos/settings')}
+            >
+              {t('pos.nav.settings')}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem icon={<LogOutIcon size={16} />} destructive onSelect={onExit}>
             {t('pos.nav.exit')}
           </DropdownMenuItem>

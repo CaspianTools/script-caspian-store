@@ -3,18 +3,15 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useT } from '../../i18n/locale-context';
 import { useCaspianNavigation, useCaspianStandalone } from '../../provider/caspian-store-provider';
-import { Button } from '../../ui/button';
 import { CashDrawerIcon } from '../../ui/icons';
-import { Dialog } from '../../ui/dialog';
-import { Input } from '../../ui/input';
 import { useToast } from '../../ui/toast';
 import { parseAmount } from '../pos-tender-dialog';
 import { PosAdminPage } from './admin/pos-admin-page';
-import { actions, field, fieldLabel, muted, section } from './admin/panel-styles';
 import { usePosShift } from './shift-context';
 import { ShiftReport } from './shift-report';
 import type { ShiftTotals } from './shift-totals';
 import type { LocalShift } from './types';
+import { PosDialog } from './ui/pos-dialog';
 
 /**
  * The open shift: what it has taken, the money moved in and out of the drawer,
@@ -83,8 +80,8 @@ export function PosShiftPage() {
         title={t('pos.shift.pageTitle')}
         subtitle={t('pos.shift.pageSubtitle')}
       >
-        <section style={section}>
-          <p style={muted}>{t('pos.shift.notEnabled')}</p>
+        <section className="cpos-section">
+          <p className="cpos-muted">{t('pos.shift.notEnabled')}</p>
         </section>
       </PosAdminPage>
     );
@@ -97,20 +94,20 @@ export function PosShiftPage() {
         title={t('pos.shift.zTitle')}
         subtitle={t('pos.shift.zSubtitle')}
       >
-        <section style={section}>
+        <section className="cpos-section">
           {/* No totals passed: a closed shift is read off the figures it was
               closed at, never recomputed. */}
           <ShiftReport shift={justClosed} formatPrice={formatPrice} />
-          <div style={actions}>
+          <div className="cpos-actions">
             {/*
               The browser's own print, which is the only receipt transport this
               till has -- see the disabled printer picker at /pos/settings. It
               prints the page, so the report is the page.
             */}
-            <Button variant="outline" onClick={() => window.print()}>
+            <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => window.print()}>
               {t('pos.shift.print')}
-            </Button>
-            <Button onClick={() => push('/pos')}>{t('pos.shift.backToRegister')}</Button>
+            </button>
+            <button type="button" className="cpos-btn cpos-btn--primary" onClick={() => push('/pos')}>{t('pos.shift.backToRegister')}</button>
           </div>
         </section>
       </PosAdminPage>
@@ -124,10 +121,10 @@ export function PosShiftPage() {
         title={t('pos.shift.pageTitle')}
         subtitle={t('pos.shift.pageSubtitle')}
       >
-        <section style={section}>
-          <p style={muted}>{t('pos.shift.noneOpen')}</p>
-          <div style={actions}>
-            <Button onClick={() => push('/pos')}>{t('pos.shift.backToRegister')}</Button>
+        <section className="cpos-section">
+          <p className="cpos-muted">{t('pos.shift.noneOpen')}</p>
+          <div className="cpos-actions">
+            <button type="button" className="cpos-btn cpos-btn--primary" onClick={() => push('/pos')}>{t('pos.shift.backToRegister')}</button>
           </div>
         </section>
       </PosAdminPage>
@@ -140,21 +137,21 @@ export function PosShiftPage() {
         title={t('pos.shift.pageTitle')}
         subtitle={t('pos.shift.pageSubtitle')}
       >
-      <section style={section}>
+      <section className="cpos-section">
         <ShiftReport shift={shift} totals={totals} formatPrice={formatPrice} />
-        <div style={actions}>
-          <Button variant="outline" onClick={() => setMovementKind('in')}>
+        <div className="cpos-actions">
+          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => setMovementKind('in')}>
             {t('pos.shift.cashIn')}
-          </Button>
-          <Button variant="outline" onClick={() => setMovementKind('out')}>
+          </button>
+          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => setMovementKind('out')}>
             {t('pos.shift.cashOut')}
-          </Button>
-          <Button onClick={() => setClosing(true)}>{t('pos.shift.close')}</Button>
+          </button>
+          <button type="button" className="cpos-btn cpos-btn--primary" onClick={() => setClosing(true)}>{t('pos.shift.close')}</button>
         </div>
       </section>
 
       {shift.movements.length ? (
-        <section style={section}>
+        <section className="cpos-section">
           <strong>{t('pos.shift.movements')}</strong>
           {shift.movements.map((movement) => (
             <div key={movement.id} style={{ display: 'flex', gap: 12, fontSize: 13.5 }}>
@@ -163,7 +160,7 @@ export function PosShiftPage() {
                 {formatPrice(movement.amount)}
               </span>
               <span>{movement.reason || t('pos.shift.noReason')}</span>
-              <span style={muted}>{movement.byUserName}</span>
+              <span className="cpos-muted">{movement.byUserName}</span>
             </div>
           ))}
         </section>
@@ -227,37 +224,36 @@ function CashMovementDialog({
   };
 
   return (
-    <Dialog
+    <PosDialog
       open={kind !== null}
       onOpenChange={onOpenChange}
       title={kind === 'out' ? t('pos.shift.cashOut') : t('pos.shift.cashIn')}
-      maxWidth={420}
-      footer={
+      foot={
         <>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => onOpenChange(false)} disabled={saving}>
             {t('common.cancel')}
-          </Button>
-          <Button onClick={submit} loading={saving} disabled={blocked}>
+          </button>
+          <button type="button" className="cpos-btn cpos-btn--primary" onClick={submit} disabled={saving || blocked}>
             {t('pos.shift.record')}
-          </Button>
+          </button>
         </>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={field}>
-          <span style={fieldLabel}>{t('pos.shift.amount')}</span>
-          <Input value={typed} inputMode="decimal" autoFocus onChange={(e) => setTyped(e.target.value)} />
+        <div className="cpos-field">
+          <span className="cpos-field__label">{t('pos.shift.amount')}</span>
+          <input className="cpos-input" value={typed} inputMode="decimal" autoFocus onChange={(e) => setTyped(e.target.value)} />
         </div>
-        <div style={field}>
-          <span style={fieldLabel}>{t('pos.shift.reason')}</span>
-          <Input
+        <div className="cpos-field">
+          <span className="cpos-field__label">{t('pos.shift.reason')}</span>
+          <input className="cpos-input"
             value={reason}
             placeholder={t('pos.shift.reasonPlaceholder')}
             onChange={(e) => setReason(e.target.value)}
           />
         </div>
       </div>
-    </Dialog>
+    </PosDialog>
   );
 }
 
@@ -303,27 +299,26 @@ function CloseShiftDialog({
   };
 
   return (
-    <Dialog
+    <PosDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t('pos.shift.close')}
-      maxWidth={440}
-      footer={
+      foot={
         <>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => onOpenChange(false)} disabled={saving}>
             {t('common.cancel')}
-          </Button>
-          <Button onClick={submit} loading={saving} disabled={!raw}>
+          </button>
+          <button type="button" className="cpos-btn cpos-btn--primary" onClick={submit} disabled={saving || !raw}>
             {t('pos.shift.closeConfirm')}
-          </Button>
+          </button>
         </>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <p style={muted}>{t('pos.shift.closeBody')}</p>
-        <div style={field}>
-          <span style={fieldLabel}>{t('pos.shift.counted')}</span>
-          <Input value={typed} inputMode="decimal" autoFocus onChange={(e) => setTyped(e.target.value)} />
+        <p className="cpos-muted">{t('pos.shift.closeBody')}</p>
+        <div className="cpos-field">
+          <span className="cpos-field__label">{t('pos.shift.counted')}</span>
+          <input className="cpos-input" value={typed} inputMode="decimal" autoFocus onChange={(e) => setTyped(e.target.value)} />
         </div>
         <div className="cpos-zreport">
           <div className="cpos-zreport__row">
@@ -353,6 +348,6 @@ function CloseShiftDialog({
           ) : null}
         </div>
       </div>
-    </Dialog>
+    </PosDialog>
   );
 }

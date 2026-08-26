@@ -4,6 +4,12 @@ Orientation for AI sessions working on the **standalone register**. It is a
 separate product from the store library that surrounds it: its own version, its
 own changelog, and a release cycle that ends at `git push`.
 
+**What the till is built out of** — every `--cpos-*` token, every control, the
+three page shapes to copy, and the rule that nothing under `src/pos/` imports a
+control from `src/ui/` — is in [DESIGN.md](DESIGN.md). Read it before adding a
+screen, and update it in the same change as any control, token or layout it
+describes. Nothing enforces that in CI.
+
 The library's own rules are in [../CLAUDE.md](../CLAUDE.md) and still apply to
 everything this file does not claim — strict TypeScript, the framework-adapter
 contract, the i18n layer, the `"use client"` boundary, the style guide, and the

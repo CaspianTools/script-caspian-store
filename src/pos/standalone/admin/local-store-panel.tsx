@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { PackageIcon, StoreIcon } from '../../../ui/icons';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Select } from '../../../ui/select';
+import { PackageIcon, PlusIcon, StoreIcon } from '../../../ui/icons';
+import { PosSelect } from '../ui/pos-field';
 import { useCaspianNavigation } from '../../../provider/caspian-store-provider';
 import { deleteLocalProduct, listAllLocalLots, listLocalProducts } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
@@ -14,17 +12,18 @@ import { usePosShopSettings } from '../shop-settings-context';
 import { localDayKey } from '../opening-cash';
 import { lotExpiryState, sortLotsFefo, type LotExpiryState } from '../lot-allocation';
 import type { LocalProduct, LocalStockLot } from '../types';
-import { LocalProductFormDialog } from './local-product-form-dialog';
 import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
+import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
 
 /**
  * Storekeeper inventory page.
  *
  * The list is stock-centric, every row opens the item's own page, and the two
  * ways stock arrives -- a new item, or more of one already here -- are the two
- * buttons in the toolbar.
+ * buttons in the toolbar. Adding goes through Quick add, so the form is the same
+ * one the top bar opens rather than a second copy of it.
  */
 export function LocalStorePanel() {
   const t = useT();
@@ -32,6 +31,7 @@ export function LocalStorePanel() {
   const session = usePosLocalSession();
   const { can } = usePosRoles();
   const { settings } = usePosShopSettings();
+  const quickAdd = usePosQuickAdd();
   // Seeing the shelf and restocking it are separate grants, so a role can be
   // given the stock list to count against without also being able to rewrite it.
   const mayEdit = can(session.user?.role, 'store.edit');
@@ -42,8 +42,6 @@ export function LocalStorePanel() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<LocalProduct | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -64,7 +62,7 @@ export function LocalStorePanel() {
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, quickAdd.savedCount]);
 
   const totalStock = (p: LocalProduct) =>
     (Object.values(p.stock) as number[]).reduce((a, b) => a + b, 0);
@@ -104,11 +102,6 @@ export function LocalStorePanel() {
     });
   }, [products, search, category]);
 
-  const startAdd = () => {
-    setEditing(null);
-    setDialogOpen(true);
-  };
-
   const remove = async (p: LocalProduct) => {
     if (!window.confirm(t('pos.admin.products.confirmDelete', { name: p.name }))) return;
     await deleteLocalProduct(p.id);
@@ -147,15 +140,20 @@ export function LocalStorePanel() {
               alignItems: 'center',
             }}
           >
-            <Input
+            <input
+              className="cpos-input"
+              type="search"
               style={{ maxWidth: 240 }}
               value={search}
               placeholder={t('pos.admin.products.search')}
+              aria-label={t('pos.admin.products.search')}
               onChange={(e) => setSearch(e.target.value)}
             />
             {showCategory && categories.length ? (
-              <Select
+              <PosSelect
+                style={{ maxWidth: 200 }}
                 value={category}
+                aria-label={t('pos.store.allCategories')}
                 onChange={(e) => setCategory(e.target.value)}
                 options={[
                   { value: '', label: t('pos.store.allCategories') },
@@ -164,11 +162,24 @@ export function LocalStorePanel() {
               />
             ) : null}
             {mayReceive ? (
-              <Button variant="outline" onClick={() => push('/pos/store/receive')}>
+              <button
+                type="button"
+                className="cpos-btn cpos-btn--outline"
+                onClick={() => push('/pos/store/receive')}
+              >
                 {t('pos.store.receive.action')}
-              </Button>
+              </button>
             ) : null}
-            {mayEdit ? <Button onClick={startAdd}>{t('pos.store.addTitle')}</Button> : null}
+            {mayEdit ? (
+              <button
+                type="button"
+                className="cpos-btn cpos-btn--primary"
+                onClick={() => quickAdd.open('product')}
+              >
+                <PlusIcon size={16} />
+                {t('pos.store.addTitle')}
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -209,17 +220,7 @@ export function LocalStorePanel() {
                             also swallows the Delete button underneath it. */}
                         <button
                           type="button"
-                          className="cpos-strip__link"
-                          style={{
-                            background: 'none',
-                            border: 0,
-                            padding: 0,
-                            font: 'inherit',
-                            fontWeight: 600,
-                            color: 'var(--cpos-brand)',
-                            cursor: 'pointer',
-                            textAlign: 'start',
-                          }}
+                          className="cpos-rowlink"
                           onClick={() => push(`/pos/store/${p.id}`)}
                         >
                           {p.name}
@@ -245,13 +246,21 @@ export function LocalStorePanel() {
                       <td className="cpos-table__num">{totalStock(p)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <Button variant="ghost" size="sm" onClick={() => push(`/pos/store/${p.id}`)}>
+                          <button
+                            type="button"
+                            className="cpos-btn cpos-btn--ghost cpos-btn--sm"
+                            onClick={() => push(`/pos/store/${p.id}`)}
+                          >
                             {t('pos.store.open')}
-                          </Button>
+                          </button>
                           {mayEdit ? (
-                            <Button variant="destructive" size="sm" onClick={() => void remove(p)}>
+                            <button
+                              type="button"
+                              className="cpos-btn cpos-btn--danger cpos-btn--sm"
+                              onClick={() => void remove(p)}
+                            >
                               {t('common.delete')}
-                            </Button>
+                            </button>
                           ) : null}
                         </div>
                       </td>
@@ -263,13 +272,6 @@ export function LocalStorePanel() {
           </div>
         )}
       </section>
-
-      <LocalProductFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        product={editing}
-        onSaved={() => void refresh()}
-      />
     </div>
   );
 }

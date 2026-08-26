@@ -2,23 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Select } from '../../../ui/select';
-import { Dialog } from '../../../ui/dialog';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
 import { cn } from '../../../utils/cn';
 import { adjustLocalStock } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { DEFAULT_SIZE_KEY } from '../lot-allocation';
+import { PosSelect } from '../ui/pos-field';
+import { PosDialog } from '../ui/pos-dialog';
 import {
   LOCAL_STOCK_ADJUST_REASONS,
   type LocalProduct,
   type LocalStockAdjustReason,
   type LocalStockLot,
 } from '../types';
-import { field, fieldLabel, row } from './panel-styles';
 
 export interface LocalStockAdjustDialogProps {
   open: boolean;
@@ -110,25 +107,24 @@ export function LocalStockAdjustDialog({
   };
 
   return (
-    <Dialog
+    <PosDialog
       open={open}
       onOpenChange={onOpenChange}
       title={t('pos.store.adjust.title', { name: product.name })}
-      maxWidth={560}
-      footer={
+      foot={
         <>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
-          </Button>
-          <Button disabled={saving} onClick={() => void save()}>
+          </button>
+          <button type="button" className="cpos-btn cpos-btn--primary" disabled={saving} onClick={() => void save()}>
             {t('pos.store.adjust.confirm')}
-          </Button>
+          </button>
         </>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={field}>
-          <span style={fieldLabel}>{t('pos.store.adjust.direction')}</span>
+        <div className="cpos-field">
+          <span className="cpos-field__label">{t('pos.store.adjust.direction')}</span>
           <div className="cpos-choices" role="group" aria-label={t('pos.store.adjust.direction')}>
             {(['in', 'out'] as const).map((value) => (
               <button
@@ -146,19 +142,19 @@ export function LocalStockAdjustDialog({
           </div>
         </div>
 
-        <div style={row}>
-          <div style={{ ...field, flex: '1 1 120px' }}>
-            <label style={fieldLabel}>{t('pos.store.adjust.quantity')}</label>
-            <Input
+        <div className="cpos-row">
+          <div className="cpos-field" style={{ flex: '1 1 120px' }}>
+            <span className="cpos-field__label">{t('pos.store.adjust.quantity')}</span>
+            <input className="cpos-input"
               value={quantity}
               inputMode="numeric"
               onChange={(e) => setQuantity(e.target.value)}
             />
           </div>
           {product.sizes.length ? (
-            <div style={{ ...field, flex: '1 1 120px' }}>
-              <label style={fieldLabel}>{t('pos.admin.products.sizes')}</label>
-              <Select
+            <div className="cpos-field" style={{ flex: '1 1 120px' }}>
+              <span className="cpos-field__label">{t('pos.admin.products.sizes')}</span>
+              <PosSelect
                 value={sizeKey}
                 onChange={(e) => {
                   setSizeKey(e.target.value);
@@ -168,9 +164,9 @@ export function LocalStockAdjustDialog({
               />
             </div>
           ) : null}
-          <div style={{ ...field, flex: '2 1 200px' }}>
-            <label style={fieldLabel}>{t('pos.store.adjust.reason')}</label>
-            <Select
+          <div className="cpos-field" style={{ flex: '2 1 200px' }}>
+            <span className="cpos-field__label">{t('pos.store.adjust.reason')}</span>
+            <PosSelect
               value={reason}
               onChange={(e) => setReason(e.target.value as LocalStockAdjustReason)}
               options={LOCAL_STOCK_ADJUST_REASONS.map((r) => ({
@@ -182,9 +178,9 @@ export function LocalStockAdjustDialog({
         </div>
 
         {product.tracksLots && sizeLots.length ? (
-          <div style={field}>
-            <label style={fieldLabel}>{t('pos.store.lot.one')}</label>
-            <Select
+          <div className="cpos-field">
+            <span className="cpos-field__label">{t('pos.store.lot.one')}</span>
+            <PosSelect
               value={lotId}
               onChange={(e) => setLotId(e.target.value)}
               options={[
@@ -203,15 +199,15 @@ export function LocalStockAdjustDialog({
           </div>
         ) : null}
 
-        <div style={field}>
-          <label style={fieldLabel}>{t('pos.store.adjust.note')}</label>
-          <Input value={note} onChange={(e) => setNote(e.target.value)} />
+        <div className="cpos-field">
+          <span className="cpos-field__label">{t('pos.store.adjust.note')}</span>
+          <input className="cpos-input" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
 
         {reason === 'customer-return' ? (
           <div className="cpos-note cpos-note--brand">{t('pos.store.adjust.returnNote')}</div>
         ) : null}
       </div>
-    </Dialog>
+    </PosDialog>
   );
 }

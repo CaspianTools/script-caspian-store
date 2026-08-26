@@ -875,6 +875,82 @@ const az: MessageDict = {
   'pos.appAdmin.recovery.mintedFor': 'Hazırkı kod {name} hesabına aiddir, {date} tarixində yaradılıb.',
   'pos.appAdmin.recovery.help':
     'Yeni kod yaratmaq köhnəsini dərhal dayandırır. Kod bir dəfə göstərilir; sonra kassa yalnız şifrələnmiş surəti saxlayır və onu heç kim, o cümlədən kassanı quran şəxs də, oxuya bilmir.',
+
+  // --- Sürətli əlavə (v1.4.0) ---
+  'pos.quickAdd.search': 'Axtar',
+  'pos.quickAdd.noMatch': 'Uyğun gələn yoxdur.',
+  'pos.quickAdd.nothingTitle': 'Burada əlavə ediləsi bir şey yoxdur',
+  'pos.quickAdd.nothingHelp':
+    'Rolunuz məhsul, kateqoriya, təchizatçı və ya şəxs əlavə edə bilmir. Kassaya baxan şəxs bunu App admin bölməsində dəyişə bilər.',
+  'pos.quickAdd.entry.product': 'Məhsul',
+  'pos.quickAdd.entry.productBlurb': 'Mağazanın satdığı bir şey.',
+  'pos.quickAdd.entry.category': 'Kateqoriya',
+  'pos.quickAdd.entry.categoryBlurb': 'Məhsulları yığmaq üçün qrup.',
+  'pos.quickAdd.entry.supplier': 'Təchizatçı',
+  'pos.quickAdd.entry.supplierBlurb': 'Mağazanın mal aldığı şəxs.',
+  'pos.quickAdd.entry.person': 'Şəxs',
+  'pos.quickAdd.entry.personBlurb': 'Burada işləyən biri üçün hesab.',
+  'pos.quickAdd.action.product': 'Məhsul əlavə et',
+  'pos.quickAdd.action.category': 'Kateqoriya əlavə et',
+  'pos.quickAdd.action.supplier': 'Təchizatçı əlavə et',
+  'pos.quickAdd.action.person': 'Şəxs əlavə et',
+
+  'pos.store.range.label': 'Dövr',
+  'pos.store.range.today': 'Bu gün',
+  'pos.store.range.week': 'Son 7 gün',
+  'pos.store.range.month': 'Son 30 gün',
+  'pos.store.range.all': 'Bütün vaxt',
+  'pos.store.revenue': 'Gəlir',
+  'pos.store.grossProfit': 'Ümumi mənfəət',
+  'pos.store.grossProfitPartial': 'Maya dəyəri yazılmamış {count} ədəd nəzərə alınmır',
+
+  'pos.store.category.needsName': 'Kateqoriyaya ad verin.',
+  'pos.store.category.added': '{name} əlavə edildi',
+  'pos.store.category.addHelp':
+    'Məhsullar ada görə yığılır, ona görə seçim siyahısında görünəcək söz budur.',
+  'pos.store.category.pageSub': '{count, plural, =0 {Məhsul yoxdur} other {# məhsul}}',
+  'pos.store.category.figures': 'Rəqəmlər',
+  'pos.store.category.products': 'Məhsullar',
+  'pos.store.category.activeCount': '{count} satışda',
+  'pos.store.category.productsTitle': 'Bu kateqoriyadakı məhsullar',
+  'pos.store.category.noProducts': 'Hələ bu kateqoriyaya heç nə yığılmayıb.',
+  'pos.store.category.rename': 'Adını dəyiş',
+  'pos.store.category.renameHelp': 'Buraya yığılmış hər məhsul yeni ada keçirilir.',
+  'pos.store.category.backToList': 'Kateqoriyalara qayıt',
+  'pos.store.category.missing': 'Belə kateqoriya yoxdur',
+  'pos.store.category.missingHelp': 'Silinmiş ola bilər, ya da ünvan səhvdir.',
+  'pos.store.category.historyNote':
+    'Məhsul kateqoriyanı keçid kimi yox, ad kimi daşıyır — ona görə məhsulu başqa kateqoriyaya keçirmək satış tarixçəsini də özü ilə aparır.',
+
+  'pos.store.product.salesTitle': 'Satışlar',
+  'pos.store.product.onSales': '{count, plural, =0 {satış yoxdur} other {# satışda}}',
+  'pos.store.product.afterDiscount': '{amount} endirim',
+  'pos.store.product.averagePrice': 'Orta qiymət',
+  'pos.store.product.lastSold': 'Son satış',
+  'pos.store.product.noSales': 'Bu dövrdə heç nə satılmayıb.',
+
+  'pos.store.supplier.figures': 'Rəqəmlər',
+  'pos.store.supplier.productsSupplied': 'Verdiyi məhsullar',
+  'pos.store.supplier.unitsReceived': 'Qəbul edilən ədəd',
+  'pos.store.supplier.stillOnHand': 'Hələ qalıb',
+  'pos.store.supplier.soldFromBatches': 'Partiyalarından satılan',
+  'pos.store.supplier.atCost': 'maya dəyəri ilə {amount}',
+  'pos.store.supplier.lastOn': 'Sonuncu {date}',
+  'pos.store.supplier.deliveriesTitle': 'Tədarüklər',
+  'pos.store.supplier.noDeliveries': 'Ondan hələ heç nə qəbul edilməyib.',
+  'pos.store.supplier.productsTitle': 'Nə verir',
+  'pos.store.supplier.noProducts': 'Hələ heç bir tədarük məhsul adı daşımır.',
+  'pos.store.supplier.noContact': 'Əlaqə məlumatı yoxdur',
+  'pos.store.supplier.backToList': 'Təchizatçılara qayıt',
+  'pos.store.supplier.missing': 'Belə təchizatçı yoxdur',
+  'pos.store.supplier.missingHelp': 'Silinmiş ola bilər, ya da ünvan səhvdir.',
+  'pos.store.supplier.attributionPartial':
+    'Satış rəqəmləri yalnız partiya ilə qəbul edilən mallara aiddir. Bu təchizatçının verdiyi qalan mallar da satılır, amma satış məhsulu yazır, hansı tədarükdən gəldiyini yox — ona görə kassa malın kimə aid olduğunu deyə bilmir.',
+  'pos.store.supplier.attributionNone':
+    'Kassa bu təchizatçının nə satdığını deyə bilmir. Satış məhsulu yazır, hansı tədarükdən gəldiyini yox, ona görə mal yalnız partiya ilə qəbul edilibsə təchizatçıya qədər izlənə bilir — bunlarınsa heç biri elə deyil.',
+  'pos.store.receive.totalCost': 'Ümumi məbləğ',
+
+  'pos.admin.people.needsCredentials': 'Həm istifadəçi adı, həm parol lazımdır.',
 };
 
 export default az;

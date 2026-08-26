@@ -2,14 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import { readLocalShopSettings } from '../local-db';
 import { listLocalShifts, summariseLocalShift } from '../local-shifts';
 import { ShiftReport } from '../shift-report';
 import type { ShiftTotals } from '../shift-totals';
 import type { LocalShift } from '../types';
-import { muted, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 
 /**
@@ -89,37 +86,38 @@ export function LocalShiftsPanel() {
 
   return (
     <>
-      <section style={section}>
+      <section className="cpos-section">
         <strong>{t('pos.shift.list.title')}</strong>
         {loadFailed ? <PanelLoadError onRetry={refresh} /> : null}
         {shifts === null ? (
           <div className="cpos-skeleton" style={{ height: 120 }} />
         ) : shifts.length === 0 ? (
-          <p style={muted}>{t('pos.shift.list.empty')}</p>
+          <p className="cpos-muted">{t('pos.shift.list.empty')}</p>
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t('pos.shift.list.colDay')}</TH>
-                <TH>{t('pos.shift.list.colCashier')}</TH>
-                <TH>{t('pos.shift.list.colTerminal')}</TH>
-                <TH>{t('pos.shift.list.colSales')}</TH>
-                <TH>{t('pos.shift.list.colVariance')}</TH>
-                <TH style={{ textAlign: 'right' }}>{t('pos.shift.list.colActions')}</TH>
-              </TR>
-            </THead>
-            <TBody>
+          <div className="cpos-tablewrap">
+            <table className="cpos-table">
+              <thead>
+              <tr>
+                <th>{t('pos.shift.list.colDay')}</th>
+                <th>{t('pos.shift.list.colCashier')}</th>
+                <th>{t('pos.shift.list.colTerminal')}</th>
+                <th>{t('pos.shift.list.colSales')}</th>
+                <th>{t('pos.shift.list.colVariance')}</th>
+                <th style={{ textAlign: 'right' }}>{t('pos.shift.list.colActions')}</th>
+              </tr>
+              </thead>
+              <tbody>
               {shifts.map((shift) => (
-                <TR key={shift.id}>
-                  <TD style={{ fontSize: 13 }}>{shift.businessDay}</TD>
-                  <TD>{shift.cashierName}</TD>
-                  <TD>{shift.terminalName}</TD>
-                  <TD style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <tr key={shift.id}>
+                  <td style={{ fontSize: 13 }}>{shift.businessDay}</td>
+                  <td>{shift.cashierName}</td>
+                  <td>{shift.terminalName}</td>
+                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {shift.status === 'open'
                       ? t('pos.shift.list.stillOpen')
                       : formatPrice(shift.salesTotal ?? 0)}
-                  </TD>
-                  <TD style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  </td>
+                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {/*
                       An open shift has no variance because nobody has counted
                       yet. Shown as a dash rather than as zero, which would read
@@ -130,25 +128,25 @@ export function LocalShiftsPanel() {
                       : shift.variance === 0
                         ? t('pos.shift.varianceExact')
                         : `${shift.variance < 0 ? '−' : '+'}${formatPrice(Math.abs(shift.variance))}`}
-                  </TD>
-                  <TD style={{ textAlign: 'right' }}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setOpenId(openId === shift.id ? null : shift.id)}
-                    >
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      className="cpos-btn cpos-btn--outline cpos-btn--sm"
+                      onClick={() => setOpenId(openId === shift.id ? null : shift.id)}>
                       {openId === shift.id ? t('pos.shift.list.hide') : t('pos.shift.list.view')}
-                    </Button>
-                  </TD>
-                </TR>
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </TBody>
-          </Table>
+              </tbody>
+          </table>
+        </div>
         )}
       </section>
 
       {opened ? (
-        <section style={section}>
+        <section className="cpos-section">
           <strong>{t('pos.shift.zTitle')}</strong>
           <ShiftReport shift={opened} totals={liveTotals ?? undefined} formatPrice={formatPrice} />
         </section>

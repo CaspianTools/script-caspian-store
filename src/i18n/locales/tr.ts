@@ -582,6 +582,82 @@ const tr: MessageDict = {
   'pos.shift.list.stillOpen': 'Hâlâ açık',
   'pos.shift.list.view': 'Gör',
   'pos.shift.list.hide': 'Gizle',
+
+  // --- Hızlı ekleme (v1.4.0) ---
+  'pos.quickAdd.search': 'Ara',
+  'pos.quickAdd.noMatch': 'Eşleşen bir şey yok.',
+  'pos.quickAdd.nothingTitle': 'Burada eklenecek bir şey yok',
+  'pos.quickAdd.nothingHelp':
+    'Rolünüz ürün, kategori, tedarikçi veya kişi ekleyemiyor. Bu, App admin bölümünden değiştirilebilir.',
+  'pos.quickAdd.entry.product': 'Ürün',
+  'pos.quickAdd.entry.productBlurb': 'Dükkânın sattığı bir şey.',
+  'pos.quickAdd.entry.category': 'Kategori',
+  'pos.quickAdd.entry.categoryBlurb': 'Ürünleri toplayan bir grup.',
+  'pos.quickAdd.entry.supplier': 'Tedarikçi',
+  'pos.quickAdd.entry.supplierBlurb': 'Dükkânın alışveriş yaptığı kişi.',
+  'pos.quickAdd.entry.person': 'Kişi',
+  'pos.quickAdd.entry.personBlurb': 'Burada çalışan biri için hesap.',
+  'pos.quickAdd.action.product': 'Ürün ekle',
+  'pos.quickAdd.action.category': 'Kategori ekle',
+  'pos.quickAdd.action.supplier': 'Tedarikçi ekle',
+  'pos.quickAdd.action.person': 'Kişi ekle',
+
+  'pos.store.range.label': 'Dönem',
+  'pos.store.range.today': 'Bugün',
+  'pos.store.range.week': 'Son 7 gün',
+  'pos.store.range.month': 'Son 30 gün',
+  'pos.store.range.all': 'Tüm zamanlar',
+  'pos.store.revenue': 'Ciro',
+  'pos.store.grossProfit': 'Brüt kâr',
+  'pos.store.grossProfitPartial': 'Maliyeti girilmemiş {count} adet hariç',
+
+  'pos.store.category.needsName': 'Kategoriye bir ad verin.',
+  'pos.store.category.added': '{name} eklendi',
+  'pos.store.category.addHelp':
+    'Ürünler ada göre bağlanır, dolayısıyla listede görünecek olan kelime budur.',
+  'pos.store.category.pageSub': '{count, plural, =0 {Ürün yok} other {# ürün}}',
+  'pos.store.category.figures': 'Rakamlar',
+  'pos.store.category.products': 'Ürünler',
+  'pos.store.category.activeCount': '{count} satışta',
+  'pos.store.category.productsTitle': 'Bu kategorideki ürünler',
+  'pos.store.category.noProducts': 'Bu kategoriye henüz bir şey konmadı.',
+  'pos.store.category.rename': 'Yeniden adlandır',
+  'pos.store.category.renameHelp': 'Buradaki her ürün yeni ada geçirilir.',
+  'pos.store.category.backToList': 'Kategorilere dön',
+  'pos.store.category.missing': 'Böyle bir kategori yok',
+  'pos.store.category.missingHelp': 'Silinmiş olabilir ya da adres yanlış.',
+  'pos.store.category.historyNote':
+    'Ürün kategoriyi bağlantı olarak değil ad olarak taşır; bu yüzden ürünü başka bir kategoriye taşımak satış geçmişini de birlikte götürür.',
+
+  'pos.store.product.salesTitle': 'Satışlar',
+  'pos.store.product.onSales': '{count, plural, =0 {satış yok} other {# satışta}}',
+  'pos.store.product.afterDiscount': '{amount} indirim',
+  'pos.store.product.averagePrice': 'Ortalama fiyat',
+  'pos.store.product.lastSold': 'Son satış',
+  'pos.store.product.noSales': 'Bu dönemde hiçbir şey satılmadı.',
+
+  'pos.store.supplier.figures': 'Rakamlar',
+  'pos.store.supplier.productsSupplied': 'Verdiği ürünler',
+  'pos.store.supplier.unitsReceived': 'Alınan adet',
+  'pos.store.supplier.stillOnHand': 'Hâlâ elde',
+  'pos.store.supplier.soldFromBatches': 'Partilerinden satılan',
+  'pos.store.supplier.atCost': 'maliyetle {amount}',
+  'pos.store.supplier.lastOn': 'Son {date}',
+  'pos.store.supplier.deliveriesTitle': 'Teslimatlar',
+  'pos.store.supplier.noDeliveries': 'Ondan henüz bir şey alınmadı.',
+  'pos.store.supplier.productsTitle': 'Ne veriyor',
+  'pos.store.supplier.noProducts': 'Hiçbir işlenmiş teslimat henüz bir ürün adı taşımıyor.',
+  'pos.store.supplier.noContact': 'İletişim bilgisi yok',
+  'pos.store.supplier.backToList': 'Tedarikçilere dön',
+  'pos.store.supplier.missing': 'Böyle bir tedarikçi yok',
+  'pos.store.supplier.missingHelp': 'Silinmiş olabilir ya da adres yanlış.',
+  'pos.store.supplier.attributionPartial':
+    'Satış rakamları yalnızca parti hâlinde alınan malları kapsar. Bu tedarikçinin verdiği diğer mallar da satılıyor, ama satış ürünü kaydeder, hangi teslimattan geldiğini değil; bu yüzden kasa malın kime ait olduğunu söyleyemez.',
+  'pos.store.supplier.attributionNone':
+    'Kasa bu tedarikçinin ne sattığını söyleyemez. Satış ürünü kaydeder, hangi teslimattan geldiğini değil; bu yüzden mal ancak parti hâlinde alınmışsa tedarikçiye kadar izlenebilir ve bunların hiçbiri öyle değil.',
+  'pos.store.receive.totalCost': 'Toplam tutar',
+
+  'pos.admin.people.needsCredentials': 'Hem kullanıcı adı hem parola gerekli.',
 };
 
 export default tr;

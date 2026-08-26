@@ -665,7 +665,7 @@ const MANUAL = {
         "It does not cover the rest of the shop. Products, categories, the online storefront, delivery, emails, themes and the page builder are all in the store manual, user-manual.html, alongside this file. This manual is also plain about what the register cannot do, because finding out mid-queue is worse than reading it here.",
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade."
       ],
-      "version": "v1.3.0"
+      "version": "v1.4.0"
     },
     "parts": [
       {
@@ -1012,15 +1012,19 @@ const MANUAL = {
             "title": "Settings for this till",
             "audience": "staff",
             "route": "/pos/settings",
-            "summary": "Everything on this page belongs to the one computer you are sitting at, not to your shop. A till at the front counter and a tablet in the stockroom each keep their own name, their own language, their own brightness and their own scanner setting. The page says so at the top: these apply to this computer only. On a till that runs with no website behind it two more sections join the list - the shop’s own details, and the backup - and those two do belong to the shop.",
+            "summary": "Everything on this page belongs to the one computer you are sitting at, not to your shop. A till at the front counter and a tablet in the stockroom each keep their own name, their own language, their own brightness and their own scanner setting. On a till that runs with no website behind it the page shows one section at a time, chosen from the index down the left, and two of those sections do belong to the shop - its own details, and the backup.",
             "steps": [
               "From the register, press Settings in the menu down the left.",
-              "Pick your language from the Language menu. It changes straight away - you do not need to press Save for this one.",
-              "Give this till a name in \"Register name\", such as Front counter. This name is printed on your receipts.",
-              "If scans arrive broken in half, raise \"Scanner speed\". If your own typing is being mistaken for a scan, lower it. The normal value is 40.",
-              "Press Save. A \"Settings saved\" message appears."
+              "Pick a section from the index down the left of the page. On a till that runs on its own only that section is shown, and the web address changes with it - so a reload, or a bookmark, comes back to the same place.",
+              "Pick your language under Language. It changes straight away; there is no Save for this one.",
+              "Under \"This till\", give the machine a name such as Front counter. This name is printed on your receipts. Press Save at the foot of that section.",
+              "Under Scanner, if scans arrive broken in half raise \"Scanner speed\"; if your own typing is being mistaken for a scan, lower it. The normal value is 40. Press Save at the foot of that section."
             ],
             "fields": [
+              {
+                "name": "The index down the left",
+                "what": "Appearance, Language, This till, Scanner, and then whichever of Your account, Shop, Backup and Storage your role may open. On a till that runs on its own, pressing one shows that section and hides the rest."
+              },
               {
                 "name": "Language",
                 "what": "Menu offering English, Azərbaycan dili, Русский and Türkçe. Takes effect the moment you pick it."
@@ -1031,50 +1035,53 @@ const MANUAL = {
               },
               {
                 "name": "Register name",
-                "what": "A name for this till, such as \"Front counter\". Saved with the Save button. It is printed on your receipts, so the help text under the box is correct."
+                "what": "Under \"This till\". A name for this machine, such as \"Front counter\". It is printed on your receipts. Saved with the Save button at the foot of that section."
               },
               {
                 "name": "Device id",
                 "what": "A long code this browser gave itself. Shown so you can read it out; it cannot be edited."
               },
               {
-                "name": "Where sales are stored",
-                "what": "Two lines: Cloud, and \"This computer only\". The one your till uses is already marked, and neither can be picked here — where a till keeps its sales is decided when it is set up. A till connected to your online store shows Cloud; a register running on its own shows \"This computer only\", with a warning that nothing is copied off the machine."
+                "name": "Lock the screen after",
+                "what": "Under \"This till\", on a register that runs on its own. How long the machine may sit untouched before it asks for a password again. Off until you set it."
+              },
+              {
+                "name": "Storage",
+                "what": "On a till that runs on its own this section carries the warning that nothing is copied off the machine, and the health card underneath it. There is no choice to make: where a till keeps its sales is decided when it is set up. A register wired to a website instead shows the two options with the one in use already marked, and neither can be picked."
               },
               {
                 "name": "Scanner speed",
-                "what": "A number between 10 and 300. The largest gap in milliseconds between two key presses that still counts as one scan rather than typing. Normal value 40."
+                "what": "Under Scanner. A number between 10 and 300: the largest gap in milliseconds between two key presses that still counts as one scan rather than typing. Normal value 40."
               },
               {
                 "name": "Receipt printer",
-                "what": "A menu with one entry, \"Browser print dialog\", and it is greyed out. It is the only way receipts print in this version."
+                "what": "Under Scanner. A menu with one entry, \"Browser print dialog\", and it is greyed out. It is the only way receipts print in this version."
               },
               {
                 "name": "Your account",
-                "what": "A box near the top of the index, on a till that runs on its own. It names the account signed in on this computer and carries one button, \"Change my password\". It asks for your current password first, then the new one twice. Changing it signs the same account out anywhere else it is open, within about a minute."
+                "what": "A section of its own, on a till that runs on its own. It names the account signed in on this computer and carries one button, \"Change my password\". It asks for your current password first, then the new one twice. Changing it signs the same account out anywhere else it is open, within about a minute."
               },
               {
                 "name": "Save",
-                "what": "Saves the register name and the scanner speed. The language and the appearance apply the moment you pick them, the two shop sections have a Save button of their own, and where sales are stored cannot be changed here at all."
+                "what": "There is no Save for the whole page. \"This till\" and Scanner each have their own, at the foot of the section, and each writes only its own boxes. The language and the appearance apply the moment you pick them; Shop and Backup have Save buttons of their own."
               }
             ],
             "notes": [
-              "Where sales are stored is shown, not chosen. A till wired to your online store keeps them in the cloud. A register set up to run on its own keeps them on that computer and contacts nothing — and then it also shows a warning, because taking backups becomes yours to do.",
-              "The receipt printer menu has only one option and cannot be changed. Direct printing to a till printer is not in this version; receipts go through your browser's print dialogue.",
+              "The page shows one section at a time on a till that runs on its own, and the section you are in is part of the web address. That means a reload brings you back to it, and a bookmark or a link in this manual lands on the right one. A register wired to a website keeps the older layout, with every section on one long page and the index scrolling between them.",
+              "There is no single Save button any more. With one section on screen, a Save at the foot of the page would sit under boxes it does not write. The two sections with boxes to fill in carry their own instead.",
+              "Where sales are stored is shown, not chosen. A till wired to your online store keeps them in the cloud. A register set up to run on its own keeps them on that computer and contacts nothing - and then it also shows a warning, because taking backups becomes yours to do.",
+              "The receipt printer menu has only one option and cannot be changed. Direct printing to a till printer is not in this version; receipts go through your browser’s print dialogue.",
               "The language you pick here is remembered by this browser, and it also changes the language of the admin panel and the shop pages when you open them in this same browser. It does not change anything for your customers or for other computers.",
-              "Only the register and the everyday shared wording are translated - roughly 139 phrases out of about 1405. Most admin screens still show English in Azerbaijani, Russian and Turkish.",
-              "If your site puts the language in the web address, an extra line appears under the menu saying your choice is stored but will not change what you see. That is the site's own routing winning, and it is not a fault.",
-              "The language changes as soon as you pick it. The Save button is only for the register name, the scanner speed and the storage choice.",
+              "If your site puts the language in the web address, an extra line appears under the menu saying your choice is stored but will not change what you see. That is the site’s own routing winning, and it is not a fault.",
               "A new scanner speed is picked up when you go back to the Register screen. Values outside 10 to 300 are pulled back into range, and clearing the box puts it back to 40.",
               "The device id is created by this browser the first time the register is opened. Clearing your browser data or using a different browser or a private window creates a new one, and the till is then treated as a different register.",
               "The register name is printed on receipts. It appears in a row labelled \"Register\", just under the \"Served by\" line. While the box is empty - which is how every till starts - that row is left off the receipt altogether. So fill it in if you want to be able to tell which till took a sale.",
               "The name is used in those two places only: this page and the printed receipt. The sale saved in your records carries the device id, not the name. That means there is no list of your sales grouped by till name, and renaming a till does not change anything already printed.",
               "If your browser blocks site data, most of this page quietly stops working, and nothing on screen warns you. The language is the one exception: it keeps a copy in memory, so your choice still applies for as long as the tab stays open, though it will not survive a reload.",
-              "With site data blocked, the register name, the scanner speed and the storage choice are not kept at all. Pressing Save still shows \"Settings saved\", but nothing is written down, and the old values come back the moment you leave this page - you do not have to reload to lose them. Treat that message as confirmation that you pressed the button, not as proof the setting was stored.",
+              "With site data blocked, the register name and the scanner speed are not kept at all. Pressing Save still shows \"Settings saved\", but nothing is written down, and the old values come back the moment you leave this page - you do not have to reload to lose them. Treat that message as confirmation that you pressed the button, not as proof the setting was stored.",
               "With site data blocked the device id is unstable in a way that matters: a new one is invented every time it is needed, so the code shown on this page is not the one stamped on your sales. Do not read it out to support while the browser is in that state.",
-              "A register running on its own shows an orange line under \"This computer only\" warning that nothing is stored anywhere else. Take that literally: if that computer is lost or its disk fails, the sales on it are gone. There is no copy in the cloud, because there is no cloud.",
-              "On a till that runs with no website behind it, the index down the left of this page grows by two entries: Shop, for the shop name, the currency and the receipt wording, and Backup, for the only copy of everything the till knows. Each appears only for a role allowed into it, and each has a section of its own in this manual.",
-              "A grey line under the Save button gives the version this register is running, and App admin carries the same line at the foot of every one of its pages. It is there for one reason: so that somebody on the telephone to support can read it out without hunting for it. It is not a setting and there is nothing to press. On a till that runs on its own it is the register's own version, the number at the top of this manual; on a till wired to a website it is the version of the shop software behind it, which is a different number that moves at a different time."
+              "A register running on its own warns under Storage that nothing is stored anywhere else. Take that literally: if that computer is lost or its disk fails, the sales on it are gone. There is no copy in the cloud, because there is no cloud.",
+              "A grey line at the foot of every section gives the version this register is running, and App admin carries the same line. It is there for one reason: so that somebody on the telephone to support can read it out without hunting for it. It is not a setting and there is nothing to press. On a till that runs on its own it is the register’s own version, the number at the top of this manual; on a till wired to a website it is the version of the shop software behind it, which is a different number that moves at a different time."
             ]
           },
           {
@@ -2104,19 +2111,62 @@ const MANUAL = {
             ]
           },
           {
+            "id": "adding-things-quickly",
+            "title": "Quick add: the one way to put something new on the till",
+            "audience": "owner",
+            "route": "/pos",
+            "summary": "Everything this till creates is made in one place. Press Quick add in the bar across the top and a window opens with two halves: what you can make down the left, and the form for the one you picked on the right. Products, groups, suppliers and staff accounts. The Add buttons on the Store, Categories, Suppliers and People screens all open this same window, already on the right thing - so there is one form per record rather than a different-looking one on each screen.",
+            "steps": [
+              "Press Quick add, at the right of the bar across the top of every screen.",
+              "Pick what you are making from the list on the left. Type in the search box above it to narrow the list, or use the up and down arrow keys and press Enter.",
+              "Fill in the form on the right. Only a name is ever required, and for a product a price as well.",
+              "Press the blue button at the bottom right - it names what it will make, such as \"Add product\".",
+              "The window stays open and the form empties, ready for the next one. Close it when you are done."
+            ],
+            "fields": [
+              {
+                "name": "Product",
+                "what": "Something the shop sells. Name and price are required; barcode, your own code, group, sizes and stock are not. Shown to anybody whose role may change the store."
+              },
+              {
+                "name": "Category",
+                "what": "A group to file products under. One box, its name. Only appears if your shop has Categories switched on."
+              },
+              {
+                "name": "Supplier",
+                "what": "Someone you buy from. Only the name is required. Only appears if your shop has Suppliers switched on."
+              },
+              {
+                "name": "Person",
+                "what": "A staff account: username, display name, password and role. Shown only to a role that may change the staff list."
+              },
+              {
+                "name": "The search box",
+                "what": "Above the list on the left. With four things to choose from it is rarely needed, but the arrow keys and Enter work from inside it, which is quicker than reaching for the mouse."
+              }
+            ],
+            "notes": [
+              "What appears in the list is what your role may create and what your shop has switched on. An entry you cannot use is absent rather than greyed out. If the list would be empty the Quick add button is not drawn at all.",
+              "The window stays open after a save, on purpose. Somebody typing a delivery in by hand adds six products in a row, and closing after each one would cost six more clicks. A message confirms each save.",
+              "Editing is not here. Quick add only makes new things; to change one, open its own page or press Edit on its row.",
+              "Taking a delivery in is not here either. That is a working screen with a saved draft, not a form - see \"Receive stock: taking a delivery in\".",
+              "There is no Quick add on a register wired to a website. Everything it would create lives in your shop admin panel instead."
+            ]
+          },
+          {
             "id": "store-on-this-till",
             "title": "The Store screen: your catalogue on this computer",
             "audience": "owner",
             "route": "/pos/store",
-            "summary": "The catalogue this till scans from, kept on the machine itself. It is a searchable list of every item with its barcode, its price and how much stock it has. Each row opens that item\u2019s own page, and the two ways stock arrives - a new item, or more of one you already sell - are the two buttons above the list. It is in the menu under Shop, for anybody whose role may see the store.",
+            "summary": "The catalogue this till scans from, kept on the machine itself. It is a searchable list of every item with its barcode, its price and how much stock it has. Each row opens that item’s own page, and the two ways stock arrives - a new item, or more of one you already sell - are the two buttons above the list. It is in the menu under Shop, for anybody whose role may see the store.",
             "steps": [
               "Press Store in the menu, under Shop.",
               "Search with the box above the list. It matches the name, your own code and the barcode, and filters as you type.",
-              "Press an item\u2019s name, or Open at the end of its row, to see everything about it and everything that has happened to it.",
-              "Press \"Add item\" to put something new on the till. The form opens over the page.",
+              "Press an item’s name, or Open at the end of its row, to see everything about it and everything that has happened to it.",
+              "Press \"Add item\" to put something new on the till. That opens Quick add, already on Product - the same window the button in the top bar opens.",
               "Press \"Receive stock\" to take a delivery in - that is how you add more of something you already sell.",
               "Fill in at least a name and a price. Fill in the barcode, your own code, or both - those are what the counter matches when something is scanned or typed.",
-              "Press \"Add it\". Delete asks before removing an item."
+              "Press \"Add product\". Delete asks before removing an item."
             ],
             "fields": [
               {
@@ -2145,7 +2195,7 @@ const MANUAL = {
               },
               {
                 "name": "Barcode / Your code",
-                "what": "What the counter looks for when something is scanned or typed: the barcode first, then your own code, then the item\u2019s internal id."
+                "what": "What the counter looks for when something is scanned or typed: the barcode first, then your own code, then the item’s internal id."
               },
               {
                 "name": "Group",
@@ -2174,23 +2224,24 @@ const MANUAL = {
             ],
             "notes": [
               "The list shows every item and the heading counts them. There is no paging.",
-              "Editing an item is now on the item\u2019s own page rather than in the row. Press the name, then Edit.",
+              "Editing an item is now on the item’s own page rather than in the row. Press the name, then Edit.",
               "There is no way to import a spreadsheet on this screen. Items go on one at a time, arrive on a delivery, or come back from a backup file.",
               "An item can be marked hidden, and the word appears beside its name in the list, but nothing on this screen sets it. It arrives that way from a backup. A hidden item cannot be scanned or found at the counter - but it can still be received, because a delivery of something you have taken off the shelf is still a delivery.",
               "Prices are read from this list at the moment a sale is completed. Correcting a price here changes what the next sale charges and nothing that has already been rung up.",
               "Stock is allowed to go negative. Selling more than the count says does not block the sale; the shortfall is recorded against it and the count goes below zero, which is your signal to come here and correct it.",
               "Deleting an item does not touch the sales that included it. Those keep the name and the price they were rung up at.",
-              "This screen is only on a till that runs on its own, and only for a role holding \"See the store\". Adding, editing and deleting need the second tick, \"Add and edit items\"; without it those buttons are not on the screen at all."
+              "This screen is only on a till that runs on its own, and only for a role holding \"See the store\". Adding, editing and deleting need the second tick, \"Add and edit items\"; without it those buttons are not on the screen at all.",
+              "Adding an item happens in Quick add now, wherever you start from. The button here, the button in the top bar and the one on the Receive stock screen all open the same window and the same form, so there is one place for the rules about what a product needs."
             ]
           },
           {
             "id": "a-product-page",
-            "title": "An item\u2019s own page: everything that has happened to it",
+            "title": "An item’s own page: everything that has happened to it",
             "audience": "owner",
             "route": "/pos/store/<item>",
-            "summary": "Press an item\u2019s name on the Store screen and you get a page about that item alone: what it is, what is on the shelf, what it has cost you and what it has earned, and a dated list of every single thing that has moved it - deliveries in, sales out, returns back, and anything put right by hand.",
+            "summary": "Press an item’s name on the Store screen and you get a page about that item alone: what it is, what is on the shelf, what it has cost you and what it has earned, and a dated list of every single thing that has moved it - deliveries in, sales out, returns back, and anything put right by hand.",
             "steps": [
-              "Open Store and press an item\u2019s name, or Open at the end of its row.",
+              "Open Store and press an item’s name, or Open at the end of its row.",
               "Read the row of figures near the top: what is on the shelf, what has been received, sold, returned and adjusted, the price and margin, and what the stock is worth.",
               "Read \"On the shelf\" under it for the count per size.",
               "If the item is received in batches, read the Batches table: each batch with its code, its date, what came in and what is left.",
@@ -2223,7 +2274,9 @@ const MANUAL = {
               "The first time this page is opened on a till that has been trading a while, it writes up the sales it already had so the history is complete. That happens once and takes a moment; every visit after it is immediate.",
               "If the figures and the shelf ever disagree, the page says so under the shelf count. It means a quantity was typed straight into the item form rather than received or adjusted - the form still lets you do that, and nothing records why.",
               "The list is written once and never edited, like the sales list. A mistake is corrected with another adjustment, not by changing a line here.",
-              "Deleting from this page removes the item and returns you to the Store screen. The sales that included it keep their record."
+              "Deleting from this page removes the item and returns you to the Store screen. The sales that included it keep their record.",
+              "Below the stock figures is a second block, Sales, with its own period menu: how many units sold, what was taken for them, what was left after the stock cost, the average price actually charged, when it last sold, and the receipts it appeared on. It is kept apart from the figures above it on purpose - those count what left the shelf, and these count what was paid. The two disagree when something was sold that the shelf did not have, and putting them under one heading would hide that.",
+              "The profit line only appears once a delivery has told the till what the item costs. Working it out against a cost of nothing would report the whole takings as profit, which is a number somebody would act on."
             ]
           },
           {
@@ -2366,12 +2419,11 @@ const MANUAL = {
             "route": "/pos/store/categories",
             "summary": "An optional screen. With it on, the Group box on an item becomes a list to pick from and the Store screen grows a filter. With it off - which is how every till starts - a group is just something you type, exactly as before.",
             "steps": [
-              "Ask whoever installed the till to switch Categories on, on the App admin page.",
-              "Press Categories in the strip above the Store list.",
-              "Type a name and press Add.",
-              "Or press \"Take in the ones already used\" to bring the groups already typed on your items into the list in one go.",
-              "Use Up and Down to put them in the order you want them offered in.",
-              "Edit renames one; the items filed under it are renamed with it."
+              "Press Store in the menu, then Categories along the strip above the list.",
+              "Press \"Add category\" to make one. That opens Quick add, already on Category.",
+              "Press a group’s name, or Open at the end of its row, to see what it holds and what it sold - and to rename or delete it.",
+              "Use Up and Down on a row to change the order groups appear in.",
+              "Press \"Adopt from products\" to sweep up every group name already typed on an item and file them all as real groups in one go."
             ],
             "fields": [
               {
@@ -2391,7 +2443,53 @@ const MANUAL = {
               "An item stores the name of its group, not a link to this list. That is why renaming here rewrites the items, and why deleting a group leaves them filed under the name they had.",
               "Deleting a group only takes it off this list. Nothing is uncategorised behind your back.",
               "Switching Categories off hides this screen and turns the Group box back into free text. Nothing you entered is lost, and switching it on again finds it all there.",
-              "Nothing at the counter uses groups. They are for finding things in the back office."
+              "Nothing at the counter uses groups. They are for finding things in the back office.",
+              "Making a group is in Quick add and renaming one is on the group’s own page. The list itself now carries the order and the way in, and nothing that edits a name in place - one screen per job rather than three ways to do the same thing."
+            ]
+          },
+          {
+            "id": "a-category-page",
+            "title": "A group’s own page: what it holds and what it sold",
+            "audience": "owner",
+            "route": "/pos/store/categories",
+            "summary": "Press a group’s name on the Categories screen to open it. The page says how many items are filed under it, how many of them are on sale, how much stock is on the shelf and what that stock cost, and then - over a period you choose - how many units it sold, what it took, and what was left after the stock cost. Under the figures is every item in the group, each row saying what it sold, and each name a way through to that item’s own page.",
+            "steps": [
+              "Press Store in the menu, then Categories along the strip.",
+              "Press the name of a group, or Open at the end of its row.",
+              "Use the period menu at the top right of the figures to switch between Today, the last 7 days, the last 30 days, and all time. It starts on the last 30 days.",
+              "Press an item’s name in the table below to open that item.",
+              "Rename and Delete are the buttons across the top of the page."
+            ],
+            "fields": [
+              {
+                "name": "Products / on sale",
+                "what": "How many items are filed under this group, and how many of those are not hidden from the counter."
+              },
+              {
+                "name": "Stock on hand",
+                "what": "Every unit of every item in the group, added up across sizes."
+              },
+              {
+                "name": "Stock value",
+                "what": "What that stock cost, using the last price you paid for each item. Items you have never received a delivery of count as nothing, because the till has never been told what they cost."
+              },
+              {
+                "name": "Sold / Revenue",
+                "what": "Units sold in the chosen period, and what was actually charged for them - after any discount given at the counter."
+              },
+              {
+                "name": "Gross profit",
+                "what": "Revenue less what those units cost. Items with no cost price on file are left out of it, and a line underneath says how many units that was."
+              },
+              {
+                "name": "Rename",
+                "what": "Changes the group’s name and rewrites every item filed under it to match, in one go."
+              }
+            ],
+            "notes": [
+              "An item carries its group as a word, not as a link. That is what lets you switch the Categories screen off again without stranding your catalogue - but it also means moving an item into another group moves its whole sales history with it. The page says so in a blue line under the figures. There is no way to ask what a group sold last month while an item was still in it.",
+              "Gross profit is only as good as your cost prices, and a cost price is only ever written by a delivery. A shop that typed its catalogue in by hand has none, so this figure will read as zero with every unit listed as left out. That is the truth rather than a fault.",
+              "Deleting a group does not delete or hide anything filed under it. The items keep the word they were carrying, so they simply stop matching a group that exists - which is exactly what \"Adopt from products\" on the Categories screen will offer to put back."
             ]
           },
           {
@@ -2401,11 +2499,10 @@ const MANUAL = {
             "route": "/pos/store/suppliers",
             "summary": "An optional screen. With it on, a delivery can say who it came from, and this list shows what each supplier has delivered and what you have spent with them.",
             "steps": [
-              "Ask whoever installed the till to switch Suppliers on, on the App admin page.",
-              "Press Suppliers in the strip above the Store list.",
-              "Press \"Add a supplier\" and fill in at least a name.",
-              "From then on, Receive stock offers a Supplier list.",
-              "Read the table for how many deliveries each has made, what you have spent, and when the last one was."
+              "Press Store in the menu, then Suppliers along the strip above the list.",
+              "Press \"Add supplier\" to add one. That opens Quick add, already on Supplier. Only the name is required.",
+              "Press a supplier’s name, or Open at the end of their row, to see what they have delivered.",
+              "Editing, disabling and deleting are on that page, not on this list."
             ],
             "fields": [
               {
@@ -2427,8 +2524,55 @@ const MANUAL = {
             ],
             "notes": [
               "A supplier that has delivered cannot be deleted, and the till says so. Its name is on that paperwork; stop using it instead.",
-              "A delivery freezes the supplier\u2019s name onto the batches it brings, so an item\u2019s page still names who it came from whatever happens to this list afterwards.",
-              "Switching Suppliers off hides this screen and takes the Supplier box off the delivery screen. Nothing already recorded changes."
+              "A delivery freezes the supplier’s name onto the batches it brings, so an item’s page still names who it came from whatever happens to this list afterwards.",
+              "Switching Suppliers off hides this screen and takes the Supplier box off the delivery screen. Nothing already recorded changes.",
+              "The buttons that used to sit on each row have moved to the supplier’s own page. Disabling and deleting both deserve to be decided with the delivery history in front of you, and the list has no room to show it."
+            ]
+          },
+          {
+            "id": "a-supplier-page",
+            "title": "A supplier’s own page: what they have delivered",
+            "audience": "owner",
+            "route": "/pos/store/suppliers",
+            "summary": "Press a supplier’s name on the Suppliers screen to open it. The page carries their contact details, how many deliveries they have made and what those cost, when the last one arrived, and what they supply - with every delivery listed, and every item, and what each one last cost you. Editing them, switching them off and deleting them are here rather than on the list, so that nobody removes a supplier without first seeing what they have brought in.",
+            "steps": [
+              "Press Store in the menu, then Suppliers along the strip.",
+              "Press the supplier’s name, or Open at the end of their row.",
+              "Read the figures across the top, then the deliveries and the items below them.",
+              "Edit changes their details. Disable takes them out of the picker on the Receive stock screen without touching a single delivery they have already made.",
+              "Delete is refused for a supplier who has delivered anything - use Disable instead."
+            ],
+            "fields": [
+              {
+                "name": "Deliveries / Total spent",
+                "what": "How many deliveries from this supplier have been posted, and what they came to in total. Deliveries still being typed in are not counted - nothing has been bought yet."
+              },
+              {
+                "name": "Products supplied",
+                "what": "How many different items have arrived from them at least once."
+              },
+              {
+                "name": "Units received",
+                "what": "Every unit across every posted delivery."
+              },
+              {
+                "name": "Still on hand / Sold from their batches",
+                "what": "Only shown when something of theirs arrived as a batch. The first is what is still on the shelf out of their batches; the second is what has sold out of them. Both are given at what those units cost."
+              },
+              {
+                "name": "Deliveries table",
+                "what": "Every posted delivery: your reference for it, when it arrived, how many lines and units, what it cost, and who took it in."
+              },
+              {
+                "name": "What they supply",
+                "what": "Every item they have delivered, with how many units in total, what it cost per unit on the most recent delivery, and what has sold out of their batches."
+              }
+            ],
+            "notes": [
+              "The till cannot always say what a supplier sold, and it says so on the page rather than showing a zero. A sale records the item and never which delivery that stock came off, so the only way back to a supplier is through a batch - which exists only for items you receive with a batch code. For everything else the sold column shows a dash.",
+              "Where the figure can be given, it is given at cost rather than at what you charged. The cost is written on the batch and is exact; the revenue would have to be split across batches the sale never named, and for a sale that took more off the shelf than the batches held there is no batch to split it against at all.",
+              "The unit cost shown against each item is the one from the most recent delivery, not an average. It is the number a reorder would be quoted at.",
+              "Disabling a supplier only takes them out of the picker. Every delivery they have made keeps their name frozen onto it, so last quarter’s paperwork still reads correctly. That is why deleting one who has delivered is refused outright."
             ]
           },
           {
@@ -3112,7 +3256,7 @@ const MANUAL = {
         "Mağazanın qalan hissəsi burada deyil. Məhsullar, kateqoriyalar, onlayn vitrin, çatdırılma, e-poçtlar, mövzular və səhifə qurucusu bu faylın yanındakı user-manual.html mağaza təlimatındadır. Bu təlimat həm də kassanın nə edə bilmədiyini açıq yazır, çünki bunu növbənin ortasında öyrənmək burada oxumaqdan pisdir.",
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır."
       ],
-      "version": "v1.3.0"
+      "version": "v1.4.0"
     },
     "parts": [
       {
@@ -3432,76 +3576,7 @@ const MANUAL = {
         "id": "setup",
         "title": "Hər kassanın qurulması",
         "blurb": "Kassaya ad vermək, dilini seçmək, skaneri tənzimləmək və qəbzdə nə çap olunacağını təyin etmək.",
-        "sections": [
-          {
-            "id": "till-settings",
-            "title": "Bu kassanın tənzimləmələri",
-            "summary": "Bu səhifədəki hər şey qarşısında oturduğunuz kompüterə aiddir, mağazanıza yox. Ön piştaxtadakı kassa və anbardakı planşet hərəsi öz adını, öz dilini, öz işıqlılığını və öz skaner tənzimləməsini saxlayır. Səhifə bunu yuxarıda bildirir: bunlar yalnız bu kompüterə aiddir. Veb saytı olmayan kassada siyahıya daha iki bölmə əlavə olunur - mağazanın öz məlumatları və ehtiyat nüsxə - və bu ikisi mağazaya aiddir.",
-            "steps": [
-              "Kassada soldakı menyudan Tənzimləmələr (Settings) bölməsini açın.",
-              "Dil (Language) menyusundan dilinizi seçin. Dil dərhal dəyişir — bunun üçün Yadda saxla (Save) düyməsini basmağa ehtiyac yoxdur.",
-              "\"Kassa adı\" (Register name) xanasında bu kassaya ad verin, məsələn Ön piştaxta. Bu ad qəbzlərinizdə çap olunur.",
-              "Skanlar yarıya bölünmüş şəkildə gəlirsə, \"Skaner sürəti\" (Scanner speed) dəyərini artırın. Öz yazdığınız skan kimi qəbul edilirsə, azaldın. Normal dəyər 40-dır.",
-              "Yadda saxla (Save) düyməsini basın. \"Tənzimləmələr yadda saxlanıldı\" (Settings saved) mesajı görünür."
-            ],
-            "fields": [
-              {
-                "name": "Dil (Language)",
-                "what": "English, Azərbaycan dili, Русский və Türkçe seçimləri olan menyu. Seçdiyiniz an qüvvəyə minir."
-              },
-              {
-                "name": "Görünüş",
-                "what": "Üç seçim: İşıqlı, Tünd və \"Bu cihaza uyğun\". Seçdiyiniz anda tətbiq olunur və yalnız bu kompüterdə saxlanılır — pəncərə yanındakı kassa ilə anbardakı kassa fərqli ola bilər. Eyni seçim yuxarı zolaqdakı kiçik günəş/ay/ekran düyməsindədir."
-              },
-              {
-                "name": "Kassa adı (Register name)",
-                "what": "Bu kassa üçün ad, məsələn \"Ön piştaxta\". Yadda saxla (Save) düyməsi ilə saxlanılır. Qəbzlərinizdə çap olunur, yəni xananın altındakı izah doğrudur."
-              },
-              {
-                "name": "Cihaz identifikatoru (Device id)",
-                "what": "Bu brauzerin özünə verdiyi uzun kod. Səsləndirə biləsiniz deyə göstərilir; redaktə oluna bilməz."
-              },
-              {
-                "name": "Satışlar harada saxlanılır (Where sales are stored)",
-                "what": "İki sətir: Bulud (Cloud) və \"Yalnız bu kompüter\" (This computer only). Kassanızın istifadə etdiyi variant artıq işarələnib və burada heç biri seçilə bilməz — kassanın satışları harada saxlayacağı quraşdırılarkən müəyyən olunur. Onlayn mağazanıza qoşulmuş kassa Bulud göstərir; təkbaşına işləyən kassa isə \"Yalnız bu kompüter\" göstərir və heç nəyin kompüterdən kənara köçürülmədiyi barədə xəbərdarlıq verir."
-              },
-              {
-                "name": "Skaner sürəti (Scanner speed)",
-                "what": "10 ilə 300 arasında rəqəm. İki düymə basılışı arasında hələ də bir skan sayılan ən böyük fasilə, millisaniyə ilə. Normal dəyər 40."
-              },
-              {
-                "name": "Qəbz printeri (Receipt printer)",
-                "what": "Cəmi bir seçimi olan menyu — \"Brauzerin çap pəncərəsi\" (Browser print dialog) — və o da sönükdür. Bu versiyada qəbzlərin çap olunmasının yeganə yolu budur."
-              },
-              {
-                "name": "Hesabınız (Your account)",
-                "what": "Öz-özünə işləyən kassada indeksin yuxarısındakı bölmə. Bu kompüterdə daxil olmuş hesabın adını göstərir və bir düyməsi var: \"Parolumu dəyiş\". Əvvəlcə hazırkı parolunuzu, sonra yenisini iki dəfə soruşur. Dəyişiklik eyni hesabın açıq olduğu bütün digər yerlərdə təxminən bir dəqiqə ərzində çıxışa səbəb olur."
-              },
-              {
-                "name": "Yadda saxla (Save)",
-                "what": "Kassa adını və skaner sürətini yadda saxlayır. Dil və görünüş seçdiyiniz an tətbiq olunur, iki mağaza bölməsinin öz yadda saxlama düyməsi var, satışların harada saxlanması isə burada ümumiyyətlə dəyişdirilə bilmir."
-              }
-            ],
-            "notes": [
-              "Satışların harada saxlanması göstərilir, seçilmir. Onlayn mağazanıza qoşulmuş kassa onları buludda saxlayır. Təkbaşına işləməyə qurulmuş kassa isə onları həmin kompüterdə saxlayır və heç yerə qoşulmur — bu halda ehtiyat nüsxə götürmək sizin öhdənizə keçdiyi üçün ekranda xəbərdarlıq da göstərilir.",
-              "Qəbz printeri menyusunda cəmi bir seçim var və onu dəyişmək olmaz. Bu versiyada birbaşa kassa printerinə çap yoxdur; qəbzlər brauzerin çap pəncərəsindən keçir.",
-              "Burada seçdiyiniz dili bu brauzer yadda saxlayır və eyni brauzerdə açdığınız idarə panelinin, mağaza səhifələrinin də dilini dəyişir. Müştəriləriniz üçün və başqa kompüterlərdə heç nə dəyişmir.",
-              "Yalnız kassa və gündəlik ümumi ifadələr tərcümə olunub — təxminən 1405 ifadədən 139-u. Azərbaycan, rus və türk dillərində əksər idarə paneli ekranları hələ də ingiliscə görünür.",
-              "Saytınız dili veb ünvana yazırsa, menyunun altında əlavə bir sətir çıxır və seçiminizin yadda saxlandığını, amma gördüyünüzü dəyişməyəcəyini bildirir. Bu, saytın öz marşrutlaşdırmasının üstün gəlməsidir və nasazlıq deyil.",
-              "Dil seçdiyiniz an dəyişir. Yadda saxla (Save) düyməsi yalnız kassa adı, skaner sürəti və saxlanma seçimi üçündür.",
-              "Yeni skaner sürəti Kassa (Register) ekranına qayıdanda qüvvəyə minir. 10 ilə 300 aralığından kənar dəyərlər aralığa qaytarılır, xananı boşaltsanız isə dəyər 40-a qayıdır.",
-              "Cihaz identifikatorunu bu brauzer kassa ilk dəfə açılanda yaradır. Brauzer məlumatlarını təmizləmək, başqa brauzerdən və ya gizli pəncərədən istifadə etmək yenisini yaradır və kassa artıq başqa kassa kimi qəbul olunur.",
-              "Kassa adı qəbzlərdə çap olunur. O, \"Xidmət göstərdi\" (Served by) sətrinin düz altında \"Kassa\" (Register) adlı sətirdə görünür. Xana boş olduğu müddətdə — hər kassa məhz belə başlayır — həmin sətir qəbzdən tamamilə çıxarılır. Ona görə satışın hansı kassadan keçdiyini bilmək istəyirsinizsə, xananı doldurun.",
-              "Ad yalnız bu iki yerdə istifadə olunur: bu səhifədə və çap olunan qəbzdə. Qeydlərinizdə saxlanan satış adı yox, cihaz identifikatorunu daşıyır. Yəni satışlarınızın kassa adına görə qruplaşdırılmış siyahısı yoxdur və kassanın adını dəyişmək artıq çap olunmuş heç nəyi dəyişmir.",
-              "Brauzeriniz sayt məlumatlarını bloklayırsa, bu səhifənin böyük hissəsi səssizcə işləməyi dayandırır və ekranda sizi xəbərdar edən heç nə olmur. Yeganə istisna dildir: onun nüsxəsi yaddaşda saxlanılır, ona görə seçiminiz tab açıq qaldığı müddətdə qüvvədə olur, səhifəni yeniləyəndə isə itir.",
-              "Sayt məlumatları bloklananda kassa adı, skaner sürəti və saxlanma seçimi ümumiyyətlə yadda saxlanmır. Yadda saxla (Save) düyməsini basanda yenə \"Tənzimləmələr yadda saxlanıldı\" (Settings saved) yazısı çıxır, amma heç nə yazılmır və bu səhifədən çıxan kimi köhnə dəyərlər geri qayıdır — itirmək üçün səhifəni yeniləmək belə lazım deyil. Həmin mesajı tənzimləmənin saxlandığının sübutu yox, sadəcə düyməni basdığınızın təsdiqi kimi qəbul edin.",
-              "Sayt məlumatları bloklananda cihaz identifikatoru ciddi şəkildə qeyri-sabit olur: hər dəfə lazım olanda yenisi yaradılır, ona görə bu səhifədə göstərilən kod satışlarınıza yazılan kod deyil. Brauzer bu vəziyyətdə olduğu müddətdə onu dəstək xidmətinə səsləndirməyin.",
-              "Təkbaşına işləyən kassada \"Yalnız bu kompüter\" sətrinin altında narıncı xəbərdarlıq görünür: heç nə başqa yerdə saxlanılmır. Bunu hərfi mənada qəbul edin — həmin kompüter itərsə və ya diski sıradan çıxarsa, oradakı satışlar da yox olur. Buludda nüsxə yoxdur, çünki bulud yoxdur.",
-              "Veb saytı olmayan kassada bu səhifənin solundakı siyahıya iki bənd əlavə olunur: mağazanın adı, valyutası və qəbz mətni üçün Mağaza, kassanın bildiyi hər şeyin yeganə nüsxəsi üçün isə Ehtiyat nüsxə. Hər biri yalnız icazəsi olan rola görünür və hər birinin bu təlimatda öz bölməsi var.",
-              "Yadda saxla düyməsinin altındakı boz sətir bu kassanın hansı versiyada işlədiyini bildirir; Tətbiq admini də eyni sətri hər səhifəsinin altında daşıyır. Səbəbi birdir: dəstəklə telefonda danışan adam onu axtarmadan oxuya bilsin. Bu, tənzimləmə deyil, basılası heç nə yoxdur. Öz-özünə işləyən kassada bu, kassanın öz versiyasıdır - bu təlimatın başındakı nömrə; veb sayta bağlı kassada isə arxadakı mağaza proqramının versiyasıdır və o, başqa vaxt dəyişən başqa nömrədir."
-            ]
-          },
-          {
+        "sections": [          {
             "id": "till-language",
             "title": "Kassada dilin seçilməsi",
             "summary": "Hər kassa öz dilini kassanın Tənzimləmələr (Settings) ekranında seçir. Seçim həmin kompüterdə yadda saxlanılır, yəni ön piştaxta türkcə, arxa ofis isə ingiliscə işləyə bilər. Bu, bütün məhsulda insanın menyudan dil seçə bildiyi yeganə yerdir.",
@@ -4276,7 +4351,7 @@ const MANUAL = {
         "Остальная часть магазина сюда не входит. Товары, категории, интернет-витрина, доставка, письма, темы и конструктор страниц описаны в руководстве по магазину, файле user-manual.html рядом с этим. Здесь также прямо сказано, чего касса делать не умеет, потому что узнать об этом посреди очереди хуже, чем прочитать здесь.",
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат."
       ],
-      "version": "v1.3.0"
+      "version": "v1.4.0"
     },
     "parts": [
       {
@@ -4596,76 +4671,7 @@ const MANUAL = {
         "id": "setup",
         "title": "Настройка каждой кассы",
         "blurb": "Назвать кассу, выбрать язык, настроить сканер и задать, что печатается на чеке.",
-        "sections": [
-          {
-            "id": "till-settings",
-            "title": "Настройки этой кассы",
-            "summary": "Всё на этой странице относится к тому компьютеру, за которым вы сидите, а не к магазину. Касса за передним прилавком и планшет в подсобке хранят каждый своё имя, свой язык, свою яркость и свою настройку сканера. Страница так и говорит сверху: это относится только к этому компьютеру. На кассе, за которой нет сайта, к списку добавляются ещё два раздела - сведения о самом магазине и резервная копия - и эти два относятся уже к магазину.",
-            "steps": [
-              "На кассе откройте «Настройки» (Settings) в меню слева.",
-              "Выберите язык в меню Language (язык). Он меняется сразу — нажимать Save для этого не нужно.",
-              "Дайте кассе название в поле «Название кассы» (Register name), например Front counter. Это название печатается на чеках.",
-              "Если сканирования приходят разорванными пополам, увеличьте «Скорость сканера» (Scanner speed). Если за сканирование принимается ваш собственный набор с клавиатуры — уменьшите. Обычное значение — 40.",
-              "Нажмите Save (сохранить). Появится сообщение «Settings saved»."
-            ],
-            "fields": [
-              {
-                "name": "Язык (Language)",
-                "what": "Меню с вариантами English, Azərbaycan dili, Русский и Türkçe. Действует сразу после выбора."
-              },
-              {
-                "name": "Оформление",
-                "what": "Три варианта: «Светлое», «Тёмное» и «Как на этом устройстве». Действует сразу и сохраняется только на этом компьютере — касса у окна и касса в подсобке могут отличаться. Тот же выбор есть на маленькой кнопке солнце/луна/экран в верхней полосе."
-              },
-              {
-                "name": "Название кассы (Register name)",
-                "what": "Название этой кассы, например «Front counter». Сохраняется кнопкой Save. Оно печатается на чеках, так что подсказка под полем не обманывает."
-              },
-              {
-                "name": "Идентификатор устройства (Device id)",
-                "what": "Длинный код, который браузер присвоил себе сам. Показан, чтобы вы могли его продиктовать; изменить его нельзя."
-              },
-              {
-                "name": "Где хранятся продажи (Where sales are stored)",
-                "what": "Две строки: Cloud (облако) и «Только на этом компьютере». Вариант, который использует ваша касса, уже отмечен, и выбрать здесь нельзя ни один — где касса хранит продажи, определяется при её настройке. Касса, подключённая к интернет-магазину, показывает Cloud; касса, работающая сама по себе, показывает «Только на этом компьютере» и предупреждение, что ничего не копируется за пределы машины."
-              },
-              {
-                "name": "Скорость сканера (Scanner speed)",
-                "what": "Число от 10 до 300. Наибольший промежуток в миллисекундах между двумя нажатиями клавиш, при котором ввод ещё считается сканированием, а не набором с клавиатуры. Обычное значение — 40."
-              },
-              {
-                "name": "Чековый принтер (Receipt printer)",
-                "what": "Меню с единственным пунктом «Browser print dialog», причём неактивное. В этой версии чеки печатаются только так."
-              },
-              {
-                "name": "Ваша учётная запись (Your account)",
-                "what": "Раздел ближе к началу списка, на кассе, работающей сама по себе. Он называет учётную запись, под которой вы вошли на этом компьютере, и содержит одну кнопку — «Сменить мой пароль». Сначала спрашивает текущий пароль, затем новый дважды. Смена примерно за минуту выводит эту же запись отовсюду, где она открыта."
-              },
-              {
-                "name": "Save (сохранить)",
-                "what": "Сохраняет название кассы и скорость сканера. Язык и оформление применяются в момент выбора, у двух магазинных разделов есть своя кнопка сохранения, а место хранения продаж здесь вообще нельзя изменить."
-              }
-            ],
-            "notes": [
-              "Где хранятся продажи — показывается, а не выбирается. Касса, подключённая к интернет-магазину, хранит их в облаке. Касса, настроенная работать сама по себе, хранит их на этом компьютере и никуда не обращается — и тогда на экране появляется предупреждение, потому что резервные копии становятся вашей заботой.",
-              "В меню чекового принтера только один пункт, и изменить его нельзя. Прямой печати на чековый принтер в этой версии нет; чеки идут через окно печати браузера.",
-              "Выбранный здесь язык запоминается этим браузером, и он же меняет язык админ-панели и страниц магазина, если открыть их в том же браузере. На ваших покупателей и на другие компьютеры это не влияет.",
-              "Переведены только касса и общие повседневные фразы — примерно 139 фраз из примерно 1405. Большинство экранов админ-панели на азербайджанском, русском и турецком по-прежнему показывают английский текст.",
-              "Если на вашем сайте язык задаётся в адресе страницы, под меню появится дополнительная строка о том, что выбор сохранён, но на то, что вы видите, не повлияет. Здесь побеждает собственная маршрутизация сайта, и это не ошибка.",
-              "Язык меняется сразу после выбора. Кнопка Save нужна только для названия кассы, скорости сканера и выбора места хранения.",
-              "Новая скорость сканера начинает действовать после возвращения на экран Register. Значения вне диапазона от 10 до 300 подтягиваются к границам, а пустое поле возвращается к 40.",
-              "Идентификатор устройства создаётся браузером при первом открытии кассы. Очистка данных браузера, другой браузер или окно в режиме инкогнито создают новый идентификатор, и касса считается уже другой.",
-              "Название кассы печатается на чеках. Оно выводится в строке «Register» сразу под строкой «Served by». Пока поле пустое — а именно так начинает работать любая касса — эта строка на чек не попадает. Так что заполните его, если хотите различать, какая касса провела продажу.",
-              "Название используется только в этих двух местах: на этой странице и на напечатанном чеке. В сохранённой продаже записывается идентификатор устройства, а не название. Значит, списка продаж с разбивкой по названиям касс не существует, а переименование кассы ничего не меняет в уже напечатанном.",
-              "Если браузер блокирует хранение данных сайта, большая часть этой страницы тихо перестаёт работать, и никакого предупреждения на экране нет. Исключение — язык: его копия остаётся в памяти, поэтому выбор действует, пока открыта вкладка, но перезагрузку он не переживёт.",
-              "При заблокированном хранении данных сайта название кассы, скорость сканера и выбор места хранения не сохраняются вовсе. Нажатие Save по-прежнему выводит «Settings saved», но ничего не записывается, и прежние значения вернутся, как только вы уйдёте с этой страницы, — перезагружать для этого ничего не нужно. Считайте это сообщение подтверждением того, что вы нажали кнопку, а не доказательством того, что настройка сохранена.",
-              "При заблокированном хранении данных сайта идентификатор устройства нестабилен, и это важно: он создаётся заново каждый раз, когда требуется, поэтому код на этой странице не тот, что записывается в ваши продажи. Не диктуйте его в поддержку, пока браузер находится в таком состоянии.",
-              "На кассе, работающей сама по себе, под строкой «Только на этом компьютере» показывается оранжевое предупреждение: больше нигде ничего не хранится. Понимайте это буквально — если компьютер потерян или его диск вышел из строя, продажи на нём исчезли. Копии в облаке нет, потому что нет облака.",
-              "На кассе, за которой нет сайта, в списке слева на этой странице появляются ещё два пункта: «Магазин» - название магазина, валюта и текст чека, и «Резервная копия» - единственная копия всего, что знает эта касса. Каждый виден только той роли, которой это разрешено, и у каждого есть свой раздел в этом руководстве.",
-              "Серая строка под кнопкой «Сохранить» показывает версию, на которой работает эта касса; «Администратор приложения» несёт ту же строку внизу каждой своей страницы. Причина одна: чтобы человек, говорящий по телефону со службой поддержки, мог её прочитать, не разыскивая. Это не настройка, нажимать нечего. На кассе, работающей сама по себе, это собственная версия кассы - число в начале этого руководства; на кассе, подключённой к сайту, это версия магазинной программы за ней, а она другая и меняется в другое время."
-            ]
-          },
-          {
+        "sections": [          {
             "id": "till-language",
             "title": "Как выбрать язык на кассе",
             "summary": "Каждая касса выбирает свой язык на экране Settings (настройки). Выбор запоминается на этом компьютере, поэтому за прилавком может быть турецкий, а в задней комнате — английский. Это единственное место во всём продукте, где человек может выбрать язык из меню.",
@@ -5440,7 +5446,7 @@ const MANUAL = {
         "Mağazanın geri kalanı burada değil. Ürünler, kategoriler, çevrimiçi vitrin, teslimat, e-postalar, temalar ve sayfa oluşturucu, bu dosyanın yanındaki user-manual.html mağaza kılavuzunda. Bu kılavuz ayrıca kasanın neleri yapamadığını açıkça yazar; çünkü bunu kuyruğun ortasında öğrenmek, burada okumaktan kötüdür.",
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır."
       ],
-      "version": "v1.3.0"
+      "version": "v1.4.0"
     },
     "parts": [
       {
@@ -5760,76 +5766,7 @@ const MANUAL = {
         "id": "setup",
         "title": "Her kasanın ayarlanması",
         "blurb": "Kasaya ad vermek, dilini seçmek, tarayıcıyı ayarlamak ve fişte ne yazacağını belirlemek.",
-        "sections": [
-          {
-            "id": "till-settings",
-            "title": "Bu kasaya ait ayarlar",
-            "summary": "Bu sayfadaki her şey karşısında oturduğunuz bilgisayara aittir, mağazanıza değil. Ön tezgâhtaki kasa ve depodaki tablet, her biri kendi adını, kendi dilini, kendi parlaklığını ve kendi tarayıcı ayarını tutar. Sayfa bunu en üstte söyler: bunlar yalnızca bu bilgisayar için geçerlidir. Arkasında web sitesi olmayan bir kasada listeye iki bölüm daha eklenir - mağazanın kendi bilgileri ve yedek - ve bu ikisi mağazaya aittir.",
-            "steps": [
-              "Kasa ekranında soldaki menüden Ayarlar (Settings) bölümünü açın.",
-              "Dil (Language) menüsünden dilinizi seçin. Dil anında değişir; bunun için Kaydet (Save) düğmesine basmanız gerekmez.",
-              "\"Kasa adı\" (Register name) kutusuna bu kasa için bir ad verin, örneğin Front counter. Bu ad fişlerinize basılır.",
-              "Okutmalar ikiye bölünmüş geliyorsa \"Okuyucu hızı\" (Scanner speed) değerini artırın. Kendi yazdıklarınız okutma sanılıyorsa değeri düşürün. Normal değer 40'tır.",
-              "Kaydet düğmesine basın. \"Settings saved\" (Ayarlar kaydedildi) mesajı görünür."
-            ],
-            "fields": [
-              {
-                "name": "Dil (Language)",
-                "what": "English, Azərbaycan dili, Русский ve Türkçe seçeneklerini sunan menü. Seçtiğiniz anda geçerli olur."
-              },
-              {
-                "name": "Görünüm",
-                "what": "Üç seçenek: Açık, Koyu ve \"Bu cihaza uy\". Seçtiğiniz anda uygulanır ve yalnızca bu bilgisayarda saklanır — pencere kenarındaki kasa ile depodaki kasa farklı olabilir. Aynı seçim üst çubuktaki küçük güneş/ay/ekran düğmesinde de vardır."
-              },
-              {
-                "name": "Kasa adı (Register name)",
-                "what": "Bu kasa için bir ad, örneğin \"Front counter\". Kaydet (Save) düğmesiyle kaydedilir. Fişlerinize basılır; yani kutunun altındaki yardım metni doğrudur."
-              },
-              {
-                "name": "Cihaz kimliği (Device id)",
-                "what": "Bu tarayıcının kendisine verdiği uzun bir kod. Okuyup söyleyebilmeniz için gösterilir; düzenlenemez."
-              },
-              {
-                "name": "Satışların saklandığı yer (Where sales are stored)",
-                "what": "İki satır: Bulut (Cloud) ve \"Yalnızca bu bilgisayar\" (This computer only). Kasanızın kullandığı seçenek zaten işaretlidir ve burada hiçbiri seçilemez — bir kasanın satışları nerede tuttuğu, kurulum sırasında belirlenir. İnternet mağazanıza bağlı bir kasa Bulut gösterir; kendi başına çalışan bir kasa ise \"Yalnızca bu bilgisayar\" gösterir ve hiçbir şeyin makinenin dışına kopyalanmadığı uyarısını verir."
-              },
-              {
-                "name": "Okuyucu hızı (Scanner speed)",
-                "what": "10 ile 300 arasında bir sayı. İki tuş vuruşu arasında, yazma değil de tek bir okutma sayılmasını sağlayan en büyük boşluk (milisaniye cinsinden). Normal değer 40."
-              },
-              {
-                "name": "Fiş yazıcısı (Receipt printer)",
-                "what": "Tek girişi olan bir menü: \"Browser print dialog\" (tarayıcı yazdırma penceresi); menü soluktur. Bu sürümde fişlerin basıldığı tek yol budur."
-              },
-              {
-                "name": "Hesabınız (Your account)",
-                "what": "Kendi başına çalışan bir kasada, dizinin üst tarafındaki bir bölüm. Bu bilgisayarda giriş yapmış hesabı adlandırır ve tek bir düğme taşır: \"Parolamı değiştir\". Önce şu anki parolanızı, sonra yenisini iki kez ister. Değiştirmek, aynı hesabın açık olduğu diğer her yerde bir dakika kadar içinde oturumu kapatır."
-              },
-              {
-                "name": "Kaydet (Save)",
-                "what": "Kasa adını ve okuyucu hızını kaydeder. Dil ve görünüm seçtiğiniz anda uygulanır, iki mağaza bölümünün kendi kaydetme düğmesi vardır, satışların nerede saklandığı ise burada hiç değiştirilemez."
-              }
-            ],
-            "notes": [
-              "Satışların nerede tutulduğu gösterilir, seçilmez. İnternet mağazanıza bağlı bir kasa onları bulutta tutar. Kendi başına çalışacak şekilde kurulmuş bir kasa ise onları o bilgisayarda tutar ve hiçbir yere bağlanmaz — bu durumda yedek almak size kaldığı için ekranda bir uyarı da görünür.",
-              "Fiş yazıcısı menüsünde tek bir seçenek vardır ve değiştirilemez. Fiş yazıcısına doğrudan yazdırma bu sürümde yoktur; fişler tarayıcınızın yazdırma penceresinden geçer.",
-              "Burada seçtiğiniz dil bu tarayıcı tarafından hatırlanır ve aynı tarayıcıda açtığınızda yönetim panelinin ve mağaza sayfalarının dilini de değiştirir. Müşterileriniz veya diğer bilgisayarlar için hiçbir şeyi değiştirmez.",
-              "Yalnızca kasa ekranı ve günlük ortak ifadeler çevrilmiştir; yaklaşık 1405 ifadenin kabaca 139'u. Azerbaycanca, Rusça ve Türkçede yönetim ekranlarının çoğu hâlâ İngilizce görünür.",
-              "Siteniz dili web adresinde taşıyorsa, menünün altında seçiminizin saklandığını ama gördüğünüz dili değiştirmeyeceğini söyleyen ek bir satır belirir. Bu, sitenin kendi yönlendirmesinin baskın gelmesidir; bir arıza değildir.",
-              "Dil, siz seçer seçmez değişir. Kaydet düğmesi yalnızca kasa adı, okuyucu hızı ve saklama seçimi içindir.",
-              "Yeni okuyucu hızı, Kasa (Register) ekranına döndüğünüzde devreye girer. 10 ile 300 aralığının dışındaki değerler aralığa çekilir; kutuyu boşaltmak değeri 40'a döndürür.",
-              "Cihaz kimliği, kasa ilk kez açıldığında bu tarayıcı tarafından oluşturulur. Tarayıcı verilerinizi temizlemek, başka bir tarayıcı ya da gizli pencere kullanmak yeni bir kimlik oluşturur ve kasa artık farklı bir kasa sayılır.",
-              "Kasa adı fişlere basılır. \"Served by\" (satışı yapan) satırının hemen altında, \"Register\" etiketli bir satırda görünür. Kutu boşken - her kasa bu şekilde başlar - o satır fişe hiç konmaz. Satışı hangi kasanın aldığını ayırt edebilmek istiyorsanız kutuyu doldurun.",
-              "Ad yalnızca şu iki yerde kullanılır: bu sayfa ve basılan fiş. Kayıtlarınıza giren satış, adı değil cihaz kimliğini taşır. Yani satışlarınızın kasa adına göre gruplandığı bir liste yoktur ve bir kasanın adını değiştirmek, daha önce basılmış hiçbir şeyi değiştirmez.",
-              "Tarayıcınız site verilerini engelliyorsa bu sayfanın çoğu sessizce çalışmaz ve ekranda sizi uyaran hiçbir şey olmaz. Tek istisna dildir: dil bellekte bir kopya tutar, bu yüzden seçiminiz sekme açık kaldığı sürece geçerli olur, ancak sayfa yenilendiğinde kaybolur.",
-              "Site verileri engelliyken kasa adı, okuyucu hızı ve saklama seçimi hiç saklanmaz. Kaydet düğmesine basmak yine \"Settings saved\" mesajını gösterir, ama hiçbir şey yazılmaz ve bu sayfadan ayrılır ayrılmaz eski değerler geri gelir; kaybetmeniz için sayfayı yenilemeniz bile gerekmez. O mesajı, ayarın saklandığının kanıtı değil, düğmeye bastığınızın onayı sayın.",
-              "Site verileri engelliyken cihaz kimliği önemli bir biçimde kararsız olur: her gerektiğinde yenisi üretilir, bu yüzden bu sayfada gördüğünüz kod, satışlarınıza işlenen kod değildir. Tarayıcı bu durumdayken o kodu destek ekibine okumayın.",
-              "Kendi başına çalışan bir kasada \"Yalnızca bu bilgisayar\" satırının altında turuncu bir uyarı görünür: hiçbir şey başka bir yerde saklanmıyor. Bunu tam anlamıyla ciddiye alın — o bilgisayar kaybolursa ya da diski bozulursa, üzerindeki satışlar da gitmiştir. Bulutta kopya yoktur, çünkü bulut yoktur.",
-              "Arkasında web sitesi olmayan bir kasada bu sayfanın solundaki listeye iki madde eklenir: mağazanın adı, para birimi ve fiş metni için Mağaza ve kasanın bildiği her şeyin tek kopyası için Yedek. Her biri yalnızca izni olan role görünür ve her birinin bu kılavuzda kendi bölümü vardır.",
-              "Kaydet düğmesinin altındaki gri satır bu kasanın hangi sürümde çalıştığını söyler; Uygulama yöneticisi de aynı satırı her sayfasının dibinde taşır. Tek nedeni şu: destekle telefonda konuşan kişi onu aramadan okuyabilsin. Bir ayar değildir, basılacak bir şey yoktur. Kendi başına çalışan bir kasada bu, kasanın kendi sürümüdür - bu kılavuzun başındaki sayı; bir web sitesine bağlı kasada ise arkasındaki mağaza yazılımının sürümüdür ve o, başka zaman değişen başka bir sayıdır."
-            ]
-          },
-          {
+        "sections": [          {
             "id": "till-language",
             "title": "Kasada dil ayarlama",
             "summary": "Her kasa kendi dilini, kasanın Ayarlar (Settings) ekranından seçer. Seçim o bilgisayarda hatırlanır; böylece ön kasa Türkçe çalışırken arka ofis İngilizce çalışabilir. Ürünün tamamında, bir kişinin menüden dil seçebildiği tek yer burasıdır.",

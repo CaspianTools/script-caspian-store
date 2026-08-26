@@ -83,6 +83,11 @@ const {
   DEFAULT_SIZE_KEY,
   addReceiptLine,
   ensureReceiptLine,
+  rangeStart,
+  salesByProduct,
+  productSaleRows,
+  categoryTotals,
+  supplierTotals,
   passwordIsWeak,
   verifyStoredCredentials,
   formatRecoveryCode,
@@ -1711,6 +1716,215 @@ check('the newest wins if a restored backup left two open', () => {
     { id: 'new', status: 'open', deviceId: 'd1', openedAtMillis: 20 },
   ];
   assert.equal(openShiftForDevice(rows, 'd1').id, 'new');
+});
+
+// ---------------------------------------------------------------- store-stats
+// The figures the category, supplier and product pages print. Pure by design --
+// every function is handed rows a caller already read -- which is the whole
+// reason they live in `store-stats.ts` rather than inside the screens.
+
+const statSale = (over) => ({
+  saleId: 's1',
+  receiptNumber: 'R-1',
+  deviceId: 'd1',
+  lines: [],
+  tenders: [],
+  subtotal: 0,
+  discount: 0,
+  total: 0,
+  committedAtMillis: 1_000,
+  cashierId: 'u1',
+  cashierName: 'Ada',
+  stockShortfall: [],
+  ...over,
+});
+
+const statLine = (over) => ({
+  productId: 'p1',
+  name: 'Tea',
+  sku: '',
+  barcode: '',
+  unitPrice: 5,
+  quantity: 1,
+  selectedSize: null,
+  selectedColor: null,
+  lineDiscount: 0,
+  lineTotal: 5,
+  ...over,
+});
+
+const statProduct = (over) => ({
+  id: 'p1',
+  name: 'Tea',
+  nameLower: 'tea',
+  price: 5,
+  sku: '',
+  barcode: '',
+  category: 'Drinks',
+  sizes: [],
+  stock: { _default: 4 },
+  isActive: true,
+  imageUrl: '',
+  description: '',
+  tracksLots: false,
+  costPrice: 2,
+  createdAtMillis: 0,
+  updatedAtMillis: 0,
+  ...over,
+});
+
+check('a range starts at the till local midnight, and All at the epoch', () => {
+  const noon = new Date(2026, 0, 15, 12, 0, 0).getTime();
+  const midnight = new Date(2026, 0, 15, 0, 0, 0).getTime();
+  assert.equal(rangeStart('today', noon), midnight);
+  assert.equal(rangeStart('week', noon), midnight - 6 * 86_400_000);
+  assert.equal(rangeStart('month', noon), midnight - 29 * 86_400_000);
+  assert.equal(rangeStart('all', noon), 0, 'All time reaches every sale ever rung');
+});
+
+check('one product on two lines of one receipt counts as one sale', () => {
+  // Two sizes of the same shirt. Counting it twice would quietly turn "sold on
+  // 40 sales" into "sold on 40 lines" and stop it matching the receipts list.
+  const rows = salesByProduct(
+    [statSale({ lines: [statLine({ quantity: 2, lineTotal: 10 }), statLine({ quantity: 1, lineTotal: 5 })] })],
+    0,
+  );
+  const p1 = rows.get('p1');
+  assert.equal(p1.units, 3);
+  assert.equal(p1.revenue, 15);
+  assert.equal(p1.saleCount, 1, 'one receipt, however many lines it has');
+});
+
+check('sales outside the window are not counted at all', () => {
+  const rows = salesByProduct([statSale({ committedAtMillis: 500 })], 1_000);
+  assert.equal(rows.size, 0);
+});
+
+check('revenue is the line total, so a discount is already taken off', () => {
+  const rows = salesByProduct(
+    [statSale({ lines: [statLine({ unitPrice: 5, quantity: 2, lineDiscount: 3, lineTotal: 7 })] })],
+    0,
+  );
+  assert.equal(rows.get('p1').revenue, 7, 'not quantity x unitPrice');
+  assert.equal(rows.get('p1').discount, 3);
+});
+
+check('category figures follow the product, not the sale', () => {
+  // The join that makes this page possible and also limits it: a sale line
+  // records `productId` and nothing else, so re-filing a product moves its whole
+  // history with it. Asserted rather than merely documented, because a future
+  // change that keyed on something else would be a silent behaviour change.
+  const sales = [statSale({ lines: [statLine({ quantity: 2, lineTotal: 10 })] })];
+  const before = categoryTotals(sales, [statProduct()], 0);
+  assert.equal(before.get('Drinks').unitsSold, 2);
+  assert.equal(before.get('Drinks').revenue, 10);
+
+  const after = categoryTotals(sales, [statProduct({ category: 'Snacks' })], 0);
+  assert.equal(after.has('Drinks'), false, 'the old category keeps nothing');
+  assert.equal(after.get('Snacks').unitsSold, 2, 'the history moved with the product');
+});
+
+check('a category holds its shelf value at the last cost paid', () => {
+  const rows = categoryTotals([], [statProduct({ stock: { S: 3, M: 2 }, costPrice: 4 })], 0);
+  assert.equal(rows.get('Drinks').unitsOnHand, 5);
+  assert.equal(rows.get('Drinks').stockValueAtCost, 20);
+});
+
+check('units with no cost price are left out of profit, and counted', () => {
+  // A shop that typed its catalogue in by hand has costPrice 0 everywhere, and
+  // counting those at zero cost reports the whole takings as profit -- a number
+  // an owner would act on.
+  const sales = [
+    statSale({ lines: [statLine({ productId: 'p1', quantity: 1, lineTotal: 5 })] }),
+    statSale({ saleId: 's2', lines: [statLine({ productId: 'p2', quantity: 2, lineTotal: 20 })] }),
+  ];
+  const rows = categoryTotals(
+    sales,
+    [statProduct(), statProduct({ id: 'p2', costPrice: 0 })],
+    0,
+  );
+  const drinks = rows.get('Drinks');
+  assert.equal(drinks.grossProfit, 3, '5 charged less the 2 it cost, and nothing from p2');
+  assert.equal(drinks.unitsWithoutCost, 2);
+});
+
+check('a sold product that has since been deleted joins no category', () => {
+  const rows = categoryTotals([statSale({ lines: [statLine({ productId: 'gone' })] })], [statProduct()], 0);
+  assert.equal(rows.get('Drinks').unitsSold, 0, 'never invented a category for it');
+});
+
+check('a supplier is credited only with what its own batches sold', () => {
+  const lots = [
+    { id: 'L1', productId: 'p1', supplierId: 'sup1', remainingQty: 4, unitCost: 2 },
+    { id: 'L2', productId: 'p1', supplierId: 'sup2', remainingQty: 1, unitCost: 3 },
+  ];
+  const movements = [
+    { kind: 'sale', lotId: 'L1', productId: 'p1', quantity: -6 },
+    { kind: 'sale', lotId: 'L2', productId: 'p1', quantity: -9 },
+    // The oversell row `saleStockMovements` writes when the lots could not cover
+    // the line. It belongs to no batch, so it belongs to no supplier.
+    { kind: 'sale', lotId: '', productId: 'p1', quantity: -5 },
+    { kind: 'receipt', lotId: 'L1', productId: 'p1', quantity: 10 },
+  ];
+  const receipts = [
+    {
+      id: 'r1',
+      supplierId: 'sup1',
+      status: 'posted',
+      totalCost: 20,
+      receivedAtMillis: 100,
+      lines: [{ productId: 'p1', productName: 'Tea', quantity: 10, unitCost: 2 }],
+    },
+  ];
+  const totals = supplierTotals({ supplierId: 'sup1', receipts, lots, movements });
+  assert.equal(totals.deliveries, 1);
+  assert.equal(totals.spend, 20);
+  assert.equal(totals.unitsReceived, 10);
+  assert.equal(totals.unitsSoldFromLots, 6, 'not the other supplier, and not the oversell');
+  assert.equal(totals.costOfUnitsSoldFromLots, 12);
+  assert.equal(totals.unitsOnHandFromLots, 4);
+  assert.equal(totals.products[0].unitsSoldFromLots, 6);
+});
+
+check('a draft delivery has not happened yet', () => {
+  const receipts = [
+    { id: 'r1', supplierId: 'sup1', status: 'draft', totalCost: 99, receivedAtMillis: 1, lines: [] },
+  ];
+  const totals = supplierTotals({ supplierId: 'sup1', receipts, lots: [], movements: [] });
+  assert.equal(totals.deliveries, 0);
+  assert.equal(totals.spend, 0, 'a storekeeper still scanning has not bought anything');
+});
+
+check('the unit cost shown is the last one paid, not an average', () => {
+  const receipts = [
+    {
+      id: 'r1', supplierId: 'sup1', status: 'posted', totalCost: 10, receivedAtMillis: 100,
+      lines: [{ productId: 'p1', productName: 'Tea', quantity: 5, unitCost: 2 }],
+    },
+    {
+      id: 'r2', supplierId: 'sup1', status: 'posted', totalCost: 30, receivedAtMillis: 200,
+      lines: [{ productId: 'p1', productName: 'Tea', quantity: 5, unitCost: 6 }],
+    },
+  ];
+  const totals = supplierTotals({ supplierId: 'sup1', receipts, lots: [], movements: [] });
+  assert.equal(totals.products[0].lastUnitCost, 6, 'what a reorder would be quoted');
+  assert.equal(totals.products[0].unitsReceived, 10);
+  assert.equal(totals.lastAtMillis, 200);
+});
+
+check('a product page lists one row per receipt, newest first', () => {
+  const rows = productSaleRows(
+    [
+      statSale({ saleId: 'a', receiptNumber: 'R-1', committedAtMillis: 10, lines: [statLine({ quantity: 1, lineTotal: 5 })] }),
+      statSale({ saleId: 'b', receiptNumber: 'R-2', committedAtMillis: 20, lines: [statLine({ quantity: 2, lineTotal: 10 }), statLine({ quantity: 1, lineTotal: 5 })] }),
+      statSale({ saleId: 'c', receiptNumber: 'R-3', committedAtMillis: 30, lines: [statLine({ productId: 'other' })] }),
+    ],
+    'p1',
+    0,
+  );
+  assert.deepEqual(rows.map((r) => r.receiptNumber), ['R-2', 'R-1']);
+  assert.equal(rows[0].quantity, 3, 'both lines of R-2 on one row');
+  assert.equal(rows[0].total, 15);
 });
 
 await Promise.all(pending);

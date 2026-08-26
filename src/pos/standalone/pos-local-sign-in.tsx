@@ -3,7 +3,6 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { useLocaleControls, useT } from '../../i18n/locale-context';
 import { BUILTIN_LOCALE_CODES, BUILTIN_LOCALE_NAMES } from '../../i18n/locales';
-import { Select } from '../../ui/select';
 import { LockIcon, ShoppingCartIcon } from '../../ui/icons';
 import { cn } from '../../utils/cn';
 import { usePosLocalSession } from './local-session-context';
@@ -12,6 +11,7 @@ import { throttleWaitSeconds } from './sign-in-throttle';
 import { PasswordField } from './password-field';
 import { PosLocalRecovery, RecoveryCodeBlock } from './pos-local-recovery';
 import { mintRecoveryCode } from './recovery-code';
+import { PosSelect } from './ui/pos-field';
 
 /**
  * Sign-in for a standalone till, the one-time setup that precedes it, and the
@@ -104,7 +104,7 @@ function LanguagePicker() {
       <label className="cpos-field__label" htmlFor={id}>
         {t('pos.local.language')}
       </label>
-      <Select
+      <PosSelect
         id={id}
         value={locale}
         onChange={(e) => setLocale(e.target.value)}

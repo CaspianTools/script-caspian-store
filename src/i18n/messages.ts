@@ -2504,6 +2504,92 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'pos.appAdmin.recovery.mintedFor': 'The current code belongs to {name}, made on {date}.',
   'pos.appAdmin.recovery.help':
     'Making a new one stops the old one working straight away. The code is shown once; afterwards the till keeps only a scrambled copy that nobody, including whoever installed it, can read back.',
+
+  // --- Quick add (standalone till v1.4.0) — the one place the till creates ---
+  'pos.quickAdd.search': 'Search',
+  'pos.quickAdd.noMatch': 'Nothing matches that.',
+  'pos.quickAdd.nothingTitle': 'Nothing to add here',
+  'pos.quickAdd.nothingHelp':
+    'Your role cannot add products, categories, suppliers or people. Whoever looks after this till can change that in App admin.',
+  'pos.quickAdd.entry.product': 'Product',
+  'pos.quickAdd.entry.productBlurb': 'Something the shop sells.',
+  'pos.quickAdd.entry.category': 'Category',
+  'pos.quickAdd.entry.categoryBlurb': 'A group to file products under.',
+  'pos.quickAdd.entry.supplier': 'Supplier',
+  'pos.quickAdd.entry.supplierBlurb': 'Someone the shop buys from.',
+  'pos.quickAdd.entry.person': 'Person',
+  'pos.quickAdd.entry.personBlurb': 'An account for someone who works here.',
+  'pos.quickAdd.action.product': 'Add product',
+  'pos.quickAdd.action.category': 'Add category',
+  'pos.quickAdd.action.supplier': 'Add supplier',
+  'pos.quickAdd.action.person': 'Add person',
+
+  // --- The period picker the record pages share ---
+  'pos.store.range.label': 'Period',
+  'pos.store.range.today': 'Today',
+  'pos.store.range.week': 'Last 7 days',
+  'pos.store.range.month': 'Last 30 days',
+  'pos.store.range.all': 'All time',
+  'pos.store.revenue': 'Revenue',
+  'pos.store.grossProfit': 'Gross profit',
+  'pos.store.grossProfitPartial': 'Leaves out {count} sold with no cost price on file',
+
+  // --- A category’s own page ---
+  'pos.store.category.needsName': 'Give the category a name.',
+  'pos.store.category.added': 'Added {name}',
+  'pos.store.category.addHelp':
+    'Products are filed by name, so this is the word that appears on the picker.',
+  'pos.store.category.pageSub': '{count, plural, =0 {No products} one {One product} other {# products}}',
+  'pos.store.category.figures': 'Figures',
+  'pos.store.category.products': 'Products',
+  'pos.store.category.activeCount': '{count} on sale',
+  'pos.store.category.productsTitle': 'Products in this category',
+  'pos.store.category.noProducts': 'Nothing is filed under this category yet.',
+  'pos.store.category.rename': 'Rename',
+  'pos.store.category.renameHelp': 'Every product filed here is rewritten to the new name.',
+  'pos.store.category.backToList': 'Back to categories',
+  'pos.store.category.missing': 'That category is not here',
+  'pos.store.category.missingHelp': 'It may have been deleted, or the address may be wrong.',
+  'pos.store.category.historyNote':
+    'A product carries its category as a name rather than a link, so moving a product to another category moves its sales history with it.',
+
+  // --- What a product sold, as opposed to what moved on the shelf ---
+  'pos.store.product.salesTitle': 'Sales',
+  'pos.store.product.onSales': '{count, plural, =0 {no sales} one {on one sale} other {on # sales}}',
+  'pos.store.product.afterDiscount': '{amount} discounted',
+  'pos.store.product.averagePrice': 'Average price',
+  'pos.store.product.lastSold': 'Last sold',
+  'pos.store.product.noSales': 'Nothing sold in this period.',
+
+  // --- A supplier’s own page ---
+  'pos.store.supplier.figures': 'Figures',
+  'pos.store.supplier.productsSupplied': 'Products supplied',
+  'pos.store.supplier.unitsReceived': 'Units received',
+  'pos.store.supplier.stillOnHand': 'Still on hand',
+  'pos.store.supplier.soldFromBatches': 'Sold from their batches',
+  'pos.store.supplier.atCost': '{amount} at cost',
+  'pos.store.supplier.lastOn': 'Last on {date}',
+  'pos.store.supplier.deliveriesTitle': 'Deliveries',
+  'pos.store.supplier.noDeliveries': 'Nothing has been received from them yet.',
+  'pos.store.supplier.productsTitle': 'What they supply',
+  'pos.store.supplier.noProducts': 'No posted delivery names a product yet.',
+  'pos.store.supplier.noContact': 'No contact details on file',
+  'pos.store.supplier.backToList': 'Back to suppliers',
+  'pos.store.supplier.missing': 'That supplier is not here',
+  'pos.store.supplier.missingHelp': 'They may have been deleted, or the address may be wrong.',
+  // Said plainly rather than shown as a zero. A sale records the product and
+  // never the delivery it came off, so the only route back to a supplier is
+  // through a batch — and most shops batch nothing.
+  'pos.store.supplier.attributionPartial':
+    'The sold figures cover only items received in batches. Everything else this supplier delivers still sells, but a sale records the product and not which delivery it came off, so the till cannot say whose stock it was.',
+  'pos.store.supplier.attributionNone':
+    'The till cannot say what this supplier sold. A sale records the product and not which delivery it came off, so stock is only traceable back to a supplier for items received in batches, and none of theirs are.',
+  'pos.store.receive.totalCost': 'Total cost',
+
+  'pos.admin.people.needsCredentials': 'A username and a password are both needed.',
+  // Referenced by the register’s scan handler since v1.0 with nothing behind it,
+  // so a failed scan printed the literal string “common.error” at the counter.
+  'common.error': 'Something went wrong',
 };
 
 /**

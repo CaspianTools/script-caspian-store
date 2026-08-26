@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
 import { ChevronLeftIcon, PackageIcon } from '../../../ui/icons';
-import { Button } from '../../../ui/button';
+import { PosSelect } from '../ui/pos-field';
 import { useCaspianNavigation } from '../../../provider/caspian-store-provider';
 import {
   backfillLocalStockMovements,
@@ -11,6 +11,7 @@ import {
   getLocalProduct,
   listLocalLots,
   listLocalMovements,
+  listLocalSales,
   listLocalSuppliers,
 } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
@@ -18,8 +19,16 @@ import { usePosRoles } from '../role-context';
 import { usePosShopSettings } from '../shop-settings-context';
 import { localDayKey } from '../opening-cash';
 import { lotExpiryState, summariseProductMovements } from '../lot-allocation';
+import {
+  POS_RANGE_KEYS,
+  productSaleRows,
+  rangeStart,
+  salesByProduct,
+  type PosRange,
+} from '../store-stats';
 import type {
   LocalProduct,
+  LocalSale,
   LocalStockLot,
   LocalStockMovement,
   LocalSupplier,
@@ -55,8 +64,10 @@ export function LocalProductPage({ productId }: { productId: string }) {
   const [lots, setLots] = useState<LocalStockLot[]>([]);
   const [movements, setMovements] = useState<LocalStockMovement[]>([]);
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
+  const [sales, setSales] = useState<LocalSale[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'failed'>('loading');
   const [shown, setShown] = useState(HISTORY_PAGE);
+  const [range, setRange] = useState<PosRange>('month');
   const [editOpen, setEditOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
 
@@ -69,11 +80,16 @@ export function LocalProductPage({ productId }: { productId: string }) {
       // read. Deliberately not at register boot -- a cashier must not wait on a
       // migration to open the till.
       await backfillLocalStockMovements();
-      const [row, lotRows, movementRows, supplierRows] = await Promise.all([
+      const [row, lotRows, movementRows, supplierRows, saleRows] = await Promise.all([
         getLocalProduct(productId),
         listLocalLots(productId),
         listLocalMovements(productId),
         settings.suppliersEnabled ? listLocalSuppliers() : Promise.resolve([]),
+        // Every sale, filtered in memory. The same thing the Sales screen does,
+        // and fine at one till's volume -- `localSales` has no per-product index
+        // and adding one to serve this page would be an upgrade every shop pays
+        // for so that one screen can skip a scan it does not notice.
+        listLocalSales(),
       ]);
       if (!row) {
         setState('missing');
@@ -83,6 +99,7 @@ export function LocalProductPage({ productId }: { productId: string }) {
       setLots(lotRows);
       setMovements(movementRows);
       setSuppliers(supplierRows);
+      setSales(saleRows);
       setState('ready');
     } catch {
       setState('failed');
@@ -95,6 +112,16 @@ export function LocalProductPage({ productId }: { productId: string }) {
 
   const summary = useMemo(() => summariseProductMovements(movements), [movements]);
   const today = useMemo(() => localDayKey(Date.now(), new Date().getTimezoneOffset()), []);
+
+  const from = useMemo(() => rangeStart(range, Date.now()), [range]);
+  const sold = useMemo(
+    () => salesByProduct(sales, from).get(productId) ?? null,
+    [sales, from, productId],
+  );
+  const saleRows = useMemo(
+    () => productSaleRows(sales, productId, from),
+    [sales, productId, from],
+  );
   const supplierName = useCallback(
     (id: string) => suppliers.find((s) => s.id === id)?.name ?? '',
     [suppliers],
@@ -137,9 +164,13 @@ export function LocalProductPage({ productId }: { productId: string }) {
           </span>
           <p className="cpos-empty__title">{t('pos.store.product.missing')}</p>
           <p className="cpos-empty__text">{t('pos.store.product.missingHelp')}</p>
-          <Button variant="outline" onClick={() => push('/pos/store')}>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--outline"
+            onClick={() => push('/pos/store')}
+          >
             {t('pos.store.backToProducts')}
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -194,29 +225,45 @@ export function LocalProductPage({ productId }: { productId: string }) {
           not the list -- arriving from Receive stock, or from a reload -- so
           `back()` would send somebody to the delivery they just posted.
         */}
-        <Button variant="ghost" onClick={() => push('/pos/store')}>
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--ghost"
+          onClick={() => push('/pos/store')}
+        >
           <ChevronLeftIcon size={16} />
           {t('pos.store.backToProducts')}
-        </Button>
+        </button>
         {mayEdit ? (
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--outline"
+            onClick={() => setEditOpen(true)}
+          >
             {t('common.edit')}
-          </Button>
+          </button>
         ) : null}
         {mayReceive ? (
-          <Button variant="outline" onClick={() => push(`/pos/store/receive?product=${product.id}`)}>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--outline"
+            onClick={() => push(`/pos/store/receive?product=${product.id}`)}
+          >
             {t('pos.store.receive.action')}
-          </Button>
+          </button>
         ) : null}
         {mayEdit ? (
-          <Button variant="outline" onClick={() => setAdjustOpen(true)}>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--outline"
+            onClick={() => setAdjustOpen(true)}
+          >
             {t('pos.store.adjust.action')}
-          </Button>
+          </button>
         ) : null}
         {mayEdit ? (
-          <Button variant="destructive" onClick={() => void remove()}>
+          <button type="button" className="cpos-btn cpos-btn--danger" onClick={() => void remove()}>
             {t('common.delete')}
-          </Button>
+          </button>
         ) : null}
       </div>
 
@@ -274,6 +321,111 @@ export function LocalProductPage({ productId }: { productId: string }) {
             <span className="cpos-stat__hint">{t('pos.store.product.stockValueHint')}</span>
           </div>
         </div>
+      </section>
+
+      {/*
+        Distinct from Figures above, which counts the stock LEDGER over all time:
+        this counts money, over a window somebody picked. The two would disagree
+        about "sold" if they shared a heading -- the ledger records a movement
+        for an oversell that no sale line priced -- so they are two sections and
+        the labels say which question each is answering.
+      */}
+      <section className="cpos-section">
+        <div className="cpos-row" style={{ alignItems: 'center' }}>
+          <h2 className="cpos-section__title">{t('pos.store.product.salesTitle')}</h2>
+          <div style={{ marginInlineStart: 'auto', minWidth: 170 }}>
+            <PosSelect
+              value={range}
+              aria-label={t('pos.store.range.label')}
+              onChange={(e) => setRange(e.target.value as PosRange)}
+              options={POS_RANGE_KEYS.map((key) => ({
+                value: key,
+                label: t(`pos.store.range.${key}`),
+              }))}
+            />
+          </div>
+        </div>
+
+        <div className="cpos-stats">
+          <div className="cpos-stat">
+            <span className="cpos-stat__label">{t('pos.store.product.sold')}</span>
+            <span className="cpos-stat__value">{sold?.units ?? 0}</span>
+            <span className="cpos-stat__hint">
+              {t('pos.store.product.onSales', { count: sold?.saleCount ?? 0 })}
+            </span>
+          </div>
+          <div className="cpos-stat">
+            <span className="cpos-stat__label">{t('pos.store.revenue')}</span>
+            <span className="cpos-stat__value">{money(sold?.revenue ?? 0)}</span>
+            {sold && sold.discount > 0 ? (
+              <span className="cpos-stat__hint">
+                {t('pos.store.product.afterDiscount', { amount: money(sold.discount) })}
+              </span>
+            ) : null}
+          </div>
+          {/* Only where a delivery has stamped a cost. Same rule as the margin
+              hint below Price: a profit computed against a cost of zero is the
+              whole takings, and it is a number somebody would act on. */}
+          {product.costPrice > 0 && sold ? (
+            <div className="cpos-stat">
+              <span className="cpos-stat__label">{t('pos.store.grossProfit')}</span>
+              <span className="cpos-stat__value">
+                {money(sold.revenue - sold.units * product.costPrice)}
+              </span>
+              <span className="cpos-stat__hint">
+                {t('pos.store.product.lastCost', { amount: money(product.costPrice) })}
+              </span>
+            </div>
+          ) : null}
+          <div className="cpos-stat">
+            <span className="cpos-stat__label">{t('pos.store.product.averagePrice')}</span>
+            <span className="cpos-stat__value">
+              {sold && sold.units > 0 ? money(sold.revenue / sold.units) : '—'}
+            </span>
+          </div>
+          <div className="cpos-stat">
+            <span className="cpos-stat__label">{t('pos.store.product.lastSold')}</span>
+            <span className="cpos-stat__value" style={{ fontSize: 16 }}>
+              {sold?.lastAtMillis ? new Date(sold.lastAtMillis).toLocaleDateString() : '—'}
+            </span>
+          </div>
+        </div>
+
+        {saleRows.length === 0 ? (
+          <div className="cpos-muted">{t('pos.store.product.noSales')}</div>
+        ) : (
+          <div className="cpos-tablewrap">
+            <table className="cpos-table">
+              <thead>
+                <tr>
+                  <th>{t('pos.admin.sales.receipt')}</th>
+                  <th>{t('pos.store.product.when')}</th>
+                  <th>{t('pos.admin.sales.cashier')}</th>
+                  <th className="cpos-table__num">{t('pos.store.adjust.quantity')}</th>
+                  <th className="cpos-table__num">{t('pos.admin.sales.total')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {saleRows.slice(0, HISTORY_PAGE).map((sale) => (
+                  <tr key={sale.saleId}>
+                    <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
+                      {sale.receiptNumber}
+                    </td>
+                    <td>{new Date(sale.atMillis).toLocaleString()}</td>
+                    <td>{sale.cashierName || '—'}</td>
+                    <td className="cpos-table__num">{sale.quantity}</td>
+                    <td className="cpos-table__num">{money(sale.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {saleRows.length > HISTORY_PAGE ? (
+          <div className="cpos-muted">
+            {t('pos.admin.sales.truncated', { shown: HISTORY_PAGE, total: saleRows.length })}
+          </div>
+        ) : null}
       </section>
 
       <section className="cpos-section">
@@ -419,9 +571,13 @@ export function LocalProductPage({ productId }: { productId: string }) {
             </div>
             {shown < movements.length ? (
               <div className="cpos-actions">
-                <Button variant="outline" onClick={() => setShown(shown + HISTORY_PAGE)}>
+                <button
+                  type="button"
+                  className="cpos-btn cpos-btn--outline"
+                  onClick={() => setShown(shown + HISTORY_PAGE)}
+                >
                   {t('pos.store.product.showMore', { count: movements.length - shown })}
-                </Button>
+                </button>
               </div>
             ) : null}
           </>

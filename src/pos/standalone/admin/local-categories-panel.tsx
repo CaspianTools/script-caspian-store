@@ -2,18 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { FolderIcon } from '../../../ui/icons';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
+import { FolderIcon, PlusIcon } from '../../../ui/icons';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
+import { useCaspianNavigation } from '../../../provider/caspian-store-provider';
 import {
   adoptLocalCategoriesFromProducts,
   deleteLocalCategory,
   listLocalCategories,
   listLocalProducts,
-  makeLocalCategory,
-  renameLocalCategory,
   saveLocalCategory,
 } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
@@ -21,28 +18,31 @@ import { usePosRoles } from '../role-context';
 import type { LocalCategory } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
 import { PanelLoadError } from './panel-load-error';
+import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
 
 /**
  * The shop's list of groups.
  *
  * A vocabulary, not a table products point at: a product stores the category
- * name, and renaming one here rewrites the products carrying it. That is what
- * lets this screen be switched off again without stranding a catalogue, and
- * what keeps the CSV and the backup unchanged.
+ * name, and renaming one rewrites the products carrying it. That is what lets
+ * this screen be switched off again without stranding a catalogue, and what
+ * keeps the CSV and the backup unchanged.
+ *
+ * Adding moved to Quick add in v1.4.0, and renaming moved to the category's own
+ * page. What is left here is the list, the order, and the way in.
  */
 export function LocalCategoriesPanel() {
   const t = useT();
   const { toast } = useToast();
+  const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
   const { can } = usePosRoles();
+  const quickAdd = usePosQuickAdd();
   const mayEdit = can(session.user?.role, 'store.edit');
 
   const [categories, setCategories] = useState<LocalCategory[] | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loadFailed, setLoadFailed] = useState(false);
-  const [adding, setAdding] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
 
   const refresh = useCallback(async () => {
     try {
@@ -60,30 +60,11 @@ export function LocalCategoriesPanel() {
     }
   }, []);
 
+  // `savedCount` is what makes a category added from the top bar appear here
+  // without this screen knowing Quick add exists.
   useEffect(() => {
     void refresh();
-  }, [refresh]);
-
-  const add = async () => {
-    const name = adding.trim();
-    if (!name) return;
-    if ((categories ?? []).some((c) => c.nameLower === name.toLowerCase())) {
-      toast({ title: t('pos.store.category.duplicate'), variant: 'destructive' });
-      return;
-    }
-    await saveLocalCategory(makeLocalCategory({ name, sortOrder: (categories ?? []).length }));
-    setAdding('');
-    await refresh();
-  };
-
-  const rename = async () => {
-    if (!editingId) return;
-    await renameLocalCategory(editingId, editingName);
-    setEditingId(null);
-    setEditingName('');
-    await refresh();
-    toast({ title: t('pos.store.category.renamed') });
-  };
+  }, [refresh, quickAdd.savedCount]);
 
   const remove = async (category: LocalCategory) => {
     const using = counts[category.name] ?? 0;
@@ -106,9 +87,8 @@ export function LocalCategoriesPanel() {
   /** Moves a row one place, which is all the ordering a list this short needs. */
   const move = async (index: number, delta: number) => {
     const rows = [...(categories ?? [])];
-    const target = index + delta;
     const a = rows[index];
-    const b = rows[target];
+    const b = rows[index + delta];
     if (!a || !b) return;
     await Promise.all([
       saveLocalCategory({ ...a, sortOrder: b.sortOrder }),
@@ -131,32 +111,32 @@ export function LocalCategoriesPanel() {
 
       <StoreScreenNav current="categories" />
 
-      {mayEdit ? (
-        <section className="cpos-section">
-          <h2 className="cpos-section__title">{t('pos.store.category.add')}</h2>
-          <div className="cpos-row">
-            <Input
-              style={{ maxWidth: 280 }}
-              value={adding}
-              placeholder={t('pos.store.category.namePlaceholder')}
-              onChange={(e) => setAdding(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void add();
-              }}
-            />
-            <Button onClick={() => void add()}>{t('pos.store.category.addAction')}</Button>
-            <Button variant="outline" onClick={() => void adopt()}>
-              {t('pos.store.category.adopt')}
-            </Button>
-          </div>
-          <FieldDescription>{t('pos.store.category.adoptHelp')}</FieldDescription>
-        </section>
-      ) : null}
-
       <section className="cpos-section">
-        <h2 className="cpos-section__title">
-          {t('pos.store.category.listTitle', { count: categories?.length ?? 0 })}
-        </h2>
+        <div className="cpos-row" style={{ alignItems: 'center' }}>
+          <span className="cpos-section__title">
+            {t('pos.store.category.listTitle', { count: categories?.length ?? 0 })}
+          </span>
+          {mayEdit ? (
+            <div style={{ display: 'flex', gap: 8, marginInlineStart: 'auto', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="cpos-btn cpos-btn--outline"
+                onClick={() => void adopt()}
+              >
+                {t('pos.store.category.adopt')}
+              </button>
+              <button
+                type="button"
+                className="cpos-btn cpos-btn--primary"
+                onClick={() => quickAdd.open('category')}
+              >
+                <PlusIcon size={16} />
+                {t('pos.store.category.addAction')}
+              </button>
+            </div>
+          ) : null}
+        </div>
+        {mayEdit ? <FieldDescription>{t('pos.store.category.adoptHelp')}</FieldDescription> : null}
 
         {loadFailed ? (
           <PanelLoadError onRetry={() => void refresh()} />
@@ -184,67 +164,51 @@ export function LocalCategoriesPanel() {
                 {categories.map((category, index) => (
                   <tr key={category.id}>
                     <td>
-                      {editingId === category.id ? (
-                        <Input
-                          value={editingName}
-                          autoFocus
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void rename();
-                            if (e.key === 'Escape') setEditingId(null);
-                          }}
-                        />
-                      ) : (
-                        category.name
-                      )}
+                      {/* A link rather than a row click: a row that navigates
+                          also swallows the Delete button underneath it. */}
+                      <button
+                        type="button"
+                        className="cpos-rowlink"
+                        onClick={() => push(`/pos/store/categories/${category.id}`)}
+                      >
+                        {category.name}
+                      </button>
                     </td>
                     <td className="cpos-table__num">{counts[category.name] ?? 0}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                        {mayEdit && editingId === category.id ? (
+                        <button
+                          type="button"
+                          className="cpos-btn cpos-btn--ghost cpos-btn--sm"
+                          onClick={() => push(`/pos/store/categories/${category.id}`)}
+                        >
+                          {t('pos.store.open')}
+                        </button>
+                        {mayEdit ? (
                           <>
-                            <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>
-                              {t('common.cancel')}
-                            </Button>
-                            <Button size="sm" onClick={() => void rename()}>
-                              {t('common.save')}
-                            </Button>
-                          </>
-                        ) : mayEdit ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            <button
+                              type="button"
+                              className="cpos-btn cpos-btn--ghost cpos-btn--sm"
                               disabled={index === 0}
                               onClick={() => void move(index, -1)}
                             >
                               {t('pos.store.category.up')}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            </button>
+                            <button
+                              type="button"
+                              className="cpos-btn cpos-btn--ghost cpos-btn--sm"
                               disabled={index === categories.length - 1}
                               onClick={() => void move(index, 1)}
                             >
                               {t('pos.store.category.down')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingId(category.id);
-                                setEditingName(category.name);
-                              }}
-                            >
-                              {t('common.edit')}
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
+                            </button>
+                            <button
+                              type="button"
+                              className="cpos-btn cpos-btn--danger cpos-btn--sm"
                               onClick={() => void remove(category)}
                             >
                               {t('common.delete')}
-                            </Button>
+                            </button>
                           </>
                         ) : null}
                       </div>

@@ -2,9 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { Select } from '../../../ui/select';
-import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import { CashDrawerIcon, ReceiptIcon } from '../../../ui/icons';
 import { cn } from '../../../utils/cn';
 import { toCsv, type CsvCell } from '../../../utils/csv';
@@ -14,10 +11,10 @@ import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
 import { usePosShopSettings } from '../shop-settings-context';
 import type { LocalOpeningCash, LocalSale } from '../types';
-import { actions, fieldLabel, muted, row, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
 import { LocalShiftsPanel } from './local-shifts-panel';
+import { PosSelect } from '../ui/pos-field';
 
 type Range = 'today' | 'week' | 'month' | 'all';
 
@@ -164,10 +161,10 @@ export function LocalSalesPanel() {
 
   return (
     <div>
-      <section style={section}>
-        <div style={row}>
+      <section className="cpos-section">
+        <div className="cpos-row">
           <div style={{ minWidth: 160 }}>
-            <Select
+            <PosSelect
               value={range}
               onChange={(e) => setRange(e.target.value as Range)}
               options={[
@@ -179,15 +176,15 @@ export function LocalSalesPanel() {
             />
           </div>
           <div style={{ marginInlineStart: 'auto', textAlign: 'end' }}>
-            <div style={muted}>{t('pos.admin.sales.takings', { count: visible.length })}</div>
+            <div className="cpos-muted">{t('pos.admin.sales.takings', { count: visible.length })}</div>
             <div style={{ fontSize: 22, fontWeight: 700 }}>{format(takings)}</div>
           </div>
         </div>
         {mayExport ? (
-          <div style={actions}>
-            <Button variant="outline" onClick={exportCsv} disabled={!visible.length}>
+          <div className="cpos-actions">
+            <button type="button" className="cpos-btn cpos-btn--outline" onClick={exportCsv} disabled={!visible.length}>
               {t('pos.admin.sales.export')}
-            </Button>
+            </button>
           </div>
         ) : null}
       </section>
@@ -200,8 +197,8 @@ export function LocalSalesPanel() {
       */}
       {showOpeningCash ? (
         <section id="pos-sales-opening-cash" className="cpos-section">
-          <div style={row}>
-            <span className="cpos-field__label">{t('pos.admin.openingCash.title')}</span>
+          <div className="cpos-row">
+            <span className="cpos-section__title">{t('pos.admin.openingCash.title')}</span>
             <div style={{ marginInlineStart: 'auto', textAlign: 'end' }}>
               <div className="cpos-muted">
                 {t('pos.admin.openingCash.declared', { count: visibleFloats.length })}
@@ -231,22 +228,23 @@ export function LocalSalesPanel() {
           ) : (
             <>
               {mayExport ? (
-                <div style={actions}>
-                  <Button variant="outline" onClick={exportOpeningCashCsv}>
+                <div className="cpos-actions">
+                  <button type="button" className="cpos-btn cpos-btn--outline" onClick={exportOpeningCashCsv}>
                     {t('pos.admin.openingCash.export')}
-                  </Button>
+                  </button>
                 </div>
               ) : null}
-              <Table>
-                <THead>
-                  <TR>
-                    <TH>{t('pos.admin.sales.when')}</TH>
-                    <TH>{t('pos.admin.sales.cashier')}</TH>
-                    <TH>{t('pos.admin.openingCash.till')}</TH>
-                    <TH>{t('pos.admin.openingCash.amount')}</TH>
-                  </TR>
-                </THead>
-                <TBody>
+              <div className="cpos-tablewrap">
+                <table className="cpos-table">
+                  <thead>
+                  <tr>
+                    <th>{t('pos.admin.sales.when')}</th>
+                    <th>{t('pos.admin.sales.cashier')}</th>
+                    <th>{t('pos.admin.openingCash.till')}</th>
+                    <th>{t('pos.admin.openingCash.amount')}</th>
+                  </tr>
+                  </thead>
+                  <tbody>
                   {/*
                     Two counts on one day by one cashier are two rows and stay
                     two rows. That pair is a drawer handover, and it is the
@@ -254,15 +252,16 @@ export function LocalSalesPanel() {
                     would erase the thing worth looking at.
                   */}
                   {visibleFloats.slice(0, 60).map((r) => (
-                    <TR key={r.id}>
-                      <TD>{new Date(r.confirmedAtMillis).toLocaleString()}</TD>
-                      <TD>{r.cashierName || '—'}</TD>
-                      <TD>{r.deviceLabel || r.deviceId.slice(0, 8)}</TD>
-                      <TD>{format(r.amount)}</TD>
-                    </TR>
+                    <tr key={r.id}>
+                      <td>{new Date(r.confirmedAtMillis).toLocaleString()}</td>
+                      <td>{r.cashierName || '—'}</td>
+                      <td>{r.deviceLabel || r.deviceId.slice(0, 8)}</td>
+                      <td>{format(r.amount)}</td>
+                    </tr>
                   ))}
-                </TBody>
-              </Table>
+                  </tbody>
+              </table>
+            </div>
               {visibleFloats.length > 60 ? (
                 <div className="cpos-muted">
                   {t('pos.admin.sales.truncated', { shown: 60, total: visibleFloats.length })}
@@ -273,14 +272,14 @@ export function LocalSalesPanel() {
         </section>
       ) : null}
 
-      <section style={section}>
-        <span style={fieldLabel}>{t('pos.admin.sales.listTitle')}</span>
+      <section className="cpos-section">
+        <h2 className="cpos-section__title">{t('pos.admin.sales.listTitle')}</h2>
         {loadFailed ? (
           <PanelLoadError onRetry={() => void refresh()} />
         ) : sales === null ? (
-          <div style={muted}>{t('common.loading')}</div>
+          <div className="cpos-muted">{t('common.loading')}</div>
         ) : visible.length === 0 ? (
-          <div style={muted}>
+          <div className="cpos-muted">
             {/*
               Names the filter, because the picker defaults to Today and an
               empty table under it looks exactly like a till that has lost its
@@ -292,33 +291,35 @@ export function LocalSalesPanel() {
               : t('pos.admin.sales.empty')}
           </div>
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t('pos.admin.sales.receipt')}</TH>
-                <TH>{t('pos.admin.sales.when')}</TH>
-                <TH>{t('pos.admin.sales.cashier')}</TH>
-                <TH>{t('pos.admin.sales.items')}</TH>
-                <TH>{t('pos.admin.sales.total')}</TH>
-              </TR>
-            </THead>
-            <TBody>
+          <div className="cpos-tablewrap">
+            <table className="cpos-table">
+              <thead>
+              <tr>
+                <th>{t('pos.admin.sales.receipt')}</th>
+                <th>{t('pos.admin.sales.when')}</th>
+                <th>{t('pos.admin.sales.cashier')}</th>
+                <th>{t('pos.admin.sales.items')}</th>
+                <th>{t('pos.admin.sales.total')}</th>
+              </tr>
+              </thead>
+              <tbody>
               {visible.slice(0, 200).map((s) => (
-                <TR key={s.saleId}>
-                  <TD style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
+                <tr key={s.saleId}>
+                  <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
                     {s.receiptNumber}
-                  </TD>
-                  <TD>{new Date(s.committedAtMillis).toLocaleString()}</TD>
-                  <TD>{s.cashierName || '—'}</TD>
-                  <TD>{s.lines.reduce((n, l) => n + l.quantity, 0)}</TD>
-                  <TD>{format(s.total)}</TD>
-                </TR>
+                  </td>
+                  <td>{new Date(s.committedAtMillis).toLocaleString()}</td>
+                  <td>{s.cashierName || '—'}</td>
+                  <td>{s.lines.reduce((n, l) => n + l.quantity, 0)}</td>
+                  <td>{format(s.total)}</td>
+                </tr>
               ))}
-            </TBody>
-          </Table>
+              </tbody>
+          </table>
+        </div>
         )}
         {visible.length > 200 ? (
-          <div style={muted}>{t('pos.admin.sales.truncated', { shown: 200, total: visible.length })}</div>
+          <div className="cpos-muted">{t('pos.admin.sales.truncated', { shown: 200, total: visible.length })}</div>
         ) : null}
       </section>
     </div>

@@ -598,6 +598,68 @@ export const POS_STYLESHEET = String.raw`
 .cpos-input:hover { border-color: var(--cpos-border-strong); }
 .cpos-input:focus { outline: none; border-color: var(--cpos-brand); box-shadow: var(--cpos-ring); }
 
+/* The dropdown and the multi-line box, restating .cpos-input's metrics rather
+   than joining its selector list. Grouping would be less to read, but .cpos-input
+   is carried by cloud-rendered screens too and pos/CLAUDE.md only lets a
+   standalone change add rules for classes a cloud register never wears -- so
+   these two are written out and the rule above is left exactly as it was. */
+.cpos-textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 11px 14px;
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-sm);
+  background: var(--cpos-surface);
+  color: var(--cpos-fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+  transition: border-color var(--cpos-dur-fast) ease, box-shadow var(--cpos-dur-fast) ease;
+}
+.cpos-textarea::placeholder { color: var(--cpos-fg-subtle); }
+.cpos-textarea:hover { border-color: var(--cpos-border-strong); }
+.cpos-textarea:focus { outline: none; border-color: var(--cpos-brand); box-shadow: var(--cpos-ring); }
+
+/* The chevron is two gradients rather than an inlined SVG so it can be drawn in
+   currentColor: a data-URI has to bake its stroke in as a literal, which would
+   be the one hardcoded colour in this sheet and would stay slate grey on a dark
+   till. Being background layers also means no wrapper element, so a select drops
+   into a .cpos-field beside an input with nothing around it. */
+.cpos-select {
+  width: 100%;
+  min-height: var(--cpos-touch);
+  padding-block: 0;
+  padding-inline: 14px 38px;
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-md);
+  background-color: var(--cpos-surface);
+  color: var(--cpos-fg);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-size: 6px 6px, 6px 6px;
+  background-position: right 20px top calc(50% + 1px), right 15px top calc(50% + 1px);
+  background-repeat: no-repeat;
+  transition: border-color var(--cpos-dur-fast) ease, box-shadow var(--cpos-dur-fast) ease;
+}
+.cpos-select:hover { border-color: var(--cpos-border-strong); }
+.cpos-select:focus { outline: none; border-color: var(--cpos-brand); box-shadow: var(--cpos-ring); }
+.cpos-select:disabled { opacity: 0.55; cursor: not-allowed; }
+/* background-position takes no logical keywords, so the flip is spelled out. */
+[dir='rtl'] .cpos-select {
+  padding-inline: 38px 14px;
+  background-position: left 20px top calc(50% + 1px), left 15px top calc(50% + 1px);
+}
+/* A select's options are painted by the OS, which reads color-scheme off the
+   element -- without this a dark till drops a white menu out of a dark control. */
+:root[data-cpos-theme='dark'] .cpos-select { color-scheme: dark; }
+
 .cpos-searchbox { position: relative; display: flex; align-items: center; flex: 0 1 380px; min-width: 0; }
 .cpos-searchbox__icon {
   position: absolute;
@@ -1111,6 +1173,57 @@ export const POS_STYLESHEET = String.raw`
   animation: cpos-modal-in var(--cpos-dur-slow) var(--cpos-ease-out) both;
 }
 .cpos-modal__title { margin: 0; font-size: 18px; font-weight: 750; letter-spacing: -0.015em; }
+
+/* Widths for the panels that hold a form rather than a tender. The base rule
+   above stays at 480px, which is the tender dialog's and the only one that was
+   ever tuned around a number pad. */
+.cpos-modal__panel--md { width: min(600px, 100%); }
+.cpos-modal__panel--lg { width: min(760px, 100%); }
+.cpos-modal__panel--split { width: min(960px, 100%); }
+
+/* A panel with a head and a foot scrolls its middle, not itself. The tender
+   dialog is short enough that scrolling the whole panel is fine; a product form
+   is not, and a Save button that scrolls off the bottom of a modal is a Save
+   button a cashier cannot find. min-height: 0 is what lets the body shrink
+   inside the flex column instead of pushing the panel past its 92dvh cap. */
+.cpos-modal__panel--framed { gap: 0; padding: 0; overflow: hidden; }
+.cpos-modal__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--cpos-border);
+}
+.cpos-modal__head .cpos-modal__title { flex: 1; min-width: 0; }
+.cpos-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cpos-border-strong) transparent;
+}
+.cpos-modal__body--flush { padding: 0; gap: 0; }
+
+/* The same rhythm, for a <form> that has to be one element so a submit button
+   in the pinned foot can point at it with form=. Without this the form is a
+   single flex child of the body above and its own fields have no gap. */
+.cpos-form { display: flex; flex-direction: column; gap: 14px; }
+.cpos-modal__foot {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 13px 20px;
+  border-top: 1px solid var(--cpos-border);
+  background: var(--cpos-surface-2);
+}
+
 .cpos-modal__due {
   display: flex;
   justify-content: space-between;
@@ -1461,6 +1574,26 @@ export const POS_STYLESHEET = String.raw`
 .cpos-table tbody tr:last-child td { border-bottom: 0; }
 .cpos-table__num { text-align: end; font-variant-numeric: tabular-nums; }
 
+/* The first cell of a row, as the way into that record's page. A button rather
+   than an <a> because the register navigates through its adapter; a button in
+   the cell rather than the whole row being clickable because a clickable row
+   also swallows the Delete sitting inside it. The Store list had this as an
+   eight-property inline object with no hover and no focus ring; three screens
+   want it now, so it is a class with both. */
+.cpos-rowlink {
+  padding: 0;
+  border: 0;
+  border-radius: var(--cpos-r-xs);
+  background: none;
+  color: var(--cpos-brand);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+.cpos-rowlink:hover { text-decoration: underline; text-underline-offset: 2px; }
+.cpos-rowlink:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+
 /* Stat tiles for the back office takings summary. */
 .cpos-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .cpos-stat {
@@ -1524,6 +1657,58 @@ export const POS_STYLESHEET = String.raw`
 }
 .cpos-jump__icon { display: inline-grid; place-items: center; width: 18px; flex-shrink: 0; }
 
+/* ------------------------------------------------------------ quick add */
+/* Two panes: what you can make, and the form for the one you picked. The list
+   is on the start side because it is what you are choosing between; the form is
+   the wider pane because it is what you are filling in.
+
+   Below 720px it stacks and the list becomes a horizontal strip rather than a
+   column -- a narrow till would otherwise spend half the panel on four words and
+   leave the form squeezed underneath them. */
+.cpos-quickadd { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 0; }
+.cpos-quickadd__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 16px;
+  border-inline-end: 1px solid var(--cpos-border);
+  background: var(--cpos-surface-2);
+}
+.cpos-quickadd__items { display: flex; flex-direction: column; gap: 3px; min-height: 0; overflow-y: auto; }
+.cpos-quickadd__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: var(--cpos-touch);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--cpos-r-sm);
+  background: transparent;
+  color: var(--cpos-fg-muted);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition: background var(--cpos-dur-fast) ease, color var(--cpos-dur-fast) ease;
+}
+.cpos-quickadd__item:hover { background: var(--cpos-surface-3); color: var(--cpos-fg); }
+.cpos-quickadd__item:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+.cpos-quickadd__item--on,
+.cpos-quickadd__item--on:hover { background: var(--cpos-brand); color: var(--cpos-brand-fg); }
+.cpos-quickadd__icon { display: inline-grid; place-items: center; width: 18px; flex-shrink: 0; }
+.cpos-quickadd__pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.cpos-quickadd__body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+.cpos-quickadd__none { padding: 30px 20px; text-align: center; }
+
+@media (max-width: 720px) {
+  .cpos-quickadd { grid-template-columns: minmax(0, 1fr); }
+  .cpos-quickadd__list { border-inline-end: 0; border-bottom: 1px solid var(--cpos-border); }
+  .cpos-quickadd__items { flex-direction: row; overflow-x: auto; }
+  .cpos-quickadd__item { flex: 0 0 auto; }
+}
+
 /* A row of mutually exclusive picks -- appearance today, anything similar later. */
 .cpos-choices { display: flex; gap: 8px; flex-wrap: wrap; }
 .cpos-choice {
@@ -1565,6 +1750,28 @@ export const POS_STYLESHEET = String.raw`
 }
 .cpos-radio--on { border-color: var(--cpos-brand-line); background: var(--cpos-brand-soft); }
 .cpos-radio input { accent-color: var(--cpos-brand); margin-top: 2px; flex: 0 0 auto; }
+
+/* The same row as .cpos-radio, for the questions that take more than one answer.
+   Written separately rather than sharing the radio's rule: a selector named for
+   a radio doing duty for a checkbox is the kind of thing that reads as a bug six
+   months later, and the two are free to drift. */
+.cpos-check {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  min-height: var(--cpos-touch);
+  padding: 13px 14px;
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-md);
+  background: var(--cpos-surface);
+  cursor: pointer;
+  transition: border-color var(--cpos-dur-fast) ease, background var(--cpos-dur-fast) ease;
+}
+.cpos-check:hover { border-color: var(--cpos-border-strong); }
+.cpos-check--on { border-color: var(--cpos-brand-line); background: var(--cpos-brand-soft); }
+.cpos-check input { accent-color: var(--cpos-brand); margin-top: 1px; flex: 0 0 auto; width: 17px; height: 17px; }
+.cpos-check__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 14px; }
+.cpos-check__sub { font-size: 12.5px; color: var(--cpos-fg-muted); line-height: 1.5; }
 
 /* ------------------------------------------------------------ switch */
 /* A switch, for a setting that lands the moment it is flipped.

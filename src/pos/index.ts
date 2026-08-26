@@ -196,7 +196,44 @@ export { LocalStorePanel } from './standalone/admin/local-store-panel';
 export { LocalProductPage } from './standalone/admin/local-product-page';
 export { LocalReceiveStockPage } from './standalone/admin/local-receive-stock-page';
 export { LocalCategoriesPanel } from './standalone/admin/local-categories-panel';
+export { LocalCategoryPage } from './standalone/admin/local-category-page';
 export { LocalSuppliersPanel } from './standalone/admin/local-suppliers-panel';
+export { LocalSupplierPage } from './standalone/admin/local-supplier-page';
+export { PosLocalSettingsPage } from './standalone/admin/pos-local-settings-page';
+export { PosLocalTopbar, type PosLocalTopbarProps } from './standalone/chrome/pos-local-topbar';
+export {
+  PosQuickAddProvider,
+  usePosQuickAdd,
+  type PosQuickAddValue,
+  type QuickAddEntry,
+} from './standalone/admin/quick-add/pos-quick-add-context';
+export { PosDialog, type PosDialogProps, type PosDialogSize } from './standalone/ui/pos-dialog';
+export {
+  PosField,
+  PosSelect,
+  PosCheck,
+  type PosFieldProps,
+  type PosSelectProps,
+  type PosSelectOption,
+  type PosCheckProps,
+} from './standalone/ui/pos-field';
+export {
+  POS_RANGE_KEYS,
+  rangeStart,
+  salesByProduct,
+  productSaleRows,
+  unitsOnHand,
+  profitOf,
+  categoryTotals,
+  supplierTotals,
+  type PosRange,
+  type ProductSalesTotals,
+  type ProductSaleRow,
+  type ProductProfit,
+  type CategoryTotals,
+  type SupplierTotals,
+  type SupplierProductRow,
+} from './standalone/store-stats';
 export {
   LocalStockAdjustDialog,
   type LocalStockAdjustDialogProps,

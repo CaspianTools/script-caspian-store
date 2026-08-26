@@ -22,9 +22,6 @@ import {
 } from '../ui/icons';
 import { getPosDeviceId, getPosDeviceLabel, setPosDeviceLabel } from './pos-device';
 import {
-  readIdleLockMinutes,
-  writeIdleLockMinutes,
-  IDLE_LOCK_CHOICES,
   readScannerGapMs,
   resolvePosStorageMode,
   writeScannerGapMs,
@@ -36,13 +33,6 @@ import { useCaspianFirebaseOptional } from '../provider/caspian-store-provider';
 import { usePosChrome } from './theme/pos-chrome-context';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseSection } from './license/pos-license-section';
-import { usePosLocalSession } from './standalone/local-session-context';
-import { usePosTerminal } from './standalone/terminal-context';
-import { usePosRoles } from './standalone/role-context';
-import { LocalShopPanel } from './standalone/admin/local-shop-panel';
-import { LocalBackupPanel } from './standalone/admin/local-backup-panel';
-import { LocalPasswordDialog } from './standalone/admin/local-password-dialog';
-import { CASPIAN_POS_VERSION } from './standalone/pos-version';
 import { CASPIAN_STORE_VERSION } from '../version';
 
 export interface PosSettingsPageProps {
@@ -108,30 +98,13 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
   const { locale, setLocale, pinned } = useLocaleControls();
   const firebase = useCaspianFirebaseOptional();
   const { themeMode, setThemeMode } = usePosChrome();
-  const local = usePosLocalSession();
-  const { terminal } = usePosTerminal();
-  const { can } = usePosRoles();
-
-  // The shop's own details and its backup used to be two tabs of a back office
-  // that no longer exists. They are standalone-only -- they read the till's own
-  // disk -- while this page also serves a cloud register, hence both gates.
-  const showShop = local.standalone && can(local.user?.role, 'settings.shop');
-  const showBackup = local.standalone && can(local.user?.role, 'settings.backup');
-
-  // Changing your own password. Not in the avatar menu beside Sign out, where
-  // it would read most naturally: that menu is `pos-topbar.tsx`, a shared file
-  // a cloud register renders too, and pos/CLAUDE.md is explicit that reaching
-  // into one of those is the signal a change has stopped being standalone.
-  // Settings is one click further and every built-in role can open it, because
-  // `settings.view` is granted to all of them.
-  const showAccount = local.standalone && !!local.user;
 
   // A standalone till activates its licence from /pos/app-admin. A cloud till
   // has no app admin to route to, so the key keeps the home it has always had
   // here -- otherwise moving the pane would leave a cloud shop that bought a
   // licence with nowhere at all to enter it.
   const license = usePosLicense(firebase?.functions ?? null);
-  const showLicense = !local.standalone && license.configured;
+  const showLicense = license.configured;
 
   const sections = useMemo<SectionConfig[]>(() => {
     const list: SectionConfig[] = [
@@ -139,26 +112,17 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
       { id: 'language', labelKey: 'pos.settings.section.language', icon: 'language' },
       { id: 'device', labelKey: 'pos.settings.section.device', icon: 'device' },
     ];
-    if (showAccount) {
-      list.push({ id: 'account', labelKey: 'pos.settings.section.account', icon: 'account' });
-    }
-    if (showShop) list.push({ id: 'shop', labelKey: 'pos.admin.section.shop', icon: 'shop' });
     if (showLicense) {
       list.push({ id: 'license', labelKey: 'pos.appAdmin.section.licence', icon: 'license' });
-    }
-    if (showBackup) {
-      list.push({ id: 'backup', labelKey: 'pos.admin.section.backup', icon: 'backup' });
     }
     list.push({ id: 'storage', labelKey: 'pos.settings.section.storage', icon: 'storage' });
     list.push({ id: 'scanner', labelKey: 'pos.settings.section.scanner', icon: 'scanner' });
     return list;
-  }, [showAccount, showShop, showBackup, showLicense]);
+  }, [showLicense]);
 
   const [deviceId, setDeviceId] = useState('');
   const [label, setLabel] = useState('');
   const [gapMs, setGapMs] = useState(40);
-  const [idleLock, setIdleLock] = useState(0);
-  const [passwordOpen, setPasswordOpen] = useState(false);
   // Derived, not chosen -- see `resolvePosStorageMode`.
   const storageMode: PosStorageMode = resolvePosStorageMode(Boolean(firebase));
 
@@ -166,13 +130,11 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
     setDeviceId(getPosDeviceId());
     setLabel(getPosDeviceLabel());
     setGapMs(readScannerGapMs());
-    setIdleLock(readIdleLockMinutes());
   }, []);
 
   const save = () => {
     setPosDeviceLabel(label);
     writeScannerGapMs(gapMs);
-    writeIdleLockMinutes(idleLock);
     toast({ title: t('pos.settings.saved') });
   };
 
@@ -251,21 +213,6 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
           </section>
 
           <section id="pos-settings-device" className="cpos-section">
-            {/*
-              Which counter this machine answers to, read-only and only once the
-              shop has named one. A cashier cannot change it here on purpose:
-              re-pointing a till at a different counter mid-day would put the
-              rest of a shift's sales under the wrong name, and the way to move
-              one is to release it on the Terminals page and pair again.
-            */}
-            {local.standalone && terminal ? (
-              <label className="cpos-field">
-                <span className="cpos-field__label">{t('pos.settings.terminal')}</span>
-                <input className="cpos-input" value={terminal.name} readOnly />
-                <FieldDescription>{t('pos.settings.terminalHelp')}</FieldDescription>
-              </label>
-            ) : null}
-
             <label className="cpos-field">
               <span className="cpos-field__label">{t('pos.settings.deviceLabel')}</span>
               <input
@@ -287,67 +234,7 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
               />
             </label>
 
-            {/*
-              A device preference, beside the scanner gap, because it is a fact
-              about where the machine stands rather than about the shop. Off
-              everywhere until somebody switches it on, and only on a till that
-              runs on its own -- a cloud register signs out through Firebase Auth
-              and has no local password to unlock with.
-            */}
-            {local.standalone ? (
-              <label className="cpos-field">
-                <span className="cpos-field__label">{t('pos.settings.idleLock')}</span>
-                <Select
-                  value={String(idleLock)}
-                  onChange={(e) => setIdleLock(Number(e.target.value))}
-                  options={IDLE_LOCK_CHOICES.map((m) => ({
-                    value: String(m),
-                    label:
-                      m === 0
-                        ? t('pos.settings.idleLockNever')
-                        : t('pos.settings.idleLockMinutes', { count: m }),
-                  }))}
-                />
-                <FieldDescription>{t('pos.settings.idleLockHelp')}</FieldDescription>
-              </label>
-            ) : null}
           </section>
-
-          {showAccount ? (
-            <section id="pos-settings-account" className="cpos-section">
-              <h2 className="cpos-section__title">{t('pos.settings.section.account')}</h2>
-              <label className="cpos-field">
-                <span className="cpos-field__label">{t('pos.settings.signedInAs')}</span>
-                <input
-                  className="cpos-input"
-                  value={local.user?.displayName || local.user?.username || ''}
-                  readOnly
-                />
-              </label>
-              <div className="cpos-actions">
-                <button
-                  type="button"
-                  className="cpos-btn cpos-btn--outline"
-                  onClick={() => setPasswordOpen(true)}
-                >
-                  {t('pos.settings.changePassword')}
-                </button>
-              </div>
-              <FieldDescription>{t('pos.settings.changePasswordHelp')}</FieldDescription>
-            </section>
-          ) : null}
-
-          {showShop ? (
-            <div id="pos-settings-shop">
-              <LocalShopPanel />
-            </div>
-          ) : null}
-
-          {showBackup ? (
-            <div id="pos-settings-backup">
-              <LocalBackupPanel />
-            </div>
-          ) : null}
 
           {showLicense ? (
             <div id="pos-settings-license">
@@ -434,18 +321,12 @@ export function PosSettingsPage({ className }: PosSettingsPageProps) {
           */}
           <p className="cpos-version">
             {t('pos.settings.appVersion', {
-              version: local.standalone ? CASPIAN_POS_VERSION : CASPIAN_STORE_VERSION,
+              version: CASPIAN_STORE_VERSION,
             })}
           </p>
         </div>
       </div>
 
-      <LocalPasswordDialog
-        open={passwordOpen}
-        onOpenChange={setPasswordOpen}
-        user={local.user}
-        self
-      />
     </div>
   );
 }

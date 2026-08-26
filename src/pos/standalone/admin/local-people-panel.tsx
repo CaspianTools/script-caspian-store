@@ -2,11 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { Select } from '../../../ui/select';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
-import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import {
   canDisableLocalUser,
   canRemoveLocalUser,
@@ -15,12 +12,12 @@ import { deleteLocalUser, listLocalUsers, saveLocalUser } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
 import type { LocalUser, PosLocalRole } from '../types';
-import { fieldLabel, muted, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 import { LocalPasswordDialog } from './local-password-dialog';
-import { LocalPersonFormDialog } from './local-person-form-dialog';
+import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
 import { PosAdminPage } from './pos-admin-page';
 import { UsersIcon } from '../../../ui/icons';
+import { PosSelect } from '../ui/pos-field';
 
 /**
  * Staff and their roles: adding, review, role changes, password resets, and
@@ -31,9 +28,10 @@ import { UsersIcon } from '../../../ui/icons';
  * component in both places on purpose -- a second table that resets passwords
  * is a second place for the last-account guards to be got wrong.
  *
- * Adding also lives in the Quick Add menu. It is here as well because that menu
- * is a shortcut, and a screen called People that cannot add one sends the
- * reader looking for a screen that can.
+ * Adding opens Quick add on the Person entry rather than a dialog of its own.
+ * The button stays here because a screen called People that cannot add one
+ * sends the reader hunting for a screen that can -- but there is one form, and
+ * it is the same one the top bar opens.
  */
 export function LocalPeoplePanel() {
   const t = useT();
@@ -42,7 +40,7 @@ export function LocalPeoplePanel() {
   const { enabledRoles, can } = usePosRoles();
   const [users, setUsers] = useState<LocalUser[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
+  const quickAdd = usePosQuickAdd();
 
   const isSupport = can(session.user?.role, 'appAdmin.view');
   /** The live test, handed to the pure last-account guards below. */
@@ -66,7 +64,7 @@ export function LocalPeoplePanel() {
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, quickAdd.savedCount]);
 
   const changeRole = async (user: LocalUser, next: PosLocalRole) => {
     await saveLocalUser({ ...user, role: next });
@@ -110,48 +108,49 @@ export function LocalPeoplePanel() {
 
   return (
     <div>
-      <section style={section}>
+      <section className="cpos-section">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ ...fieldLabel, flex: 1 }}>{t('pos.admin.people.listTitle')}</span>
+          <span className="cpos-section__title" style={{ flex: 1 }}>{t('pos.admin.people.listTitle')}</span>
           {mayEdit ? (
-            <Button size="sm" onClick={() => setAddOpen(true)}>
+            <button type="button" className="cpos-btn cpos-btn--primary cpos-btn--sm" onClick={() => quickAdd.open('person')}>
               {t('pos.admin.people.add')}
-            </Button>
+            </button>
           ) : null}
         </div>
         {loadFailed ? (
           <PanelLoadError onRetry={() => void refresh()} />
         ) : users === null ? (
-          <div style={muted}>{t('common.loading')}</div>
+          <div className="cpos-muted">{t('common.loading')}</div>
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t('pos.local.username')}</TH>
-                <TH>{t('pos.local.displayName')}</TH>
-                <TH>{t('pos.admin.people.roleLabel')}</TH>
-                <TH />
-              </TR>
-            </THead>
-            <TBody>
+          <div className="cpos-tablewrap">
+            <table className="cpos-table">
+              <thead>
+              <tr>
+                <th>{t('pos.local.username')}</th>
+                <th>{t('pos.local.displayName')}</th>
+                <th>{t('pos.admin.people.roleLabel')}</th>
+                <th />
+              </tr>
+              </thead>
+              <tbody>
               {users.map((u) => {
                 const isSelf = u.id === session.user?.id;
                 const editable = mayEdit && (isSupport || u.role !== 'superadmin');
                 return (
-                  <TR key={u.id}>
-                    <TD style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
+                  <tr key={u.id}>
+                    <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
                       {u.username}
-                    </TD>
-                    <TD>
+                    </td>
+                    <td>
                       {u.displayName}
                       {u.disabled ? (
-                        <span style={muted}> · {t('pos.admin.people.disabled')}</span>
+                        <span className="cpos-muted"> · {t('pos.admin.people.disabled')}</span>
                       ) : null}
-                      {isSelf ? <span style={muted}> · {t('pos.admin.people.you')}</span> : null}
-                    </TD>
-                    <TD>
+                      {isSelf ? <span className="cpos-muted"> · {t('pos.admin.people.you')}</span> : null}
+                    </td>
+                    <td>
                       {editable && !isSelf ? (
-                        <Select
+                        <PosSelect
                           value={u.role}
                           onChange={(e) => void changeRole(u, e.target.value as PosLocalRole)}
                           options={assignable.map((r) => ({ value: r.id, label: r.name }))}
@@ -159,33 +158,34 @@ export function LocalPeoplePanel() {
                       ) : (
                         roleLabel(u.role)
                       )}
-                    </TD>
-                    <TD>
+                    </td>
+                    <td>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         {editable ? (
-                          <Button variant="outline" onClick={() => setPasswordFor(u)}>
+                          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => setPasswordFor(u)}>
                             {t('pos.admin.people.resetPassword')}
-                          </Button>
+                          </button>
                         ) : null}
                         {editable && !isSelf ? (
-                          <Button variant="outline" onClick={() => void toggleDisabled(u)}>
+                          <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => void toggleDisabled(u)}>
                             {u.disabled
                               ? t('pos.admin.people.enable')
                               : t('pos.admin.people.disable')}
-                          </Button>
+                          </button>
                         ) : null}
                         {editable && !isSelf ? (
-                          <Button variant="destructive" onClick={() => void remove(u)}>
+                          <button type="button" className="cpos-btn cpos-btn--danger" onClick={() => void remove(u)}>
                             {t('common.delete')}
-                          </Button>
+                          </button>
                         ) : null}
                       </div>
-                    </TD>
-                  </TR>
+                    </td>
+                  </tr>
                 );
               })}
-            </TBody>
-          </Table>
+              </tbody>
+          </table>
+        </div>
         )}
         <FieldDescription>{t('pos.admin.people.deleteNote')}</FieldDescription>
       </section>
@@ -198,11 +198,6 @@ export function LocalPeoplePanel() {
         user={passwordFor}
       />
 
-      <LocalPersonFormDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onSaved={() => void refresh()}
-      />
     </div>
   );
 }

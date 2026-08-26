@@ -2,18 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { TruckIcon } from '../../../ui/icons';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Dialog } from '../../../ui/dialog';
-import { useToast } from '../../../ui/toast';
-import {
-  deleteLocalSupplier,
-  listLocalStockReceipts,
-  listLocalSuppliers,
-  makeLocalSupplier,
-  saveLocalSupplier,
-} from '../local-db';
+import { PlusIcon, TruckIcon } from '../../../ui/icons';
+import { useCaspianNavigation } from '../../../provider/caspian-store-provider';
+import { listLocalStockReceipts, listLocalSuppliers } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
 import { usePosShopSettings } from '../shop-settings-context';
@@ -21,36 +12,38 @@ import type { LocalStockReceipt, LocalSupplier } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
-import { field, fieldLabel, row } from './panel-styles';
-
-const BLANK = { name: '', contactName: '', phone: '', email: '', address: '', note: '' };
+import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
 
 /**
  * Who the shop buys from.
  *
  * A supplier is picked on a delivery and its name frozen onto the lots that
  * arrive, so this list is a convenience rather than a source of truth for
- * history. That is why disabling is offered before deleting: the paperwork
- * still names them either way, but a disabled one stops cluttering the picker.
+ * history.
+ *
+ * Adding moved to Quick add in v1.4.0, and editing, disabling and deleting moved
+ * to the supplier's own page -- where there is room to say what they have
+ * actually delivered before somebody decides to remove them.
  */
 export function LocalSuppliersPanel() {
   const t = useT();
-  const { toast } = useToast();
+  const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
   const { can } = usePosRoles();
   const { settings } = usePosShopSettings();
+  const quickAdd = usePosQuickAdd();
   const mayEdit = can(session.user?.role, 'store.edit');
 
   const [suppliers, setSuppliers] = useState<LocalSupplier[] | null>(null);
   const [receipts, setReceipts] = useState<LocalStockReceipt[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<LocalSupplier | null>(null);
-  const [draft, setDraft] = useState(BLANK);
 
   const refresh = useCallback(async () => {
     try {
-      const [rows, receiptRows] = await Promise.all([listLocalSuppliers(), listLocalStockReceipts()]);
+      const [rows, receiptRows] = await Promise.all([
+        listLocalSuppliers(),
+        listLocalStockReceipts(),
+      ]);
       setSuppliers(rows);
       setReceipts(receiptRows);
       setLoadFailed(false);
@@ -61,7 +54,7 @@ export function LocalSuppliersPanel() {
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, quickAdd.savedCount]);
 
   /** How much each supplier has delivered, off the posted receipts. */
   const activity = useMemo(() => {
@@ -77,54 +70,6 @@ export function LocalSuppliersPanel() {
     }
     return out;
   }, [receipts]);
-
-  const startAdd = () => {
-    setEditing(null);
-    setDraft(BLANK);
-    setDialogOpen(true);
-  };
-
-  const startEdit = (supplier: LocalSupplier) => {
-    setEditing(supplier);
-    setDraft({
-      name: supplier.name,
-      contactName: supplier.contactName,
-      phone: supplier.phone,
-      email: supplier.email,
-      address: supplier.address,
-      note: supplier.note,
-    });
-    setDialogOpen(true);
-  };
-
-  const save = async () => {
-    if (!draft.name.trim()) {
-      toast({ title: t('pos.store.supplier.needsName'), variant: 'destructive' });
-      return;
-    }
-    await saveLocalSupplier(makeLocalSupplier({ ...(editing ?? {}), ...draft }));
-    setDialogOpen(false);
-    await refresh();
-    toast({ title: t('pos.store.supplier.saved') });
-  };
-
-  const toggle = async (supplier: LocalSupplier) => {
-    await saveLocalSupplier({ ...supplier, isActive: !supplier.isActive, updatedAtMillis: Date.now() });
-    await refresh();
-  };
-
-  const remove = async (supplier: LocalSupplier) => {
-    const delivered = activity.get(supplier.id)?.deliveries ?? 0;
-    if (delivered) {
-      // Deleting one that has delivered would leave its receipts naming a
-      // supplier the shop can no longer look up. Disabling does the job.
-      toast({ title: t('pos.store.supplier.deleteBlocked'), variant: 'destructive' });
-      return;
-    }
-    if (!window.confirm(t('pos.store.supplier.confirmDelete', { name: supplier.name }))) return;
-    await deleteLocalSupplier(supplier.id);
-    await refresh();
-  };
 
   return (
     <div className="cpos-page">
@@ -147,7 +92,14 @@ export function LocalSuppliersPanel() {
           </span>
           {mayEdit ? (
             <div style={{ marginInlineStart: 'auto' }}>
-              <Button onClick={startAdd}>{t('pos.store.supplier.add')}</Button>
+              <button
+                type="button"
+                className="cpos-btn cpos-btn--primary"
+                onClick={() => quickAdd.open('supplier')}
+              >
+                <PlusIcon size={16} />
+                {t('pos.store.supplier.add')}
+              </button>
             </div>
           ) : null}
         </div>
@@ -183,7 +135,13 @@ export function LocalSuppliersPanel() {
                   return (
                     <tr key={supplier.id}>
                       <td>
-                        {supplier.name}
+                        <button
+                          type="button"
+                          className="cpos-rowlink"
+                          onClick={() => push(`/pos/store/suppliers/${supplier.id}`)}
+                        >
+                          {supplier.name}
+                        </button>
                         {supplier.isActive ? null : (
                           <span className="cpos-muted"> · {t('pos.store.supplier.disabled')}</span>
                         )}
@@ -204,27 +162,13 @@ export function LocalSuppliersPanel() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          {mayEdit ? (
-                            <>
-                              <Button variant="outline" size="sm" onClick={() => startEdit(supplier)}>
-                                {t('common.edit')}
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => void toggle(supplier)}>
-                                {t(
-                                  supplier.isActive
-                                    ? 'pos.store.supplier.disable'
-                                    : 'pos.store.supplier.enable',
-                                )}
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => void remove(supplier)}
-                              >
-                                {t('common.delete')}
-                              </Button>
-                            </>
-                          ) : null}
+                          <button
+                            type="button"
+                            className="cpos-btn cpos-btn--ghost cpos-btn--sm"
+                            onClick={() => push(`/pos/store/suppliers/${supplier.id}`)}
+                          >
+                            {t('pos.store.open')}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -235,55 +179,6 @@ export function LocalSuppliersPanel() {
           </div>
         )}
       </section>
-
-      <Dialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title={editing ? t('pos.store.supplier.editTitle') : t('pos.store.supplier.add')}
-        maxWidth={560}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={() => void save()}>{t('common.save')}</Button>
-          </>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={row}>
-            <div style={{ ...field, flex: '2 1 200px' }}>
-              <label style={fieldLabel}>{t('pos.store.supplier.name')}</label>
-              <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-            </div>
-            <div style={{ ...field, flex: '1 1 160px' }}>
-              <label style={fieldLabel}>{t('pos.store.supplier.contact')}</label>
-              <Input
-                value={draft.contactName}
-                onChange={(e) => setDraft({ ...draft, contactName: e.target.value })}
-              />
-            </div>
-          </div>
-          <div style={row}>
-            <div style={{ ...field, flex: '1 1 140px' }}>
-              <label style={fieldLabel}>{t('pos.store.supplier.phone')}</label>
-              <Input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} />
-            </div>
-            <div style={{ ...field, flex: '2 1 200px' }}>
-              <label style={fieldLabel}>{t('pos.store.supplier.email')}</label>
-              <Input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
-            </div>
-          </div>
-          <div style={field}>
-            <label style={fieldLabel}>{t('pos.store.supplier.address')}</label>
-            <Input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} />
-          </div>
-          <div style={field}>
-            <label style={fieldLabel}>{t('pos.store.adjust.note')}</label>
-            <Input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} />
-          </div>
-        </div>
-      </Dialog>
     </div>
   );
 }

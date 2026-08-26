@@ -23,6 +23,93 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.4.0 — One look, one way to add things, and a page behind every record
+
+The till has looked like two products since it was built. The screens a cashier
+uses at the counter were made of the register's own controls; every back-office
+screen and every popup borrowed the storefront library's instead — 40px where the
+counter uses 44, a different corner radius, a dropdown that stayed light grey in
+dark mode, and a popup that arrived as a white sheet on a dark till. That is
+fixed everywhere, and the reason it happened is fixed too: the register's design
+system is now written down, in `pos/DESIGN.md`, so the next screen has something
+to be built against.
+
+Two other things follow from the same idea. Adding a thing used to look different
+depending on where you started — a product from the top bar, from the Store
+toolbar, from the product page or from a delivery; a category from a row wedged
+into a table; a supplier from a dialog on its list. There is one dialog now, and
+every Add button on every screen opens it. And categories and suppliers were rows
+that could not be opened; both are records with their own page, alongside the one
+products have had since v1.1.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+No data moves, no account is touched, and nothing that worked before has been
+taken away — the buttons are in the same places, they just look like the rest of
+the till now.
+
+### Added
+
+- **Quick add**, one dialog for everything the till creates. What you can make is
+  a searchable list down the left, the form for the one you picked is on the
+  right, and it stays open after a save so a delivery entered by hand does not
+  cost six extra clicks. Products, categories, suppliers and people. Arrow keys
+  move the list; Enter picks.
+- **A page for every category.** Open one from the Categories list to see what is
+  filed under it, what that stock is worth, and what it sold over Today, 7 days,
+  30 days or all time — with the products in it listed by what each one sold, and
+  each name a link through to its own page. Renaming and deleting live here now.
+- **A page for every supplier.** Deliveries, what they have cost, when the last
+  one arrived, what is still on the shelf out of their batches, and what has sold
+  out of them. Editing, disabling and deleting moved here from the list, so
+  nobody removes a supplier without first seeing what they have delivered.
+- **Sales on the product page.** Units, revenue, gross profit, the average price
+  actually charged, when it last sold, and the receipts it appeared on — over the
+  same period picker the other two pages use. This sits beside the stock figures
+  rather than inside them, because they answer different questions: the stock
+  ledger counts what left the shelf, and this counts what was paid for it.
+- **Settings shows one section at a time**, the way App admin already did. The
+  address carries the section, so a reload and a bookmark both land where you
+  were. Each section that has fields to fill in has its own Save.
+- **`pos/DESIGN.md`** — every token, control and layout the register is made of,
+  the three page shapes to copy, and the rules. Not a manual; it is for whoever
+  builds the next screen.
+
+### Changed
+
+- **One set of controls across the whole till.** Every button, box, dropdown,
+  text area, checkbox, table and popup on every back-office screen is now the
+  register's own — correct in dark mode, at the 44px touch floor, and following
+  the shop's colour. The old inline style module twelve panels shared is gone.
+- **A supplier page says what it cannot know.** A sale records the product and
+  never the delivery it came off, so stock is only traceable back to a supplier
+  for items received in batches. Where that link exists the figures are exact;
+  where it does not, the page says so in words rather than showing a zero that
+  would read as "sold nothing". Those figures are reported at cost, not at
+  revenue, because the cost is on the batch and the revenue would have to be
+  guessed.
+- **A category page says the same kind of thing.** A product carries its category
+  as a name rather than a link, which is what lets the Categories screen be
+  switched off without stranding a catalogue — and it means moving a product to
+  another category moves its sales history with it. The page says so.
+- **The till has its own top bar and its own Settings page.** Both were shared
+  with the cloud-connected register and had grown a row of "only when this till
+  runs on its own" branches. Nothing a cloud register shows has changed.
+- **Adding a person happens in one place.** The People screen's Add button opens
+  Quick add rather than a second dialog of its own.
+
+### Fixed
+
+- **A failed scan showed the words `common.error`** at the counter instead of a
+  message. The English text for it had never been written, and only English was
+  affected — a till set to Azerbaijani, Russian or Turkish always had it.
+- **Row links on the Store list had no hover and no focus ring**, so a till
+  driven from a keyboard or a scanner gave no sign of where it was. Categories
+  and suppliers get the same link, and all three now show both.
+- **A long form no longer scrolls its Save button off the bottom** of a popup.
+  The buttons are pinned and the fields scroll under them.
+
 ## v1.3.0 — Counters, and a drawer that can be counted
 
 A shop with more than one till could not say which one a sale came from, and no

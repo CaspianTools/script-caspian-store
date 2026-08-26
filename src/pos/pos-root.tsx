@@ -21,7 +21,12 @@ import { LocalStorePanel } from './standalone/admin/local-store-panel';
 import { LocalProductPage } from './standalone/admin/local-product-page';
 import { LocalReceiveStockPage } from './standalone/admin/local-receive-stock-page';
 import { LocalCategoriesPanel } from './standalone/admin/local-categories-panel';
+import { LocalCategoryPage } from './standalone/admin/local-category-page';
 import { LocalSuppliersPanel } from './standalone/admin/local-suppliers-panel';
+import { LocalSupplierPage } from './standalone/admin/local-supplier-page';
+import { PosLocalSettingsPage } from './standalone/admin/pos-local-settings-page';
+import { PosQuickAddProvider } from './standalone/admin/quick-add/pos-quick-add-context';
+import { PosLocalTopbar } from './standalone/chrome/pos-local-topbar';
 import { LocalSalesPage } from './standalone/admin/local-sales-panel';
 import { LocalPeoplePage } from './standalone/admin/local-people-panel';
 import { usePosLicense } from './license/use-pos-license';
@@ -99,7 +104,16 @@ export function PosShell({ children }: { children: ReactNode }) {
                       be doing while nobody is looking.
                     */}
                     <PosLockGate>
-                      <PosShellChrome>{children}</PosShellChrome>
+                      {/*
+                        Quick add, the one place the till creates anything.
+                        Inside the lock gate rather than above it, so a locked
+                        till has no dialog sitting behind the lock screen; below
+                        the shop settings because the entries it offers depend on
+                        which optional screens this shop has switched on.
+                      */}
+                      <PosQuickAddProvider>
+                        <PosShellChrome>{children}</PosShellChrome>
+                      </PosQuickAddProvider>
                     </PosLockGate>
                   </PosShiftProvider>
                 </PosTerminalProvider>
@@ -228,16 +242,31 @@ function PosShellChrome({ children }: { children: ReactNode }) {
       <PosSidebar items={items} activeHref={activeHref} roleLabel={roleLabel} />
 
       <div className="cpos-column">
-        <PosTopbar
-          title={current?.label ?? t('pos.nav.register')}
-          subtitle={local.standalone ? t('pos.storage.localShort') : undefined}
-          whoIsHere={whoIsHere}
-          initials={initials}
-          userProfile={userProfile}
-          local={local.standalone}
-          queue={queue}
-          onExit={exit}
-        />
+        {/*
+          Two bars, not one with a mode flag. The shared one had grown five
+          `local && …` branches -- a quick-add menu whose every entry was
+          standalone-only, and two form dialogs a cloud register imported and
+          could never open. pos/CLAUDE.md calls that the signal a standalone
+          feature wants a file of its own, so it has one, and the branches came
+          out of `pos-topbar.tsx` rather than growing a sixth.
+        */}
+        {local.standalone ? (
+          <PosLocalTopbar
+            title={current?.label ?? t('pos.nav.register')}
+            whoIsHere={whoIsHere}
+            initials={initials}
+            onExit={exit}
+          />
+        ) : (
+          <PosTopbar
+            title={current?.label ?? t('pos.nav.register')}
+            whoIsHere={whoIsHere}
+            initials={initials}
+            userProfile={userProfile}
+            queue={queue}
+            onExit={exit}
+          />
+        )}
 
         <PosServiceWorker />
         <PosLicenseBanner license={license} />
@@ -262,11 +291,11 @@ export function PosRoot(): ReactNode {
   const { standalone, user } = usePosLocalSession();
   const { can } = usePosRoles();
   const after = stripLocalePrefix(pathname).replace(/^\/pos\/?/, '');
-  // The store is the one screen with a second level: `/pos/store/receive`,
-  // `/pos/store/categories`, `/pos/store/suppliers`, and otherwise a product
-  // id. `screenOf` still keys on `head` alone, so the sidebar stays lit on
-  // Store for all of them.
-  const [head, sub] = after.split('/');
+  // The store is the one screen with levels below it: `/pos/store/receive`,
+  // `/pos/store/categories[/<id>]`, `/pos/store/suppliers[/<id>]`, and otherwise
+  // a product id. `screenOf` still keys on `head` alone, so the sidebar stays
+  // lit on Store for all of them.
+  const [head, sub, leaf] = after.split('/');
   const { settings, loading: settingsLoading } = usePosShopSettings();
 
   // The back office used to live at /pos/admin holding four tabs. Three are
@@ -319,8 +348,13 @@ export function PosRoot(): ReactNode {
 
   switch (head) {
     case 'settings':
-      // Ungated on a cloud till, which has no role definitions to consult.
-      return !standalone || can(user?.role, 'settings.view') ? <PosSettingsPage /> : register;
+      // Two pages, for the reason the top bar is two bars. The shared one had
+      // five `local.standalone && …` branches -- the account pane, the shop
+      // record, the backup panel, the idle lock, and which version number to
+      // print. Ungated on a cloud till, which has no role definitions to
+      // consult.
+      if (!standalone) return <PosSettingsPage />;
+      return can(user?.role, 'settings.view') ? <PosLocalSettingsPage /> : register;
     case 'queue':
       return <PosQueuePage />;
     case 'store': {
@@ -342,7 +376,13 @@ export function PosRoot(): ReactNode {
         if (settingsLoading) return <div className="cpos-page" aria-busy="true" />;
         const on = sub === 'categories' ? settings.categoriesEnabled : settings.suppliersEnabled;
         if (!on) return <LocalStorePanel />;
-        return sub === 'categories' ? <LocalCategoriesPanel /> : <LocalSuppliersPanel />;
+        // A third segment is that record's own page. Both pages resolve a
+        // missing id themselves, with a way back to the list, rather than
+        // bouncing -- an id that no longer exists is worth saying out loud.
+        if (sub === 'categories') {
+          return leaf ? <LocalCategoryPage categoryId={leaf} /> : <LocalCategoriesPanel />;
+        }
+        return leaf ? <LocalSupplierPage supplierId={leaf} /> : <LocalSuppliersPanel />;
       }
       return sub ? <LocalProductPage productId={sub} /> : <LocalStorePanel />;
     }

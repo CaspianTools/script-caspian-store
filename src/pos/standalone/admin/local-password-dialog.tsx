@@ -2,8 +2,7 @@
 
 import { useEffect, useId, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { Dialog } from '../../../ui/dialog';
+import { PosDialog } from '../ui/pos-dialog';
 import { useToast } from '../../../ui/toast';
 import { FieldDescription } from '../../../ui/field-description';
 import {
@@ -14,7 +13,6 @@ import {
 } from '../local-auth';
 import { PasswordField } from '../password-field';
 import type { LocalUser } from '../types';
-import { danger } from './panel-styles';
 
 export interface LocalPasswordDialogProps {
   open: boolean;
@@ -110,18 +108,29 @@ export function LocalPasswordDialog({
   const who = user?.displayName || user?.username || '';
 
   return (
-    <Dialog
+    <PosDialog
       open={open}
       onOpenChange={onOpenChange}
+      size="sm"
       title={self ? t('pos.local.changeMyPasswordTitle') : t('pos.admin.people.passwordTitle', { name: who })}
-      footer={
+      foot={
         <>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--outline"
+            onClick={() => onOpenChange(false)}
+            disabled={busy}
+          >
             {t('common.cancel')}
-          </Button>
-          <Button onClick={save} disabled={!ready || busy}>
+          </button>
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--primary"
+            onClick={save}
+            disabled={!ready || busy}
+          >
             {t('pos.admin.people.passwordCta')}
-          </Button>
+          </button>
         </>
       }
     >
@@ -163,7 +172,7 @@ export function LocalPasswordDialog({
         mounts already carrying its text is missed by screen readers about half
         the time.
       */}
-      <div aria-live="polite">
+      <div className="cpos-muted" aria-live="polite">
         {tooShort ? t('pos.local.passwordTooShort') : null}
         {weak ? t('pos.local.passwordWeak') : null}
         {mismatch ? t('pos.local.passwordMismatch') : null}
@@ -171,10 +180,10 @@ export function LocalPasswordDialog({
       </div>
 
       {error ? (
-        <div style={danger} role="alert">
+        <div className="cpos-note cpos-note--danger" role="alert">
           {error}
         </div>
       ) : null}
-    </Dialog>
+    </PosDialog>
   );
 }

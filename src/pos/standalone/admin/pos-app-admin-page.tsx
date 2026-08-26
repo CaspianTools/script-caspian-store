@@ -12,7 +12,6 @@ import {
   UsersIcon,
 } from '../../../ui/icons';
 import { FieldDescription } from '../../../ui/field-description';
-import { Input } from '../../../ui/input';
 import { useToast } from '../../../ui/toast';
 import { cn } from '../../../utils/cn';
 import {
@@ -581,7 +580,8 @@ function RolesSection() {
                   {custom && mayEdit ? (
                     <label className="cpos-field">
                       <span className="cpos-field__label">{t('pos.appAdmin.roleName')}</span>
-                      <Input
+                      <input
+                        className="cpos-input"
                         value={drafts[role.id] ?? role.name}
                         onChange={(e) =>
                           setDrafts((current) => ({ ...current, [role.id]: e.target.value }))

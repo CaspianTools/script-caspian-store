@@ -588,6 +588,82 @@ const ru: MessageDict = {
   'pos.shift.list.stillOpen': 'Ещё открыта',
   'pos.shift.list.view': 'Смотреть',
   'pos.shift.list.hide': 'Скрыть',
+
+  // --- Быстрое добавление (v1.4.0) ---
+  'pos.quickAdd.search': 'Поиск',
+  'pos.quickAdd.noMatch': 'Ничего не найдено.',
+  'pos.quickAdd.nothingTitle': 'Здесь нечего добавить',
+  'pos.quickAdd.nothingHelp':
+    'Ваша роль не может добавлять товары, категории, поставщиков или сотрудников. Это меняется в App admin.',
+  'pos.quickAdd.entry.product': 'Товар',
+  'pos.quickAdd.entry.productBlurb': 'То, что продаёт магазин.',
+  'pos.quickAdd.entry.category': 'Категория',
+  'pos.quickAdd.entry.categoryBlurb': 'Группа, в которую попадают товары.',
+  'pos.quickAdd.entry.supplier': 'Поставщик',
+  'pos.quickAdd.entry.supplierBlurb': 'Тот, у кого магазин закупается.',
+  'pos.quickAdd.entry.person': 'Сотрудник',
+  'pos.quickAdd.entry.personBlurb': 'Учётная запись для того, кто здесь работает.',
+  'pos.quickAdd.action.product': 'Добавить товар',
+  'pos.quickAdd.action.category': 'Добавить категорию',
+  'pos.quickAdd.action.supplier': 'Добавить поставщика',
+  'pos.quickAdd.action.person': 'Добавить сотрудника',
+
+  'pos.store.range.label': 'Период',
+  'pos.store.range.today': 'Сегодня',
+  'pos.store.range.week': 'Последние 7 дней',
+  'pos.store.range.month': 'Последние 30 дней',
+  'pos.store.range.all': 'Всё время',
+  'pos.store.revenue': 'Выручка',
+  'pos.store.grossProfit': 'Валовая прибыль',
+  'pos.store.grossProfitPartial': 'Не учтено {count} шт. без себестоимости',
+
+  'pos.store.category.needsName': 'Дайте категории название.',
+  'pos.store.category.added': 'Добавлено: {name}',
+  'pos.store.category.addHelp':
+    'Товары привязаны по названию, поэтому это то слово, которое появится в списке.',
+  'pos.store.category.pageSub': '{count, plural, =0 {Нет товаров} one {# товар} other {# товаров}}',
+  'pos.store.category.figures': 'Показатели',
+  'pos.store.category.products': 'Товары',
+  'pos.store.category.activeCount': '{count} в продаже',
+  'pos.store.category.productsTitle': 'Товары в этой категории',
+  'pos.store.category.noProducts': 'В эту категорию пока ничего не отнесено.',
+  'pos.store.category.rename': 'Переименовать',
+  'pos.store.category.renameHelp': 'Каждый товар в ней будет переписан на новое название.',
+  'pos.store.category.backToList': 'К категориям',
+  'pos.store.category.missing': 'Такой категории здесь нет',
+  'pos.store.category.missingHelp': 'Возможно, она удалена или адрес неверный.',
+  'pos.store.category.historyNote':
+    'Товар хранит категорию как название, а не как ссылку, поэтому перенос товара в другую категорию уносит с собой и историю продаж.',
+
+  'pos.store.product.salesTitle': 'Продажи',
+  'pos.store.product.onSales': '{count, plural, =0 {продаж нет} one {в # продаже} other {в # продажах}}',
+  'pos.store.product.afterDiscount': 'скидка {amount}',
+  'pos.store.product.averagePrice': 'Средняя цена',
+  'pos.store.product.lastSold': 'Последняя продажа',
+  'pos.store.product.noSales': 'За этот период ничего не продано.',
+
+  'pos.store.supplier.figures': 'Показатели',
+  'pos.store.supplier.productsSupplied': 'Поставляемые товары',
+  'pos.store.supplier.unitsReceived': 'Принято единиц',
+  'pos.store.supplier.stillOnHand': 'Ещё на складе',
+  'pos.store.supplier.soldFromBatches': 'Продано из их партий',
+  'pos.store.supplier.atCost': '{amount} по себестоимости',
+  'pos.store.supplier.lastOn': 'Последняя {date}',
+  'pos.store.supplier.deliveriesTitle': 'Поставки',
+  'pos.store.supplier.noDeliveries': 'От них пока ничего не принято.',
+  'pos.store.supplier.productsTitle': 'Что поставляет',
+  'pos.store.supplier.noProducts': 'Ни одна проведённая поставка пока не называет товар.',
+  'pos.store.supplier.noContact': 'Контактов нет',
+  'pos.store.supplier.backToList': 'К поставщикам',
+  'pos.store.supplier.missing': 'Такого поставщика здесь нет',
+  'pos.store.supplier.missingHelp': 'Возможно, он удалён или адрес неверный.',
+  'pos.store.supplier.attributionPartial':
+    'Цифры продаж охватывают только товары, принятые партиями. Остальное от этого поставщика тоже продаётся, но продажа фиксирует товар, а не поставку, поэтому касса не может сказать, чей это был запас.',
+  'pos.store.supplier.attributionNone':
+    'Касса не может сказать, что продал этот поставщик. Продажа фиксирует товар, а не поставку, поэтому запас прослеживается до поставщика только для товаров, принятых партиями, — а таких у него нет.',
+  'pos.store.receive.totalCost': 'Итого',
+
+  'pos.admin.people.needsCredentials': 'Нужны и имя пользователя, и пароль.',
 };
 
 export default ru;

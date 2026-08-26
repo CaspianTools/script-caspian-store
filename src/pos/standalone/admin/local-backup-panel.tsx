@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
 import { useToast } from '../../../ui/toast';
+import { cn } from '../../../utils/cn';
 import { FieldDescription } from '../../../ui/field-description';
 import {
   buildLocalBackup,
@@ -16,7 +16,6 @@ import { listLocalProducts, listLocalSales, listLocalUsers } from '../local-db';
 import { useFormatDate } from '../../../i18n/locale-context';
 import { pickBackupFolder, forgetBackupFolder, backupFolderSupported } from '../local-backup-folder';
 import { usePosAutoBackupState } from '../auto-backup-context';
-import { actions, fieldLabel, muted, section, warning } from './panel-styles';
 
 /**
  * Backups, and the warning that goes with them.
@@ -98,11 +97,11 @@ export function LocalBackupPanel() {
 
   return (
     <div>
-      <section style={section}>
-        <span style={fieldLabel}>{t('pos.admin.backup.title')}</span>
-        <div style={warning}>{t('pos.admin.backup.warning')}</div>
+      <section className="cpos-section">
+        <h2 className="cpos-section__title">{t('pos.admin.backup.title')}</h2>
+        <div className="cpos-note cpos-note--warning">{t('pos.admin.backup.warning')}</div>
         {counts ? (
-          <div style={muted}>
+          <div className="cpos-muted">
             {t('pos.admin.backup.counts', {
               products: counts.products,
               users: counts.users,
@@ -111,7 +110,7 @@ export function LocalBackupPanel() {
           </div>
         ) : null}
         {countsError ? (
-          <div style={warning}>{t('pos.admin.backup.readFailed')}</div>
+          <div className="cpos-note cpos-note--warning">{t('pos.admin.backup.readFailed')}</div>
         ) : null}
         <FieldDescription>{t('pos.admin.backup.help')}</FieldDescription>
         {/*
@@ -123,28 +122,33 @@ export function LocalBackupPanel() {
           the file keeps everything, and the screen says what is in it.
         */}
         <FieldDescription>{t('pos.admin.backup.credentialsNote')}</FieldDescription>
-        <div style={actions}>
-          <Button onClick={() => void backup()} disabled={busy}>
+        <div className="cpos-actions">
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--primary"
+            onClick={() => void backup()}
+            disabled={busy}
+          >
             {t('pos.admin.backup.download')}
-          </Button>
+          </button>
         </div>
       </section>
 
-      <section style={section}>
-        <span style={fieldLabel}>{t('pos.admin.backup.auto.title')}</span>
+      <section className="cpos-section">
+        <h2 className="cpos-section__title">{t('pos.admin.backup.auto.title')}</h2>
         {!backupFolderSupported() ? (
           <FieldDescription>{t('pos.admin.backup.auto.unsupported')}</FieldDescription>
         ) : (
           <>
             <FieldDescription>{t('pos.admin.backup.auto.help')}</FieldDescription>
             <FieldDescription>{t('pos.admin.backup.credentialsNote')}</FieldDescription>
-            <div style={muted}>
+            <div className="cpos-muted">
               {auto.folderName
                 ? t('pos.admin.backup.auto.folder', { folder: auto.folderName })
                 : t('pos.admin.backup.auto.noFolder')}
             </div>
             {auto.folderName ? (
-              <div style={muted}>
+              <div className="cpos-muted">
                 {auto.lastOkMillis
                   ? t('pos.admin.backup.auto.last', {
                       when: formatWhen.format(new Date(auto.lastOkMillis)),
@@ -152,21 +156,25 @@ export function LocalBackupPanel() {
                   : t('pos.admin.backup.auto.never')}
               </div>
             ) : null}
-            {auto.stale ? <div style={warning}>{t('pos.admin.backup.auto.stale')}</div> : null}
+            {auto.stale ? <div className="cpos-note cpos-note--warning">{t('pos.admin.backup.auto.stale')}</div> : null}
             {auto.permission === 'prompt' && auto.folderName ? (
-              <div style={warning}>{t('pos.admin.backup.auto.needsPermission')}</div>
+              <div className="cpos-note cpos-note--warning">{t('pos.admin.backup.auto.needsPermission')}</div>
             ) : null}
             {auto.permission === 'denied' ? (
-              <div style={warning}>{t('pos.admin.backup.auto.denied')}</div>
+              <div className="cpos-note cpos-note--warning">{t('pos.admin.backup.auto.denied')}</div>
             ) : null}
             {auto.lastError && auto.lastError !== 'permission' ? (
-              <div style={warning}>
+              <div className="cpos-note cpos-note--warning">
                 {t('pos.admin.backup.auto.failed', { reason: auto.lastError })}
               </div>
             ) : null}
-            <div style={actions}>
-              <Button
-                variant={auto.folderName ? 'outline' : 'primary'}
+            <div className="cpos-actions">
+              <button
+                type="button"
+                className={cn(
+                  'cpos-btn',
+                  auto.folderName ? 'cpos-btn--outline' : 'cpos-btn--primary',
+                )}
                 disabled={busy}
                 onClick={() => {
                   void (async () => {
@@ -181,18 +189,20 @@ export function LocalBackupPanel() {
                 {auto.folderName
                   ? t('pos.admin.backup.auto.change')
                   : t('pos.admin.backup.auto.choose')}
-              </Button>
+              </button>
               {auto.folderName ? (
                 <>
-                  <Button
-                    variant="outline"
+                  <button
+                    type="button"
+                    className="cpos-btn cpos-btn--outline"
                     disabled={busy || auto.running}
                     onClick={() => void auto.backupNow()}
                   >
                     {t('pos.admin.backup.auto.runNow')}
-                  </Button>
-                  <Button
-                    variant="ghost"
+                  </button>
+                  <button
+                    type="button"
+                    className="cpos-btn cpos-btn--ghost"
                     disabled={busy}
                     onClick={() => {
                       void (async () => {
@@ -202,7 +212,7 @@ export function LocalBackupPanel() {
                     }}
                   >
                     {t('pos.admin.backup.auto.stop')}
-                  </Button>
+                  </button>
                 </>
               ) : null}
             </div>
@@ -210,13 +220,18 @@ export function LocalBackupPanel() {
         )}
       </section>
 
-      <section style={section}>
-        <span style={fieldLabel}>{t('pos.admin.backup.restoreTitle')}</span>
+      <section className="cpos-section">
+        <h2 className="cpos-section__title">{t('pos.admin.backup.restoreTitle')}</h2>
         <FieldDescription>{t('pos.admin.backup.restoreHelp')}</FieldDescription>
-        <div style={actions}>
-          <Button variant="outline" disabled={busy} onClick={() => fileInput.current?.click()}>
+        <div className="cpos-actions">
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--outline"
+            disabled={busy}
+            onClick={() => fileInput.current?.click()}
+          >
             {t('pos.admin.backup.restore')}
-          </Button>
+          </button>
           <input
             ref={fileInput}
             type="file"

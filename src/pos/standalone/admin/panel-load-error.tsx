@@ -1,8 +1,6 @@
 'use client';
 
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { actions, warning } from './panel-styles';
 
 /**
  * "This screen could not read the database", instead of a spinner that never
@@ -18,11 +16,13 @@ export function PanelLoadError({ onRetry }: { onRetry: () => void }) {
   const t = useT();
   return (
     <div>
-      <div style={warning}>{t('pos.admin.loadFailed')}</div>
-      <div style={actions}>
-        <Button variant="outline" onClick={onRetry}>
+      <div className="cpos-note cpos-note--warning" role="alert">
+        {t('pos.admin.loadFailed')}
+      </div>
+      <div className="cpos-actions" style={{ marginTop: 12 }}>
+        <button type="button" className="cpos-btn cpos-btn--outline" onClick={onRetry}>
           {t('pos.admin.loadRetry')}
-        </Button>
+        </button>
       </div>
     </div>
   );

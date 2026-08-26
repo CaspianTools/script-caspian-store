@@ -2,9 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../../i18n/locale-context';
-import { Button } from '../../../ui/button';
-import { Input } from '../../../ui/input';
-import { Table, TBody, TD, TH, THead, TR } from '../../../ui/table';
 import { useToast } from '../../../ui/toast';
 import { getPosDeviceId } from '../../pos-device';
 import {
@@ -16,7 +13,6 @@ import {
 } from '../local-terminals';
 import { RecoveryCodeBlock } from '../pos-local-recovery';
 import type { LocalTerminal } from '../types';
-import { actions, field, fieldLabel, muted, row, section } from './panel-styles';
 import { PanelLoadError } from './panel-load-error';
 
 /**
@@ -130,87 +126,89 @@ export function LocalTerminalsPanel() {
 
   return (
     <>
-      <section style={section}>
+      <section className="cpos-section">
         <strong>{t('pos.terminal.addTitle')}</strong>
-        <p style={muted}>{t('pos.terminal.addHelp')}</p>
-        <div style={row}>
-          <div style={{ ...field, flex: '1 1 220px' }}>
-            <span style={fieldLabel}>{t('pos.terminal.name')}</span>
-            <Input
+        <p className="cpos-muted">{t('pos.terminal.addHelp')}</p>
+        <div className="cpos-row">
+          <div className="cpos-field" style={{ flex: '1 1 220px' }}>
+            <span className="cpos-field__label">{t('pos.terminal.name')}</span>
+            <input className="cpos-input"
               value={name}
               placeholder={t('pos.terminal.namePlaceholder')}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <Button onClick={add} loading={saving} disabled={!name.trim()}>
+          <button type="button" className="cpos-btn cpos-btn--primary" onClick={add} disabled={saving || !name.trim()}>
             {t('pos.terminal.add')}
-          </Button>
+          </button>
         </div>
       </section>
 
       {freshCode ? (
-        <section style={section}>
+        <section className="cpos-section">
           <strong>{t('pos.terminal.codeFor', { name: freshCode.terminal })}</strong>
-          <p style={muted}>{t('pos.terminal.codeOnce')}</p>
+          <p className="cpos-muted">{t('pos.terminal.codeOnce')}</p>
           <RecoveryCodeBlock code={freshCode.code} />
-          <div style={actions}>
-            <Button variant="outline" onClick={() => setFreshCode(null)}>
+          <div className="cpos-actions">
+            <button type="button" className="cpos-btn cpos-btn--outline" onClick={() => setFreshCode(null)}>
               {t('pos.terminal.codeDone')}
-            </Button>
+            </button>
           </div>
         </section>
       ) : null}
 
-      <section style={section}>
+      <section className="cpos-section">
         <strong>{t('pos.terminal.listTitle')}</strong>
-        <p style={muted}>{t('pos.terminal.noSync')}</p>
+        <p className="cpos-muted">{t('pos.terminal.noSync')}</p>
         {loadFailed ? <PanelLoadError onRetry={refresh} /> : null}
         {terminals === null ? (
           <div className="cpos-skeleton" style={{ height: 120 }} />
         ) : terminals.length === 0 ? (
-          <p style={muted}>{t('pos.terminal.empty')}</p>
+          <p className="cpos-muted">{t('pos.terminal.empty')}</p>
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t('pos.terminal.colName')}</TH>
-                <TH>{t('pos.terminal.colClaimed')}</TH>
-                <TH style={{ textAlign: 'right' }}>{t('pos.terminal.colActions')}</TH>
-              </TR>
-            </THead>
-            <TBody>
+          <div className="cpos-tablewrap">
+            <table className="cpos-table">
+              <thead>
+              <tr>
+                <th>{t('pos.terminal.colName')}</th>
+                <th>{t('pos.terminal.colClaimed')}</th>
+                <th style={{ textAlign: 'right' }}>{t('pos.terminal.colActions')}</th>
+              </tr>
+              </thead>
+              <tbody>
               {terminals.map((terminal) => (
-                <TR key={terminal.id}>
-                  <TD>
-                    <Input
+                <tr key={terminal.id}>
+                  <td>
+                    <input className="cpos-input"
                       defaultValue={terminal.name}
                       // Commits on blur rather than on every keystroke: a write
                       // per character would be a write per character, and the
                       // roster is read on every register mount.
                       onBlur={(e) => void rename(terminal, e.target.value)}
                     />
-                  </TD>
-                  <TD style={{ fontSize: 13 }}>
+                  </td>
+                  <td style={{ fontSize: 13 }}>
                     {!terminal.claimedByDeviceId
                       ? t('pos.terminal.free')
                       : terminal.claimedByDeviceId === deviceId
                         ? t('pos.terminal.thisMachine')
                         : t('pos.terminal.otherMachine')}
-                  </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
-                      <Button variant="outline" size="sm" onClick={() => void newCode(terminal)}>
+                      <button type="button" className="cpos-btn cpos-btn--outline cpos-btn--sm"   onClick={() => void newCode(terminal)}>
                         {t('pos.terminal.newCode')}
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => void remove(terminal)}>
+                      </button>
+                      <button type="button" className="cpos-btn cpos-btn--danger cpos-btn--sm"   onClick={() => void remove(terminal)}>
                         {t('pos.terminal.remove')}
-                      </Button>
+                      </button>
                     </div>
-                  </TD>
-                </TR>
+                  </td>
+                </tr>
               ))}
-            </TBody>
-          </Table>
+              </tbody>
+          </table>
+        </div>
         )}
       </section>
     </>
