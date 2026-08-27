@@ -1032,6 +1032,15 @@ export {
 } from './services/email-service';
 export { DEFAULT_SCRIPT_SETTINGS, SOCIAL_PLATFORMS } from './types';
 
+// --- The cloud register's contract (v14.1.0) ---
+// The till moved out to apps/pos in v14.0.0 and now consumes this package the
+// way any consumer does, but these five never left the barrel's inside: it
+// imported them while it was still part of src/. Without them the till does not
+// build at all -- `POS_ROLES is not exported by dist/index.mjs`.
+export { POS_ROLES, DEFAULT_POS_SETTINGS } from './types';
+export type { PosSettings, UserRole } from './types';
+export { Switch, type SwitchProps } from './ui/switch';
+
 // --- Error logging (mod1182) ---
 export { ErrorBoundary, type ErrorBoundaryProps } from './components/error-boundary';
 export {

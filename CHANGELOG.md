@@ -16,6 +16,30 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v14.1.0 — The five exports the register move left behind
+
+v14.0.0 moved the till out to `apps/pos/` and had it consume this package the way
+any consumer does. Five symbols it imports never made the trip: they had been
+reachable while the register was inside `src/`, and were never on the barrel. The
+till did not type-check and did not build — `"POS_ROLES" is not exported by
+dist/index.mjs` — from the moment the move landed.
+
+They are on the barrel now. Anyone building a cloud-backed register outside this
+package needs the same five.
+
+### No consumer action required
+
+Purely additive: five names joined the main entry and nothing was renamed, moved
+or removed. An existing install is unaffected.
+
+### Added
+
+- `POS_ROLES` and `DEFAULT_POS_SETTINGS`, and the types `PosSettings` and
+  `UserRole`, are exported from the main entry.
+- `Switch` and `SwitchProps` are exported from the main entry. It is the
+  admin-panel toggle; a register uses its own (`.cpos-switch`), which is built to
+  the 44px touch floor and resolves through the till's tokens.
+
 ## v14.0.0 — The register moves out
 
 The standalone till now lives in `apps/pos/`, a top-level app of its own. Its

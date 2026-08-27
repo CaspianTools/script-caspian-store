@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useId, useRef, type ReactNode } from 'react';
-import { XIcon } from '../../../icons';
+import { ChevronLeftIcon, XIcon } from '../../../icons';
 import { cn } from '@caspian-explorer/script-caspian-store';
 
-export type PosDialogSize = 'sm' | 'md' | 'lg' | 'split';
+export type PosDialogSize = 'sm' | 'md' | 'lg';
 
 export interface PosDialogProps {
   open: boolean;
@@ -16,8 +16,14 @@ export interface PosDialogProps {
   /** The action row. Put Cancel first and the verb last, as every screen does. */
   foot?: ReactNode;
   size?: PosDialogSize;
-  /** Drops the body padding, for a child that draws its own panes (Quick add). */
-  bodyFlush?: boolean;
+  /**
+   * Draws a back chevron at the start of the head, for a dialog with more than
+   * one step (Quick add). In the head rather than the body so it stays put while
+   * a long form scrolls under it.
+   */
+  onBack?: () => void;
+  /** The back button's accessible name. Required whenever `onBack` is passed. */
+  backLabel?: string;
   className?: string;
 }
 
@@ -25,7 +31,6 @@ const SIZE_CLASS: Record<PosDialogSize, string> = {
   sm: '',
   md: 'cpos-modal__panel--md',
   lg: 'cpos-modal__panel--lg',
-  split: 'cpos-modal__panel--split',
 };
 
 /**
@@ -51,7 +56,8 @@ export function PosDialog({
   children,
   foot,
   size = 'md',
-  bodyFlush,
+  onBack,
+  backLabel,
   className,
 }: PosDialogProps) {
   const titleId = useId();
@@ -110,6 +116,16 @@ export function PosDialog({
         )}
       >
         <header className="cpos-modal__head">
+          {onBack ? (
+            <button
+              type="button"
+              className="cpos-iconbtn"
+              onClick={onBack}
+              aria-label={backLabel}
+            >
+              <ChevronLeftIcon size={18} />
+            </button>
+          ) : null}
           <span className="cpos-cardhead__text">
             <h2 className="cpos-modal__title" id={titleId}>
               {title}
@@ -126,9 +142,7 @@ export function PosDialog({
           </button>
         </header>
 
-        <div className={cn('cpos-modal__body', bodyFlush && 'cpos-modal__body--flush')}>
-          {children}
-        </div>
+        <div className="cpos-modal__body">{children}</div>
 
         {foot ? <footer className="cpos-modal__foot">{foot}</footer> : null}
       </div>

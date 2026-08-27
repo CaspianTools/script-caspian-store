@@ -1179,14 +1179,23 @@ export const POS_STYLESHEET = String.raw`
    ever tuned around a number pad. */
 .cpos-modal__panel--md { width: min(600px, 100%); }
 .cpos-modal__panel--lg { width: min(760px, 100%); }
-.cpos-modal__panel--split { width: min(960px, 100%); }
 
 /* A panel with a head and a foot scrolls its middle, not itself. The tender
    dialog is short enough that scrolling the whole panel is fine; a product form
    is not, and a Save button that scrolls off the bottom of a modal is a Save
    button a cashier cannot find. min-height: 0 is what lets the body shrink
    inside the flex column instead of pushing the panel past its 92dvh cap. */
-.cpos-modal__panel--framed { gap: 0; padding: 0; overflow: hidden; }
+/* The width eases because Quick add changes it between its two steps -- the
+   list is a --md panel and the form an --lg one, and snapping between them
+   reads as a second dialog rather than the same one moving on. Inert for every
+   other framed dialog, none of which resize, and the reduced-motion block at
+   the foot of this sheet already names .cpos-modal__panel. */
+.cpos-modal__panel--framed {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: width var(--cpos-dur) var(--cpos-ease);
+}
 .cpos-modal__head {
   display: flex;
   align-items: center;
@@ -1195,7 +1204,11 @@ export const POS_STYLESHEET = String.raw`
   padding: 16px 20px;
   border-bottom: 1px solid var(--cpos-border);
 }
-.cpos-modal__head .cpos-modal__title { flex: 1; min-width: 0; }
+/* The head's growing child is the title block, not the h2 inside it. Targeting
+   the h2 -- which this rule did while the title was still a direct child --
+   grows it down its own column and leaves the close button hugging the text
+   instead of sitting at the end of the head. */
+.cpos-modal__head .cpos-cardhead__text { flex: 1; min-width: 0; }
 .cpos-modal__body {
   display: flex;
   flex-direction: column;
@@ -1207,7 +1220,6 @@ export const POS_STYLESHEET = String.raw`
   scrollbar-width: thin;
   scrollbar-color: var(--cpos-border-strong) transparent;
 }
-.cpos-modal__body--flush { padding: 0; gap: 0; }
 
 /* The same rhythm, for a <form> that has to be one element so a submit button
    in the pinned foot can point at it with form=. Without this the form is a
@@ -1658,56 +1670,63 @@ export const POS_STYLESHEET = String.raw`
 .cpos-jump__icon { display: inline-grid; place-items: center; width: 18px; flex-shrink: 0; }
 
 /* ------------------------------------------------------------ quick add */
-/* Two panes: what you can make, and the form for the one you picked. The list
-   is on the start side because it is what you are choosing between; the form is
-   the wider pane because it is what you are filling in.
+/* Step one of the add dialog: a search box over a stacked list of what this
+   till can make. Full-width rows, because the thing being chosen between needs
+   a sentence and not just a noun -- the 232px rail these replaced could hold
+   "Category" and nowhere to say what one is for.
 
-   Below 720px it stacks and the list becomes a horizontal strip rather than a
-   column -- a narrow till would otherwise spend half the panel on four words and
-   leave the form squeezed underneath them. */
-.cpos-quickadd { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 0; }
-.cpos-quickadd__list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  padding: 16px;
-  border-inline-end: 1px solid var(--cpos-border);
-  background: var(--cpos-surface-2);
-}
-.cpos-quickadd__items { display: flex; flex-direction: column; gap: 3px; min-height: 0; overflow-y: auto; }
+   No breakpoint. A column of rows is already what a narrow till wants, which
+   is the other half of why the two panes went. */
+.cpos-quickadd { display: flex; flex-direction: column; gap: 12px; }
+.cpos-quickadd__items { display: flex; flex-direction: column; gap: 8px; }
 .cpos-quickadd__item {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 13px;
   min-height: var(--cpos-touch);
-  padding: 0 12px;
-  border: 0;
-  border-radius: var(--cpos-r-sm);
-  background: transparent;
-  color: var(--cpos-fg-muted);
+  padding: 11px 13px;
+  border: 1px solid var(--cpos-border);
+  border-radius: var(--cpos-r-lg);
+  background: var(--cpos-surface);
+  color: var(--cpos-fg);
   font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
   text-align: start;
   cursor: pointer;
+  transition: background var(--cpos-dur-fast) ease, border-color var(--cpos-dur-fast) ease;
+}
+.cpos-quickadd__item:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
+/* The hover and the arrow keys' cursor are one state on purpose: a row tinted
+   rather than filled, because a full-width row filled with --cpos-brand reads
+   as one already pressed. */
+.cpos-quickadd__item:hover,
+.cpos-quickadd__item--on {
+  background: var(--cpos-brand-soft);
+  border-color: var(--cpos-brand-line);
+}
+.cpos-quickadd__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: var(--cpos-r-md);
+  background: var(--cpos-brand-soft);
+  color: var(--cpos-brand-soft-fg);
   transition: background var(--cpos-dur-fast) ease, color var(--cpos-dur-fast) ease;
 }
-.cpos-quickadd__item:hover { background: var(--cpos-surface-3); color: var(--cpos-fg); }
-.cpos-quickadd__item:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
-.cpos-quickadd__item--on,
-.cpos-quickadd__item--on:hover { background: var(--cpos-brand); color: var(--cpos-brand-fg); }
-.cpos-quickadd__icon { display: inline-grid; place-items: center; width: 18px; flex-shrink: 0; }
-.cpos-quickadd__pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.cpos-quickadd__body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
-.cpos-quickadd__none { padding: 30px 20px; text-align: center; }
-
-@media (max-width: 720px) {
-  .cpos-quickadd { grid-template-columns: minmax(0, 1fr); }
-  .cpos-quickadd__list { border-inline-end: 0; border-bottom: 1px solid var(--cpos-border); }
-  .cpos-quickadd__items { flex-direction: row; overflow-x: auto; }
-  .cpos-quickadd__item { flex: 0 0 auto; }
+/* The tile fills as the row tints, or it would vanish into a row that has just
+   taken the tile's own colour. */
+.cpos-quickadd__item:hover .cpos-quickadd__icon,
+.cpos-quickadd__item--on .cpos-quickadd__icon {
+  background: var(--cpos-brand);
+  color: var(--cpos-brand-fg);
 }
+.cpos-quickadd__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.cpos-quickadd__name { font-size: 14.5px; font-weight: 650; }
+.cpos-quickadd__blurb { font-size: 13px; color: var(--cpos-fg-muted); }
+.cpos-quickadd__go { color: var(--cpos-fg-subtle); flex-shrink: 0; }
+.cpos-quickadd__item:hover .cpos-quickadd__go,
+.cpos-quickadd__item--on .cpos-quickadd__go { color: var(--cpos-brand-soft-fg); }
 
 /* A row of mutually exclusive picks -- appearance today, anything similar later. */
 .cpos-choices { display: flex; gap: 8px; flex-wrap: wrap; }

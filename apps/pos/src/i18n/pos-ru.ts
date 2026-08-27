@@ -601,6 +601,7 @@ const ru: MessageDict = {
   'pos.shift.list.hide': 'Скрыть',
 
   // --- Быстрое добавление (v1.4.0) ---
+  'pos.quickAdd.pickHelp': 'Что вы хотите добавить?',
   'pos.quickAdd.search': 'Поиск',
   'pos.quickAdd.noMatch': 'Ничего не найдено.',
   'pos.quickAdd.nothingTitle': 'Здесь нечего добавить',
@@ -618,6 +619,10 @@ const ru: MessageDict = {
   'pos.quickAdd.action.category': 'Добавить категорию',
   'pos.quickAdd.action.supplier': 'Добавить поставщика',
   'pos.quickAdd.action.person': 'Добавить сотрудника',
+  'pos.quickAdd.new.product': 'Новый товар',
+  'pos.quickAdd.new.category': 'Новая категория',
+  'pos.quickAdd.new.supplier': 'Новый поставщик',
+  'pos.quickAdd.new.person': 'Новый сотрудник',
 
   'pos.store.range.label': 'Период',
   'pos.store.range.today': 'Сегодня',

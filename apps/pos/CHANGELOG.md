@@ -23,6 +23,45 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.7.0 — Quick add asks one question at a time
+
+Quick add used to open as two panes: a narrow column of four words down the left
+and the form for whichever one was highlighted on the right. The column was wide
+enough for "Category" and not for the sentence saying what a category is for, so
+the sentence was banished to the dialog's subtitle, where it described only the
+entry that happened to be selected. It also opened already on a form nobody had
+picked.
+
+It is now two steps. The window opens on a full-width list — icon, name and the
+line saying what the thing is — and pressing a row turns the window into that
+record's form, with a back arrow at the top left to return to the list.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+Same records, same forms, same data; a different way in.
+
+### Changed
+
+- Quick add opens on the list of what this till can make, rather than on the
+  first form the signed-in role happens to have access to.
+- Each row carries its own icon tile, its name and its description. All four
+  descriptions are visible at once instead of one at a time.
+- Choosing a record replaces the list with its form. The dialog's title names
+  what is being made — "New product" — and a back arrow at the top left returns
+  to the list without closing the window.
+- An Add button pressed on the Store, Categories, Suppliers or People screen
+  still lands straight on that record's form. The back arrow is there too, so
+  those buttons are now also a way into the other forms.
+- The search box keeps the arrow keys, and Enter now opens the row they have
+  reached instead of only highlighting it.
+- The dialog no longer becomes a horizontal strip of chips on a narrow till. A
+  column of rows is what a narrow till wanted in the first place.
+- A modal's close button now sits at the end of its header instead of hugging
+  the title. The rule that was meant to push it there had been aimed at the
+  heading rather than the block the heading moved inside, and had done nothing
+  for some time.
+
 ## v1.6.1 — A folder of its own
 
 Nothing at the counter changed. The till's source moved out of the library it

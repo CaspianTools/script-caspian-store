@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v1.6.1"
+      "version": "v1.7.0"
     },
     "parts": [
       {
@@ -2164,13 +2164,13 @@ const MANUAL = {
             "title": "Quick add: the one way to put something new on the till",
             "audience": "owner",
             "route": "/pos",
-            "summary": "Everything this till creates is made in one place. Press Quick add in the bar across the top and a window opens with two halves: what you can make down the left, and the form for the one you picked on the right. Products, groups, suppliers and staff accounts. The Add buttons on the Store, Categories, Suppliers and People screens all open this same window, already on the right thing - so there is one form per record rather than a different-looking one on each screen.",
+            "summary": "Everything this till creates is made in one place, and it asks one question at a time. Press Quick add in the bar across the top and a window opens listing what you can make - products, groups, suppliers and staff accounts - each on its own row with a line saying what it is for. Press a row and the same window becomes that record's form, with a back arrow at the top left to return to the list. The Add buttons on the Store, Categories, Suppliers and People screens all open this same window, already on the right form - so there is one form per record rather than a different-looking one on each screen.",
             "steps": [
               "Press Quick add, at the right of the bar across the top of every screen.",
-              "Pick what you are making from the list on the left. Type in the search box above it to narrow the list, or use the up and down arrow keys and press Enter.",
-              "Fill in the form on the right. Only a name is ever required, and for a product a price as well.",
+              "Read the list and press the row you want. Type in the search box above it to narrow the list, or use the up and down arrow keys and press Enter.",
+              "Fill in the form. Only a name is ever required, and for a product a price as well.",
               "Press the blue button at the bottom right - it names what it will make, such as \"Add product\".",
-              "The window stays open and the form empties, ready for the next one. Close it when you are done."
+              "The window stays open and the form empties, ready for the next one. Press the back arrow at the top left to make something else, or close it when you are done."
             ],
             "fields": [
               {
@@ -2191,7 +2191,11 @@ const MANUAL = {
               },
               {
                 "name": "The search box",
-                "what": "Above the list on the left. With four things to choose from it is rarely needed, but the arrow keys and Enter work from inside it, which is quicker than reaching for the mouse."
+                "what": "Above the list. With four things to choose from it is rarely needed, but the arrow keys move down the list from inside it and Enter opens the row you have reached, which is quicker than reaching for the mouse."
+              },
+              {
+                "name": "The back arrow",
+                "what": "Top left of the window, once you are on a form. It returns you to the list without closing the window or losing your place. It is there whichever way you came in, so an Add button pressed on the Store screen can still take you to the supplier form."
               }
             ],
             "notes": [
@@ -3306,7 +3310,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v1.6.1"
+      "version": "v1.7.0"
     },
     "parts": [
       {
@@ -4402,7 +4406,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v1.6.1"
+      "version": "v1.7.0"
     },
     "parts": [
       {
@@ -5498,7 +5502,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v1.6.1"
+      "version": "v1.7.0"
     },
     "parts": [
       {

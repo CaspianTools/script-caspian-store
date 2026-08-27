@@ -883,6 +883,7 @@ const az: MessageDict = {
     'Yeni kod yaratmaq köhnəsini dərhal dayandırır. Kod bir dəfə göstərilir; sonra kassa yalnız şifrələnmiş surəti saxlayır və onu heç kim, o cümlədən kassanı quran şəxs də, oxuya bilmir.',
 
   // --- Sürətli əlavə (v1.4.0) ---
+  'pos.quickAdd.pickHelp': 'Nə əlavə etmək istəyirsiniz?',
   'pos.quickAdd.search': 'Axtar',
   'pos.quickAdd.noMatch': 'Uyğun gələn yoxdur.',
   'pos.quickAdd.nothingTitle': 'Burada əlavə ediləsi bir şey yoxdur',
@@ -900,6 +901,10 @@ const az: MessageDict = {
   'pos.quickAdd.action.category': 'Kateqoriya əlavə et',
   'pos.quickAdd.action.supplier': 'Təchizatçı əlavə et',
   'pos.quickAdd.action.person': 'Şəxs əlavə et',
+  'pos.quickAdd.new.product': 'Yeni məhsul',
+  'pos.quickAdd.new.category': 'Yeni kateqoriya',
+  'pos.quickAdd.new.supplier': 'Yeni təchizatçı',
+  'pos.quickAdd.new.person': 'Yeni şəxs',
 
   'pos.store.range.label': 'Dövr',
   'pos.store.range.today': 'Bu gün',

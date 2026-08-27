@@ -594,6 +594,7 @@ const tr: MessageDict = {
   'pos.shift.list.hide': 'Gizle',
 
   // --- Hızlı ekleme (v1.4.0) ---
+  'pos.quickAdd.pickHelp': 'Ne eklemek istiyorsunuz?',
   'pos.quickAdd.search': 'Ara',
   'pos.quickAdd.noMatch': 'Eşleşen bir şey yok.',
   'pos.quickAdd.nothingTitle': 'Burada eklenecek bir şey yok',
@@ -611,6 +612,10 @@ const tr: MessageDict = {
   'pos.quickAdd.action.category': 'Kategori ekle',
   'pos.quickAdd.action.supplier': 'Tedarikçi ekle',
   'pos.quickAdd.action.person': 'Kişi ekle',
+  'pos.quickAdd.new.product': 'Yeni ürün',
+  'pos.quickAdd.new.category': 'Yeni kategori',
+  'pos.quickAdd.new.supplier': 'Yeni tedarikçi',
+  'pos.quickAdd.new.person': 'Yeni kişi',
 
   'pos.store.range.label': 'Dönem',
   'pos.store.range.today': 'Bugün',

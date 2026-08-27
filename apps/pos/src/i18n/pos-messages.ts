@@ -1025,6 +1025,7 @@ export const POS_MESSAGES_EN: MessageDict = {
     'Making a new one stops the old one working straight away. The code is shown once; afterwards the till keeps only a scrambled copy that nobody, including whoever installed it, can read back.',
 
   // --- Quick add (standalone till v1.4.0) — the one place the till creates ---
+  'pos.quickAdd.pickHelp': 'What would you like to add?',
   'pos.quickAdd.search': 'Search',
   'pos.quickAdd.noMatch': 'Nothing matches that.',
   'pos.quickAdd.nothingTitle': 'Nothing to add here',
@@ -1042,6 +1043,13 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.quickAdd.action.category': 'Add category',
   'pos.quickAdd.action.supplier': 'Add supplier',
   'pos.quickAdd.action.person': 'Add person',
+  // The dialog's own title once a record is picked. Not the action label above:
+  // that one names the button that writes, and a head reading "Add product"
+  // over a foot reading "Add product" says the same thing twice.
+  'pos.quickAdd.new.product': 'New product',
+  'pos.quickAdd.new.category': 'New category',
+  'pos.quickAdd.new.supplier': 'New supplier',
+  'pos.quickAdd.new.person': 'New person',
 
   // --- The period picker the record pages share ---
   'pos.store.range.label': 'Period',

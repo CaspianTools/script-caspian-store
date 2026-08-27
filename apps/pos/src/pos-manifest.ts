@@ -1,4 +1,11 @@
-import { buildWebManifest, type WebManifestIcon, type WebManifestInput } from './build-manifest';
+// The /pwa entry, not the barrel: these are pure functions with no React in
+// them, and the sibling module this used to import stayed in the library when
+// the till moved out to apps/pos.
+import {
+  buildWebManifest,
+  type WebManifestIcon,
+  type WebManifestInput,
+} from '@caspian-explorer/script-caspian-store/pwa';
 
 /**
  * Web app manifest for the register, served at `/pos.webmanifest`.

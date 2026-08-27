@@ -248,6 +248,7 @@ It needs no new class — `.cpos-field` is a column with a gap, so it nests.
 | `.cpos-settings__grid` + `.cpos-jump` | the sidebar-and-body layout used by Settings and App admin; `.cpos-jump__item--on` marks the current section |
 | `.cpos-segmented` | the second-level tab strip across the Store screens |
 | `.cpos-collapse` | a disclosure row with a caret, a summary and a body |
+| `.cpos-quickadd` | Quick add's first step — a search box over `__items`, a stacked column of `__item` rows. A row is an `__icon` tile, `__text` (`__name` over `__blurb`) and a trailing `__go` chevron; `--on` is the arrow keys' cursor and tints exactly as hover does |
 | `.cpos-modal` | see below |
 | `.cpos-fadein` | a one-frame entrance; key it on the section id so switching sections animates |
 | `.cpos-version` | the version line at the foot of a settings body |
@@ -257,16 +258,23 @@ It needs no new class — `.cpos-field` is a column with a gap, so it nests.
 ```
 .cpos-modal                       fixed, scrim, blur, centres its panel
   .cpos-modal__panel--framed      480px default, 92dvh cap, xl radius + shadow
-    .cpos-modal__head             title + close button
+    .cpos-modal__head             back? + title + close button
     .cpos-modal__body             scrolls; min-height: 0; 14px column rhythm
     .cpos-modal__foot             right-aligned actions, top border
 ```
 
-Width modifiers on the panel: `--md` 600px (a short form), `--lg` 760px (a long
-one), `--split` 960px (Quick Add's two panes). The unmodified 480px is the tender
-dialog's, and stays. `--framed` is what drops the panel's own padding so the
-head, body and foot can own theirs; `--flush` on the body drops its padding in
-turn, for a child that draws its own panes.
+Width modifiers on the panel: `--md` 600px (a short form) and `--lg` 760px (a
+long one). The unmodified 480px is the tender dialog's, and stays. `--framed` is
+what drops the panel's own padding so the head, body and foot can own theirs,
+and it eases `width` so a dialog that changes size between steps moves rather
+than snaps.
+
+**A dialog with more than one step gets `onBack`**, and the head draws a
+`.cpos-iconbtn` chevron at its start — the same back idiom as a record page,
+kept in the head so it stays put while a long form scrolls under it. It needs a
+`backLabel` for its accessible name; `PosDialog` has no `useT` of its own and is
+not getting one for eleven call sites when the one caller that needs it already
+has `t`. Quick add is the only user.
 
 The body scrolls, not the panel. A Save button that scrolls off the bottom of a
 modal is a Save button a cashier cannot find, and `min-height: 0` is what lets
