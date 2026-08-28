@@ -26,6 +26,7 @@ import type { LocalCategory, LocalProduct, LocalSale } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * One category, and what it is worth.
@@ -43,6 +44,7 @@ import { PanelLoadError } from './panel-load-error';
  */
 export function LocalCategoryPage({ categoryId }: { categoryId: string }) {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
@@ -136,12 +138,13 @@ export function LocalCategoryPage({ categoryId }: { categoryId: string }) {
 
   const remove = async () => {
     if (!category) return;
-    if (
-      !window.confirm(
-        t('pos.store.category.confirmDelete', { name: category.name, count: mine.length }),
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t('pos.store.category.deleteTitle'),
+      body: t('pos.store.category.confirmDelete', { name: category.name, count: mine.length }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await deleteLocalCategory(category.id);
     push('/pos/store/categories');
   };
@@ -340,6 +343,7 @@ export function LocalCategoryPage({ categoryId }: { categoryId: string }) {
       </section>
 
       <PosDialog
+        closeLabel={t('common.close')}
         open={renameOpen}
         onOpenChange={setRenameOpen}
         size="sm"

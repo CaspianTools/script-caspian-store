@@ -234,6 +234,25 @@ button, and `flexWrap` stacked all of it into two or three rows on a narrow till
 Do not move nav back into `PosTopbar` — the bar's job is to say which screen you
 are on.
 
+**Routing is in the URL fragment**, in
+[src/pos-navigation.tsx](src/pos-navigation.tsx). It used to be a module
+variable in `memory-navigation.tsx`, which kept the shop's static host out of
+the routing problem but cost the register every URL it had: no bookmarks, no
+deep links, Back left the app, and a reload always landed on the register no
+matter where the cashier had been.
+
+The fragment answers the original worry and returns the rest. The document
+requested is always `/pos/`, and the part after `#` is never sent to a server,
+so no host needs a rewrite rule — which History routing would have needed, and
+which the service worker cannot stand in for, because a first visit, cleared
+site data or a private window has no controlling worker. It also lines up with
+the offline shell: `/pos/` is the one document the cache reliably holds, so
+reloading a deep link works offline too.
+
+Route strings are unchanged — `/pos/store/abc` throughout — so `PosRoot`'s
+switch, `screenOf` and `stripLocalePrefix` know nothing about it. Moving to
+History routing later is this one file plus host configuration.
+
 **Two nav arrays have nothing checking them.** `PosSidebar`'s `items` and the
 `switch (head)` in `PosRoot` are two halves of one thing and can drift silently;
 so can the `NAV` array in

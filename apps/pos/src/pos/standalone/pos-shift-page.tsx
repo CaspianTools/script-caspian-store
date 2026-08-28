@@ -228,6 +228,7 @@ function CashMovementDialog({
 
   return (
     <PosDialog
+      closeLabel={t('common.close')}
       open={kind !== null}
       onOpenChange={onOpenChange}
       title={kind === 'out' ? t('pos.shift.cashOut') : t('pos.shift.cashIn')}
@@ -303,6 +304,7 @@ function CloseShiftDialog({
 
   return (
     <PosDialog
+      closeLabel={t('common.close')}
       open={open}
       onOpenChange={onOpenChange}
       title={t('pos.shift.close')}

@@ -105,6 +105,7 @@ export function LocalStockAdjustDialog({
 
   return (
     <PosDialog
+      closeLabel={t('common.close')}
       open={open}
       onOpenChange={onOpenChange}
       title={t('pos.store.adjust.title', { name: product.name })}

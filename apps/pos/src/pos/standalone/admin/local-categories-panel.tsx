@@ -21,6 +21,7 @@ import type { LocalCategory } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
 import { PanelLoadError } from './panel-load-error';
 import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * The shop's list of groups.
@@ -35,6 +36,7 @@ import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
  */
 export function LocalCategoriesPanel() {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
@@ -70,8 +72,13 @@ export function LocalCategoriesPanel() {
 
   const remove = async (category: LocalCategory) => {
     const using = counts[category.name] ?? 0;
-    if (!window.confirm(t('pos.store.category.confirmDelete', { name: category.name, count: using })))
-      return;
+    const ok = await confirm({
+      title: t('pos.store.category.deleteTitle'),
+      body: t('pos.store.category.confirmDelete', { name: category.name, count: using }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await deleteLocalCategory(category.id);
     await refresh();
   };

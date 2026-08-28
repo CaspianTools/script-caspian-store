@@ -197,6 +197,7 @@ export function PosQuickAddDialog({
 
   return (
     <PosDialog
+      closeLabel={t('common.close')}
       open={open}
       onOpenChange={onOpenChange}
       title={current ? t(`pos.quickAdd.new.${current.value}`) : t('pos.quickAdd.title')}

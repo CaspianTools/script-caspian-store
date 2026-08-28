@@ -41,6 +41,7 @@ export function LocalProductFormDialog({
 
   return (
     <PosDialog
+      closeLabel={t('common.close')}
       open={open}
       onOpenChange={onOpenChange}
       size="lg"

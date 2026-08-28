@@ -18,6 +18,8 @@ import {
 import { listLocalProducts, listLocalSales, listLocalUsers } from '../local-db';
 import { pickBackupFolder, forgetBackupFolder, backupFolderSupported } from '../local-backup-folder';
 import { usePosAutoBackupState } from '../auto-backup-context';
+import { usePosConfirm } from '../ui/pos-confirm';
+import { usePosShopSettings } from '../shop-settings-context';
 
 /**
  * Backups, and the warning that goes with them.
@@ -30,6 +32,8 @@ import { usePosAutoBackupState } from '../auto-backup-context';
  */
 export function LocalBackupPanel() {
   const t = useT();
+  const confirm = usePosConfirm();
+  const { settings } = usePosShopSettings();
   const { toast } = useToast();
   const [counts, setCounts] = useState<{ products: number; users: number; sales: number } | null>(
     null,
@@ -79,7 +83,30 @@ export function LocalBackupPanel() {
       toast({ title: t('pos.admin.backup.notABackup') });
       return;
     }
-    if (!window.confirm(t('pos.admin.backup.confirmRestore'))) return;
+    // Typed, not tapped. A restore merges a whole shop's records onto a
+    // trading till and `restoreLocalBackup` has no undo.
+    const ok = await confirm({
+      title: t('pos.admin.backup.restoreTitle'),
+      body: t('pos.admin.backup.confirmRestore'),
+      confirmLabel: t('pos.admin.backup.restoreVerb'),
+      tone: 'danger',
+      typeToConfirm: {
+        expected: settings.shopName.trim() || t('pos.admin.backup.restoreWord'),
+        hint: t('pos.admin.backup.restoreGate', {
+          word: settings.shopName.trim() || t('pos.admin.backup.restoreWord'),
+        }),
+      },
+      detail: (
+        <p className="cpos-muted" style={{ margin: 0 }}>
+          {t('pos.admin.backup.counts', {
+            products: parsed.products.length,
+            users: parsed.users.length,
+            sales: parsed.sales.length,
+          })}
+        </p>
+      ),
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const result = await restoreLocalBackup(parsed);

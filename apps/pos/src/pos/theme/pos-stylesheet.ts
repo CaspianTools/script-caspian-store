@@ -232,6 +232,9 @@ export const POS_STYLESHEET = String.raw`
   overflow: hidden;
 }
 .cpos-sidebar--rail .cpos-sidebar__brand { padding-inline: 14px; }
+/* The drawer close button, pushed to the end of the brand row. Sized to the
+   touch floor, which the scrim it supplements never had to meet. */
+.cpos-sidebar__close { margin-inline-start: auto; width: var(--cpos-touch); height: var(--cpos-touch); }
 
 .cpos-sidebar__mark {
   display: grid;

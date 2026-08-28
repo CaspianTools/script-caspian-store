@@ -41,6 +41,7 @@ import {
 } from './receipt/build-receipt-model';
 import { PosReceipt } from './receipt/pos-receipt';
 import { readScannerGapMs } from './pos-preferences';
+import { usePosConfirm } from './standalone/ui/pos-confirm';
 
 type Phase =
   | { kind: 'selling' }
@@ -95,6 +96,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const { user, userProfile } = useAuth();
   const local = usePosLocalSession();
   const t = useT();
+  const confirm = usePosConfirm();
   // The open sale lives above this component, and on disk. `PosRoot` swaps
   // this whole component out for every other /pos screen, so a ticket owned
   // here would not survive a cashier glancing at Settings.
@@ -835,7 +837,27 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
               style={{ flex: 1 }}
               disabled={ticket.isEmpty}
               onClick={() => {
-                if (window.confirm(t('pos.ticket.clearConfirm'))) startNewSale();
+                void (async () => {
+                  // Focus starts on Cancel. This is the most-pressed of the
+                  // register's confirms and the one hit mid-queue, so the safe
+                  // answer is the one already under the finger.
+                  const ok = await confirm({
+                    title: t('pos.ticket.clearTitle'),
+                    body: t('pos.ticket.clearConfirm'),
+                    confirmLabel: t('pos.ticket.clearVerb'),
+                    tone: 'danger',
+                    focus: 'cancel',
+                    detail: (
+                      <p className="cpos-muted" style={{ margin: 0 }}>
+                        {t('pos.ticket.clearDetail', {
+                          count: ticket.lines.length,
+                          total: formatPrice(ticket.totals.total),
+                        })}
+                      </p>
+                    ),
+                  });
+                  if (ok) startNewSale();
+                })();
               }}
             >
               {t('pos.ticket.clear')}

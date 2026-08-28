@@ -37,6 +37,7 @@ import { LocalStockAdjustDialog } from './local-stock-adjust-dialog';
 import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney, formatSignedQuantity } from './local-money';
 import { PanelLoadError } from './panel-load-error';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /** How many ledger rows a page shows before asking to be shown more. */
 const HISTORY_PAGE = 25;
@@ -51,6 +52,7 @@ const HISTORY_PAGE = 25;
  */
 export function LocalProductPage({ productId }: { productId: string }) {
   const t = useT();
+  const confirm = usePosConfirm();
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
   const { can } = usePosRoles();
@@ -133,7 +135,13 @@ export function LocalProductPage({ productId }: { productId: string }) {
 
   const remove = async () => {
     if (!product) return;
-    if (!window.confirm(t('pos.admin.products.confirmDelete', { name: product.name }))) return;
+    const ok = await confirm({
+      title: t('pos.admin.products.deleteTitle'),
+      body: t('pos.admin.products.confirmDelete', { name: product.name }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await deleteLocalProduct(product.id);
     push('/pos/store');
   };

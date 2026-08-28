@@ -13,6 +13,7 @@ import {
 import { RecoveryCodeBlock } from '../pos-local-recovery';
 import type { LocalTerminal } from '../types';
 import { PanelLoadError } from './panel-load-error';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * The counters the shop has, and which machine answers to each.
@@ -32,6 +33,7 @@ import { PanelLoadError } from './panel-load-error';
  */
 export function LocalTerminalsPanel() {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const [terminals, setTerminals] = useState<LocalTerminal[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -89,12 +91,15 @@ export function LocalTerminalsPanel() {
   };
 
   const newCode = async (terminal: LocalTerminal) => {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(t('pos.terminal.confirmNewCode', { name: terminal.name }))
-    ) {
-      return;
-    }
+    // Primary, not danger: this re-issues a pairing code rather than
+    // destroying anything.
+    const ok = await confirm({
+      title: t('pos.terminal.newCodeTitle'),
+      body: t('pos.terminal.confirmNewCode', { name: terminal.name }),
+      confirmLabel: t('pos.terminal.newCode'),
+      tone: 'primary',
+    });
+    if (!ok) return;
     try {
       const code = await regenerateLocalTerminalCode(terminal.id);
       if (code) setFreshCode({ terminal: terminal.name, code });
@@ -108,7 +113,13 @@ export function LocalTerminalsPanel() {
       terminal.claimedByDeviceId && terminal.claimedByDeviceId !== deviceId
         ? t('pos.terminal.confirmRemoveClaimed', { name: terminal.name })
         : t('pos.terminal.confirmRemove', { name: terminal.name });
-    if (typeof window !== 'undefined' && !window.confirm(warning)) return;
+    const ok = await confirm({
+      title: t('pos.terminal.removeTitle'),
+      body: warning,
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
       const result = await deleteLocalTerminal(terminal.id);
       if (!result.ok) {

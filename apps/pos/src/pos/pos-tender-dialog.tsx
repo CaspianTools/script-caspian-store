@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { useT, cn } from '@caspian-explorer/script-caspian-store';
 import { CheckIcon, PlusIcon, XIcon } from '../icons';
 import type { PosTenderInput } from './storage/types';
 import { fromMinor, toMinor } from './money';
 import { parseAmount } from './parse-amount';
 import { splitTenders, type TenderDraftAmounts } from './tender-allocation';
+import { usePosOverlay } from './standalone/ui/pos-dialog';
 
 interface DraftTender {
   kind: 'cash' | 'card' | 'other';
@@ -46,6 +47,29 @@ export function PosTenderDialog({
   onConfirm,
 }: PosTenderDialogProps) {
   const t = useT();
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const containers = useRef([modalRef]).current;
+
+  /**
+   * The overlay contract, with two refusals stated rather than accidental.
+   *
+   * `dismissOn: {}` means no Escape and no backdrop click. A cashier holding a
+   * customer's cash with a card machine mid-transaction must not lose a split
+   * tender to a stray key or a misplaced tap. That was already the behaviour,
+   * but only because two `useEffect`s had never been written; now it is a
+   * decision at the call site.
+   *
+   * What it gains is the rest of the contract, all of which it lacked: Tab used
+   * to walk straight out of the payment sheet onto the quantity buttons behind
+   * it, so a keyboard or screen-reader user could change the basket while
+   * taking money for it. The ticket, Clear and Pay are now `inert`.
+   *
+   * The keyboard's way out is Tab to Cancel. Say so here so nobody "fixes" the
+   * missing Escape later.
+   */
+  usePosOverlay({ open: true, containers, onDismiss: onCancel, dismissOn: {} });
+
   const [tenders, setTenders] = useState<DraftTender[]>([
     { kind: 'cash', amount: total.toFixed(2), tendered: '', reference: '' },
   ]);
@@ -107,9 +131,17 @@ export function PosTenderDialog({
   };
 
   return (
-    <div className="cpos-modal" role="dialog" aria-modal="true" aria-label={t('pos.tender.title')}>
-      <div className="cpos-modal__panel">
-        <h2 className="cpos-modal__title">{t('pos.tender.title')}</h2>
+    <div ref={modalRef} className="cpos-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      {/*
+        A <form>, not a <div>. `.cpos-modal__panel` is a class rather than an
+        element selector, so the flex column and its gap are untouched -- and
+        Enter now completes the sale from the cash field it starts in, which is
+        where a cashier's hand already is. Every other button in this file is
+        `type="button"`, so implicit submission cannot fire the wrong one;
+        anyone adding a button here must keep that true.
+      */}
+      <form className="cpos-modal__panel" onSubmit={(event) => { event.preventDefault(); confirm(); }}>
+        <h2 className="cpos-modal__title" id={titleId}>{t('pos.tender.title')}</h2>
 
         <div className="cpos-modal__due">
           <span className="cpos-modal__duelabel">{t('pos.tender.due')}</span>
@@ -235,9 +267,8 @@ export function PosTenderDialog({
             {t('pos.tender.cancel')}
           </button>
           <button
-            type="button"
+            type="submit"
             className="cpos-btn cpos-btn--success cpos-btn--lg"
-            onClick={confirm}
             disabled={!covered || submitting}
             title={!covered ? t('pos.tender.shortfall') : undefined}
           >
@@ -245,7 +276,7 @@ export function PosTenderDialog({
             {t('pos.tender.confirm')}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

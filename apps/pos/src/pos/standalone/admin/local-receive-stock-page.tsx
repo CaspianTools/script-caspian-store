@@ -36,6 +36,7 @@ import { LocalProductFormDialog } from './local-product-form-dialog';
 import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
 import { PosSelect } from '../ui/pos-field';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 type Mode = 'scan' | 'manual';
 
@@ -69,6 +70,7 @@ function blankReceipt(userId: string, userName: string): LocalStockReceipt {
  */
 export function LocalReceiveStockPage() {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const { push, searchParams } = useCaspianNavigation();
   const session = usePosLocalSession();
@@ -278,7 +280,13 @@ export function LocalReceiveStockPage() {
 
   const discard = async () => {
     if (!receipt) return;
-    if (!window.confirm(t('pos.store.receive.confirmDiscard'))) return;
+    const ok = await confirm({
+      title: t('pos.store.receive.discardTitle'),
+      body: t('pos.store.receive.confirmDiscard'),
+      confirmLabel: t('pos.store.receive.discard'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await discardLocalStockReceiptDraft(receipt.id);
     const fresh = blankReceipt(session.user?.id ?? '', session.user?.displayName ?? '');
     setReceipt(fresh);

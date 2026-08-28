@@ -15,6 +15,7 @@ import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
 import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * Storekeeper inventory page.
@@ -26,6 +27,7 @@ import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
  */
 export function LocalStorePanel() {
   const t = useT();
+  const confirm = usePosConfirm();
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
   const { can } = usePosRoles();
@@ -102,7 +104,13 @@ export function LocalStorePanel() {
   }, [products, search, category]);
 
   const remove = async (p: LocalProduct) => {
-    if (!window.confirm(t('pos.admin.products.confirmDelete', { name: p.name }))) return;
+    const ok = await confirm({
+      title: t('pos.admin.products.deleteTitle'),
+      body: t('pos.admin.products.confirmDelete', { name: p.name }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await deleteLocalProduct(p.id);
     await refresh();
   };

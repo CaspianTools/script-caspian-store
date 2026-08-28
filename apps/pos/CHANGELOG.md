@@ -23,6 +23,64 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.10.0 — One way to close a window, and a register that has addresses
+
+Every pop-up in the register behaved differently, "Are you sure?" arrived in
+whatever language the browser was set to, and the address bar never changed no
+matter where you were.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+
+### Fixed
+
+- **Delete could silently stop working, permanently.** The register asked "Are
+  you sure?" through the browser's own pop-up. After two or three of those,
+  Chrome offers a tick-box saying "prevent this page from creating additional
+  dialogs" — and once a cashier ticks it, every one of those questions answers
+  itself with "no". Delete does nothing. Clear does nothing. There is no
+  message, no clue, and it stays that way until the page is reloaded, which
+  nobody has a reason to do. All thirteen of those questions are now asked by
+  the register itself, so the tick-box has nothing to switch off.
+- **"Are you sure?" is now in your language.** The browser's pop-up used its own
+  language for OK and Cancel, not the register's, so an Azerbaijani shop was
+  answering English buttons on the one screen that asks before destroying
+  something.
+- **The payment window could be tabbed out of.** Pressing Tab from the payment
+  screen walked out of it onto the basket behind, so it was possible to change
+  what was being bought while taking the money for it. Everything behind a
+  pop-up is now properly out of reach.
+- **The side menu had no way out except a tap on the dark area.** It now has a ✕
+  and closes on Escape, and the page behind it no longer scrolls under it.
+- **The close ✕ on every window announced the wrong thing** to a screen reader —
+  it read out the window's title instead of "Close".
+
+### Added
+
+- **Enter completes a sale.** The payment window opens with the cursor in "Cash
+  received"; pressing Enter used to do nothing at all, so a till driven by a
+  keyboard and a scanner had to reach for the mouse to finish. Escape still does
+  **not** close that window, deliberately: a half-entered split payment must not
+  be lost to a stray key. Tab to "Back to sale" is the way out.
+- **The register has addresses again.** Each screen now has its own, so you can
+  bookmark the Store, the Back button goes back a screen instead of leaving, and
+  a reload keeps you where you were rather than dropping you on the register.
+  Nothing to set up on your web host — the address works the same on every one.
+- **The two questions with no undo now ask you to type a word first.**
+  Restoring a backup asks for your shop's name; deleting a role asks for the
+  role's name. Everything else is a single tap, and "Clear the sale" starts with
+  Cancel selected, because that one gets pressed most and gets pressed in a
+  queue.
+- Questions can now carry detail the browser's pop-up could not: clearing a sale
+  says how many lines and how much, and restoring a backup says how many items,
+  people and sales are in the file.
+
+### Changed
+
+- Disabled boxes and buttons are consistent everywhere, and the side menu's new
+  ✕ uses the menu's own palette rather than the page's.
+
 ## v1.9.0 — Nothing takes the till down
 
 Three things that only show up on a bad day: a render error used to replace the

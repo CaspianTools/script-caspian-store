@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v1.9.0"
+      "version": "v1.10.0"
     },
     "parts": [
       {
@@ -1901,7 +1901,9 @@ const MANUAL = {
               "On each payment row the amount box is labelled \"Amount due\", the same wording as the big total at the top of the window. On a split payment the box is the share for that row, not the whole bill.",
               "Pressing \"Complete sale\" twice, or a network hiccup that makes you retry, cannot charge the customer twice. The sale carries an identifier from this register, and a repeat lands on the same sale rather than creating a second one.",
               "If the sale fails to save you stay on the payment window with the error shown, and you can press \"Complete sale\" again. It will record the same single sale.",
-              "The register records the sale even if it takes your stock below zero. It does not refuse. You get an amber warning saying stock went negative on a number of lines, and the sale shows a \"Stock went negative\" badge in the admin panel so it can be tidied up later."
+              "The register records the sale even if it takes your stock below zero. It does not refuse. You get an amber warning saying stock went negative on a number of lines, and the sale shows a \"Stock went negative\" badge in the admin panel so it can be tidied up later.",
+              "From v1.10.0, pressing Enter completes the sale. The window opens with the cursor in \"Cash received\", so on a till driven by a keyboard and a scanner you can key the cash and press Enter without reaching for the mouse.",
+              "Escape does NOT close the payment window, and that is deliberate: a half-entered split payment must not be lost to a stray key. \"Back to sale\" is the way out, and Tab reaches it. While the window is open the basket behind it cannot be changed - previously Tab walked straight out onto the quantity buttons."
             ]
           },
           {
@@ -1991,7 +1993,9 @@ const MANUAL = {
               "If the whole screen goes blank, the browser reloads, or the power goes out mid-sale, the items on the ticket are not lost. The register writes the open sale onto this computer as you scan, and offers it back at the top of the screen when it comes up again — see “Coming back to an interrupted sale”. Nothing was recorded and nobody was charged; you choose whether to carry on with it or clear it away.",
               "Nothing is charged, recorded or taken off stock until \"Complete sale\" succeeds. If you are unsure whether a sale went through, look for it in the recent-sales table on the Point of sale page in the admin panel, or ask the owner to.",
               "From v1.9.0 a fault while drawing a screen no longer blanks the register. The side menu, the top bar and Quick add stay where they are, and the screen that failed says so and offers \"Try again\". Walking to another screen clears it too. An open sale is not affected - it is saved on this computer as you ring it up, and it is still there afterwards.",
-              "If the fault is bad enough to take the whole window, you get a single page offering \"Try again\" and \"Reload the register\", with a \"Show the technical message\" link. Read that message out if you are phoning for help; it is the only record, because the register sends nothing anywhere."
+              "If the fault is bad enough to take the whole window, you get a single page offering \"Try again\" and \"Reload the register\", with a \"Show the technical message\" link. Read that message out if you are phoning for help; it is the only record, because the register sends nothing anywhere.",
+              "Up to v1.10.0 the register asked \"Are you sure?\" using the browser's own pop-up, and that had a trap in it. After a few of them Chrome offers a tick-box saying \"prevent this page from creating additional dialogs\". Tick it and every one of those questions silently answers itself with \"no\" - Delete does nothing, Clear does nothing, with no message and no clue, until the page is reloaded. The register now asks its own questions, in your language, so there is nothing for that tick-box to switch off.",
+              "Two questions now ask you to type a word before the button will work: restoring a backup asks for your shop's name, and deleting a role asks for the role's name. Those are the two with no undo. Everything else is a single tap, and \"Clear the sale\" opens with Cancel already selected."
             ]
           },
           {
@@ -2160,7 +2164,8 @@ const MANUAL = {
               "The old address is a redirect, not a page. There is nothing left at /pos/admin to bookmark, so update any shortcut kept on a till.",
               "Which of these you can see depends on your role. Store, Sales, People, Shop and Backup are each behind their own permission, so two people signed in to the same till see different menus - see \"Roles on a till with no website\".",
               "All of this is for a till that runs on its own. On a register wired to a website these addresses are not screens at all: /pos/store, /pos/sales, /pos/people and /pos/app-admin quietly show the sale screen, because that work is done in the shop’s own admin panel.",
-              "A till that runs on its own has no Held sales screen and queues nothing, because nothing is ever sent anywhere. Everything it records is already in its final place, on that computer."
+              "A till that runs on its own has no Held sales screen and queues nothing, because nothing is ever sent anywhere. Everything it records is already in its final place, on that computer.",
+              "From v1.10.0 each screen has its own address, so you can bookmark the Store or the Sales list, the browser's Back button goes back a screen instead of leaving the register, and a reload keeps you where you were rather than dropping you on the register. The address carries a # in it, which is what lets it work on any web host with nothing to configure."
             ]
           },
           {
@@ -3321,7 +3326,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v1.9.0"
+      "version": "v1.10.0"
     },
     "parts": [
       {
@@ -3999,7 +4004,9 @@ const MANUAL = {
               "Hər ödəniş sətrində məbləğ xanası \"Ödəniləcək məbləğ\" (Amount due) adlanır — pəncərənin yuxarısındakı iri yekunla eyni yazı. Bölünmüş ödənişdə isə bu xana bütün hesabı yox, həmin sətrə düşən payı bildirir.",
               "\"Satışı tamamla\" (Complete sale) düyməsini iki dəfə basmaq, yaxud şəbəkə kəsintisinə görə yenidən cəhd etmək müştəridən iki dəfə pul çıxa bilməz. Satış bu kassaya aid identifikator daşıyır və təkrar cəhd ikinci satış yaratmır, eyni satışın üzərinə düşür.",
               "Satış yadda saxlanılmasa, ödəniş pəncərəsində qalırsınız və xəta göstərilir; \"Satışı tamamla\" düyməsini yenidən basa bilərsiniz. Yenə eyni tək satış qeydə alınacaq.",
-              "Stok mənfiyə düşsə belə, kassa satışı qeydə alır. İmtina etmir. Neçə sətirdə stokun mənfiyə düşdüyünü bildirən sarı xəbərdarlıq görünür, satış isə idarə panelində \"Stok mənfiyə düşdü\" (Stock went negative) nişanı ilə göstərilir ki, sonradan qaydaya salına bilsin."
+              "Stok mənfiyə düşsə belə, kassa satışı qeydə alır. İmtina etmir. Neçə sətirdə stokun mənfiyə düşdüyünü bildirən sarı xəbərdarlıq görünür, satış isə idarə panelində \"Stok mənfiyə düşdü\" (Stock went negative) nişanı ilə göstərilir ki, sonradan qaydaya salına bilsin.",
+              "v1.10.0-dan etibarən Enter düyməsi satışı tamamlayır. Pəncərə açılanda kursor \"Alınan nağd\" xanasındadır, ona görə klaviatura və skanerlə işləyən kassada nağdı yazıb Enter basmaq kifayətdir, siçana uzanmağa ehtiyac yoxdur.",
+              "Escape ödəniş pəncərəsini bağlamır, və bu qəsdəndir: yarımçıq bölünmüş ödəniş təsadüfi bir düymə ucbatından itməməlidir. Çıxış yolu \"Satışa qayıt\" düyməsidir, Tab ilə oraya çatmaq olar. Pəncərə açıq olanda arxadakı səbəti dəyişmək mümkün deyil - əvvəllər Tab birbaşa say düymələrinin üstünə çıxırdı."
             ]
           },
           {
@@ -4087,7 +4094,9 @@ const MANUAL = {
               "Bütün ekran qaralarsa, brauzer yenidən yüklənərsə və ya satışın ortasında işıq kəsilərsə, siyahıdakı məhsullar itmir. Kassa siz skan etdikcə açıq satışı bu kompüterə yazır və yenidən açılanda onu ekranın yuxarısında geri təklif edir — “Yarımçıq qalmış satışa qayıtmaq” bölməsinə baxın. Heç nə qeyd olunmayıb və heç kimdən pul alınmayıb; davam etmək və ya təmizləmək sizin seçiminizdir.",
               "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin.",
               "v1.9.0-dan etibarən ekran çəkilərkən baş verən nasazlıq artıq kassanı boş səhifəyə çevirmir. Yan menyu, yuxarı zolaq və Sürətli əlavə yerində qalır, nasazlıq olan ekran isə bunu deyir və \"Yenidən cəhd et\" təklif edir. Başqa ekrana keçmək də onu təmizləyir. Açıq satışa toxunulmur — o, siz yazdıqca bu kompüterdə saxlanılır və sonra da yerindədir.",
-              "Nasazlıq bütün pəncərəni aparacaq qədər ciddidirsə, \"Yenidən cəhd et\" və \"Kassanı yenidən yüklə\" təklif edən bir səhifə görəcəksiniz, üstündə də \"Texniki mesajı göstər\" linki. Kömək üçün zəng edirsinizsə, həmin mesajı oxuyun — kassa heç yerə heç nə göndərmədiyi üçün yeganə qeyd odur."
+              "Nasazlıq bütün pəncərəni aparacaq qədər ciddidirsə, \"Yenidən cəhd et\" və \"Kassanı yenidən yüklə\" təklif edən bir səhifə görəcəksiniz, üstündə də \"Texniki mesajı göstər\" linki. Kömək üçün zəng edirsinizsə, həmin mesajı oxuyun — kassa heç yerə heç nə göndərmədiyi üçün yeganə qeyd odur.",
+              "v1.10.0-a qədər kassa \"Əminsiniz?\" sualını brauzerin öz pəncərəsi ilə verirdi və orada bir tələ var idi. Bir neçə belə sualdan sonra Chrome \"bu səhifənin əlavə dialoq yaratmasının qarşısını al\" qeyd xanasını təklif edir. Onu işarələyəndə bu sualların hamısı səssizcə özü-özünə \"xeyr\" cavabını verir - Sil işləmir, Təmizlə işləmir, nə mesaj var, nə də bir işarə, səhifə yenidən yüklənənə qədər. İndi kassa sualları özü verir, sizin dilinizdə, ona görə həmin qeyd xanasının söndürəcəyi bir şey qalmır.",
+              "İki sual indi düymə işləməzdən əvvəl bir söz yazmağınızı istəyir: nüsxədən bərpa mağazanızın adını, rolun silinməsi isə rolun adını soruşur. Bunlar geri qaytarıla bilməyən iki əməliyyatdır. Qalanların hamısı bir toxunuşdur, \"Satışı sil\" isə açılanda Ləğv et düyməsi seçilmiş olur."
             ]
           }
         ]
@@ -4421,7 +4430,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v1.9.0"
+      "version": "v1.10.0"
     },
     "parts": [
       {
@@ -5099,7 +5108,9 @@ const MANUAL = {
               "В каждой строке платежа поле суммы подписано «Amount due» — так же, как крупный итог вверху окна. При раздельной оплате в этом поле стоит доля именно этой строки, а не весь счёт.",
               "Двойное нажатие «Завершить продажу» (Complete sale) или повтор из-за сбоя сети не приведут к двойному списанию с покупателя. Продажа несёт идентификатор этой кассы, и повторная отправка попадает в ту же самую продажу, а не создаёт вторую.",
               "Если продажу не удалось сохранить, вы остаётесь в окне оплаты с сообщением об ошибке и можете нажать «Завершить продажу» (Complete sale) ещё раз. Запишется всё та же одна продажа.",
-              "Касса запишет продажу, даже если остаток уходит в минус. Отказа не будет. Вы увидите жёлтое предупреждение о том, что по нескольким строкам остаток стал отрицательным, а в админ-панели у продажи появится отметка «Stock went negative», чтобы потом всё привести в порядок."
+              "Касса запишет продажу, даже если остаток уходит в минус. Отказа не будет. Вы увидите жёлтое предупреждение о том, что по нескольким строкам остаток стал отрицательным, а в админ-панели у продажи появится отметка «Stock went negative», чтобы потом всё привести в порядок.",
+              "С версии 1.10.0 нажатие Enter завершает продажу. Окно открывается с курсором в поле «Получено наличными», поэтому на кассе с клавиатурой и сканером можно ввести сумму и нажать Enter, не берясь за мышь.",
+              "Escape НЕ закрывает окно оплаты, и это сделано намеренно: наполовину введённая раздельная оплата не должна теряться из-за случайной клавиши. Выход - кнопка «Вернуться к продаже», до неё можно дойти клавишей Tab. Пока окно открыто, корзину позади него изменить нельзя - раньше Tab уводил прямо на кнопки количества."
             ]
           },
           {
@@ -5187,7 +5198,9 @@ const MANUAL = {
               "Если экран погас, браузер перезагрузился или посреди продажи пропало электричество, товары из чека не пропадают. Касса записывает открытую продажу на этот компьютер по мере сканирования и предлагает её обратно вверху экрана при следующем запуске — см. «Возвращение к незавершённой продаже». Ничего не записано и никто не был списан; вы сами решаете, продолжить её или очистить.",
               "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца.",
               "С версии 1.9.0 сбой при отрисовке экрана больше не оставляет кассу пустой. Боковое меню, верхняя панель и «Быстрое добавление» остаются на месте, а экран, где произошёл сбой, сообщает об этом и предлагает «Повторить». Переход на другой экран тоже его сбрасывает. Открытая продажа не затрагивается — она сохраняется на этом компьютере по мере ввода и остаётся на месте.",
-              "Если сбой настолько серьёзный, что уносит всё окно, вы увидите одну страницу с кнопками «Повторить» и «Перезагрузить кассу» и ссылкой «Показать техническое сообщение». Если звоните за помощью, прочитайте это сообщение — это единственная запись, потому что касса никуда ничего не отправляет."
+              "Если сбой настолько серьёзный, что уносит всё окно, вы увидите одну страницу с кнопками «Повторить» и «Перезагрузить кассу» и ссылкой «Показать техническое сообщение». Если звоните за помощью, прочитайте это сообщение — это единственная запись, потому что касса никуда ничего не отправляет.",
+              "До версии 1.10.0 касса задавала вопрос «Вы уверены?» через собственное окно браузера, и в этом была ловушка. После нескольких таких окон Chrome предлагает галочку «запретить этой странице создавать дополнительные диалоги». Поставьте её - и все эти вопросы молча отвечают себе «нет»: Удалить не делает ничего, Очистить не делает ничего, без сообщения и без намёка, пока страницу не перезагрузят. Теперь касса задаёт свои вопросы сама, на вашем языке, так что этой галочке нечего отключать.",
+              "Два вопроса теперь просят сначала ввести слово: восстановление из копии спрашивает название магазина, удаление роли - название роли. Это две операции, которые нельзя отменить. Всё остальное - одно нажатие, а «Очистить продажу» открывается с уже выбранной кнопкой «Отмена»."
             ]
           }
         ]
@@ -5521,7 +5534,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v1.9.0"
+      "version": "v1.10.0"
     },
     "parts": [
       {
@@ -6199,7 +6212,9 @@ const MANUAL = {
               "Her ödeme satırındaki tutar kutusunda \"Ödenecek tutar\" (Amount due) yazar; pencerenin üstündeki büyük toplamla aynı ifade. Bölünmüş ödemede bu kutu, hesabın tamamını değil, o satıra düşen payı gösterir.",
               "\"Satışı tamamla\" düğmesine iki kez basmanız ya da bağlantı aksaklığı yüzünden tekrar denemeniz, müşteriden iki kez tahsilat yapılmasına yol açmaz. Satış, bu kasadan gelen bir tanımlayıcı taşır; tekrar gönderim ikinci bir satış oluşturmaz, aynı satışa düşer.",
               "Satış kaydedilemezse hata görünür hâlde ödeme penceresinde kalırsınız ve \"Satışı tamamla\" düğmesine tekrar basabilirsiniz. Yine tek ve aynı satış kaydedilir.",
-              "Kasa, stoğunuzu eksiye düşürse bile satışı kaydeder. Reddetmez. Kaç satırda stoğun eksiye düştüğünü söyleyen turuncu bir uyarı alırsınız ve satış, sonradan düzeltilebilmesi için yönetim panelinde \"Stock went negative\" (stok eksiye düştü) rozetiyle görünür."
+              "Kasa, stoğunuzu eksiye düşürse bile satışı kaydeder. Reddetmez. Kaç satırda stoğun eksiye düştüğünü söyleyen turuncu bir uyarı alırsınız ve satış, sonradan düzeltilebilmesi için yönetim panelinde \"Stock went negative\" (stok eksiye düştü) rozetiyle görünür.",
+              "v1.10.0'dan itibaren Enter tuşu satışı tamamlar. Pencere açıldığında imleç \"Alınan nakit\" kutusundadır; klavye ve okuyucuyla çalışan bir kasada nakdi yazıp Enter'a basmak yeterlidir, fareye uzanmanıza gerek yoktur.",
+              "Escape ödeme penceresini kapatmaz ve bu bilinçlidir: yarım girilmiş bölünmüş ödeme yanlışlıkla basılan bir tuş yüzünden kaybolmamalıdır. Çıkış yolu \"Satışa dön\" düğmesidir ve Tab ile oraya ulaşılır. Pencere açıkken arkasındaki sepet değiştirilemez - önceden Tab doğrudan adet düğmelerine geçiyordu."
             ]
           },
           {
@@ -6287,7 +6302,9 @@ const MANUAL = {
               "Ekran tamamen kararırsa, tarayıcı yeniden yüklenirse veya satışın ortasında elektrik giderse fişteki ürünler kaybolmaz. Kasa, siz okuttukça açık satışı bu bilgisayara yazar ve yeniden açıldığında ekranın üstünde geri önerir — bkz. “Yarım kalan bir satışa dönmek”. Hiçbir şey kaydedilmedi ve kimseden tahsilat yapılmadı; devam etmek ya da temizlemek sizin seçiminiz.",
               "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin.",
               "v1.9.0'dan itibaren bir ekran çizilirken oluşan arıza artık kasayı boş bırakmıyor. Yan menü, üst çubuk ve Hızlı ekleme yerinde kalır; arıza olan ekran bunu söyler ve \"Yeniden dene\" sunar. Başka bir ekrana geçmek de temizler. Açık satış etkilenmez — siz girdikçe bu bilgisayara kaydedilir ve sonrasında da oradadır.",
-              "Arıza tüm pencereyi götürecek kadar ağırsa, \"Yeniden dene\" ve \"Kasayı yeniden yükle\" sunan tek bir sayfa görürsünüz; üstünde \"Teknik mesajı göster\" bağlantısı vardır. Yardım için arıyorsanız o mesajı okuyun; kasa hiçbir yere bir şey göndermediği için tek kayıt odur."
+              "Arıza tüm pencereyi götürecek kadar ağırsa, \"Yeniden dene\" ve \"Kasayı yeniden yükle\" sunan tek bir sayfa görürsünüz; üstünde \"Teknik mesajı göster\" bağlantısı vardır. Yardım için arıyorsanız o mesajı okuyun; kasa hiçbir yere bir şey göndermediği için tek kayıt odur.",
+              "v1.10.0'a kadar kasa \"Emin misiniz?\" sorusunu tarayıcının kendi penceresiyle soruyordu ve bunun içinde bir tuzak vardı. Birkaç tanesinden sonra Chrome \"bu sayfanın ek iletişim kutuları oluşturmasını engelle\" kutucuğunu önerir. Onu işaretlediğinizde bu soruların hepsi sessizce kendine \"hayır\" yanıtını verir - Sil hiçbir şey yapmaz, Temizle hiçbir şey yapmaz; ne mesaj vardır ne de bir ipucu, sayfa yeniden yüklenene kadar. Artık kasa sorularını kendisi soruyor, sizin dilinizde, dolayısıyla o kutucuğun kapatacağı bir şey kalmıyor.",
+              "İki soru artık düğme çalışmadan önce bir kelime yazmanızı istiyor: yedekten geri yükleme mağazanızın adını, rol silme ise rolün adını soruyor. Bunlar geri alınamayan iki işlemdir. Diğerlerinin hepsi tek dokunuştur ve \"Satışı temizle\" açıldığında İptal düğmesi seçili gelir."
             ]
           }
         ]

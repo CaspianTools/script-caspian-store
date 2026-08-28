@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, type ReactNode } from 'react';
 import { useCaspianLink, useT, cn } from '@caspian-explorer/script-caspian-store';
 import {
   ChevronLeftIcon,
@@ -13,8 +13,10 @@ import {
   ShoppingCartIcon,
   StoreIcon,
   UsersIcon,
+  XIcon,
 } from '../icons';
 import { usePosChrome } from './theme/pos-chrome-context';
+import { usePosOverlay } from './standalone/ui/pos-dialog';
 
 /**
  * A register screen the side menu can reach.
@@ -77,6 +79,38 @@ export function PosSidebar({ items, activeHref, roleLabel }: PosSidebarProps) {
   const t = useT();
   const { rail, toggleRail, compact, drawerOpen, closeDrawer } = usePosChrome();
 
+  const asideRef = useRef<HTMLElement | null>(null);
+  const scrimRef = useRef<HTMLButtonElement | null>(null);
+  // TWO containers, not one. The scrim is a SIBLING of the panel, so a
+  // single-container walk would inert it -- and click-to-dismiss is the way
+  // most people close this thing.
+  const containers = useRef([asideRef, scrimRef]).current;
+
+  // As a drawer it is a modal overlay and takes the contract. As a permanent
+  // column it is just navigation, and trapping focus in the page's own nav
+  // would be a bug rather than a feature -- hence the `compact` gate.
+  usePosOverlay({
+    open: compact && drawerOpen,
+    containers,
+    onDismiss: closeDrawer,
+    dismissOn: { escape: true },
+  });
+
+  /**
+   * Put focus in the drawer when it opens, the way `PosDialog` does for itself.
+   *
+   * Not optional here, and not merely nice: the hamburger that opened the
+   * drawer lives in `.cpos-column`, which `applyInert` has just marked inert,
+   * and the HTML focus-fixup rule blurs an element that becomes inert. Focus
+   * therefore lands on `<body>` -- so the `role="dialog"` this change adds is
+   * never announced, and Shift+Tab escapes the trap because the handler only
+   * rewrites Tab at the two ends. Focusing the panel rather than the close
+   * button is what makes a screen reader read the drawer's name.
+   */
+  useEffect(() => {
+    if (compact && drawerOpen) asideRef.current?.focus();
+  }, [compact, drawerOpen]);
+
   // The drawer is always full width: it is already an overlay, so parking it as
   // a rail would trade the one advantage it has for nothing.
   const asRail = rail && !compact;
@@ -112,20 +146,31 @@ export function PosSidebar({ items, activeHref, roleLabel }: PosSidebarProps) {
   return (
     <>
       {compact ? (
+        // Not in the tab order: once the drawer has a real close button, a
+        // full-bleed unlabelled button would be the trap's first stop.
         <button
           type="button"
           className="cpos-scrim"
-          aria-label={t('common.close')}
+          tabIndex={-1}
+          aria-hidden="true"
+          ref={scrimRef}
           onClick={closeDrawer}
         />
       ) : null}
 
       <aside
+        ref={asideRef}
+        // Focusable only as a target for the line above; never a tab stop.
+        tabIndex={compact ? -1 : undefined}
         className={cn(
           'cpos-sidebar',
           asRail && 'cpos-sidebar--rail',
           compact && 'cpos-sidebar--drawer',
         )}
+        // Only as a drawer. A permanent column claiming to be a modal dialog
+        // would be a lie a screen reader has to work around.
+        role={compact ? 'dialog' : undefined}
+        aria-modal={compact ? true : undefined}
         aria-label={t('pos.nav.menu')}
       >
         <div className="cpos-sidebar__brand">
@@ -137,6 +182,18 @@ export function PosSidebar({ items, activeHref, roleLabel }: PosSidebarProps) {
               <span className="cpos-sidebar__name">{t('pos.title')}</span>
               {roleLabel ? <span className="cpos-sidebar__sub">{roleLabel}</span> : null}
             </span>
+          ) : null}
+          {compact ? (
+            // The drawer had no visible way out at all -- only the scrim, which
+            // looks like nothing, and which a keyboard cannot reach.
+            <button
+              type="button"
+              className="cpos-iconbtn cpos-iconbtn--onbrand cpos-sidebar__close"
+              aria-label={t('common.close')}
+              onClick={closeDrawer}
+            >
+              <XIcon size={18} />
+            </button>
           ) : null}
         </div>
 

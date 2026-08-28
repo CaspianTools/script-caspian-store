@@ -16,6 +16,7 @@ import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
 import { PosAdminPage } from './pos-admin-page';
 import { UsersIcon } from '../../../icons';
 import { PosSelect } from '../ui/pos-field';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * Staff and their roles: adding, review, role changes, password resets, and
@@ -33,6 +34,7 @@ import { PosSelect } from '../ui/pos-field';
  */
 export function LocalPeoplePanel() {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const session = usePosLocalSession();
   const { enabledRoles, can } = usePosRoles();
@@ -94,7 +96,13 @@ export function LocalPeoplePanel() {
       toast({ title: t('pos.admin.people.lastSupport') });
       return;
     }
-    if (!window.confirm(t('pos.admin.people.confirmDelete', { name: user.displayName }))) return;
+    const ok = await confirm({
+      title: t('pos.admin.people.deleteTitle'),
+      body: t('pos.admin.people.confirmDelete', { name: user.displayName }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await deleteLocalUser(user.id);
     await refresh();
   };

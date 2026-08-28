@@ -258,6 +258,7 @@ It needs no new class — `.cpos-field` is a column with a gap, so it nests.
 | `.cpos-stats` / `.cpos-stat` | auto-fit grid of figure tiles — `__label` (uppercase), `__value` (23px, tabular), `__hint` |
 | `.cpos-tablewrap` / `.cpos-table` | the till's only table. `.cpos-table__num` right-aligns and tabularises a numeric column, **header included** — `.cpos-table th` is (0,1,1) and beat the class until an explicit `th.cpos-table__num` rule was added |
 | `.cpos-neg` | a figure that has gone below zero, in `--cpos-danger`. Never the only signal — pair it with a badge or a word |
+| `.cpos-sidebar__close` | the drawer's ✕, at the end of the brand row and sized to the touch floor. Wears `.cpos-iconbtn--onbrand`, because the sidebar is dark in **both** themes and a plain `.cpos-iconbtn` is a content-surface grey on it |
 | `.cpos-empty` | the "nothing here yet" block — `__icon`, `__title`, `__text` |
 | `.cpos-note` | a boxed message. Tones: `--brand`, `--success`, `--warning`, `--danger` |
 | `.cpos-badge` | an inline pill. Same four tones plus a neutral default |
@@ -299,8 +300,52 @@ modal is a Save button a cashier cannot find, and `min-height: 0` is what lets
 the body shrink inside the flex column rather than pushing the panel past its
 `92dvh` cap.
 
-Reach for `PosDialog`, never the raw markup — it owns Escape, the backdrop click,
-the body scroll lock and focus return.
+Reach for `PosDialog`, never the raw markup.
+
+**The overlay contract.** Six behaviours, owned by `usePosOverlay` (exported
+from `standalone/ui/pos-dialog.tsx`) so the two overlays that are *not*
+`PosDialog` get them too:
+
+1. **Focus capture and restore.** A dialog opened from a table row that returns
+   focus to `<body>` means the next scan lands nowhere.
+2. **Body scroll lock, reference-counted.** Not a boolean: `pos-shift-page.tsx`
+   renders two dialogs, and a plain save-and-restore let the second to unmount
+   put back `hidden`.
+3. **Escape — opt-in**, via `dismissOn: { escape: true }`. An overlay opts *in*
+   to being easy to leave, so a refusal is a decision at the call site rather
+   than a missing effect.
+4. **A Tab focus trap**, acting on Tab and on focus arriving from outside, and
+   on nothing else. A scanner types into whatever is focused; a trap that
+   reasserted focus per keystroke would eat a scan.
+5. **`inert` on everything behind**, applied by walking each container's
+   ancestor chain to `<body>`. That walk is why no overlay here portals.
+6. **Initial focus is the caller's job.** The hook does not place it, and every
+   overlay must — `PosDialog` focuses its panel, the tender dialog uses
+   `autoFocus`, the drawer focuses its `aside`. Skipping it is not cosmetic:
+   `inert` on the background *blurs* the control that opened the overlay, so
+   focus falls to `<body>`, the `role="dialog"` is never announced, and
+   Shift+Tab escapes the trap.
+
+`PosDialog` also requires **`closeLabel`**. It used to label its ✕ with the
+dialog's own title, so a screen reader announced the close button on "Edit this
+item" as a button called "Edit this item".
+
+The two overlays that are not `PosDialog`, and what each declines:
+
+| Overlay | Declines | Why |
+| --- | --- | --- |
+| the tender panel | Escape, backdrop dismiss, a ✕ | a cashier holding cash with a card machine mid-transaction must not lose a split tender to a stray key. The keyboard's way out is Tab to Cancel. |
+| the nav drawer | nothing | it takes the whole contract, but only while `compact` — a permanent column claiming `role="dialog"` would be a lie. |
+
+**`PosConfirmProvider` / `usePosConfirm`** (`standalone/ui/pos-confirm.tsx`) is
+a `PosDialog` preset with an imperative, promise-returning API: `const confirm
+= usePosConfirm()`, then `await confirm({ title, body, confirmLabel, tone,
+detail?, focus?, typeToConfirm? })`. Imperative because all thirteen call sites
+it replaced were already `if (!window.confirm(x)) return;` — threading state
+and JSX through eleven files is the thing `PosDialog` exists to prevent, and
+`useToast` is the precedent. `tone: 'danger'` for destructive, `'primary'` for
+a re-issue; `focus: 'cancel'` for a destructive action taken often under
+pressure; `typeToConfirm` for the two with no undo.
 
 **A submit button in the foot reaches its form by `form=`.** The foot is outside
 the `<form>`, so the button carries `type="submit" form={formId}` and the form

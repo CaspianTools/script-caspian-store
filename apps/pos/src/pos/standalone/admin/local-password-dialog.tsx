@@ -107,6 +107,7 @@ export function LocalPasswordDialog({
 
   return (
     <PosDialog
+      closeLabel={t('common.close')}
       open={open}
       onOpenChange={onOpenChange}
       size="sm"

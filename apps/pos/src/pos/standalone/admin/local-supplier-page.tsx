@@ -28,6 +28,7 @@ import { StoreScreenNav } from './store-screen-nav';
 import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
 import { LocalSupplierForm } from './quick-add/local-supplier-form';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * One supplier: what they have delivered, and what happened to it.
@@ -47,6 +48,7 @@ import { LocalSupplierForm } from './quick-add/local-supplier-form';
  */
 export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
@@ -139,7 +141,13 @@ export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
       toast({ title: t('pos.store.supplier.deleteBlocked'), variant: 'destructive' });
       return;
     }
-    if (!window.confirm(t('pos.store.supplier.confirmDelete', { name: supplier.name }))) return;
+    const ok = await confirm({
+      title: t('pos.store.supplier.deleteTitle'),
+      body: t('pos.store.supplier.confirmDelete', { name: supplier.name }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await deleteLocalSupplier(supplier.id);
     push('/pos/store/suppliers');
   };
@@ -388,6 +396,7 @@ export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
       </section>
 
       <PosDialog
+        closeLabel={t('common.close')}
         open={editOpen}
         onOpenChange={setEditOpen}
         size="md"

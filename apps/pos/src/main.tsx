@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CaspianStoreProvider } from '@caspian-explorer/script-caspian-store';
 import '@caspian-explorer/script-caspian-store/styles.css';
-import { memoryAdapters } from './memory-navigation';
+import { posAdapters } from './pos-navigation';
 import { POS_MESSAGES } from './i18n';
 import { PosApp } from './pos-app';
 import { PosErrorBoundary } from './pos/standalone/ui/pos-error-boundary';
@@ -36,7 +36,7 @@ if (!container) throw new Error('index.html is missing #root');
 
 createRoot(container).render(
   <StrictMode>
-    <CaspianStoreProvider standalone adapters={memoryAdapters} messagesByLocale={POS_MESSAGES}>
+    <CaspianStoreProvider standalone adapters={posAdapters} messagesByLocale={POS_MESSAGES}>
       {/*
         Inside the provider, not around it: the crash screen calls `useT`, so it
         needs the locale context that the provider supplies. It brings its own

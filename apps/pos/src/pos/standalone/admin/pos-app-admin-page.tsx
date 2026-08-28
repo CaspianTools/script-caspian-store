@@ -41,6 +41,7 @@ import {
   type PosLocalRole,
   type RoleDefinition,
 } from '../types';
+import { usePosConfirm } from '../ui/pos-confirm';
 
 /**
  * Roles that cannot be switched off.
@@ -361,6 +362,7 @@ function GeneralSection() {
  */
 function RolesSection() {
   const t = useT();
+  const confirm = usePosConfirm();
   const { toast } = useToast();
   const session = usePosLocalSession();
   const { roles, saveRoles, loading, can } = usePosRoles();
@@ -474,8 +476,20 @@ function RolesSection() {
     );
   };
 
-  const removeRole = (role: RoleDefinition) => {
-    if (!window.confirm(t('pos.appAdmin.confirmDeleteRole', { name: role.name }))) return;
+  const removeRole = async (role: RoleDefinition) => {
+    // Typed: every account holding this role loses everything it granted, and
+    // a standalone till has no server-side override to put it back.
+    const ok = await confirm({
+      title: t('pos.appAdmin.deleteRoleTitle'),
+      body: t('pos.appAdmin.confirmDeleteRole', { name: role.name }),
+      confirmLabel: t('common.delete'),
+      tone: 'danger',
+      typeToConfirm: {
+        expected: role.name,
+        hint: t('pos.appAdmin.deleteRoleGate', { name: role.name }),
+      },
+    });
+    if (!ok) return;
     if (openId === role.id) setOpenId(null);
     persist(
       roles.filter((r) => r.id !== role.id),

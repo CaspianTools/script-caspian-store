@@ -29,6 +29,7 @@ import { LocalSuppliersPanel } from './standalone/admin/local-suppliers-panel';
 import { LocalSupplierPage } from './standalone/admin/local-supplier-page';
 import { PosLocalSettingsPage } from './standalone/admin/pos-local-settings-page';
 import { PosQuickAddProvider } from './standalone/admin/quick-add/pos-quick-add-context';
+import { PosConfirmProvider } from './standalone/ui/pos-confirm';
 import { PosLocalTopbar } from './standalone/chrome/pos-local-topbar';
 import { LocalSalesPage } from './standalone/admin/local-sales-panel';
 import { LocalPeoplePage } from './standalone/admin/local-people-panel';
@@ -116,7 +117,14 @@ export function PosShell({ children }: { children: ReactNode }) {
                         which optional screens this shop has switched on.
                       */}
                       <PosQuickAddProvider>
-                        <PosShellChrome>{children}</PosShellChrome>
+                        {/*
+                          Beside Quick add and inside the lock gate, for the
+                          same reason: a locked till must not have a dialog
+                          sitting behind the lock screen waiting to be answered.
+                        */}
+                        <PosConfirmProvider>
+                          <PosShellChrome>{children}</PosShellChrome>
+                        </PosConfirmProvider>
                       </PosQuickAddProvider>
                     </PosLockGate>
                   </PosShiftProvider>
