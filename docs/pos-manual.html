@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v1.8.0"
+      "version": "v1.9.0"
     },
     "parts": [
       {
@@ -1964,7 +1964,9 @@ const MANUAL = {
               "The till reserves receipt numbers in advance, a few hundred at a time. If it somehow runs out mid-outage it keeps selling, but the customer gets a slip marked as a reference rather than a receipt. You are warned in the top bar while still online, long before that happens.",
               "The shop prices every sale when it arrives, not when it was rung up. If a price changed during the outage the recorded sale uses the real catalogue price, and the difference is visible to the owner.",
               "A sale that cannot be sent at all - usually because the item was deleted from the catalogue while the till was offline - stops on the Held sales page and waits for a person, rather than being retried forever or quietly thrown away.",
-              "If the account loses the right to sell while sales are waiting, sending stops and says so. Signing in with an account that has the Staff role sends them through; the waiting sales belong to the till, not to whoever is signed in."
+              "If the account loses the right to sell while sales are waiting, sending stops and says so. Signing in with an account that has the Staff role sends them through; the waiting sales belong to the till, not to whoever is signed in.",
+              "Up to v1.9.0 the offline page had never actually been saved for offline use on any till - the register asked for it at one address and it shipped at another, and the failure was silent. It is saved correctly now, and the register's own page is saved on the first visit rather than the second, so a newly installed till is covered from the first day rather than the second.",
+              "If the shop's web host answers with an error page, the register now falls back to its own saved copy instead of showing you the host's error. Only a real error counts: being sent on to another address, which is what happens each time the installed app opens, is passed through as normal."
             ]
           },
           {
@@ -1987,7 +1989,9 @@ const MANUAL = {
               "The scanner stops listening while the payment window is open and while the \"Sale complete\" screen is showing. That is deliberate, so that typing an amount cannot be read as a barcode. On the completed-sale screen you must press \"New sale\" before scanning the next customer's items.",
               "If the till loses its internet connection the sale is still recorded — it is held on this computer and sent when the connection returns. The receipt prints as normal. You can see what is waiting under Held sales in the menu down the left.",
               "If the whole screen goes blank, the browser reloads, or the power goes out mid-sale, the items on the ticket are not lost. The register writes the open sale onto this computer as you scan, and offers it back at the top of the screen when it comes up again — see “Coming back to an interrupted sale”. Nothing was recorded and nobody was charged; you choose whether to carry on with it or clear it away.",
-              "Nothing is charged, recorded or taken off stock until \"Complete sale\" succeeds. If you are unsure whether a sale went through, look for it in the recent-sales table on the Point of sale page in the admin panel, or ask the owner to."
+              "Nothing is charged, recorded or taken off stock until \"Complete sale\" succeeds. If you are unsure whether a sale went through, look for it in the recent-sales table on the Point of sale page in the admin panel, or ask the owner to.",
+              "From v1.9.0 a fault while drawing a screen no longer blanks the register. The side menu, the top bar and Quick add stay where they are, and the screen that failed says so and offers \"Try again\". Walking to another screen clears it too. An open sale is not affected - it is saved on this computer as you ring it up, and it is still there afterwards.",
+              "If the fault is bad enough to take the whole window, you get a single page offering \"Try again\" and \"Reload the register\", with a \"Show the technical message\" link. Read that message out if you are phoning for help; it is the only record, because the register sends nothing anywhere."
             ]
           },
           {
@@ -3317,7 +3321,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v1.8.0"
+      "version": "v1.9.0"
     },
     "parts": [
       {
@@ -4056,7 +4060,9 @@ const MANUAL = {
               "Kassa qəbz nömrələrini qabaqcadan, hər dəfə bir neçə yüz ədəd ayırır. Əgər kəsintinin ortasında birtəhər qurtarsa, satmağa davam edir, amma müştəri qəbz yox, istinad kağızı alır. Bu baş verməzdən xeyli əvvəl, hələ onlayn ikən yuxarı zolaqda xəbərdarlıq alırsınız.",
               "Mağaza hər satışı rəsmiləşdirildiyi vaxt yox, çatdığı vaxt qiymətləndirir. Kəsinti zamanı qiymət dəyişibsə, qeyd olunan satış əsl kataloq qiymətini işlədir və fərq sahibə görünür.",
               "Ümumiyyətlə göndərilə bilməyən satış - adətən kassa oflayn ikən məhsul kataloqdan silindiyi üçün - Gözləyən satışlar səhifəsində dayanır və insanı gözləyir, sonsuz təkrar edilmir və sakitcə atılmır.",
-              "Satışlar gözləyərkən hesab satış hüququnu itirsə, göndərmə dayanır və bunu bildirir. İşçi rolu olan hesabla daxil olmaq onları göndərir; gözləyən satışlar daxil olan adama yox, kassaya aiddir."
+              "Satışlar gözləyərkən hesab satış hüququnu itirsə, göndərmə dayanır və bunu bildirir. İşçi rolu olan hesabla daxil olmaq onları göndərir; gözləyən satışlar daxil olan adama yox, kassaya aiddir.",
+              "v1.9.0-a qədər oflayn səhifə heç bir kassada həqiqətən oflayn üçün saxlanılmamışdı — kassa onu bir ünvanda axtarırdı, səhifə isə başqa ünvanda gəlirdi, və bu səssizcə baş verirdi. İndi düzgün saxlanılır, kassanın öz səhifəsi isə ikinci deyil, ilk açılışda saxlanılır, ona görə yeni qurulmuş kassa ikinci gündən yox, elə birinci gündən qorunur.",
+              "Mağazanın veb-hostu səhv səhifəsi qaytarsa, kassa indi hostun səhvini göstərmək əvəzinə öz saxladığı nüsxəyə keçir. Yalnız həqiqi səhv sayılır: quraşdırılmış tətbiq hər açılanda baş verən başqa ünvana yönləndirmə normal qaydada ötürülür."
             ]
           },
           {
@@ -4079,7 +4085,9 @@ const MANUAL = {
               "Ödəniş pəncərəsi açıq ikən və Satış tamamlandı ekranı göstərilərkən skaner dinləməni dayandırır. Bu qəsdəndir ki, məbləğ yazmaq barkod kimi oxunmasın. Tamamlanmış satış ekranında növbəti müştərinin məhsullarını skan etməzdən əvvəl Yeni satış düyməsini basmalısınız.",
               "Kassa internet bağlantısını itirsə də satış qeyd olunur - o, bu kompüterdə saxlanılır və bağlantı qayıdanda göndərilir. Qəbz adi qaydada çap olunur. Nəyin gözlədiyini soldakı menyudakı Gözləyən satışlar bölməsində görə bilərsiniz.",
               "Bütün ekran qaralarsa, brauzer yenidən yüklənərsə və ya satışın ortasında işıq kəsilərsə, siyahıdakı məhsullar itmir. Kassa siz skan etdikcə açıq satışı bu kompüterə yazır və yenidən açılanda onu ekranın yuxarısında geri təklif edir — “Yarımçıq qalmış satışa qayıtmaq” bölməsinə baxın. Heç nə qeyd olunmayıb və heç kimdən pul alınmayıb; davam etmək və ya təmizləmək sizin seçiminizdir.",
-              "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin."
+              "Satışı tamamla uğurla bitməyincə heç nədən pul alınmır, heç nə qeyd olunmur və ehtiyatdan çıxılmır. Satışın keçib-keçmədiyinə əmin deyilsinizsə, idarə panelindəki Kassa səhifəsinin son satışlar cədvəlində axtarın və ya sahibdən xahiş edin.",
+              "v1.9.0-dan etibarən ekran çəkilərkən baş verən nasazlıq artıq kassanı boş səhifəyə çevirmir. Yan menyu, yuxarı zolaq və Sürətli əlavə yerində qalır, nasazlıq olan ekran isə bunu deyir və \"Yenidən cəhd et\" təklif edir. Başqa ekrana keçmək də onu təmizləyir. Açıq satışa toxunulmur — o, siz yazdıqca bu kompüterdə saxlanılır və sonra da yerindədir.",
+              "Nasazlıq bütün pəncərəni aparacaq qədər ciddidirsə, \"Yenidən cəhd et\" və \"Kassanı yenidən yüklə\" təklif edən bir səhifə görəcəksiniz, üstündə də \"Texniki mesajı göstər\" linki. Kömək üçün zəng edirsinizsə, həmin mesajı oxuyun — kassa heç yerə heç nə göndərmədiyi üçün yeganə qeyd odur."
             ]
           }
         ]
@@ -4413,7 +4421,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v1.8.0"
+      "version": "v1.9.0"
     },
     "parts": [
       {
@@ -5152,7 +5160,9 @@ const MANUAL = {
               "Касса резервирует номера чеков заранее, по несколько сотен за раз. Если они всё же закончатся посреди обрыва связи, она продолжит продавать, но покупатель получит талон-справку, а не чек. Предупреждение появляется в верхней панели ещё онлайн, задолго до этого.",
               "Магазин считает цену каждой продажи в момент её поступления, а не в момент оформления. Если во время обрыва цена изменилась, записанная продажа использует настоящую каталожную цену, и разница видна владельцу.",
               "Продажа, которую отправить вообще не удаётся - обычно потому, что товар удалили из каталога, пока касса была офлайн, - останавливается на странице отложенных продаж и ждёт человека, а не повторяется бесконечно и не выбрасывается тихо.",
-              "Если у учётной записи пропадёт право продавать, пока есть ожидающие продажи, отправка остановится и об этом будет сказано. Вход под учётной записью с ролью «Сотрудник» отправит их; ожидающие продажи принадлежат кассе, а не тому, кто вошёл."
+              "Если у учётной записи пропадёт право продавать, пока есть ожидающие продажи, отправка остановится и об этом будет сказано. Вход под учётной записью с ролью «Сотрудник» отправит их; ожидающие продажи принадлежат кассе, а не тому, кто вошёл.",
+              "До версии 1.9.0 офлайн-страница ни на одной кассе не была по-настоящему сохранена для работы без сети: касса запрашивала её по одному адресу, а поставлялась она по другому, и сбой происходил молча. Теперь она сохраняется правильно, а собственная страница кассы сохраняется при первом посещении, а не при втором, — поэтому новая касса защищена с первого дня, а не со второго.",
+              "Если веб-хост магазина отвечает страницей ошибки, касса теперь берёт свою сохранённую копию вместо того, чтобы показывать ошибку хоста. Считается только настоящая ошибка: переадресация на другой адрес, которая происходит при каждом запуске установленного приложения, пропускается как обычно."
             ]
           },
           {
@@ -5175,7 +5185,9 @@ const MANUAL = {
               "Пока открыто окно оплаты и пока показан экран «Продажа завершена», сканер перестаёт слушать. Это сделано намеренно, чтобы ввод суммы не читался как штрихкод. На экране завершённой продажи нужно нажать «Новая продажа», прежде чем сканировать товары следующего покупателя.",
               "Если касса потеряет связь с интернетом, продажа всё равно записывается - она хранится на этом компьютере и отправляется, когда связь вернётся. Чек печатается как обычно. Что именно ждёт отправки, видно в разделе «Отложенные продажи» в меню слева.",
               "Если экран погас, браузер перезагрузился или посреди продажи пропало электричество, товары из чека не пропадают. Касса записывает открытую продажу на этот компьютер по мере сканирования и предлагает её обратно вверху экрана при следующем запуске — см. «Возвращение к незавершённой продаже». Ничего не записано и никто не был списан; вы сами решаете, продолжить её или очистить.",
-              "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца."
+              "Пока «Завершить продажу» не сработает, ничего не списано, не записано и не снято с остатков. Если вы не уверены, прошла ли продажа, поищите её в таблице последних продаж на странице Касса в панели администратора или попросите об этом владельца.",
+              "С версии 1.9.0 сбой при отрисовке экрана больше не оставляет кассу пустой. Боковое меню, верхняя панель и «Быстрое добавление» остаются на месте, а экран, где произошёл сбой, сообщает об этом и предлагает «Повторить». Переход на другой экран тоже его сбрасывает. Открытая продажа не затрагивается — она сохраняется на этом компьютере по мере ввода и остаётся на месте.",
+              "Если сбой настолько серьёзный, что уносит всё окно, вы увидите одну страницу с кнопками «Повторить» и «Перезагрузить кассу» и ссылкой «Показать техническое сообщение». Если звоните за помощью, прочитайте это сообщение — это единственная запись, потому что касса никуда ничего не отправляет."
             ]
           }
         ]
@@ -5509,7 +5521,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v1.8.0"
+      "version": "v1.9.0"
     },
     "parts": [
       {
@@ -6248,7 +6260,9 @@ const MANUAL = {
               "Kasa fiş numaralarını önceden, her seferinde birkaç yüz tane ayırır. Kesintinin ortasında bir şekilde biterse satmayı sürdürür ama müşteri fiş yerine referans niteliğinde bir belge alır. Bu olmadan çok önce, daha çevrimiçiyken üst çubukta uyarılırsınız.",
               "Mağaza her satışı kaydedildiği anda değil, kendisine ulaştığı anda fiyatlandırır. Kesinti sırasında fiyat değiştiyse kaydedilen satış gerçek katalog fiyatını kullanır ve fark mağaza sahibine görünür.",
               "Hiç gönderilemeyen bir satış - genellikle kasa çevrimdışıyken ürün katalogdan silindiği için - Bekleyen satışlar sayfasında durur ve bir kişiyi bekler; sonsuza dek yeniden denenmez ve sessizce atılmaz.",
-              "Bekleyen satışlar varken hesap satış hakkını kaybederse gönderim durur ve bunu söyler. Personel rolü olan bir hesapla giriş yapmak onları gönderir; bekleyen satışlar giriş yapan kişiye değil kasaya aittir."
+              "Bekleyen satışlar varken hesap satış hakkını kaybederse gönderim durur ve bunu söyler. Personel rolü olan bir hesapla giriş yapmak onları gönderir; bekleyen satışlar giriş yapan kişiye değil kasaya aittir.",
+              "v1.9.0'a kadar çevrimdışı sayfası hiçbir kasada gerçekten çevrimdışı için kaydedilmemişti — kasa onu bir adreste arıyordu, sayfa başka bir adreste geliyordu ve bu sessizce oluyordu. Artık doğru kaydediliyor; kasanın kendi sayfası da ikinci ziyarette değil ilk ziyarette kaydediliyor, böylece yeni kurulan bir kasa ikinci günden değil ilk günden korunuyor.",
+              "Mağazanın web sunucusu bir hata sayfası döndürürse, kasa artık sunucunun hatasını göstermek yerine kendi kayıtlı kopyasını kullanır. Yalnızca gerçek hata sayılır: kurulu uygulama her açıldığında olan başka bir adrese yönlendirme normal şekilde geçirilir."
             ]
           },
           {
@@ -6271,7 +6285,9 @@ const MANUAL = {
               "Ödeme penceresi açıkken ve Satış tamamlandı ekranı gösterilirken tarayıcı dinlemeyi bırakır. Bu bilerek yapılmıştır ki bir tutar yazmak barkod olarak okunmasın. Tamamlanan satış ekranında, bir sonraki müşterinin ürünlerini okutmadan önce Yeni satış düğmesine basmanız gerekir.",
               "Kasa internet bağlantısını kaybetse de satış yine kaydedilir - bu bilgisayarda tutulur ve bağlantı döndüğünde gönderilir. Fiş normal şekilde basılır. Neyin beklediğini soldaki menüdeki Bekleyen satışlar bölümünde görebilirsiniz.",
               "Ekran tamamen kararırsa, tarayıcı yeniden yüklenirse veya satışın ortasında elektrik giderse fişteki ürünler kaybolmaz. Kasa, siz okuttukça açık satışı bu bilgisayara yazar ve yeniden açıldığında ekranın üstünde geri önerir — bkz. “Yarım kalan bir satışa dönmek”. Hiçbir şey kaydedilmedi ve kimseden tahsilat yapılmadı; devam etmek ya da temizlemek sizin seçiminiz.",
-              "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin."
+              "Satışı tamamla başarılı olana kadar hiçbir şey tahsil edilmez, kaydedilmez ve stoktan düşülmez. Bir satışın geçip geçmediğinden emin değilseniz yönetim panelindeki Kasa sayfasının son satışlar tablosunda arayın ya da mağaza sahibinden bakmasını isteyin.",
+              "v1.9.0'dan itibaren bir ekran çizilirken oluşan arıza artık kasayı boş bırakmıyor. Yan menü, üst çubuk ve Hızlı ekleme yerinde kalır; arıza olan ekran bunu söyler ve \"Yeniden dene\" sunar. Başka bir ekrana geçmek de temizler. Açık satış etkilenmez — siz girdikçe bu bilgisayara kaydedilir ve sonrasında da oradadır.",
+              "Arıza tüm pencereyi götürecek kadar ağırsa, \"Yeniden dene\" ve \"Kasayı yeniden yükle\" sunan tek bir sayfa görürsünüz; üstünde \"Teknik mesajı göster\" bağlantısı vardır. Yardım için arıyorsanız o mesajı okuyun; kasa hiçbir yere bir şey göndermediği için tek kayıt odur."
             ]
           }
         ]

@@ -918,6 +918,14 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.admin.loadFailed':
     'This computer’s records could not be read. Nothing has been lost — check Settings → Storage, and close any other tab that has the register open.',
   'pos.admin.loadRetry': 'Try again',
+  'pos.crash.title': 'Something went wrong on this register',
+  'pos.crash.screenTitle': 'Something went wrong on this screen',
+  'pos.crash.body':
+    'Nothing has been lost. An open sale is saved on this computer and comes back when the register does.',
+  'pos.crash.retry': 'Try again',
+  'pos.crash.reload': 'Reload the register',
+  'pos.crash.backToRegister': 'Back to the register',
+  'pos.crash.details': 'Show the technical message',
   'pos.openSale.found':
     'A sale of {count} items was left unfinished at {when}. Resume it, or clear it away.',
   'pos.openSale.foundOther':

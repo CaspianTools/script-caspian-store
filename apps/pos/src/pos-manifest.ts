@@ -51,7 +51,14 @@ export function buildPosWebManifest(input: PosWebManifestInput = {}): Record<str
     name: brand ? `${brand} Register` : 'Register',
     shortName: 'Register',
     description: brand ? `Point of sale for ${brand}` : 'Point of sale register',
-    startUrl: '/pos',
+    // Trailing slash on purpose. The document is at /pos/index.html, so a
+    // start_url of /pos makes every host that normalises a directory URL
+    // answer the launch with a 3xx -- and a navigation redirect reaches a
+    // service worker as an opaque response the worker has to be careful not
+    // to mistake for a failure. scope and id stay slashless: id is the
+    // app identity and changing it would read as a different app to an
+    // already-installed till.
+    startUrl: '/pos/',
     scope,
     display: 'standalone',
     // A till is a counter monitor, a tablet on a stand, or a phone in a market.

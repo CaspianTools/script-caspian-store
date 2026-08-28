@@ -2,7 +2,7 @@
   "name": "Caspian Register",
   "short_name": "Register",
   "description": "Point of sale register for Caspian",
-  "start_url": "/pos",
+  "start_url": "/pos/",
   "scope": "/pos",
   "id": "/pos",
   "display": "standalone",

@@ -5,6 +5,8 @@ import '@caspian-explorer/script-caspian-store/styles.css';
 import { memoryAdapters } from './memory-navigation';
 import { POS_MESSAGES } from './i18n';
 import { PosApp } from './pos-app';
+import { PosErrorBoundary } from './pos/standalone/ui/pos-error-boundary';
+import { PosCrashScreen } from './pos/standalone/ui/pos-crash-screen';
 
 /**
  * The whole register, running on nothing.
@@ -35,7 +37,15 @@ if (!container) throw new Error('index.html is missing #root');
 createRoot(container).render(
   <StrictMode>
     <CaspianStoreProvider standalone adapters={memoryAdapters} messagesByLocale={POS_MESSAGES}>
-      <PosApp />
+      {/*
+        Inside the provider, not around it: the crash screen calls `useT`, so it
+        needs the locale context that the provider supplies. It brings its own
+        `PosStyleScope`, because the stylesheet is injected further down at
+        `PosShell` and would be gone along with everything else it was wrapping.
+      */}
+      <PosErrorBoundary fallback={(state) => <PosCrashScreen {...state} />}>
+        <PosApp />
+      </PosErrorBoundary>
     </CaspianStoreProvider>
   </StrictMode>,
 );

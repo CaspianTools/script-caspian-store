@@ -41,6 +41,8 @@ import { PosOpenSaleBanner } from './open-sale-banner';
 import { PosAutoBackupProvider } from './standalone/auto-backup-context';
 import { PosShopSettingsProvider, usePosShopSettings } from './standalone/shop-settings-context';
 import { PosServiceWorker } from './pos-service-worker';
+import { PosErrorBoundary } from './standalone/ui/pos-error-boundary';
+import { PosScreenCrash } from './standalone/ui/pos-crash-screen';
 import { PosSidebar, type PosNavItem } from './pos-sidebar';
 import { PosTopbar } from './pos-topbar';
 import { PosChromeProvider } from './theme/pos-chrome-context';
@@ -141,7 +143,7 @@ function screenOf(pathname: string): string {
  * what makes the connection pill reflect the outbox they actually write to.
  */
 function PosShellChrome({ children }: { children: ReactNode }) {
-  const { pathname: rawPathname } = useCaspianNavigation();
+  const { pathname: rawPathname, push } = useCaspianNavigation();
   // A consumer that puts the locale in the URL hands us /az/pos/settings.
   const pathname = stripLocalePrefix(rawPathname);
   const { userProfile, signOut } = useAuth();
@@ -274,7 +276,25 @@ function PosShellChrome({ children }: { children: ReactNode }) {
         <PosLicenseBanner license={license} />
         <PosOpenSaleBanner />
 
-        <main className="cpos-main">{children}</main>
+        {/*
+          Around the screen only. A crash here leaves the sidebar, the top bar,
+          the banners, Quick add and the open ticket untouched, so a cashier
+          whose Store page died can still walk back and sell. `resetKey` on the
+          route means navigating away clears it with no extra wiring.
+
+          Deliberately no third boundary inside the register itself: a crash
+          there would leave the ticket pane painted beside a dead half, which
+          reads as a working till that has quietly stopped working. An honest
+          page beats a convincing one.
+        */}
+        <main className="cpos-main">
+          <PosErrorBoundary
+            resetKey={pathname}
+            fallback={(state) => <PosScreenCrash {...state} onHome={() => push('/pos')} />}
+          >
+            {children}
+          </PosErrorBoundary>
+        </main>
       </div>
     </div>
   );

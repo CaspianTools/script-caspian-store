@@ -38,6 +38,11 @@ export interface PosServiceWorkerProps {
 function sameOriginShellAssets(): string[] {
   if (typeof document === 'undefined') return [];
   const urls = new Set<string>();
+  // The document itself, not only what it pulls in. A first visit has no
+  // controlling worker, so `/pos/` was cached only as a by-product of the
+  // SECOND visit's navigation -- leaving a whole-day window on a fresh install
+  // where going offline meant the fallback page rather than the register.
+  if (typeof location !== 'undefined') urls.add(location.pathname);
   const push = (raw: string | null) => {
     if (!raw) return;
     try {

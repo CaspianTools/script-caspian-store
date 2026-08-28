@@ -11,7 +11,21 @@
  */
 
 const CACHE = 'caspian-pos-shell-v1';
-const OFFLINE_URL = '/pos/offline.html';
+/**
+ * At the DEPLOY root, not under /pos/.
+ *
+ * Vite copies `public/*` to the root of `dist/`, and `scripts/build.mjs` moves
+ * only `index.html` down into `dist/pos/`. So this file ships to
+ * `/offline.html` alongside `/pos.webmanifest` and `/icons/`, and the worker
+ * asked for `/pos/offline.html` -- a path that has never existed.
+ *
+ * The 404 was invisible: `cache.addAll` rejected, the `.catch` below swallowed
+ * it, and the worker installed anyway with an empty cache. Every navigation
+ * fallback since has had nothing to serve. Caching is not scope-limited (only
+ * fetch INTERCEPTION is), so a /pos-scoped worker holding a root-level file is
+ * fine.
+ */
+const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
   // The page will post the real asset list after registration. Until then,
@@ -115,21 +129,42 @@ self.addEventListener('fetch', (event) => {
 
   // Navigation requests: try network, fall back to cached shell or offline page.
   if (request.mode === 'navigate') {
+    const fallback = () =>
+      caches
+        .match(request)
+        .then((cached) => cached || caches.match(OFFLINE_URL))
+        .then((hit) => hit || new Response('Offline', { status: 503 }));
+
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response && response.status === 200) {
+          if (!response) return fallback();
+
+          // A navigation Request carries redirect mode "manual", so a 3xx from
+          // the host arrives as an opaque-redirect response: type
+          // 'opaqueredirect', status 0, no body. Handing it back is what lets
+          // the browser follow the redirect. A naive `status === 200` gate
+          // treats it as a failure instead -- and this is the FRONT DOOR: the
+          // manifest's start_url is `/pos` while the document is at `/pos/`,
+          // so any host that normalises a directory URL redirects on launch.
+          // The cashier would tap the icon and land on the offline page while
+          // fully online, with a reload doing the same thing again.
+          if (response.type === 'opaqueredirect' || response.status === 0) return response;
+
+          if (response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE).then((cache) => cache.put(request, clone)).catch(() => {});
+            return response;
           }
+
+          // A 404 is a RESPONSE, not a network failure, so it never reached the
+          // catch below -- the cashier got the host's error page while a
+          // perfectly good shell sat in the cache. Only an actual error status
+          // takes the offline route; anything else is passed through.
+          if (response.status >= 400) return fallback();
           return response;
         })
-        .catch(() =>
-          caches
-            .match(request)
-            .then((cached) => cached || caches.match(OFFLINE_URL))
-            .then((fallback) => fallback || new Response('Offline', { status: 503 })),
-        ),
+        .catch(fallback),
     );
     return;
   }

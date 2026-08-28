@@ -89,6 +89,9 @@ export const POS_STYLESHEET = String.raw`
   --cpos-touch: 44px;
 
   --cpos-dur-fast: 120ms;
+  /* One value for every disabled control. Three different ones (0.5, 0.55,
+     0.45) were in the sheet before, none of them chosen. */
+  --cpos-disabled-fade: 0.55;
   --cpos-dur: 200ms;
   --cpos-dur-slow: 320ms;
   --cpos-ease: cubic-bezier(0.32, 0.72, 0, 1);
@@ -555,7 +558,31 @@ export const POS_STYLESHEET = String.raw`
 }
 .cpos-btn:active:not(:disabled) { transform: translateY(1px); }
 .cpos-btn:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
-.cpos-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Flattened, not merely faded. .cpos-btn--primary keeps its brand fill AND
+   its glow, so a disabled Pay button still read as the one thing on screen to
+   press -- the shadow does not dim with opacity the way a colour does. The
+   three ad-hoc values this replaces (0.5 here, 0.55 on select, 0.45 on switch)
+   were never a decision; --cpos-disabled-fade is. */
+.cpos-btn:disabled,
+.cpos-btn[aria-disabled='true'] {
+  background: var(--cpos-surface-3);
+  color: var(--cpos-fg-subtle);
+  border-color: var(--cpos-border);
+  box-shadow: none;
+  filter: none;
+  opacity: var(--cpos-disabled-fade);
+  cursor: not-allowed;
+}
+/* No rule existed for these at all, so a disabled field fell back to the user
+   agent's grey -- a light box on a dark panel under data-cpos-theme="dark". */
+.cpos-input:disabled,
+.cpos-textarea:disabled {
+  background: var(--cpos-surface-3);
+  color: var(--cpos-fg-subtle);
+  border-color: var(--cpos-border);
+  opacity: var(--cpos-disabled-fade);
+  cursor: not-allowed;
+}
 
 .cpos-btn--primary {
   background: var(--cpos-brand);
@@ -658,7 +685,7 @@ export const POS_STYLESHEET = String.raw`
 }
 .cpos-select:hover { border-color: var(--cpos-border-strong); }
 .cpos-select:focus { outline: none; border-color: var(--cpos-brand); box-shadow: var(--cpos-ring); }
-.cpos-select:disabled { opacity: 0.55; cursor: not-allowed; }
+.cpos-select:disabled { opacity: var(--cpos-disabled-fade); cursor: not-allowed; }
 /* background-position takes no logical keywords, so the flip is spelled out. */
 [dir='rtl'] .cpos-select {
   padding-inline: 38px 14px;
@@ -1864,7 +1891,7 @@ export const POS_STYLESHEET = String.raw`
 .cpos-switch:hover:not(:disabled) { background: var(--cpos-fg-subtle); }
 .cpos-switch--on:hover:not(:disabled) { background: var(--cpos-brand-hover); }
 .cpos-switch:focus-visible { outline: none; box-shadow: var(--cpos-ring); }
-.cpos-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+.cpos-switch:disabled { opacity: var(--cpos-disabled-fade); cursor: not-allowed; }
 
 /* A setting stated as a sentence with its switch at the end of the line. */
 .cpos-switchrow { display: flex; align-items: center; gap: 14px; min-height: var(--cpos-touch); padding: 9px 0; }

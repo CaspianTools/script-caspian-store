@@ -23,6 +23,69 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.9.0 — Nothing takes the till down
+
+Three things that only show up on a bad day: a render error used to replace the
+whole register with a blank page, the offline page had never once been cached,
+and a disabled button did not look disabled.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+The register will ask to reload once, as it does for any update — it never takes
+over mid-sale.
+
+### Fixed
+
+- **A crash no longer takes the register with it.** There was no error boundary
+  anywhere in the till, so anything at all thrown while drawing the screen —
+  a malformed item, an unexpected gap in a sale line — left a white page, at the
+  counter, with a customer waiting, and the only way back was a reload nobody
+  had a reason to try. Now the shell survives: the side menu, the top bar and
+  Quick add stay where they are, the screen that failed says so and offers Try
+  again, and the open sale is untouched because it was already saved on this
+  computer. If the failure is bad enough to take the whole window, that screen
+  offers Try again and Reload, and shows the technical message so it can be read
+  down a phone.
+- **The offline page had never been cached, on any till.** The register asked
+  for it at `/pos/offline.html`; it ships at `/offline.html`. The request failed
+  silently on every install since the feature shipped, so the register had
+  nothing to fall back on when the connection went. It is cached now.
+- **A page that the shop's web host answered with an error went straight to the
+  cashier**, even when a perfectly good copy of the register was sitting in the
+  cache. Only a genuine network failure used to count as being offline; an error
+  page did not.
+- **Disabled buttons now look disabled.** "Complete sale" while a payment is
+  short, and "Take payment" on an empty basket, kept their full colour and their
+  glow and only went slightly see-through — so the one control a cashier must
+  not press still looked like the one to press. Disabled boxes had no styling at
+  all and fell back to the browser's grey, which on the dark theme was a pale
+  box on a dark panel.
+
+### Changed
+
+- The register's own page is now saved for offline use on the **first** visit
+  rather than the second, closing a day-long window on a newly installed till
+  where losing the connection meant losing the register.
+- The installed app now opens `/pos/` rather than `/pos`. Same screen; it just
+  stops the shop's web host having to redirect on every launch.
+
+### Internal
+
+- `PosErrorBoundary` is the till's only class component, and carries no text or
+  markup of its own so the two screens it shows stay ordinary translated
+  components.
+- Adversarial review of this release caught two faults in its own first draft,
+  both in the service worker, and both worth recording because they were
+  introduced by the fixes above rather than found alongside them. Treating any
+  non-200 as a failure would have caught a redirect as well as an error, and the
+  redirect is the installed till's **front door** — the register would have
+  launched into "you are offline" while online, permanently, until the next
+  update. And bumping the cache name would have thrown away the only offline
+  copy of the register in exchange for nothing: the new cache can only be
+  refilled by a page that has already loaded, which needs the connection that is
+  missing.
+
 ## v1.8.0 — The money is right
 
 An audit of v1.7.0 found the change the till tells a cashier to hand back was
