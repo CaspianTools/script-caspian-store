@@ -26,7 +26,7 @@ import {
 } from '../offline/pos-queue-db';
 import { listLocalSales, localStoreAvailable, newLocalId } from './local-db';
 import { localDayKey } from './opening-cash';
-import { fromMinor, toMinor } from './price-local-sale';
+import { fromMinor, toMinor } from '../money';
 import { openShiftForDevice } from './shift-gate';
 import { salesForShift, shiftVariance, summariseShift, type ShiftTotals } from './shift-totals';
 import type { LocalCashMovement, LocalShift, LocalTerminal } from './types';

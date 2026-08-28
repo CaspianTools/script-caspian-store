@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v1.7.0"
+      "version": "v1.8.0"
     },
     "parts": [
       {
@@ -1894,9 +1894,9 @@ const MANUAL = {
             ],
             "notes": [
               "The register does not talk to your card machine. Choosing Card just records that a card was used - you still take the payment on the machine yourself. The window says so in small print.",
-              "Change is worked out from cash rows only. If a card row is over the amount owed, the difference is simply recorded, not treated as change to hand back.",
+              "Change is worked out from the whole sale, not from one payment row. If a card row is typed for more than the sale comes to, the register refuses it rather than quietly recording it - it cannot make your card machine give change.",
               "Change rounding is switched off unless a developer has set it in your store record - there is no screen for it. With it off, change is shown to the exact cent, and the payment window, the \"Sale complete\" screen, the printed receipt and the saved sale all show the same figure.",
-              "If change rounding is switched on, it is applied everywhere with that same setting - the payment window, the receipt and the saved sale all round. One small difference remains. The payment window adds up the change from all the cash rows and rounds that one total, while the receipt and the saved sale round each cash row on its own. So a bill split across two cash payments can show a figure one rounding step apart on the payment window and on the receipt. With a single cash payment the two always agree.",
+              "If change rounding is switched on, it is applied everywhere with that same setting - the payment window, the \"Sale complete\" screen, the printed receipt and the saved sale all round, and all four show the same figure. Up to v1.8.0 the window and the receipt could round differently on a bill split across two cash payments. They no longer can.",
               "Both the amount and the cash received boxes accept a comma as the decimal mark, so \"12,50\" is read as twelve and a half, not as one thousand two hundred and fifty.",
               "On each payment row the amount box is labelled \"Amount due\", the same wording as the big total at the top of the window. On a split payment the box is the share for that row, not the whole bill.",
               "Pressing \"Complete sale\" twice, or a network hiccup that makes you retry, cannot charge the customer twice. The sale carries an identifier from this register, and a repeat lands on the same sale rather than creating a second one.",
@@ -2203,7 +2203,10 @@ const MANUAL = {
               "The window stays open after a save, on purpose. Somebody typing a delivery in by hand adds six products in a row, and closing after each one would cost six more clicks. A message confirms each save.",
               "Editing is not here. Quick add only makes new things; to change one, open its own page or press Edit on its row.",
               "Taking a delivery in is not here either. That is a working screen with a saved draft, not a form - see \"Receive stock: taking a delivery in\".",
-              "There is no Quick add on a register wired to a website. Everything it would create lives in your shop admin panel instead."
+              "There is no Quick add on a register wired to a website. Everything it would create lives in your shop admin panel instead.",
+              "Anything wrong with what you have typed is now shown under the box it belongs to, and the first one is jumped to when you press Save. Before, the only sign was a message in the corner that did not say which box it meant.",
+              "Leaving the price box empty is refused. Up to v1.8.0 an item saved with it blank was written at 0.00 and the till said \"Saved\".",
+              "A price typed with a comma - \"12,50\" - is read as twelve and a half. It used to be refused as though no price had been entered."
             ]
           },
           {
@@ -2284,7 +2287,9 @@ const MANUAL = {
               "Stock is allowed to go negative. Selling more than the count says does not block the sale; the shortfall is recorded against it and the count goes below zero, which is your signal to come here and correct it.",
               "Deleting an item does not touch the sales that included it. Those keep the name and the price they were rung up at.",
               "This screen is only on a till that runs on its own, and only for a role holding \"See the store\". Adding, editing and deleting need the second tick, \"Add and edit items\"; without it those buttons are not on the screen at all.",
-              "Adding an item happens in Quick add now, wherever you start from. The button here, the button in the top bar and the one on the Receive stock screen all open the same window and the same form, so there is one place for the rules about what a product needs."
+              "Adding an item happens in Quick add now, wherever you start from. The button here, the button in the top bar and the one on the Receive stock screen all open the same window and the same form, so there is one place for the rules about what a product needs.",
+              "A count that has gone below zero is now shown in red rather than as ordinary text, so an item that has been oversold stands out in the list instead of having to be spotted.",
+              "Two items cannot be given the same barcode or the same code. Saving the second one is refused and the message names the item already using it. Files restored from a backup are exempt - a file written before v1.8.0 may contain a pair, and those surface the next time either item is edited."
             ]
           },
           {
@@ -2329,7 +2334,9 @@ const MANUAL = {
               "The list is written once and never edited, like the sales list. A mistake is corrected with another adjustment, not by changing a line here.",
               "Deleting from this page removes the item and returns you to the Store screen. The sales that included it keep their record.",
               "Below the stock figures is a second block, Sales, with its own period menu: how many units sold, what was taken for them, what was left after the stock cost, the average price actually charged, when it last sold, and the receipts it appeared on. It is kept apart from the figures above it on purpose - those count what left the shelf, and these count what was paid. The two disagree when something was sold that the shelf did not have, and putting them under one heading would hide that.",
-              "The profit line only appears once a delivery has told the till what the item costs. Working it out against a cost of nothing would report the whole takings as profit, which is a number somebody would act on."
+              "The profit line only appears once a delivery has told the till what the item costs. Working it out against a cost of nothing would report the whole takings as profit, which is a number somebody would act on.",
+              "An item whose count has gone below zero shows the count in red with a \"Short\" badge beside it, and its stock value reads as a dash rather than a figure - the till has no cost price for an item that has never arrived on a delivery, and 0.00 would look like an answer.",
+              "Up to v1.8.0 an oversold item could not be edited at all: the form refused any count below zero, so its name and price were stuck too. It now saves the count back exactly as it found it, and says why it is there. Put it right with Receive stock or Adjust stock."
             ]
           },
           {
@@ -3310,7 +3317,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v1.7.0"
+      "version": "v1.8.0"
     },
     "parts": [
       {
@@ -3981,9 +3988,9 @@ const MANUAL = {
             ],
             "notes": [
               "Kassa kart terminalınızla əlaqə saxlamır. Kart seçimi sadəcə kartla ödənildiyini qeyd edir — ödənişi yenə də terminalda özünüz alırsınız. Pəncərədə bu barədə xırda şriftlə yazılıb.",
-              "Qaytarılacaq pul yalnız nağd sətirlərinə görə hesablanır. Kart sətrindəki məbləğ borcdan çoxdursa, fərq sadəcə qeyd olunur, geri qaytarılacaq pul kimi sayılmır.",
+              "Qaytarılacaq pul bir ödəniş sətrindən deyil, bütün satışdan hesablanır. Kart sətrinə satışın məbləğindən çoxu yazılsa, kassa onu sakitcə qeyd etmək əvəzinə qəbul etmir - kart terminalı pul qaytara bilmir.",
               "Developer mağaza qeydinizdə xüsusi olaraq açmayıbsa, qaytarılacaq pulun yuvarlaqlaşdırılması sönülüdür — bunun üçün ekran yoxdur. Sönülü olanda qaytarılacaq məbləğ qəpiyi-qəpiyinə göstərilir və ödəniş pəncərəsi, \"Satış tamamlandı\" (Sale complete) ekranı, çap olunan qəbz və yadda saxlanan satış — hamısı eyni rəqəmi göstərir.",
-              "Yuvarlaqlaşdırma açıqdırsa, hər yerdə eyni tənzimləmə ilə tətbiq olunur — ödəniş pəncərəsi, qəbz və yadda saxlanan satış, hamısı yuvarlaqlaşdırır. Bir kiçik fərq isə qalır. Ödəniş pəncərəsi bütün nağd sətirlərinin qaytarılacaq məbləğini toplayıb bu bir yekunu yuvarlaqlaşdırır, qəbz və yadda saxlanan satış isə hər nağd sətrini ayrıca yuvarlaqlaşdırır. Ona görə iki nağd ödənişə bölünmüş hesabda ödəniş pəncərəsindəki və qəbzdəki rəqəm bir yuvarlaqlaşdırma addımı qədər fərqlənə bilər. Nağd ödəniş bir dənədirsə, ikisi həmişə üst-üstə düşür.",
+              "Yuvarlaqlaşdırma açıqdırsa, hər yerdə eyni tənzimləmə ilə tətbiq olunur - ödəniş pəncərəsi, \"Satış tamamlandı\" ekranı, çap olunan qəbz və yadda saxlanılan satış, dördü də eyni rəqəmi göstərir. v1.8.0-a qədər iki nağd ödənişə bölünmüş hesabda pəncərə ilə qəbz fərqli yuvarlaqlaşdıra bilirdi. Artıq yox.",
               "Həm məbləğ, həm də alınan nağd xanaları onluq ayırıcı kimi vergülü qəbul edir, yəni \"12,50\" on iki yarım kimi oxunur, min iki yüz əlli kimi yox.",
               "Hər ödəniş sətrində məbləğ xanası \"Ödəniləcək məbləğ\" (Amount due) adlanır — pəncərənin yuxarısındakı iri yekunla eyni yazı. Bölünmüş ödənişdə isə bu xana bütün hesabı yox, həmin sətrə düşən payı bildirir.",
               "\"Satışı tamamla\" (Complete sale) düyməsini iki dəfə basmaq, yaxud şəbəkə kəsintisinə görə yenidən cəhd etmək müştəridən iki dəfə pul çıxa bilməz. Satış bu kassaya aid identifikator daşıyır və təkrar cəhd ikinci satış yaratmır, eyni satışın üzərinə düşür.",
@@ -4406,7 +4413,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v1.7.0"
+      "version": "v1.8.0"
     },
     "parts": [
       {
@@ -5077,9 +5084,9 @@ const MANUAL = {
             ],
             "notes": [
               "Касса не связана с вашим платёжным терминалом. Выбор Card лишь фиксирует, что платили картой, — оплату вы всё равно проводите на терминале сами. Об этом сказано мелким шрифтом в самом окне.",
-              "Сдача считается только по строкам с наличными. Если по карте прошло больше, чем нужно, разница просто записывается и сдачей к выдаче не считается.",
+              "Сдача считается от всей продажи, а не от одной строки оплаты. Если в строке карты указана сумма больше стоимости продажи, касса её не примет, а не запишет молча - терминал не может выдать сдачу.",
               "Округление сдачи выключено, если только разработчик не задал его в записи вашего магазина, — экрана для этого нет. Когда оно выключено, сдача показывается с точностью до копейки, и окно оплаты, экран «Продажа завершена» (Sale complete), напечатанный чек и сохранённая продажа показывают одно и то же число.",
-              "Если округление сдачи включено, оно применяется везде с одной и той же настройкой: округляют и окно оплаты, и чек, и сохранённая продажа. Одно небольшое отличие всё же остаётся. Окно оплаты складывает сдачу по всем наличным строкам и округляет общую сумму, а чек и сохранённая продажа округляют каждую наличную строку по отдельности. Поэтому счёт, разделённый на два наличных платежа, в окне оплаты и на чеке может разойтись на один шаг округления. При одном наличном платеже они всегда совпадают.",
+              "Если округление сдачи включено, оно применяется везде с одной и той же настройкой - окно оплаты, экран \"Продажа завершена\", напечатанный чек и сохранённая продажа округляют одинаково, и все четыре показывают одну сумму. До версии 1.8.0 при счёте, разделённом на две наличные оплаты, окно и чек могли округлять по-разному. Больше не могут.",
               "И поле суммы, и поле полученных наличных принимают запятую как десятичный разделитель, поэтому «12,50» читается как двенадцать с половиной, а не как тысяча двести пятьдесят.",
               "В каждой строке платежа поле суммы подписано «Amount due» — так же, как крупный итог вверху окна. При раздельной оплате в этом поле стоит доля именно этой строки, а не весь счёт.",
               "Двойное нажатие «Завершить продажу» (Complete sale) или повтор из-за сбоя сети не приведут к двойному списанию с покупателя. Продажа несёт идентификатор этой кассы, и повторная отправка попадает в ту же самую продажу, а не создаёт вторую.",
@@ -5502,7 +5509,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v1.7.0"
+      "version": "v1.8.0"
     },
     "parts": [
       {
@@ -6173,9 +6180,9 @@ const MANUAL = {
             ],
             "notes": [
               "Kasa, kart cihazınızla konuşmaz. Kart'ı seçmek yalnızca kartla ödendiğini kaydeder; ödemeyi yine cihazdan kendiniz alırsınız. Pencerede de bu, küçük puntoyla yazılıdır.",
-              "Para üstü yalnızca nakit satırlarından hesaplanır. Bir kart satırı borçtan fazlaysa aradaki fark yalnızca kaydedilir, geri verilecek para üstü sayılmaz.",
+              "Para üstü tek bir ödeme satırından değil, satışın tamamından hesaplanır. Kart satırına satış tutarından fazlası yazılırsa kasa bunu sessizce kaydetmek yerine kabul etmez - kart makinesi para üstü veremez.",
               "Para üstü yuvarlaması, bir geliştirici mağaza kaydınızda ayarlamadıysa kapalıdır; bunun için bir ekran yoktur. Kapalıyken para üstü kuruşu kuruşuna gösterilir ve ödeme penceresi, \"Satış tamamlandı\" ekranı, basılan fiş ve kaydedilen satış aynı rakamı gösterir.",
-              "Para üstü yuvarlaması açıksa aynı ayarla her yerde uygulanır: ödeme penceresi, fiş ve kaydedilen satış yuvarlar. Yine de küçük bir fark kalır. Ödeme penceresi tüm nakit satırlarının para üstünü toplayıp o tek toplamı yuvarlar; fiş ve kaydedilen satış ise her nakit satırını ayrı ayrı yuvarlar. Bu yüzden iki nakit ödemeye bölünmüş bir hesapta, ödeme penceresindeki ve fişteki rakam bir yuvarlama adımı farklı çıkabilir. Tek nakit ödemede ikisi her zaman aynıdır.",
+              "Para üstü yuvarlaması açıksa her yerde aynı ayarla uygulanır - ödeme penceresi, \"Satış tamamlandı\" ekranı, basılan fiş ve kaydedilen satış aynı tutarı gösterir. v1.8.0'a kadar iki nakit ödemeye bölünen hesapta pencere ile fiş farklı yuvarlayabiliyordu. Artık yapamaz.",
               "Hem tutar hem de alınan nakit kutuları ondalık ayırıcı olarak virgülü kabul eder; yani \"12,50\" bin iki yüz elli değil, on iki buçuk olarak okunur.",
               "Her ödeme satırındaki tutar kutusunda \"Ödenecek tutar\" (Amount due) yazar; pencerenin üstündeki büyük toplamla aynı ifade. Bölünmüş ödemede bu kutu, hesabın tamamını değil, o satıra düşen payı gösterir.",
               "\"Satışı tamamla\" düğmesine iki kez basmanız ya da bağlantı aksaklığı yüzünden tekrar denemeniz, müşteriden iki kez tahsilat yapılmasına yol açmaz. Satış, bu kasadan gelen bir tanımlayıcı taşır; tekrar gönderim ikinci bir satış oluşturmaz, aynı satışa düşer.",

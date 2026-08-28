@@ -8,7 +8,7 @@ import {
   useToast,
 } from '@caspian-explorer/script-caspian-store';
 import { CashDrawerIcon } from '../../icons';
-import { parseAmount } from '../pos-tender-dialog';
+import { parseAmount } from '../parse-amount';
 import { PosAdminPage } from './admin/pos-admin-page';
 import { usePosShift } from './shift-context';
 import { ShiftReport } from './shift-report';

@@ -23,6 +23,97 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.8.0 — The money is right
+
+An audit of v1.7.0 found the change the till tells a cashier to hand back was
+computed against the wrong number, and that the same wrong number was printed on
+the customer's receipt. That is the release. Everything else here came out of
+the same pass.
+
+### Action needed on each till
+
+Nothing to install — the update strip in the register's own header picks this up
+between customers. But two things are worth doing once it has:
+
+1. **Check any unexplained drawer variance since you started using the till.**
+   The bug below did not only show a wrong figure on screen; in one of its two
+   forms it also *recorded* more cash taken than the sale was worth, so a shift
+   could close over by the difference. Past sales are not rewritten — a record
+   is written once and never edited — so an old variance stays where it is.
+2. **Look at any item showing a stock count below zero.** Those items could not
+   be edited at all before this release, so some may be carrying a name or a
+   price somebody has been trying to correct.
+
+### Fixed
+
+- **Change due is measured against the sale, not against one payment box.** It
+  used to be `cash received − that payment's own amount box`, which never
+  consulted the sale total. Two ways that went wrong:
+  - A 46.00 sale with the amount box left at 20.00 and 100.00 handed over showed
+    **"Still to pay 26.00" and "Change due 80.00" at the same time**. The change
+    is 54.00.
+  - A 46.00 sale with the amount box raised to 60.00 and 60.00 handed over
+    showed **change 0.00** — and completed, recording 60.00 of cash taken. The
+    customer was owed 14.00 and the drawer closed 14.00 over.
+
+  Both are gone. A shortfall and a change amount are now two sides of one
+  subtraction, so they can never both be on screen, and what is written onto the
+  sale is what each payment actually covered rather than what was typed into it.
+- **The printed receipt had the same bug**, in its own copy of the same
+  expression, and so did the "Sale complete" screen. All three now read one
+  function.
+- **A card typed for more than the sale comes to is refused** instead of being
+  quietly absorbed. The till cannot make a card machine give change, so
+  absorbing it took the difference out of the drawer against a card that had
+  really charged the higher figure.
+- **An item saved with the price box empty was written at 0.00** — and the till
+  said "Saved". A blank price is now an error on the field.
+- **A price typed as `12,50` was rejected** as though no price had been entered,
+  on the one screen where a shop sets its prices. The comma is a decimal point
+  on an Azerbaijani or Turkish numpad and now reads as one.
+- **An item that had gone below zero could not be edited at all.** The form
+  refused any count under zero, but the register puts items below zero on
+  purpose when it sells more than it has on record — so an oversold item's edit
+  form was permanently stuck, and its name could not be corrected. A count the
+  item already had is now saved back untouched, with a line saying why it is
+  there and how to put it right. A negative typed by hand is still refused.
+- **Two items could be given the same barcode or the same code, with no
+  warning.** Every later scan of that barcode then stopped the sale to ask which
+  one was meant. Saving now refuses and names the item already using it. (A
+  backup restore is deliberately exempt: a file written before this release can
+  hold duplicates, and a shop must always be able to restore its own records.)
+- **Stock value showed `-$0.00`** on an oversold item with no cost price on
+  file. It now shows an em dash, which is the honest answer to a figure the till
+  does not have.
+- **Numeric column headings did not line up with their figures.** PRICE and
+  STOCK sat left while their columns sat right.
+
+### Changed
+
+- **A count below zero now reads as a problem** — in the danger colour, with a
+  "Short" badge beside it on the item page so the colour is never the only
+  signal. Before, it was ordinary black text.
+- **When a scan matches more than one item, the picker shows enough to choose
+  between them** — the code, the group and what is on the shelf, not just the
+  name and the price. Two items sharing a barcode very often share a name too.
+- **Errors on the item form appear on the field they belong to**, rather than
+  only as a message that slides past the corner of the screen.
+- **The Store toolbar wraps as a group.** At around 1200px the search box and
+  Receive stock took the first line and left **Add item** floating underneath,
+  aligned to nothing.
+- The stock help under a single stock box no longer wraps into a ten-line
+  ribbon; it sits under the row, as it already did on an item with sizes.
+
+### Internal
+
+- `toMinor` / `fromMinor` had four copies across four files and `roundCash` had
+  two. All of it is now `src/pos/money.ts`, and the arithmetic that decides what
+  a customer is handed back is `src/pos/tender-allocation.ts` — pure, and
+  checked by `npm run check` without a browser.
+- 33 new assertions, covering both change-due failures above, the drawer
+  invariant that what is recorded adds up to the sale, and every rule the item
+  form applies.
+
 ## v1.7.0 — Quick add asks one question at a time
 
 Quick add used to open as two panes: a narrow column of four words down the left

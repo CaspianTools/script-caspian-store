@@ -9,21 +9,7 @@
 
 import type { LocalProduct, LocalSale, LocalSaleLine, LocalStockLot } from './types';
 import { allocateFefo } from './lot-allocation';
-
-/**
- * Same integer-minor-unit accumulation as `usePosTicket`.
- *
- * Summing floats across a long ticket drifts by a cent or two, and at a till
- * that is not a rounding curiosity — it is a drawer that will not balance at
- * close.
- */
-export function toMinor(amount: number): number {
-  return Math.round(amount * 100);
-}
-
-export function fromMinor(minor: number): number {
-  return Math.round(minor) / 100;
-}
+import { fromMinor, toMinor } from '../money';
 
 export interface PricedLineInput {
   productId: string;

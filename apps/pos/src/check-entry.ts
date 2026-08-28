@@ -22,8 +22,16 @@ export {
   formatBytes,
   storageIsTight,
 } from './pos/pos-storage-durability';
-export { parseAmount } from './pos/pos-tender-dialog';
-export { summariseSoldLines } from './pos/receipt/build-receipt-model';
+export {
+  displayAmount,
+  fromMinor,
+  roundCashMinor,
+  toMinor,
+  usableCurrency,
+} from './pos/money';
+export { parseAmount, parseAmountStrict } from './pos/parse-amount';
+export { splitTenders } from './pos/tender-allocation';
+export { buildReceiptModel, summariseSoldLines } from './pos/receipt/build-receipt-model';
 export {
   MIN_LOCAL_PASSWORD_LENGTH,
   canDisableLocalUser,
@@ -58,6 +66,7 @@ export {
   localRolesRow,
   makeLocalProduct,
 } from './pos/standalone/local-db';
+export { validateProductDraft } from './pos/standalone/admin/quick-add/validate-product-draft';
 export { hasRecoveryCode } from './pos/standalone/local-recovery';
 export {
   DEFAULT_SIZE_KEY,

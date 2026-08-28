@@ -1,12 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT, useToast, FieldDescription } from '@caspian-explorer/script-caspian-store';
 import { PosCheck, PosField, PosSelect } from '../../ui/pos-field';
-import { listLocalCategories, makeLocalProduct, saveLocalProduct } from '../../local-db';
+import {
+  LocalCodeClashError,
+  listLocalCategories,
+  makeLocalProduct,
+  saveLocalProduct,
+} from '../../local-db';
 import { DEFAULT_SIZE_KEY } from '../../lot-allocation';
 import { usePosShopSettings } from '../../shop-settings-context';
 import type { LocalCategory, LocalProduct } from '../../types';
+import { validateProductDraft } from './validate-product-draft';
 
 interface Draft {
   name: string;
@@ -88,6 +94,31 @@ export function LocalProductForm({
       : { ...BLANK, barcode: initialBarcode ?? '' },
   );
   const [categories, setCategories] = useState<LocalCategory[]>([]);
+  /**
+   * Errors are shown only once somebody has tried to save. A form that shouts
+   * at a half-typed name is a form people learn to ignore.
+   */
+  const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  /**
+   * A barcode or SKU another item already holds. Not something the draft can be
+   * checked against on its own -- it takes a look at the catalogue -- so it
+   * arrives from the failed save and clears on the next keystroke in that field.
+   */
+  const [clash, setClash] = useState<{ field: 'barcode' | 'sku'; name: string } | null>(null);
+
+  /**
+   * The stock this item arrived with, as typed. Held so an unchanged negative
+   * count -- which the till produces by overselling, on purpose -- can be
+   * saved back untouched instead of locking the whole form.
+   */
+  const [originalStock] = useState<Record<string, string>>(() =>
+    product
+      ? Object.fromEntries(
+          Object.entries(product.stock).map(([key, count]) => [key, String(count)]),
+        )
+      : {},
+  );
 
   useEffect(() => {
     if (!settings.categoriesEnabled) return;
@@ -140,29 +171,33 @@ export function LocalProductForm({
   const setStock = (key: string, value: string) =>
     setDraft({ ...draft, stock: { ...draft.stock, [key]: value } });
 
+  const check = useMemo(
+    () => validateProductDraft(draft, { stockKeys, unlistedKeys, originalStock }),
+    [draft, stockKeys, unlistedKeys, originalStock],
+  );
+  const errors = submitted ? check.errors : {};
+  const clashMessage = clash
+    ? t(
+        clash.field === 'barcode'
+          ? 'pos.admin.products.errBarcodeTaken'
+          : 'pos.admin.products.errSkuTaken',
+        { name: clash.name },
+      )
+    : undefined;
+
   const save = async () => {
-    const price = Number(draft.price);
-    if (!draft.name.trim() || !Number.isFinite(price) || price < 0) {
+    setSubmitted(true);
+    if (!check.ok || !check.values) {
+      // The toast is a summary, not the message: on a tall dialog the bad field
+      // can be below the fold, and a refusal with nothing on screen at all is
+      // what this form used to do.
       toast({ title: t('pos.admin.products.invalid'), variant: 'destructive' });
+      window.requestAnimationFrame(() => {
+        formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      });
       return;
     }
-
-    const stock: Record<string, number> = {};
-    for (const key of [...stockKeys, ...unlistedKeys]) {
-      const typed = (draft.stock[key] ?? '').trim();
-      const count = typed === '' ? 0 : Number(typed);
-      // Refused, not dropped. The box this replaced parsed `size:qty` and threw
-      // away whatever did not match, so a plain `12` saved nothing at all and
-      // correcting a shelf figure to `13` silently wiped the count that was
-      // there. A shop had no way to tell either had happened.
-      if (!Number.isInteger(count) || count < 0) {
-        toast({ title: t('pos.admin.products.stockInvalid'), variant: 'destructive' });
-        return;
-      }
-      // A listed bucket is written even at zero -- "none left" is a fact worth
-      // recording. An unlisted one survives only while it still holds something.
-      if (count > 0 || stockKeys.includes(key)) stock[key] = count;
-    }
+    const { price, stock } = check.values;
 
     const saved = makeLocalProduct({
       ...(product ?? {}),
@@ -177,7 +212,20 @@ export function LocalProductForm({
       description: draft.description,
       tracksLots: draft.tracksLots,
     });
-    await saveLocalProduct(saved);
+    try {
+      await saveLocalProduct(saved);
+    } catch (error) {
+      if (error instanceof LocalCodeClashError) {
+        setClash({ field: error.clash.field, name: error.clash.product.name });
+        toast({ title: t('pos.admin.products.invalid'), variant: 'destructive' });
+        window.requestAnimationFrame(() => {
+          formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+        });
+        return;
+      }
+      throw error;
+    }
+    setClash(null);
     onSaved?.(saved);
     toast({ title: t('pos.admin.products.saved') });
   };
@@ -195,27 +243,43 @@ export function LocalProductForm({
       : []),
   ];
 
-  const stockBox = (key: string, unlisted: boolean) => (
-    <PosField
-      key={key}
-      label={key === DEFAULT_SIZE_KEY ? t('pos.admin.products.stockNoSize') : key}
-      help={unlisted ? t('pos.admin.products.stockUnlisted') : undefined}
-      style={{ flex: '0 1 120px' }}
-    >
-      <input
-        className="cpos-input"
-        value={draft.stock[key] ?? ''}
-        inputMode="numeric"
-        placeholder="0"
-        onChange={(e) => setStock(key, e.target.value)}
-      />
-    </PosField>
-  );
+  const stockBox = (key: string, unlisted: boolean) => {
+    const error = errors.stock?.[key];
+    return (
+      <PosField
+        key={key}
+        label={key === DEFAULT_SIZE_KEY ? t('pos.admin.products.stockNoSize') : key}
+        help={unlisted ? t('pos.admin.products.stockUnlisted') : undefined}
+        error={error ? t(error) : undefined}
+        style={{ flex: '0 1 120px' }}
+      >
+        <input
+          className="cpos-input"
+          value={draft.stock[key] ?? ''}
+          inputMode="numeric"
+          placeholder="0"
+          aria-invalid={error ? true : undefined}
+          onChange={(e) => setStock(key, e.target.value)}
+        />
+      </PosField>
+    );
+  };
 
   const onlyKey = stockKeys.length === 1 && unlistedKeys.length === 0 ? stockKeys[0] : null;
 
+  /**
+   * Said out loud rather than left as a puzzle. A count below zero is not a
+   * mistake somebody made on this form -- it is the till having sold more than
+   * it had, which it does on purpose -- and the form now saves it back
+   * unchanged instead of refusing every edit until it is fixed.
+   */
+  const negativeOnHand = Object.values(draft.stock).some(
+    (typed) => Number(typed.trim() || '0') < 0,
+  );
+
   return (
     <form
+      ref={formRef}
       id={formId}
       onSubmit={(event) => {
         event.preventDefault();
@@ -224,34 +288,76 @@ export function LocalProductForm({
       className="cpos-form"
     >
       <div className="cpos-row">
-        <PosField label={t('pos.admin.products.name')} style={{ flex: '2 1 180px' }}>
+        <PosField
+          label={t('pos.admin.products.name')}
+          style={{ flex: '2 1 180px' }}
+          error={errors.name ? t(errors.name) : undefined}
+        >
           <input
             className="cpos-input"
             value={draft.name}
             autoFocus
+            autoComplete="off"
+            aria-invalid={errors.name ? true : undefined}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
           />
         </PosField>
-        <PosField label={t('pos.admin.products.price')} style={{ flex: '1 1 100px' }}>
+        {/*
+          `inputMode` but deliberately no `type="number"`: it rejects the comma
+          separator `parseAmountStrict` exists to accept, its spinner is under
+          the 44px touch floor, and a focused one changes value on wheel-scroll
+          -- a shelf price moving because somebody scrolled the dialog.
+        */}
+        <PosField
+          label={t('pos.admin.products.price')}
+          style={{ flex: '1 1 100px' }}
+          error={errors.price ? t(errors.price) : undefined}
+        >
           <input
             className="cpos-input"
             value={draft.price}
             inputMode="decimal"
+            autoComplete="off"
+            aria-invalid={errors.price ? true : undefined}
             onChange={(e) => setDraft({ ...draft, price: e.target.value })}
           />
         </PosField>
-        <PosField label={t('pos.admin.products.barcode')} style={{ flex: '1 1 120px' }}>
+        <PosField
+          label={t('pos.admin.products.barcode')}
+          style={{ flex: '1 1 120px' }}
+          error={clash?.field === 'barcode' ? clashMessage : undefined}
+        >
           <input
             className="cpos-input"
             value={draft.barcode}
-            onChange={(e) => setDraft({ ...draft, barcode: e.target.value })}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            aria-invalid={clash?.field === 'barcode' ? true : undefined}
+            onChange={(e) => {
+              if (clash?.field === 'barcode') setClash(null);
+              setDraft({ ...draft, barcode: e.target.value });
+            }}
           />
         </PosField>
-        <PosField label={t('pos.admin.products.sku')} style={{ flex: '1 1 100px' }}>
+        <PosField
+          label={t('pos.admin.products.sku')}
+          style={{ flex: '1 1 100px' }}
+          error={clash?.field === 'sku' ? clashMessage : undefined}
+        >
           <input
             className="cpos-input"
             value={draft.sku}
-            onChange={(e) => setDraft({ ...draft, sku: e.target.value })}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            aria-invalid={clash?.field === 'sku' ? true : undefined}
+            onChange={(e) => {
+              if (clash?.field === 'sku') setClash(null);
+              setDraft({ ...draft, sku: e.target.value });
+            }}
           />
         </PosField>
       </div>
@@ -293,23 +399,37 @@ export function LocalProductForm({
       {draft.tracksLots ? (
         <FieldDescription>{t('pos.admin.products.stockByBatch')}</FieldDescription>
       ) : onlyKey !== null ? (
-        // In a `.cpos-row` even though it is alone: `.cpos-form` is a column, so
-        // a flex basis on a direct child of it would size the field's height.
-        <div className="cpos-row">
-          <PosField
-            label={t('pos.admin.products.stock')}
-            help={t('pos.admin.products.stockHelp')}
-            style={{ flex: '0 1 120px' }}
-          >
-            <input
-              className="cpos-input"
-              value={draft.stock[onlyKey] ?? ''}
-              inputMode="numeric"
-              placeholder="0"
-              onChange={(e) => setStock(onlyKey, e.target.value)}
-            />
-          </PosField>
-        </div>
+        // The help sits OUTSIDE the field, exactly as the multi-size branch
+        // below does it. Inside, it inherited the field's `0 1 120px` basis and
+        // wrapped a 129-character sentence into a ten-line ribbon.
+        <PosField asDiv label={t('pos.admin.products.stock')}>
+          {/*
+            In a `.cpos-row` even though it is alone: `.cpos-form` is a column,
+            so a flex basis on a direct child of it would size the field's
+            height.
+          */}
+          <div className="cpos-row">
+            <PosField
+              label=""
+              error={errors.stock?.[onlyKey] ? t(errors.stock[onlyKey]) : undefined}
+              style={{ flex: '0 1 120px' }}
+            >
+              <input
+                className="cpos-input"
+                value={draft.stock[onlyKey] ?? ''}
+                inputMode="numeric"
+                placeholder="0"
+                aria-label={t('pos.admin.products.stock')}
+                aria-invalid={errors.stock?.[onlyKey] ? true : undefined}
+                onChange={(e) => setStock(onlyKey, e.target.value)}
+              />
+            </PosField>
+          </div>
+          <FieldDescription>{t('pos.admin.products.stockHelp')}</FieldDescription>
+          {negativeOnHand ? (
+            <FieldDescription>{t('pos.admin.products.stockNegative')}</FieldDescription>
+          ) : null}
+        </PosField>
       ) : (
         <PosField asDiv label={t('pos.admin.products.stock')}>
           <div className="cpos-row">
@@ -319,6 +439,9 @@ export function LocalProductForm({
           <FieldDescription>
             {t('pos.admin.products.stockHelp')} {t('pos.admin.products.stockNoSizeHelp')}
           </FieldDescription>
+          {negativeOnHand ? (
+            <FieldDescription>{t('pos.admin.products.stockNegative')}</FieldDescription>
+          ) : null}
         </PosField>
       )}
 

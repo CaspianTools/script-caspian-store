@@ -209,11 +209,28 @@ not "fix" it by widening its colours, and do not import it here.
 .cpos-field                 column, 6px gap
   .cpos-field__label        12.5px / 650
   <control>
+  .cpos-field__error        13px, --cpos-danger, optional
   <FieldDescription>        muted help text, optional
 ```
 
 `PosField` renders exactly that. `.cpos-field__control` wraps a control that
 carries an adornment (the password reveal button).
+
+**Say what is wrong in the field it is wrong in.** `PosField`'s `error` prop
+renders `.cpos-field__error` and suppresses `help` while it is set — two
+sentences under one box is where a cashier stops reading either. It is sized
+like the help text it replaces, so a field does not jump height as an error
+appears and clears. The caller also sets `aria-invalid` on the control, which
+takes a `--cpos-danger` border *and keeps it while focused*: `--cpos-ring` is
+the brand colour, so without that rule an invalid field that has just been
+focused looks focused-and-fine at the moment it most needs to look wrong.
+
+Because `PosField` renders a `<label>` **wrapping** its control, the error joins
+the field's accessible *name* rather than its description — "Price, Type a
+price, like 4.50". That is the wanted reading and it needs no id plumbing.
+
+Errors belong on screen only once somebody has tried to save. A form that
+shouts at a half-typed name is a form people learn to ignore.
 
 **A group of related boxes is one field, not several.** Where one label covers a
 run of controls whose number is not known until render — the per-size stock
@@ -239,7 +256,8 @@ It needs no new class — `.cpos-field` is a column with a gap, so it nests.
 | `.cpos-muted` | 12px secondary text |
 | `.cpos-divider` | a 1px rule |
 | `.cpos-stats` / `.cpos-stat` | auto-fit grid of figure tiles — `__label` (uppercase), `__value` (23px, tabular), `__hint` |
-| `.cpos-tablewrap` / `.cpos-table` | the till's only table. `.cpos-table__num` right-aligns and tabularises a numeric column |
+| `.cpos-tablewrap` / `.cpos-table` | the till's only table. `.cpos-table__num` right-aligns and tabularises a numeric column, **header included** — `.cpos-table th` is (0,1,1) and beat the class until an explicit `th.cpos-table__num` rule was added |
+| `.cpos-neg` | a figure that has gone below zero, in `--cpos-danger`. Never the only signal — pair it with a badge or a word |
 | `.cpos-empty` | the "nothing here yet" block — `__icon`, `__title`, `__text` |
 | `.cpos-note` | a boxed message. Tones: `--brand`, `--success`, `--warning`, `--danger` |
 | `.cpos-badge` | an inline pill. Same four tones plus a neutral default |

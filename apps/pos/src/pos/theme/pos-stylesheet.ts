@@ -166,7 +166,15 @@ export const POS_STYLESHEET = String.raw`
 }
 :root[data-cpos-theme='dark'] .cpos-shell { color-scheme: dark; }
 
-.cpos-shell *, .cpos-shell *::before, .cpos-shell *::after { box-sizing: border-box; }
+/* The shell is not the only root the till draws into. .cpos-modal renders
+   outside it -- its parent chain is div.cpos-modal < div < body -- so scoping
+   this reset to .cpos-shell alone left every control in every dialog on
+   content-box. .cpos-input pads 14px a side and carries a 1px border, so a
+   field sat 30px wider than the column holding it: the product form's four-up
+   row ran past the panel edge, and its help text wrapped into a 120px ribbon.
+   Same reason the --cpos-* tokens live on :root rather than on the shell. */
+.cpos-shell *, .cpos-shell *::before, .cpos-shell *::after,
+.cpos-modal *, .cpos-modal *::before, .cpos-modal *::after { box-sizing: border-box; }
 
 .cpos-column {
   display: flex;
@@ -782,6 +790,24 @@ export const POS_STYLESHEET = String.raw`
 
 .cpos-field { display: flex; flex-direction: column; gap: 6px; }
 .cpos-field__label { font-size: 12.5px; font-weight: 650; color: var(--cpos-fg); }
+/* Says what is wrong, in the field it is wrong in. Sized with the help text it
+   replaces so a field does not jump height as an error appears and clears. */
+.cpos-field__error { font-size: 13px; line-height: 1.5; color: var(--cpos-danger); }
+/* An invalid field keeps a danger border even while focused. --cpos-ring is the
+   brand colour, so without this an invalid field that has just been focused
+   looks focused-and-fine, which is the moment it most needs to look wrong. */
+.cpos-input[aria-invalid='true'],
+.cpos-textarea[aria-invalid='true'],
+.cpos-select[aria-invalid='true'] { border-color: var(--cpos-danger); }
+.cpos-input[aria-invalid='true']:focus-visible,
+.cpos-textarea[aria-invalid='true']:focus-visible,
+.cpos-select[aria-invalid='true']:focus-visible {
+  border-color: var(--cpos-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cpos-danger) 30%, transparent);
+}
+/* A figure that has gone below zero. Never the only signal -- the screens that
+   use it pair it with a badge, because colour alone is not a message. */
+.cpos-neg { color: var(--cpos-danger); }
 .cpos-muted { font-size: 12px; color: var(--cpos-fg-muted); line-height: 1.5; }
 .cpos-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .cpos-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
@@ -1585,6 +1611,10 @@ export const POS_STYLESHEET = String.raw`
 .cpos-table tbody tr:hover { background: var(--cpos-surface-2); }
 .cpos-table tbody tr:last-child td { border-bottom: 0; }
 .cpos-table__num { text-align: end; font-variant-numeric: tabular-nums; }
+/* The element selector .cpos-table th is (0,1,1) and beats .cpos-table__num
+   at (0,1,0), so a numeric HEADER kept the start alignment its cells had
+   already left. The column read as ragged for as long as the class existed. */
+.cpos-table th.cpos-table__num { text-align: end; }
 
 /* The first cell of a row, as the way into that record's page. A button rather
    than an <a> because the register navigates through its adapter; a button in

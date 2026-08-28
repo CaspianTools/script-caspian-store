@@ -1,4 +1,6 @@
 import type { PosSaleLine, PosSoldLine, PosTenderInput } from '../storage/types';
+import { fromMinor, toMinor } from '../money';
+import { splitTenders, type TenderDraftAmounts } from '../tender-allocation';
 
 export interface PosReceiptLine {
   name: string;
@@ -13,9 +15,9 @@ export interface PosReceiptLine {
 
 export interface PosReceiptTender {
   kind: 'cash' | 'card' | 'other';
+  /** What this tender covered of the sale, not the raw figure it was entered as. */
   amount: number;
   tendered?: number;
-  change?: number;
   reference?: string;
 }
 
@@ -86,20 +88,6 @@ export function summariseSoldLines(lines: PosSoldLine[]): { subtotal: number; di
   return { subtotal: fromMinor(grossMinor), discount: fromMinor(discountMinor) };
 }
 
-function toMinor(amount: number): number {
-  return Math.round(amount * 100);
-}
-function fromMinor(minor: number): number {
-  return Math.round(minor) / 100;
-}
-
-/** Same rule as the tender screen and `functions-pos/src/money.ts`. */
-function roundCash(amount: number, step: number): number {
-  if (!step || step <= 0) return fromMinor(toMinor(amount));
-  const stepMinor = toMinor(step);
-  return fromMinor(Math.round(toMinor(amount) / stepMinor) * stepMinor);
-}
-
 /**
  * The one description of what a receipt says.
  *
@@ -129,20 +117,26 @@ export function buildReceiptModel(args: BuildReceiptArgs): PosReceiptModel {
     };
   });
 
-  const tenders: PosReceiptTender[] = args.tenders.map((tender) => {
-    if (tender.kind !== 'cash' || tender.tendered == null) {
-      return { kind: tender.kind, amount: tender.amount, reference: tender.reference };
-    }
-    return {
+  // Change is a property of the SALE, not of one tender. Computing it per
+  // tender -- `tendered - that tender's own amount` -- is what printed 80.00
+  // of change on a 46.00 sale whose first tender box had been left at 20.00.
+  // The screen and the slip now read the same function.
+  const drafts: TenderDraftAmounts[] = args.tenders.map((tender) => ({
+    kind: tender.kind,
+    amountMinor: toMinor(tender.amount),
+    cashGivenMinor:
+      tender.kind === 'cash' && tender.tendered != null ? toMinor(tender.tendered) : null,
+  }));
+  const split = splitTenders(toMinor(args.total), drafts, toMinor(args.cashRounding ?? 0));
+
+  const tenders: PosReceiptTender[] = args.tenders.map((tender, index) => {
+    const entry: PosReceiptTender = {
       kind: tender.kind,
-      amount: tender.amount,
-      tendered: tender.tendered,
-      change: roundCash(
-        fromMinor(Math.max(0, toMinor(tender.tendered) - toMinor(tender.amount))),
-        args.cashRounding ?? 0,
-      ),
+      amount: fromMinor(split.appliedMinor[index] ?? 0),
       reference: tender.reference,
     };
+    if (tender.kind === 'cash' && tender.tendered != null) entry.tendered = tender.tendered;
+    return entry;
   });
 
   return {
@@ -159,7 +153,7 @@ export function buildReceiptModel(args: BuildReceiptArgs): PosReceiptModel {
     discount: args.discount,
     total: args.total,
     tenders,
-    changeDue: tenders.reduce((sum, t) => sum + (t.change ?? 0), 0),
+    changeDue: fromMinor(split.changeMinor),
   };
 }
 

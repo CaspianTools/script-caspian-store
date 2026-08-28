@@ -50,7 +50,8 @@ import {
   type RoleDefinition,
 } from './types';
 import { latestOpeningCash, localDayKey } from './opening-cash';
-import { fromMinor, priceLocalSale, toMinor, type PricedLineInput } from './price-local-sale';
+import { fromMinor, toMinor } from '../money';
+import { priceLocalSale, type PricedLineInput } from './price-local-sale';
 import {
   DEFAULT_SIZE_KEY,
   allocateFefo,
@@ -173,11 +174,79 @@ export async function getLocalProduct(id: string): Promise<LocalProduct | null> 
   return row ? hydrateLocalProduct(row) : null;
 }
 
-export async function saveLocalProduct(product: LocalProduct): Promise<void> {
-  await posTx(STORE_LOCAL_PRODUCTS, 'readwrite', (tx) => idbPut(tx, STORE_LOCAL_PRODUCTS, product));
+/**
+ * Another item already using this item's barcode or SKU, or `null`.
+ *
+ * Neither `by-barcode` nor `by-sku` is a unique index, and that is not an
+ * oversight in the schema so much as one nobody had cause to notice:
+ * `localUsers.by-username` IS unique, so the option was known. Uniqueness is
+ * enforced here instead of there because a clash has to be REPORTED -- an index
+ * that rejects the write gives a cashier a `ConstraintError`, not the name of
+ * the item they have collided with.
+ *
+ * A blank code is not a clash. Most shops leave SKU empty on most items, and
+ * "" is not a code two items are sharing.
+ */
+export type LocalCodeClash = { field: 'barcode' | 'sku'; product: LocalProduct };
+
+async function findCodeClash(
+  tx: IDBTransaction,
+  product: LocalProduct,
+): Promise<LocalCodeClash | null> {
+  const fields: Array<'barcode' | 'sku'> = ['barcode', 'sku'];
+  for (const field of fields) {
+    const code = (product[field] ?? '').trim();
+    if (!code) continue;
+    const rows = await idbGetAllByIndex<LocalProduct>(
+      tx,
+      STORE_LOCAL_PRODUCTS,
+      field === 'barcode' ? 'by-barcode' : 'by-sku',
+      code,
+    );
+    const other = rows.find((row) => row.id !== product.id);
+    if (other) return { field, product: hydrateLocalProduct(other) };
+  }
+  return null;
 }
 
-/** Bulk upsert, used by CSV import. One transaction, so a failed import lands nothing. */
+/**
+ * Thrown rather than returned so no call site can save and ignore the clash.
+ * Carries the item collided with, because "that barcode is taken" without
+ * saying what took it leaves a shop hunting through its own catalogue.
+ */
+export class LocalCodeClashError extends Error {
+  readonly clash: LocalCodeClash;
+  constructor(clash: LocalCodeClash) {
+    super(`${clash.field} already used by ${clash.product.name}`);
+    this.name = 'LocalCodeClashError';
+    this.clash = clash;
+  }
+}
+
+export async function saveLocalProduct(product: LocalProduct): Promise<void> {
+  await posTx(STORE_LOCAL_PRODUCTS, 'readwrite', async (tx) => {
+    // Inside the transaction, not before it. Two tabs saving the same barcode
+    // would both pass a check made beforehand, and IndexedDB serialises
+    // overlapping readwrite transactions on a store -- so this is the only
+    // place the check actually holds.
+    const clash = await findCodeClash(tx, product);
+    if (clash) throw new LocalCodeClashError(clash);
+    await idbPut(tx, STORE_LOCAL_PRODUCTS, product);
+  });
+}
+
+/**
+ * Bulk upsert. One transaction, so a failed write lands nothing.
+ *
+ * Deliberately does NOT check for duplicate barcodes, unlike its single-product
+ * sibling. Its only callers are the backup restore and the lot repair that
+ * follows one, and a shop restoring its own file must always succeed: a
+ * catalogue written before that check existed can hold two items on one
+ * barcode, and refusing the restore would hand somebody a file they can no
+ * longer open in exchange for a rule about data they already have. The clash
+ * surfaces the next time either item is edited, which is the right moment --
+ * somebody is looking at it.
+ */
 export async function saveLocalProducts(products: LocalProduct[]): Promise<number> {
   if (!products.length) return 0;
   await posTx(STORE_LOCAL_PRODUCTS, 'readwrite', async (tx) => {

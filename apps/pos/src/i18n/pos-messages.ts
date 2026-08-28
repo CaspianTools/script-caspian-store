@@ -132,6 +132,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.tender.addTender': 'Add another payment',
   'pos.tender.removeTender': 'Remove',
   'pos.tender.remaining': 'Still to pay',
+  'pos.tender.overAllocated': 'More on the card than the sale comes to',
   'pos.tender.reference': 'Reference',
   'pos.tender.referenceHint': 'Card auth code, voucher number, transfer reference.',
   'pos.tender.confirm': 'Complete sale',
@@ -282,6 +283,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.store.product.lastCost': 'Last cost {amount}',
   'pos.store.product.margin': '{percent}% margin',
   'pos.store.product.stockValue': 'Stock value',
+  'pos.store.product.short': 'Short',
   'pos.store.product.stockValueHint': 'What is on the shelf, at the last price you paid.',
   'pos.store.product.ledgerSays':
     'The history adds up to {count}. A quantity was set on the item form rather than received or adjusted.',
@@ -781,6 +783,14 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.admin.products.stockUnlisted':
     'No longer one of this item’s sizes. Set it to 0 to clear it.',
   'pos.admin.products.stockInvalid': 'A stock count must be a whole number, 0 or more.',
+  'pos.admin.products.errName': 'This item needs a name.',
+  'pos.admin.products.errPrice': 'Type a price, like 4.50.',
+  'pos.admin.products.errStockWhole': 'Use a whole number.',
+  'pos.admin.products.errStockNegative': 'A count you type cannot be below zero.',
+  'pos.admin.products.errBarcodeTaken': 'This barcode is already on {name}.',
+  'pos.admin.products.errSkuTaken': 'This code is already on {name}.',
+  'pos.admin.products.stockNegative':
+    'A count here is below zero because the till sold more than it had on record. Saving leaves it as it is — put it right with Receive stock or Adjust stock.',
   'pos.admin.products.add': 'Add it',
   'pos.admin.products.update': 'Save changes',
   'pos.admin.products.saved': 'Item saved',

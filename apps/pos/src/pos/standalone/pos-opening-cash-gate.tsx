@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useT, useCaspianStandalone, useToast, cn } from '@caspian-explorer/script-caspian-store';
 import { CashDrawerIcon } from '../../icons';
-import { parseAmount } from '../pos-tender-dialog';
+import { parseAmount } from '../parse-amount';
 import { usePosLocalSession } from './local-session-context';
 import type { OpeningCashGate } from './opening-cash';
 import { usePosOpeningCash } from './opening-cash-context';

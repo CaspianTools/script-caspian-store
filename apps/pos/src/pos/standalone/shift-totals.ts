@@ -13,7 +13,7 @@
  */
 
 import type { LocalSale, LocalShift } from './types';
-import { fromMinor, toMinor } from './price-local-sale';
+import { fromMinor, toMinor } from '../money';
 
 export interface ShiftTotals {
   /** Opening float + cash taken + movements in − movements out. */

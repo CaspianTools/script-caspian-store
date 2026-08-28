@@ -15,7 +15,7 @@ import type {
   LocalStockMovement,
   LocalStockReceiptLine,
 } from './types';
-import { fromMinor, toMinor } from './price-local-sale';
+import { fromMinor, toMinor } from '../money';
 
 /** The bucket an item with no sizes keeps its stock in. */
 export const DEFAULT_SIZE_KEY = '_default';

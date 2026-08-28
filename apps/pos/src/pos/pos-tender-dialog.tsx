@@ -4,24 +4,9 @@ import { useMemo, useState } from 'react';
 import { useT, cn } from '@caspian-explorer/script-caspian-store';
 import { CheckIcon, PlusIcon, XIcon } from '../icons';
 import type { PosTenderInput } from './storage/types';
-
-function toMinor(amount: number): number {
-  return Math.round(amount * 100);
-}
-function fromMinor(minor: number): number {
-  return Math.round(minor) / 100;
-}
-
-/**
- * Round to the smallest coin still in circulation (`0.05` where 1¢/2¢ are
- * withdrawn). Mirrors `roundCash` in functions-pos so the change shown at the
- * till matches the change recorded on the order.
- */
-function roundCash(amount: number, step: number): number {
-  if (!step || step <= 0) return fromMinor(toMinor(amount));
-  const stepMinor = toMinor(step);
-  return fromMinor(Math.round(toMinor(amount) / stepMinor) * stepMinor);
-}
+import { fromMinor, toMinor } from './money';
+import { parseAmount } from './parse-amount';
+import { splitTenders, type TenderDraftAmounts } from './tender-allocation';
 
 interface DraftTender {
   kind: 'cash' | 'card' | 'other';
@@ -29,41 +14,6 @@ interface DraftTender {
   amount: string;
   tendered: string;
   reference: string;
-}
-
-/**
- * Parse a keyed amount without fighting the cashier's keyboard.
- *
- * Accepts both `,` and `.` as the decimal separator: a register in Baku or
- * Istanbul has a comma on the numpad, and rejecting it (or worse, silently
- * reading "12,50" as 1250) is how a till ends up 100× out.
- *
- * It must also survive a GROUPING separator, which the previous version did
- * not: `String.replace` with a string argument replaces only the first match,
- * so `1,234.50` became `1.234.50` and `parseFloat` stopped at the second dot
- * and returned **1.234**. On the tendered field that is wrong change handed to
- * a customer, which is the exact failure the note above claims to prevent.
- *
- * The rule: the last separator is the decimal point if one or two digits
- * follow it, and grouping otherwise. `12,50`, `1,234.50` and `1.234,50` all
- * read correctly; `1,234` reads as one thousand two hundred and thirty-four.
- * That last case is genuinely ambiguous between the two conventions, and three
- * trailing digits is grouping far more often than it is a third decimal place
- * in a currency amount.
- */
-export function parseAmount(text: string): number {
-  const cleaned = text.replace(/\s/g, '');
-  if (!cleaned) return 0;
-
-  const decimalAt = Math.max(cleaned.lastIndexOf(','), cleaned.lastIndexOf('.'));
-  const fractionDigits = decimalAt < 0 ? 0 : cleaned.length - decimalAt - 1;
-  const normalized =
-    decimalAt >= 0 && fractionDigits >= 1 && fractionDigits <= 2
-      ? `${cleaned.slice(0, decimalAt).replace(/[.,]/g, '')}.${cleaned.slice(decimalAt + 1)}`
-      : cleaned.replace(/[.,]/g, '');
-
-  const value = Number.parseFloat(normalized);
-  return Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
 export interface PosTenderDialogProps {
@@ -100,21 +50,23 @@ export function PosTenderDialog({
     { kind: 'cash', amount: total.toFixed(2), tendered: '', reference: '' },
   ]);
 
-  const appliedMinor = tenders.reduce((sum, tender) => sum + toMinor(parseAmount(tender.amount)), 0);
   const totalMinor = toMinor(total);
-  const remaining = fromMinor(Math.max(0, totalMinor - appliedMinor));
-  const covered = appliedMinor >= totalMinor;
+  const split = useMemo(() => {
+    const drafts: TenderDraftAmounts[] = tenders.map((tender) => ({
+      kind: tender.kind,
+      amountMinor: toMinor(parseAmount(tender.amount)),
+      cashGivenMinor:
+        tender.kind === 'cash' && tender.tendered.trim()
+          ? toMinor(parseAmount(tender.tendered))
+          : null,
+    }));
+    return splitTenders(totalMinor, drafts, toMinor(cashRounding));
+  }, [tenders, totalMinor, cashRounding]);
 
-  const changeDue = useMemo(() => {
-    let change = 0;
-    for (const tender of tenders) {
-      if (tender.kind !== 'cash' || !tender.tendered.trim()) continue;
-      const given = toMinor(parseAmount(tender.tendered));
-      const applied = toMinor(parseAmount(tender.amount));
-      if (given > applied) change += given - applied;
-    }
-    return roundCash(fromMinor(change), cashRounding);
-  }, [tenders, cashRounding]);
+  const remaining = fromMinor(split.shortfallMinor);
+  const changeDue = fromMinor(split.changeMinor);
+  const overNonCash = fromMinor(split.overNonCashMinor);
+  const covered = split.covered;
 
   const update = (index: number, patch: Partial<DraftTender>) => {
     setTenders((current) => current.map((tender, i) => (i === index ? { ...tender, ...patch } : tender)));
@@ -134,11 +86,19 @@ export function PosTenderDialog({
   const confirm = () => {
     if (!covered || submitting) return;
     onConfirm(
-      tenders.map((tender) => {
-        const amount = parseAmount(tender.amount);
-        const base: PosTenderInput = { kind: tender.kind, amount };
+      tenders.map((tender, index) => {
+        // `amount` is what this tender COVERED, not what the box said. The two
+        // differ whenever the cashier over-typed a box, and `shift-totals.ts`
+        // reads this figure as the cash that netted into the drawer -- so
+        // writing the box through is a drawer that closes over.
+        const base: PosTenderInput = {
+          kind: tender.kind,
+          amount: fromMinor(split.appliedMinor[index] ?? 0),
+        };
         if (tender.reference.trim()) base.reference = tender.reference.trim();
         if (tender.kind === 'cash' && tender.tendered.trim()) {
+          // Verbatim: this is what physically went into the drawer and what
+          // prints on the slip, so it is not the allocated figure.
           base.tendered = parseAmount(tender.tendered);
         }
         return base;
@@ -236,10 +196,17 @@ export function PosTenderDialog({
           {t('pos.tender.addTender')}
         </button>
 
-        {!covered ? (
-          <div className="cpos-note cpos-note--warning">
+        {remaining > 0 ? (
+          <div className="cpos-note cpos-note--warning" role="status">
             <span style={{ flex: 1 }}>{t('pos.tender.remaining')}</span>
             <strong>{formatPrice(remaining)}</strong>
+          </div>
+        ) : null}
+
+        {overNonCash > 0 ? (
+          <div className="cpos-note cpos-note--warning" role="status">
+            <span style={{ flex: 1 }}>{t('pos.tender.overAllocated')}</span>
+            <strong>{formatPrice(overNonCash)}</strong>
           </div>
         ) : null}
 

@@ -51,7 +51,16 @@ const {
   SIGN_IN_THROTTLE_FORGET_MS,
   canAccess,
   parseAmount,
+  parseAmountStrict,
+  toMinor,
+  fromMinor,
+  roundCashMinor,
+  displayAmount,
+  usableCurrency,
+  splitTenders,
+  validateProductDraft,
   summariseSoldLines,
+  buildReceiptModel,
   POS_LOCAL_ROLES,
   LOCAL_PRODUCT_COLUMNS,
   localProductsToCsv,
@@ -551,6 +560,234 @@ check('spaces and empty input are tolerated', () => {
 check('nonsense and negatives read as zero rather than NaN', () => {
   assert.equal(parseAmount('abc'), 0);
   assert.equal(parseAmount('-5'), 0);
+});
+// The strict reader is what the product form uses. It has to tell "nothing
+// typed" from "zero typed", because the form used to parse with a bare
+// `Number()`: `Number('')` is 0, so an item saved with the price box empty was
+// written at 0.00 and the cashier got a success toast.
+check('the strict reader separates blank from zero', () => {
+  assert.equal(parseAmountStrict(''), null);
+  assert.equal(parseAmountStrict('   '), null);
+  assert.equal(parseAmountStrict('0'), 0);
+  assert.equal(parseAmountStrict('abc'), null);
+  assert.equal(parseAmountStrict('-5'), null);
+  assert.equal(parseAmountStrict('12,50'), 12.5);
+});
+
+console.log('what a product form will save');
+// Three silent failures lived in the rules this replaces, and all three are
+// pinned here: a blank price saved as 0.00 with a SUCCESS toast, a comma
+// decimal was rejected as "not a price", and a negative count -- which the till
+// creates by overselling, on purpose -- made the whole form unsaveable, so an
+// oversold item's name could not be corrected.
+const draftOf = (over = {}) => ({ name: 'Thing', price: '4.50', stock: {}, ...over });
+const ctxOf = (over = {}) => ({ stockKeys: ['_default'], unlistedKeys: [], ...over });
+
+check('a filled-in draft saves, and reports what it parsed', () => {
+  const r = validateProductDraft(draftOf({ stock: { _default: '5' } }), ctxOf());
+  assert.ok(r.ok);
+  assert.equal(r.values.price, 4.5);
+  assert.deepEqual(r.values.stock, { _default: 5 });
+});
+check('a blank price is refused, not silently saved as zero', () => {
+  const r = validateProductDraft(draftOf({ price: '' }), ctxOf());
+  assert.ok(!r.ok);
+  assert.equal(r.errors.price, 'pos.admin.products.errPrice');
+  assert.equal(r.values, null);
+});
+check('a price that is not a number is refused', () => {
+  assert.ok(!validateProductDraft(draftOf({ price: 'abc' }), ctxOf()).ok);
+  assert.ok(!validateProductDraft(draftOf({ price: '-5' }), ctxOf()).ok);
+});
+check('a price of zero is allowed -- a free sample is a real thing', () => {
+  const r = validateProductDraft(draftOf({ price: '0' }), ctxOf());
+  assert.ok(r.ok);
+  assert.equal(r.values.price, 0);
+});
+check('a decimal comma is a price, not a typo', () => {
+  const r = validateProductDraft(draftOf({ price: '12,50' }), ctxOf());
+  assert.ok(r.ok);
+  assert.equal(r.values.price, 12.5);
+});
+check('a name is required', () => {
+  const r = validateProductDraft(draftOf({ name: '   ' }), ctxOf());
+  assert.ok(!r.ok);
+  assert.equal(r.errors.name, 'pos.admin.products.errName');
+});
+check('a blank stock box means none, not an error', () => {
+  const r = validateProductDraft(draftOf({ stock: { _default: '' } }), ctxOf());
+  assert.ok(r.ok);
+  assert.deepEqual(r.values.stock, { _default: 0 });
+});
+check('a fractional count is refused', () => {
+  const r = validateProductDraft(draftOf({ stock: { _default: '2.5' } }), ctxOf());
+  assert.ok(!r.ok);
+  assert.equal(r.errors.stock._default, 'pos.admin.products.errStockWhole');
+});
+check('a negative count typed by hand is refused', () => {
+  const r = validateProductDraft(
+    draftOf({ stock: { _default: '-1' } }),
+    ctxOf({ originalStock: { _default: '5' } }),
+  );
+  assert.ok(!r.ok);
+  assert.equal(r.errors.stock._default, 'pos.admin.products.errStockNegative');
+});
+// The lockout. An oversold item arrives at the form already negative; refusing
+// it means the item can never be edited again -- not its name, not its price.
+check('a negative count the item arrived with saves back untouched', () => {
+  const r = validateProductDraft(
+    draftOf({ stock: { _default: '-3' } }),
+    ctxOf({ originalStock: { _default: '-3' } }),
+  );
+  assert.ok(r.ok);
+  assert.deepEqual(r.values.stock, { _default: -3 });
+});
+check('an oversold item can still have its name and price corrected', () => {
+  const r = validateProductDraft(
+    draftOf({ name: 'Corrected', price: '9.99', stock: { _default: '-2' } }),
+    ctxOf({ originalStock: { _default: '-2' } }),
+  );
+  assert.ok(r.ok);
+  assert.equal(r.values.price, 9.99);
+});
+
+console.log('money primitives');
+// Four copies of toMinor/fromMinor and two of roundCash lived in four files
+// before `pos/money.ts`. The one that drifted was the change a customer is
+// handed, so the arithmetic is pinned here rather than trusted to stay in step.
+check('minor units survive a float that cannot be represented', () => {
+  assert.equal(toMinor(0.1) * 10, 100);
+  assert.equal(toMinor(19.99), 1999);
+  assert.equal(fromMinor(1999), 19.99);
+});
+check('cash rounding lands on the nearest step, and is a no-op at zero', () => {
+  assert.equal(roundCashMinor(103, 5), 105);
+  assert.equal(roundCashMinor(102, 5), 100);
+  assert.equal(roundCashMinor(103, 0), 103);
+});
+// `Intl.NumberFormat` renders -0 as "-$0.00", which is what the item page
+// printed for an oversold item with no cost price: -3 * 0 is -0.
+check('negative zero is normalised before it reaches a formatter', () => {
+  assert.ok(Object.is(displayAmount(-0), 0));
+  assert.equal(displayAmount(-3 * 0), 0);
+  assert.equal(displayAmount(-4.5), -4.5);
+});
+check('a currency code is usable only if it is shaped like one and exists', () => {
+  assert.equal(usableCurrency(' azn '), 'AZN');
+  assert.equal(usableCurrency('USD'), 'USD');
+  assert.equal(usableCurrency('US'), '');
+  assert.equal(usableCurrency('DOLLAR'), '');
+  assert.equal(usableCurrency(''), '');
+});
+
+console.log('change due');
+// Change used to be measured per tender -- `tendered` against that tender's own
+// editable amount box -- and never against the sale. Two failures came out of
+// that, and both are pinned below. The second is the expensive one: it
+// COMMITTED, recording more cash taken than the sale was worth, so the shift
+// closed over by the difference.
+const splitOf = (total, drafts, step = 0) => splitTenders(total, drafts, step);
+const cashDraft = (amountMinor, cashGivenMinor = null) => ({ kind: 'cash', amountMinor, cashGivenMinor });
+const cardDraft = (amountMinor) => ({ kind: 'card', amountMinor, cashGivenMinor: null });
+
+check('exact cash leaves no change and no shortfall', () => {
+  const r = splitOf(4600, [cashDraft(4600)]);
+  assert.equal(r.changeMinor, 0);
+  assert.equal(r.shortfallMinor, 0);
+  assert.ok(r.covered);
+});
+check('change is measured against the sale, not against the amount box', () => {
+  // 46.00 sale, box left at 20.00, 100.00 handed over. The screen used to show
+  // "Still to pay 26.00" and "Change due 80.00" at the same time.
+  const r = splitOf(4600, [cashDraft(2000, 10000)]);
+  assert.equal(r.changeMinor, 5400);
+  assert.equal(r.shortfallMinor, 0);
+  assert.ok(r.covered);
+  assert.deepEqual(r.appliedMinor, [4600]);
+});
+check('an over-typed cash box still yields the right change', () => {
+  // 46.00 sale, box raised to 60.00, 60.00 handed over. This used to read
+  // change 0.00 and commit 60.00 of cash taken.
+  const r = splitOf(4600, [cashDraft(6000, 6000)]);
+  assert.equal(r.changeMinor, 1400);
+  assert.ok(r.covered);
+  assert.deepEqual(r.appliedMinor, [4600]);
+});
+check('a card and cash split allocates in entry order', () => {
+  const r = splitOf(4600, [cardDraft(2000), cashDraft(2600, 3000)]);
+  assert.equal(r.changeMinor, 400);
+  assert.deepEqual(r.appliedMinor, [2000, 2600]);
+  assert.ok(r.covered);
+});
+check('two cash tenders split the sale between them', () => {
+  const r = splitOf(4600, [cashDraft(2000, 2000), cashDraft(2600, 3000)]);
+  assert.equal(r.changeMinor, 400);
+  assert.deepEqual(r.appliedMinor, [2000, 2600]);
+});
+// The till cannot make a card machine give change, so an over-typed card is
+// refused rather than absorbed -- absorbing it takes the difference out of the
+// drawer against a card that really charged the higher figure.
+check('a card typed above the sale total is refused, not absorbed', () => {
+  const r = splitOf(4600, [cardDraft(6000)]);
+  assert.equal(r.overNonCashMinor, 1400);
+  assert.ok(!r.covered);
+});
+check('cash handed over below the amount box is a shortfall', () => {
+  const r = splitOf(4600, [cashDraft(4600, 3000)]);
+  assert.equal(r.shortfallMinor, 1600);
+  assert.equal(r.changeMinor, 0);
+  assert.ok(!r.covered);
+});
+// The two properties everything above rests on.
+check('a shortfall and change can never both be showing', () => {
+  const cases = [
+    [4600, [cashDraft(4600)]], [4600, [cashDraft(2000, 10000)]], [4600, [cashDraft(6000, 6000)]],
+    [4600, [cardDraft(2000), cashDraft(2600, 3000)]], [4600, [cashDraft(4600, 3000)]],
+    [4600, [cardDraft(6000)]], [0, [cashDraft(0)]], [4600, [cashDraft(0, 0)]],
+  ];
+  for (const [total, drafts] of cases) {
+    const r = splitOf(total, drafts);
+    assert.ok(r.shortfallMinor === 0 || r.changeMinor === 0);
+  }
+});
+check('what is recorded adds up to the sale whenever it is covered', () => {
+  // This is the drawer invariant. `shift-totals.ts` sums these figures as the
+  // cash that netted in, so if they do not sum to the total, the drawer cannot
+  // balance at close.
+  const cases = [
+    [4600, [cashDraft(4600)]], [4600, [cashDraft(2000, 10000)]], [4600, [cashDraft(6000, 6000)]],
+    [4600, [cardDraft(2000), cashDraft(2600, 3000)]], [4600, [cashDraft(2000, 2000), cashDraft(2600, 3000)]],
+  ];
+  for (const [total, drafts] of cases) {
+    const r = splitOf(total, drafts);
+    assert.ok(r.covered);
+    assert.equal(r.appliedMinor.reduce((a, b) => a + b, 0), total);
+  }
+});
+// Cash rounding touches the change and nothing else. Rounding the allocation
+// would break the invariant above, and the sale record has no rounding line to
+// book the difference against -- so the crumb stays in the drawer. A shop that
+// turned the setting on has already accepted that.
+check('cash rounding moves the change, never the allocation', () => {
+  const r = splitOf(4600, [cashDraft(4600, 4603)], 5);
+  assert.equal(r.changeMinor, 5);
+  assert.deepEqual(r.appliedMinor, [4600]);
+});
+check('the receipt shows the same change as the screen', () => {
+  const model = buildReceiptModel({
+    receiptNumber: 'R-000001',
+    orderId: 'o1',
+    lines: [{ productId: 'p1', name: 'Thing', unitPrice: 46, quantity: 1, lineDiscount: 0 }],
+    tenders: [{ kind: 'cash', amount: 20, tendered: 100 }],
+    subtotal: 46,
+    discount: 0,
+    total: 46,
+    cashierName: 'Ada',
+    deviceLabel: 'Till 1',
+  });
+  assert.equal(model.changeDue, 54);
+  assert.equal(model.tenders[0].amount, 46);
+  assert.equal(model.tenders[0].tendered, 100);
 });
 
 console.log('receipt figures');

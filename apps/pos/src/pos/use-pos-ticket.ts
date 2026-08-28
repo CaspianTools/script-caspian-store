@@ -3,14 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { Product } from '@caspian-explorer/script-caspian-store';
 import type { PosSaleLine } from './storage/types';
-
-/** Cents in, cents out — see the note in `totals` below. */
-function toMinor(amount: number): number {
-  return Math.round(amount * 100);
-}
-function fromMinor(minor: number): number {
-  return Math.round(minor) / 100;
-}
+import { fromMinor, toMinor } from './money';
 
 export interface PosTicketTotals {
   subtotal: number;

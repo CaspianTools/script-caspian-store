@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { useT, useCaspianNavigation, cn } from '@caspian-explorer/script-caspian-store';
 import { ChevronLeftIcon, PackageIcon } from '../../../icons';
 import { PosSelect } from '../ui/pos-field';
 import {
@@ -278,7 +278,14 @@ export function LocalProductPage({ productId }: { productId: string }) {
         <div className="cpos-stats">
           <div className="cpos-stat">
             <span className="cpos-stat__label">{t('pos.store.totalStock')}</span>
-            <span className="cpos-stat__value">{onHand}</span>
+            <span className={cn('cpos-stat__value', onHand < 0 && 'cpos-neg')}>{onHand}</span>
+            {onHand < 0 ? (
+              // Colour is never the only signal: the badge says it in words for
+              // anyone who cannot tell the red from the black.
+              <span className="cpos-badge cpos-badge--danger">
+                {t('pos.store.product.short')}
+              </span>
+            ) : null}
             {summary.onHand !== onHand ? (
               // Worth saying out loud rather than hiding: the ledger and the
               // shelf disagreeing means a quantity was written before the
@@ -316,7 +323,17 @@ export function LocalProductPage({ productId }: { productId: string }) {
           </div>
           <div className="cpos-stat">
             <span className="cpos-stat__label">{t('pos.store.product.stockValue')}</span>
-            <span className="cpos-stat__value">{money(onHand * product.costPrice)}</span>
+            {/*
+              The one place on this page that did not guard on a cost price, so
+              an item added by hand -- which never gets one, since only a
+              delivery stamps it -- showed 0.00 as though that were its shelf
+              value. Oversold, `onHand * 0` is `-0`, and `Intl` renders that
+              "-$0.00". An em dash is the honest answer to a figure the till
+              does not have.
+            */}
+            <span className="cpos-stat__value">
+              {product.costPrice > 0 ? money(onHand * product.costPrice) : '\u2014'}
+            </span>
             <span className="cpos-stat__hint">{t('pos.store.product.stockValueHint')}</span>
           </div>
         </div>

@@ -159,11 +159,25 @@ never against a hardcoded role id; the People screen and the Add person dialog
 got that wrong once and a custom role granted App admin could not hand out
 Support.
 
-**The money arithmetic is a pure function.**
-[src/pos/standalone/price-local-sale.ts](src/pos/standalone/price-local-sale.ts)
-was split out of the IndexedDB transaction so it can be checked in CI without a
-browser, which is exactly what `check-standalone.mjs` does. Anything that changes
-what a customer is charged goes there, with a matching assertion.
+**The money arithmetic is three pure functions**, each split out of the layer
+that stores or renders it so it can be checked in CI without a browser, which is
+exactly what `check-standalone.mjs` does:
+
+- [src/pos/money.ts](src/pos/money.ts) — the primitives. `toMinor`/`fromMinor`,
+  cash rounding, the `-0` guard, currency validation. React-free and with no
+  `standalone/` import, because the tender dialog and the receipt model are
+  shared files a cloud register renders too. It exists because these had **four**
+  copies across four files and the one that drifted was the change a customer is
+  handed.
+- [src/pos/standalone/price-local-sale.ts](src/pos/standalone/price-local-sale.ts)
+  — what a customer is **charged**.
+- [src/pos/tender-allocation.ts](src/pos/tender-allocation.ts) — what they are
+  **handed back**, and what each tender is recorded as having covered. That last
+  part is not cosmetic: `shift-totals.ts` reads a tender'''s `amount` as the cash
+  that netted into the drawer, so writing through what a cashier typed rather
+  than what it covered is a drawer that closes over.
+
+Anything that changes any of the three goes there, with a matching assertion.
 
 **Till data is not rebuildable.** There are five cloud stores — `queue`,
 `leases`, `catalog`, `openTicket`, `meta` — caches and outboxes whose truth lives

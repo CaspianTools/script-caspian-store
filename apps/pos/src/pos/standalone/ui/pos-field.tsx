@@ -9,6 +9,18 @@ export interface PosFieldProps {
   /** Muted help text under the control. */
   help?: ReactNode;
   /**
+   * What is wrong with what is in the control, in the danger tone. Replaces
+   * `help` while it is set rather than stacking under it: two sentences under
+   * one field is where a cashier stops reading either.
+   *
+   * Announced as part of the field's accessible NAME, not as a description,
+   * because `PosField` renders a `<label>` wrapping its control. That reads
+   * "Price, An item needs a price" without any id plumbing, which is the
+   * behaviour wanted here -- the caller still sets `aria-invalid` on the
+   * control itself so the state is exposed as well as the reason.
+   */
+  error?: string;
+  /**
    * A flex basis, and nothing else.
    *
    * Every form in the till is `.cpos-row` holding fields of different widths --
@@ -31,13 +43,22 @@ export interface PosFieldProps {
  * Replaces the `field` / `fieldLabel` inline-style pair from the old
  * `panel-styles.ts`, which ten panels imported and which is now gone.
  */
-export function PosField({ label, children, help, style, className, asDiv }: PosFieldProps) {
+export function PosField({
+  label,
+  children,
+  help,
+  error,
+  style,
+  className,
+  asDiv,
+}: PosFieldProps) {
   const Tag = asDiv ? 'div' : 'label';
   return (
     <Tag className={cn('cpos-field', className)} style={style}>
       <span className="cpos-field__label">{label}</span>
       {children}
-      {help ? <FieldDescription>{help}</FieldDescription> : null}
+      {error ? <span className="cpos-field__error">{error}</span> : null}
+      {!error && help ? <FieldDescription>{help}</FieldDescription> : null}
     </Tag>
   );
 }

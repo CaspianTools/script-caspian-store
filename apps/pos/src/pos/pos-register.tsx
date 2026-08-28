@@ -32,7 +32,8 @@ import { readLocalShopSettings } from './standalone/local-db';
 import { announcePosSaleCommitted } from './standalone/use-pos-auto-backup';
 import { usePosOpenSale } from './open-sale-context';
 import { getPosDeviceId, getPosDeviceLabel, nextPosSaleId } from './pos-device';
-import { PosTenderDialog, parseAmount } from './pos-tender-dialog';
+import { PosTenderDialog } from './pos-tender-dialog';
+import { parseAmount } from './parse-amount';
 import {
   buildReceiptModel,
   summariseSoldLines,
@@ -608,22 +609,61 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
         {ambiguous && !searchQuery ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <strong style={{ fontSize: 14 }}>{t('pos.scan.chooseMatch')}</strong>
-            {ambiguous.map((product) => (
-              <button
-                key={product.id}
-                type="button"
-                className="cpos-btn cpos-btn--outline"
-                style={{ justifyContent: 'space-between' }}
-                onClick={() => {
-                  ticket.addProduct(product);
-                  setAmbiguous(null);
-                  setScanMessage(null);
-                }}
-              >
-                <span>{product.name}</span>
-                <span>{formatPrice(product.price)}</span>
-              </button>
-            ))}
+            {/*
+              Name and price alone are not enough to choose between two items
+              that share a barcode -- which is exactly the situation this picker
+              exists for, and two items with the same name is the commonest
+              version of it. The code and what is on the shelf are what tell
+              them apart, so they are on the button.
+            */}
+            {ambiguous.map((product) => {
+              const onHand = Object.values(product.stock ?? {}).reduce(
+                (sum, count) => sum + (count ?? 0),
+                0,
+              );
+              const detail = [product.sku || product.barcode, product.category]
+                .filter(Boolean)
+                .join(' \u00b7 ');
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  className="cpos-btn cpos-btn--outline"
+                  style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
+                  onClick={() => {
+                    ticket.addProduct(product);
+                    setAmbiguous(null);
+                    setScanMessage(null);
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 2,
+                      minWidth: 0,
+                    }}
+                  >
+                    <span>{product.name}</span>
+                    {detail ? <span className="cpos-muted">{detail}</span> : null}
+                  </span>
+                  <span
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: 2,
+                    }}
+                  >
+                    <span>{formatPrice(product.price)}</span>
+                    <span className={cn('cpos-muted', onHand < 0 && 'cpos-neg')}>
+                      {t('pos.search.inStock', { count: onHand })}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         ) : null}
 

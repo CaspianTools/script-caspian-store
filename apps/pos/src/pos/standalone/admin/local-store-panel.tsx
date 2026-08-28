@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { useT, useCaspianNavigation, cn } from '@caspian-explorer/script-caspian-store';
 import { PackageIcon, PlusIcon, StoreIcon } from '../../../icons';
 import { PosSelect } from '../ui/pos-field';
 import { deleteLocalProduct, listAllLocalLots, listLocalProducts } from '../local-db';
@@ -130,15 +130,14 @@ export function LocalStorePanel() {
           <span className="cpos-section__title">
             {t('pos.admin.products.listTitle', { count: products?.length ?? 0 })}
           </span>
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              marginInlineStart: 'auto',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}
-          >
+          {/*
+            .cpos-actions rather than an anonymous inline flex: it right-aligns
+            and wraps as a GROUP. The hand-rolled version wrapped each control
+            independently, so at around 1200px the search box and Receive stock
+            took the first line and left Add item -- the primary action --
+            floating mid-row under them, aligned to nothing.
+          */}
+          <div className="cpos-actions" style={{ flex: '1 1 auto', alignItems: 'center' }}>
             <input
               className="cpos-input"
               type="search"
@@ -242,7 +241,9 @@ export function LocalStorePanel() {
                       <td className="cpos-table__num">
                         {formatLocalMoney(p.price, settings.currency)}
                       </td>
-                      <td className="cpos-table__num">{totalStock(p)}</td>
+                      <td className={cn('cpos-table__num', totalStock(p) < 0 && 'cpos-neg')}>
+                        {totalStock(p)}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button
