@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type KeyboardEvent } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { EyeIcon, EyeOffIcon } from '../../icons';
 
 /**

@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useId, useState, type FormEvent, type ReactNode } from 'react';
-import { useT, useCaspianStandalone, useToast } from '@caspian-explorer/script-caspian-store';
+import { useCaspianStandalone, useToast } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { StoreIcon } from '../../icons';
 import { isTerminalCodeShaped } from './terminal-code';
 import { usePosTerminal } from './terminal-context';

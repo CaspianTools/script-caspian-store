@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { useCallback, useEffect, useState } from 'react';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { readLocalShopSettings } from '../local-db';
 import { listLocalShifts, summariseLocalShift } from '../local-shifts';
 import { ShiftReport } from '../shift-report';
 import type { ShiftTotals } from '../shift-totals';
 import type { LocalShift } from '../types';
 import { PanelLoadError } from './panel-load-error';
+import { usePosMoney } from '../../use-pos-money';
 
 /**
  * Every turn worked at every counter, newest first.
@@ -51,16 +52,7 @@ export function LocalShiftsPanel() {
     void refresh();
   }, [refresh]);
 
-  const formatPrice = useMemo(
-    () => (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    },
-    [currency],
-  );
+  const formatPrice = usePosMoney(currency);
 
   const opened = shifts?.find((s) => s.id === openId) ?? null;
 

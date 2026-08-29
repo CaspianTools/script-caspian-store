@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  useT,
   useToast,
   FieldDescription,
   useCaspianNavigation,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { FolderIcon, PlusIcon } from '../../../icons';
 import {
   adoptLocalCategoriesFromProducts,

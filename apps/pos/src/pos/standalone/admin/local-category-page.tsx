@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useToast, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { useToast, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { ChevronLeftIcon, FolderIcon } from '../../../icons';
 import { PosDialog } from '../ui/pos-dialog';
 import { PosField, PosSelect } from '../ui/pos-field';
@@ -24,9 +25,9 @@ import {
 } from '../store-stats';
 import type { LocalCategory, LocalProduct, LocalSale } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
-import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
 import { usePosConfirm } from '../ui/pos-confirm';
+import { usePosMoney } from '../../use-pos-money';
 
 /**
  * One category, and what it is worth.
@@ -121,7 +122,7 @@ export function LocalCategoryPage({ categoryId }: { categoryId: string }) {
     return { held, stockValue, unitsSold, revenue, grossProfit, unitsWithoutCost, active };
   }, [mine, perProduct]);
 
-  const money = (amount: number) => formatLocalMoney(amount, settings.currency);
+  const money = usePosMoney(settings.currency);
 
   const rename = async () => {
     if (!category) return;

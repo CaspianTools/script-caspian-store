@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { CheckIcon, ScanIcon } from '../../icons';
 import { usePosAdapter } from '../pos-adapter-context';
 import { readScannerGapMs, writeScannerGapMs } from '../pos-preferences';

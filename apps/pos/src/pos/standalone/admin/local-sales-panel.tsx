@@ -1,7 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, cn, toCsv, type CsvCell } from '@caspian-explorer/script-caspian-store';
+import {
+  cn,
+  toCsv,
+  type CsvCell,
+  useFormatDate,
+} from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { CashDrawerIcon, ReceiptIcon } from '../../../icons';
 import { listLocalOpeningCash, listLocalSales, readLocalShopSettings } from '../local-db';
 import { saveTextFile } from '../local-backup';
@@ -13,6 +19,14 @@ import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
 import { LocalShiftsPanel } from './local-shifts-panel';
 import { PosSelect } from '../ui/pos-field';
+import { usePosMoney } from '../../use-pos-money';
+
+/**
+ * Hoisted, not inline. `useFormatDate` memoises on `[locale, options]`, and an
+ * object literal written at the call site is a new reference every render --
+ * which would rebuild an `Intl.DateTimeFormat` on every paint.
+ */
+const WHEN: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
 
 type Range = 'today' | 'week' | 'month' | 'all';
 
@@ -36,6 +50,7 @@ function startOf(range: Range): number {
  */
 export function LocalSalesPanel() {
   const t = useT();
+  const formatWhen = useFormatDate(WHEN);
   const { can } = usePosRoles();
   const session = usePosLocalSession();
   const mayExport = can(session.user?.role, 'sales.export');
@@ -70,15 +85,7 @@ export function LocalSalesPanel() {
     void refresh();
   }, [refresh]);
 
-  const format = useMemo(() => {
-    return (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    };
-  }, [currency]);
+  const format = usePosMoney(currency);
 
   const visible = useMemo(() => {
     const from = startOf(range);
@@ -251,7 +258,7 @@ export function LocalSalesPanel() {
                   */}
                   {visibleFloats.slice(0, 60).map((r) => (
                     <tr key={r.id}>
-                      <td>{new Date(r.confirmedAtMillis).toLocaleString()}</td>
+                      <td>{formatWhen.format(r.confirmedAtMillis)}</td>
                       <td>{r.cashierName || '—'}</td>
                       <td>{r.deviceLabel || r.deviceId.slice(0, 8)}</td>
                       <td>{format(r.amount)}</td>
@@ -306,7 +313,7 @@ export function LocalSalesPanel() {
                   <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
                     {s.receiptNumber}
                   </td>
-                  <td>{new Date(s.committedAtMillis).toLocaleString()}</td>
+                  <td>{formatWhen.format(s.committedAtMillis)}</td>
                   <td>{s.cashierName || '—'}</td>
                   <td>{s.lines.reduce((n, l) => n + l.quantity, 0)}</td>
                   <td>{format(s.total)}</td>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 
 /**
  * Registers the register's own service worker at scope `/pos`.

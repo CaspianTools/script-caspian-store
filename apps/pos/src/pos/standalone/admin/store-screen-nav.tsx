@@ -1,7 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useT, cn, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { cn, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { FolderIcon, PackageIcon, TruckIcon, InboxIcon } from '../../../icons';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';

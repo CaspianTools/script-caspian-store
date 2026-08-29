@@ -1,7 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import {
+  useCaspianNavigation,
+  useFormatDate,
+} from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { PlusIcon, TruckIcon } from '../../../icons';
 import { listLocalStockReceipts, listLocalSuppliers } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
@@ -9,9 +13,11 @@ import { usePosRoles } from '../role-context';
 import { usePosShopSettings } from '../shop-settings-context';
 import type { LocalStockReceipt, LocalSupplier } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
-import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
 import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
+import { usePosMoney } from '../../use-pos-money';
+
+const DAY: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
 /**
  * Who the shop buys from.
@@ -26,10 +32,12 @@ import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
  */
 export function LocalSuppliersPanel() {
   const t = useT();
+  const formatDay = useFormatDate(DAY);
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
   const { can } = usePosRoles();
   const { settings } = usePosShopSettings();
+  const money = usePosMoney(settings.currency);
   const quickAdd = usePosQuickAdd();
   const mayEdit = can(session.user?.role, 'store.edit');
 
@@ -152,11 +160,11 @@ export function LocalSuppliersPanel() {
                       </td>
                       <td className="cpos-table__num">{stats?.deliveries ?? 0}</td>
                       <td className="cpos-table__num">
-                        {formatLocalMoney(stats?.total ?? 0, settings.currency)}
+                        {money(stats?.total ?? 0)}
                       </td>
                       <td>
                         {stats?.lastAtMillis
-                          ? new Date(stats.lastAtMillis).toLocaleDateString()
+                          ? formatDay.format(stats.lastAtMillis)
                           : '—'}
                       </td>
                       <td>

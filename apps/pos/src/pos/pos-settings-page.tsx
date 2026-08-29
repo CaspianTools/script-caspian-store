@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   useLocaleControls,
-  useT,
   BUILTIN_LOCALE_CODES,
   BUILTIN_LOCALE_NAMES,
   Select,
@@ -13,6 +12,7 @@ import {
   useCaspianFirebaseOptional,
   CASPIAN_STORE_VERSION,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import {
   GlobeIcon,
   InboxIcon,

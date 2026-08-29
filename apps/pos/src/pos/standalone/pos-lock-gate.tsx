@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { LockIcon } from '../../icons';
 import { IDLE_LOCK_CHANGED_EVENT, readIdleLockMinutes } from '../pos-preferences';
 import { throttleWaitSeconds } from './sign-in-throttle';

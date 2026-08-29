@@ -5,10 +5,10 @@ import {
   useAuth,
   useCaspianLink,
   useScriptSettings,
-  useT,
   POS_ROLES,
   type UserRole,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { PosStyleScope } from './theme/pos-styles';
 import { LockIcon, ShoppingCartIcon } from '../icons';
 import { usePosLocalSession } from './standalone/local-session-context';

@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  useT,
   useToast,
   FieldDescription,
   cn,
   useCaspianNavigation,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { InboxIcon, ScanIcon, SearchIcon, TrashIcon } from '../../../icons';
 import { DEFAULT_SCAN_GAP_MS, useBarcodeScanner } from '../../hardware/use-barcode-scanner';
 import { readScannerGapMs } from '../../pos-preferences';
@@ -34,9 +34,9 @@ import type {
 } from '../types';
 import { LocalProductFormDialog } from './local-product-form-dialog';
 import { StoreScreenNav } from './store-screen-nav';
-import { formatLocalMoney } from './local-money';
 import { PosSelect } from '../ui/pos-field';
 import { usePosConfirm } from '../ui/pos-confirm';
+import { usePosMoney } from '../../use-pos-money';
 
 type Mode = 'scan' | 'manual';
 
@@ -245,7 +245,7 @@ export function LocalReceiveStockPage() {
   };
 
   const totals = useMemo(() => receiptTotals(receipt?.lines ?? []), [receipt?.lines]);
-  const money = (amount: number) => formatLocalMoney(amount, settings.currency);
+  const money = usePosMoney(settings.currency);
 
   const post = async () => {
     if (!receipt || !receipt.lines.length || postingRef.current) return;
@@ -361,6 +361,7 @@ export function LocalReceiveStockPage() {
                 <input className="cpos-input"
                   value={manualCode}
                   placeholder={t('pos.scan.placeholder')}
+                  aria-label={t('pos.scan.labelReceive')}
                   onChange={(e) => setManualCode(e.target.value)}
                 />
               </div>

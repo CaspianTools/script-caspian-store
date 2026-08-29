@@ -25,8 +25,8 @@ const ru: MessageDict = {
   'pos.queue.offline': 'Нет интернета',
   'pos.queue.offlineHolding': 'Нет интернета — {count} в ожидании',
   'pos.queue.sending': 'Отправка: {count}',
-  'pos.queue.blockedCount': '{count} требуют внимания',
-  'pos.queue.lowNumbers': 'Осталось номеров чеков: {count}',
+  'pos.queue.blockedCount': '{count, plural, one {# требует внимания} few {# требуют внимания} many {# требуют внимания} other {# требуют внимания}}',
+  'pos.queue.lowNumbers': '{count, plural, one {остался # номер чека} few {осталось # номера чека} many {осталось # номеров чека} other {осталось # номера чека}}',
   'pos.queue.noNumbers': 'Не удаётся зарезервировать номера чеков',
   'pos.queue.paused': 'Отправка приостановлена',
   'pos.queue.pausedBody': 'Этой учётной записи больше не разрешено записывать продажи, поэтому ничего не отправляется. Войдите под учётной записью с ролью «Сотрудник», и отложенные продажи пройдут.',
@@ -141,7 +141,7 @@ const ru: MessageDict = {
   'pos.lock.someoneElse': 'Войти под другой учётной записью',
   'pos.settings.idleLock': 'Блокировать экран при бездействии',
   'pos.settings.idleLockNever': 'Никогда',
-  'pos.settings.idleLockMinutes': '{count, plural, one {# минута} few {# минуты} other {# минут}}',
+  'pos.settings.idleLockMinutes': '{count, plural, one {# минута} few {# минуты} many {# минут} other {# минуты}}',
   'pos.settings.idleLockHelp':
     'Закрывает экран, пока снова не введут пароль. Никого не выводит из системы: открытая продажа, кассир и пересчёт денег в ящике остаются. Выключено, пока вы не выберете время, и относится только к этому компьютеру.',
   'pos.admin.people.lastSupport':
@@ -161,7 +161,7 @@ const ru: MessageDict = {
   'pos.scan.matchedByBarcode': 'Найдено по штрихкоду',
   'pos.scan.matchedById': 'Найдено по идентификатору товара',
   'pos.scan.multipleMatches':
-    '{count, plural, one {# товар подходит} other {# товаров подходит}}',
+    '{count, plural, one {# товар подходит} few {# товара подходят} many {# товаров подходят} other {# товара подходят}}',
   'pos.scan.chooseMatch': 'Какой именно?',
   'pos.scan.reading': 'Считывание… {code}',
 
@@ -185,7 +185,7 @@ const ru: MessageDict = {
   'pos.ticket.discountTotal': 'Скидка',
   'pos.ticket.tax': 'Налог',
   'pos.ticket.total': 'Итого',
-  'pos.ticket.itemCount': '{count, plural, =0 {Нет товаров} one {# товар} other {# товаров}}',
+  'pos.ticket.itemCount': '{count, plural, =0 {Нет товаров} one {# товар} few {# товара} many {# товаров} other {# товара}}',
   'pos.ticket.outOfStock': 'Нет в наличии',
   'pos.ticket.lowStock': 'Осталось {count}',
 
@@ -238,7 +238,7 @@ const ru: MessageDict = {
   'pos.settings.deviceLabelPlaceholder': 'Передний прилавок',
   'pos.done.retry': 'Повторить',
   'pos.done.stockWarning':
-    'Записано, но остаток ушёл в минус по {count, plural, one {# строке} other {# строкам}}. Проверьте склад.',
+    'Записано, но остаток ушёл в минус по {count, plural, one {# строке} few {# строкам} many {# строкам} other {# строкам}}. Проверьте склад.',
 
   // POS — receipt
   'pos.receipt.title': 'Чек',
@@ -319,10 +319,8 @@ const ru: MessageDict = {
     'Касса открыта в другой вкладке и заблокирована ею. Закройте другие вкладки и проверьте снова.',
   'pos.settings.storage.used': 'Занято места',
   'pos.settings.storage.usedOf': '{used} из {total}',
-  'pos.openSale.found':
-    'В {when} осталась незавершённая продажа на {count} товаров. Продолжите её или очистите.',
-  'pos.openSale.foundOther':
-    '{name} оставил(а) незавершённую продажу на {count} товаров в {when}. Продолжите её или очистите.',
+  'pos.openSale.found': 'Продажа на {count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}} осталась незавершённой в {when}. Продолжите или очистите её.',
+  'pos.openSale.foundOther': '{name} оставил незавершённой продажу на {count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}} в {when}. Продолжите или очистите её.',
   'pos.openSale.resume': 'Продолжить продажу',
   'pos.openSale.discard': 'Очистить',
   'pos.openSale.dismiss': 'Понятно',
@@ -535,7 +533,7 @@ const ru: MessageDict = {
     'Позовите его, если получится. В записи попадёт та сумма, которую посчитали.',
 
   'pos.shift.strip.sales':
-    '{count, plural, one {# продажа} few {# продажи} other {# продаж}}',
+    '{count, plural, one {# продажа} few {# продажи} many {# продаж} other {# продажи}}',
   'pos.shift.strip.drawer': 'Должно быть в ящике',
   'pos.shift.strip.manage': 'Смена',
 
@@ -637,7 +635,7 @@ const ru: MessageDict = {
   'pos.store.category.added': 'Добавлено: {name}',
   'pos.store.category.addHelp':
     'Товары привязаны по названию, поэтому это то слово, которое появится в списке.',
-  'pos.store.category.pageSub': '{count, plural, =0 {Нет товаров} one {# товар} other {# товаров}}',
+  'pos.store.category.pageSub': '{count, plural, =0 {Нет товаров} one {# товар} few {# товара} many {# товаров} other {# товара}}',
   'pos.store.category.figures': 'Показатели',
   'pos.store.category.products': 'Товары',
   'pos.store.category.activeCount': '{count} в продаже',
@@ -652,7 +650,7 @@ const ru: MessageDict = {
     'Товар хранит категорию как название, а не как ссылку, поэтому перенос товара в другую категорию уносит с собой и историю продаж.',
 
   'pos.store.product.salesTitle': 'Продажи',
-  'pos.store.product.onSales': '{count, plural, =0 {продаж нет} one {в # продаже} other {в # продажах}}',
+  'pos.store.product.onSales': '{count, plural, =0 {продаж нет} one {в # продаже} few {в # продажах} many {в # продажах} other {в # продажах}}',
   'pos.store.product.afterDiscount': 'скидка {amount}',
   'pos.store.product.averagePrice': 'Средняя цена',
   'pos.store.product.lastSold': 'Последняя продажа',
@@ -775,7 +773,7 @@ const ru: MessageDict = {
   'pos.admin.sales.listTitle': 'Продажи',
   'pos.admin.sales.month': 'Последние 30 дней',
   'pos.admin.sales.receipt': 'Чек',
-  'pos.admin.sales.takings': 'Получено с продаж ({count})',
+  'pos.admin.sales.takings': 'Получено за {count, plural, one {# продажу} few {# продажи} many {# продаж} other {# продажи}}',
   'pos.admin.sales.today': 'Сегодня',
   'pos.admin.sales.total': 'Итого',
   'pos.admin.sales.truncated': 'Показаны последние {shown} из {total}. Остальное — в выгрузке.',
@@ -976,7 +974,7 @@ const ru: MessageDict = {
   'pos.store.category.adoptHelp': 'У товаров уже вписаны категории. Это перенесёт их названия в список, чтобы они появлялись в выборе.',
   'pos.store.category.adopted': 'Собрано: {count, plural, one {# категория} few {# категории} many {# категорий} other {# категории}}',
   'pos.store.category.adoptedNone': 'Новых категорий не нашлось',
-  'pos.store.category.confirmDelete': 'Убрать «{name}» из списка? У товаров, отнесённых к ней ({count} шт.), название сохранится.',
+  'pos.store.category.confirmDelete': 'Удалить «{name}» из списка? {count, plural, =0 {В этой группе ничего нет.} one {# товар в ней сохранит название.} few {# товара в ней сохранят название.} many {# товаров в ней сохранят название.} other {# товара в ней сохранят название.}}',
   'pos.store.category.down': 'Вниз',
   'pos.store.category.duplicate': 'Такая категория уже есть в списке.',
   'pos.store.category.empty': 'Категорий пока нет',
@@ -1122,6 +1120,16 @@ const ru: MessageDict = {
   'pos.ticket.clearDetail': '{count, plural, one {# строка} few {# строки} many {# строк} other {# строки}}, {total}. Ничего не записывается.',
   'pos.ticket.clearTitle': 'Очистить эту продажу?',
   'pos.ticket.clearVerb': 'Очистить продажу',
+  'pos.admin.shop.currencyInvalid': 'Выберите валюту из списка.',
+  'pos.store.adjust.reason.customer-return': 'Покупатель вернул товар',
+  'pos.store.adjust.reason.count-correction': 'Исправление количества',
+  'pos.local.shopTitle': 'О вашем магазине',
+  'pos.local.shopBody': 'Две вещи, которые нужны кассе до первой продажи. Обе можно изменить позже в настройках.',
+  'pos.local.shopSkip': 'Сделаю это позже',
+  'pos.scan.labelAddToSale': 'Отсканируйте или введите код, чтобы добавить в эту продажу',
+  'pos.search.labelFindItem': 'Поиск по каталогу',
+  'pos.scan.labelReceive': 'Отсканируйте или введите код, чтобы добавить в эту поставку',
+  'pos.local.shopContinue': 'Продолжить',
 };
 
 export default ru;

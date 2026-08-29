@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment, useEffect, useRef, type ReactNode } from 'react';
-import { useCaspianLink, useT, cn } from '@caspian-explorer/script-caspian-store';
+import { useCaspianLink, cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import {
   ChevronLeftIcon,
   InboxIcon,

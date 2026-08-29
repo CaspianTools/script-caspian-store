@@ -23,6 +23,76 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v1.11.0 — It speaks your language
+
+Switching the register to Azerbaijani used to change the words and nothing else.
+Prices still read `$23.00`, dates still came out in the browser's format, and
+Russian plurals were written correctly in the translation file and then thrown
+away by the code.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+A till that has been running on the wrong currency label will start showing the
+right one immediately — no figures change, only how they are written.
+
+### Fixed
+
+- **Prices ignored the register's language.** Every screen formatted money
+  against the *browser's* language rather than the register's, so a till set to
+  Azerbaijani still wrote `$23.00` and grouped digits the American way. Twenty-two
+  places in all — every price, total, drawer figure and date.
+- **Russian plurals were being thrown away.** The translations were right —
+  `1 товар`, `2 товара`, `5 товаров` — but the register only ever picked between
+  "one" and "everything else", so `2 товара` came out as `2 товаров`. It now
+  asks the language what form a number takes. Azerbaijani and Turkish need only
+  two forms and get two; Russian needs four and gets four.
+- **Six English count messages had no plural at all** — "Taken across 1 sales",
+  "1 receipt numbers left", and a literal "The {count} item(s) filed under it".
+- **A currency could be mistyped.** It was a free-text box whose only rule was
+  turning letters into capitals, and a typo made every money figure on the till
+  lose its symbol, silently, everywhere. It is now a list, in your own language,
+  with the currencies this register is used with at the top.
+
+### Added
+
+- **Setting up a new till now asks for the shop's name and currency**, once,
+  while the account is being created. It is skippable, and both are changeable
+  later in Settings — but a till in Baku no longer opens on US dollars and stays
+  there until somebody finds the right screen. The currency is pre-selected from
+  the language you picked on the previous screen, and never applied without
+  showing you.
+- The moment a till was **commissioned** is now recorded when it is
+  commissioned, rather than the first time somebody happened to save the Shop
+  settings screen.
+
+### Changed
+
+- **The role called "Cashier (duplicate)" is now "Cashier (old)"** — and, more
+  to the point, it no longer appears in the People screen as a *second option
+  also called "Cashier"*. Only the App admin screen had ever told the two apart.
+- **"Camera scanning needs Chrome or Edge" is gone.** It was shown while running
+  in Chrome. What the camera scanner actually needs is a device that supports
+  it, which is mostly phones and tablets, so it now says that.
+- **The three scan boxes now say what each one does.** The one in the header,
+  the one on the register and the one on the Receive stock screen were all
+  announced identically to a screen reader, and only one of them adds to the
+  sale.
+
+### Internal
+
+- Eight new checks in `npm run check` cover the dictionaries: every key present
+  in every language, no orphans, every `{placeholder}` surviving translation,
+  every plural keeping an `other` arm, and no language using a plural form its
+  grammar does not have. They found four real defects on the first run — two
+  translations that had silently dropped their plural, a Russian one missing a
+  form, and two keys nobody had noticed were untranslated because their names
+  contain a hyphen.
+- A ninth reads the source rather than the bundle, and fails if any screen
+  imports `useT` from the library directly. Partial adoption of the plural fix
+  would be worse than none: whether a correct translation renders would depend
+  on which file the string happened to live on.
+
 ## v1.10.0 — One way to close a window, and a register that has addresses
 
 Every pop-up in the register behaved differently, "Are you sure?" arrived in

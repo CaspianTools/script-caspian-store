@@ -42,8 +42,8 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.queue.offline': 'No internet',
   'pos.queue.offlineHolding': 'No internet — {count} held',
   'pos.queue.sending': 'Sending {count}',
-  'pos.queue.blockedCount': '{count} need attention',
-  'pos.queue.lowNumbers': '{count} receipt numbers left',
+  'pos.queue.blockedCount': '{count, plural, one {# needs attention} other {# need attention}}',
+  'pos.queue.lowNumbers': '{count, plural, one {# receipt number left} other {# receipt numbers left}}',
   'pos.queue.noNumbers': 'Cannot reserve receipt numbers',
   'pos.queue.paused': 'Sending paused',
   'pos.queue.pausedBody': 'This account is no longer allowed to record sales, so nothing is being sent. Sign in with an account that has the Staff role and the held sales will go through.',
@@ -73,6 +73,9 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.guard.disabledBody':
     'Point of sale is disabled for this store. An admin can enable it in Settings.',
   'pos.scan.placeholder': 'Scan or type a barcode / SKU',
+  'pos.scan.labelAddToSale': 'Scan or type a code to add to this sale',
+  'pos.search.labelFindItem': 'Search the catalogue',
+  'pos.scan.labelReceive': 'Scan or type a code to add to this delivery',
   'pos.scan.title': 'Scan an item',
   'pos.scan.readyTitle': 'Ready to scan',
   'pos.scan.hint': 'A USB or Bluetooth scanner works here with no setup — just scan.',
@@ -80,7 +83,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.scan.camera': 'Use camera',
   'pos.scan.cameraStop': 'Stop camera',
   'pos.scan.cameraUnsupported':
-    'Camera scanning needs Chrome or Edge. Use a USB scanner, or type the code above.',
+    'Camera scanning is not available on this device. Use a USB scanner, or type the code.',
   'pos.scan.cameraDenied': 'Camera permission was denied. Allow it in your browser settings.',
   'pos.scan.notFound': 'Nothing matches {code}',
   'pos.scan.matchedBySku': 'Matched by SKU',
@@ -409,8 +412,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.store.category.emptyHelp': 'Add one, or take in the groups already typed on your items.',
   'pos.store.category.duplicate': 'That group is already on the list.',
   'pos.store.category.renamed': 'Group renamed, and the items with it',
-  'pos.store.category.confirmDelete':
-    'Remove "{name}" from the list? The {count} item(s) filed under it keep the name.',
+  'pos.store.category.confirmDelete': 'Remove "{name}" from the list? {count, plural, =0 {Nothing is filed under it.} one {The one item filed under it keeps the name.} other {The # items filed under it keep the name.}}',
 
   'pos.store.supplier.title': 'Suppliers',
   'pos.store.supplier.subtitle': 'Who this shop buys from.',
@@ -440,7 +442,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.appAdmin.subtitle':
     'The settings this shop is set up with, the roles behind them, the people who hold those roles, and the way back in if a password is lost. Only a Support account can open this page.',
   'pos.appAdmin.role.staff': 'Cashier',
-  'pos.appAdmin.role.cashier': 'Cashier (duplicate)',
+  'pos.appAdmin.role.cashier': 'Cashier (old)',
   'pos.appAdmin.role.storekeeper': 'Storekeeper',
   'pos.appAdmin.role.manager': 'Manager',
   'pos.appAdmin.role.accountant': 'Accountant',
@@ -449,7 +451,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.appAdmin.roleLocked': 'Support cannot be switched off. It is the only role that can open this page.',
   'pos.appAdmin.roleIsYours':
     'This is the role you are signed in as. It cannot be switched off, and App admin cannot be taken off it, because one flip would end your own access to this page.',
-  'pos.appAdmin.roleDuplicate': 'Same access as Cashier. Kept so people already given it keep working — give new people Cashier.',
+  'pos.appAdmin.roleDuplicate': 'The same access as Cashier, under an older name. Kept so anyone already given it keeps working — give new people Cashier.',
   'pos.appAdmin.rolesIntro':
     'The switch says whether anybody can be given the role. Open a role to see and change what holding it means.',
   'pos.appAdmin.rolesReadOnly':
@@ -710,6 +712,10 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.local.insecureContextTitle': 'This till is not on a secure address',
   'pos.local.insecureContextBody':
     'Passwords cannot be checked over a plain http address. The register needs https, or to be opened at localhost. Ask whoever set up this computer to fix the address — there is nothing to change here.',
+  'pos.local.shopContinue': 'Continue',
+  'pos.local.shopTitle': 'About your shop',
+  'pos.local.shopBody': 'Two things the register needs before the first sale. You can change both later in Settings.',
+  'pos.local.shopSkip': 'I\'ll do this later',
   'pos.local.commissionTitle': 'Set up this till',
   'pos.local.commissionBody':
     'Create the support account. It can add the shop\u2019s own staff afterwards, and is the only account on this till until it does.',
@@ -857,7 +863,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.admin.sales.week': 'Last 7 days',
   'pos.admin.sales.month': 'Last 30 days',
   'pos.admin.sales.all': 'Everything',
-  'pos.admin.sales.takings': 'Taken across {count} sales',
+  'pos.admin.sales.takings': 'Taken across {count, plural, one {# sale} other {# sales}}',
   'pos.admin.sales.export': 'Export to a spreadsheet',
   'pos.admin.sales.listTitle': 'Sales',
   'pos.admin.sales.empty': 'No sales in this period.',
@@ -882,7 +888,8 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.admin.shop.detailsTitle': 'Your shop',
   'pos.admin.shop.name': 'Shop name',
   'pos.admin.shop.currency': 'Currency',
-  'pos.admin.shop.currencyHelp': 'Three letters, like USD, EUR or AZN.',
+  'pos.admin.shop.currencyHelp': 'What prices and totals are shown in, everywhere on this till.',
+  'pos.admin.shop.currencyInvalid': 'Pick a currency from the list.',
   'pos.admin.shop.receiptTitle': 'What prints on a receipt',
   'pos.admin.shop.receiptHeader': 'Top of the receipt',
   'pos.admin.shop.receiptHeaderHelp': 'Your shop name, address and tax number, if you show one.',
@@ -941,10 +948,8 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.crash.reload': 'Reload the register',
   'pos.crash.backToRegister': 'Back to the register',
   'pos.crash.details': 'Show the technical message',
-  'pos.openSale.found':
-    'A sale of {count} items was left unfinished at {when}. Resume it, or clear it away.',
-  'pos.openSale.foundOther':
-    '{name} left a sale of {count} items unfinished at {when}. Resume it, or clear it away.',
+  'pos.openSale.found': 'A sale of {count, plural, one {# item} other {# items}} was left unfinished at {when}. Resume it, or clear it away.',
+  'pos.openSale.foundOther': '{name} left a sale of {count, plural, one {# item} other {# items}} unfinished at {when}. Resume it, or clear it away.',
   'pos.openSale.resume': 'Resume sale',
   'pos.openSale.discard': 'Clear it',
   'pos.openSale.dismiss': 'OK',

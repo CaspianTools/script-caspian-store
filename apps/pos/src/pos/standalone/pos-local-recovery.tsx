@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState, type FormEvent } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { LockIcon } from '../../icons';
 import { MIN_LOCAL_PASSWORD_LENGTH, passwordIsWeak } from './local-auth';
 import { buildLocalBackup, localBackupFilename, saveTextFile } from './local-backup';

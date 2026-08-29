@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useT, Button } from '@caspian-explorer/script-caspian-store';
+import { Button } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import {
   ensurePosStoragePersisted,
   formatBytes,

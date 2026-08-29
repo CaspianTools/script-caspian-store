@@ -1,13 +1,14 @@
 'use client';
 
-import { useId, useState, type FormEvent, type ReactNode } from 'react';
+import { useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import {
+  useLocale,
   useLocaleControls,
-  useT,
   BUILTIN_LOCALE_CODES,
   BUILTIN_LOCALE_NAMES,
   cn,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { LockIcon, ShoppingCartIcon } from '../../icons';
 import { usePosLocalSession } from './local-session-context';
 import { localCryptoAvailable, MIN_LOCAL_PASSWORD_LENGTH, passwordIsWeak } from './local-auth';
@@ -15,7 +16,8 @@ import { throttleWaitSeconds } from './sign-in-throttle';
 import { PasswordField } from './password-field';
 import { PosLocalRecovery, RecoveryCodeBlock } from './pos-local-recovery';
 import { mintRecoveryCode } from './recovery-code';
-import { PosSelect } from './ui/pos-field';
+import { currencyOptions } from './currencies';
+import { PosField, PosSelect } from './ui/pos-field';
 
 /**
  * Sign-in for a standalone till, the one-time setup that precedes it, and the
@@ -250,8 +252,18 @@ function SignInForm({ onLockedOut }: { onLockedOut: () => void }) {
  * the installer's hands with exactly one account on it, and the owner's staff
  * are added deliberately rather than as a side effect of setup.
  */
+/** A sensible default, offered rather than imposed. */
+function currencyForLocale(locale: string): string {
+  const primary = locale.split('-')[0];
+  if (primary === 'az') return 'AZN';
+  if (primary === 'tr') return 'TRY';
+  if (primary === 'ru') return 'RUB';
+  return 'USD';
+}
+
 function CommissionForm() {
   const t = useT();
+  const locale = useLocale();
   const { commission } = usePosLocalSession();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -284,6 +296,23 @@ function CommissionForm() {
   */
   const [pendingCode, setPendingCode] = useState<string | null>(null);
 
+  /**
+   * The setup step: shop name and currency, asked once, while the till is being
+   * commissioned.
+   *
+   * Deliberately a STEP and not a gate. The only signal a fresh till has is
+   * `commissionedAtMillis === 0`, and every till already in the field has it at
+   * zero -- a gate keyed on that would put a shop with a year of trading in
+   * front of a setup wizard. Here it is unreachable for a commissioned machine
+   * by construction, because this whole screen is.
+   */
+  const [step, setStep] = useState<'account' | 'shop'>('account');
+  const [shopName, setShopName] = useState('');
+  // Pre-SELECTED from the language the operator already chose, never silently
+  // applied: a till in Baku opening on USD was the whole complaint.
+  const [currency, setCurrency] = useState(() => currencyForLocale(locale));
+  const currencies = useMemo(() => currencyOptions(locale, currency), [locale, currency]);
+
   // Advisory, in the polite region, never blocking. Silently trimming would lock
   // out anybody whose password genuinely ends in a space, and refusing it
   // outright would forbid a password that is perfectly good written down.
@@ -309,7 +338,7 @@ function CommissionForm() {
       return;
     }
     setError('');
-    setPendingCode(mintRecoveryCode());
+    setStep('shop');
   };
 
   const create = async () => {
@@ -322,6 +351,9 @@ function CommissionForm() {
         displayName: displayName.trim(),
         password,
         recoveryCode: pendingCode,
+        // Only when something was actually answered. Skipping the step leaves
+        // `DEFAULT_LOCAL_SHOP_SETTINGS` exactly as before.
+        ...(shopName.trim() || currency ? { shop: { shopName: shopName.trim(), currency } } : {}),
       });
       if (!result.ok) {
         setError(
@@ -346,6 +378,66 @@ function CommissionForm() {
       setBusy(false);
     }
   };
+
+  if (step === 'shop' && !pendingCode) {
+    const onwards = () => {
+      setError('');
+      setPendingCode(mintRecoveryCode());
+    };
+    return (
+      <div className="cpos-signin">
+        <div className="cpos-signin__brand">
+          <span className="cpos-signin__mark">
+            <ShoppingCartIcon size={24} />
+          </span>
+          <h1 className="cpos-signin__h">{t('pos.local.shopTitle')}</h1>
+          <p className="cpos-signin__sub">{t('pos.local.shopBody')}</p>
+        </div>
+
+        <PosField label={t('pos.admin.shop.name')}>
+          <input
+            className="cpos-input"
+            value={shopName}
+            autoFocus
+            autoComplete="off"
+            onChange={(event) => setShopName(event.target.value)}
+          />
+        </PosField>
+
+        <PosField label={t('pos.admin.shop.currency')} help={t('pos.admin.shop.currencyHelp')}>
+          <PosSelect
+            value={currency}
+            options={currencies}
+            onChange={(event) => setCurrency(event.target.value)}
+          />
+        </PosField>
+
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--primary cpos-btn--lg cpos-btn--block"
+          onClick={onwards}
+        >
+          {t('pos.local.shopContinue')}
+        </button>
+
+        {/*
+          Skippable, and it must stay skippable. This step must never be the
+          reason a till cannot be commissioned -- skipping lands on the same
+          defaults the register has always started with.
+        */}
+        <button
+          type="button"
+          className="cpos-btn cpos-btn--ghost cpos-btn--block"
+          onClick={() => {
+            setShopName('');
+            onwards();
+          }}
+        >
+          {t('pos.local.shopSkip')}
+        </button>
+      </div>
+    );
+  }
 
   if (pendingCode) {
     return (
@@ -381,7 +473,10 @@ function CommissionForm() {
         <button
           type="button"
           className="cpos-btn cpos-btn--ghost cpos-btn--block"
-          onClick={() => setPendingCode(null)}
+          onClick={() => {
+            setPendingCode(null);
+            setStep('shop');
+          }}
           disabled={busy}
         >
           {t('pos.local.recoveryBack')}

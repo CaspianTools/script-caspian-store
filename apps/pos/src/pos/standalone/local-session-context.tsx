@@ -87,6 +87,12 @@ export interface PosLocalSessionValue {
     displayName: string;
     password: string;
     recoveryCode?: string;
+    /**
+     * What the setup step collected: shop name and currency. Merged into the
+     * same write that stores the recovery hash, so a fresh till is commissioned
+     * in one transaction rather than two.
+     */
+    shop?: { shopName: string; currency: string };
   }) => Promise<{ ok: true } | { ok: false; reason: string }>;
   refresh: () => Promise<void>;
 }
@@ -300,10 +306,11 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       displayName: string;
       password: string;
       recoveryCode?: string;
+      shop?: { shopName: string; currency: string };
     }) => {
       if (await isCommissioned()) return { ok: false as const, reason: 'already-commissioned' };
       const role: PosLocalRole = 'superadmin';
-      const { recoveryCode, ...account } = input;
+      const { recoveryCode, shop, ...account } = input;
       const created = await createLocalUser({ ...account, role });
       if (!created.ok) return { ok: false as const, reason: created.reason };
       // Stored after the account exists, because the code names the account it
@@ -311,9 +318,25 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       // take the account with it: a till with an account and no recovery code
       // is the state every till commissioned before this release is in, and it
       // is recoverable from the App admin screen. A till with neither is not.
-      if (recoveryCode) {
+      if (recoveryCode || shop) {
         try {
-          await writeLocalShopSettings(await recoveryPatchFor(recoveryCode, created.user.id));
+          // One write, not two. `writeLocalShopSettings` is a read-merge-write
+          // in a single IndexedDB transaction, so folding the setup answers in
+          // here adds no new failure mode to the one already reasoned about.
+          await writeLocalShopSettings({
+            ...(recoveryCode ? await recoveryPatchFor(recoveryCode, created.user.id) : {}),
+            ...(shop
+              ? {
+                  shopName: shop.shopName,
+                  currency: shop.currency,
+                  // The moment the till was actually commissioned. It used to be
+                  // stamped by the unrelated act of saving the Shop panel, so a
+                  // till that never opened that screen reported never having
+                  // been set up.
+                  commissionedAtMillis: Date.now(),
+                }
+              : {}),
+          });
         } catch {
           // Left without a code. The App admin screen says so and offers one.
         }

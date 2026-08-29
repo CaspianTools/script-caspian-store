@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useT, useToast, FieldDescription, cn } from '@caspian-explorer/script-caspian-store';
+import { useToast, FieldDescription, cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { adjustLocalStock } from '../local-db';
 import { usePosLocalSession } from '../local-session-context';
 import { DEFAULT_SIZE_KEY } from '../lot-allocation';

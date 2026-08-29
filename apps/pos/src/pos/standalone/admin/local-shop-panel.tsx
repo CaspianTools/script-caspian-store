@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useT, useToast } from '@caspian-explorer/script-caspian-store';
-import { PosCheck, PosField } from '../ui/pos-field';
+import { useEffect, useMemo, useState } from 'react';
+import { useToast, useLocale } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
+import { PosCheck, PosField, PosSelect } from '../ui/pos-field';
+import { usableCurrency } from '../../money';
+import { currencyOptions } from '../currencies';
 import { readLocalShopSettings, writeLocalShopSettings } from '../local-db';
 import { DEFAULT_LOCAL_SHOP_SETTINGS, type LocalShopSettings } from '../types';
 
@@ -13,8 +16,15 @@ import { DEFAULT_LOCAL_SHOP_SETTINGS, type LocalShopSettings } from '../types';
 export function LocalShopPanel() {
   const t = useT();
   const { toast } = useToast();
+  const locale = useLocale();
   const [draft, setDraft] = useState<LocalShopSettings>(DEFAULT_LOCAL_SHOP_SETTINGS);
   const [loaded, setLoaded] = useState(false);
+
+  // Two hundred-odd entries, so built once per locale rather than per render.
+  const currencies = useMemo(
+    () => currencyOptions(locale, draft.currency),
+    [locale, draft.currency],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -29,6 +39,13 @@ export function LocalShopPanel() {
   }, []);
 
   const save = async () => {
+    // Belt and braces behind the picker. A code can still arrive from a
+    // restored backup or a file edited by hand, and writing one that
+    // `Intl` refuses would take every money figure in the till down with it.
+    if (!usableCurrency(draft.currency)) {
+      toast({ title: t('pos.admin.shop.currencyInvalid'), variant: 'destructive' });
+      return;
+    }
     const saved = await writeLocalShopSettings({
       ...draft,
       commissionedAtMillis: draft.commissionedAtMillis || Date.now(),
@@ -54,12 +71,12 @@ export function LocalShopPanel() {
           <PosField
             label={t('pos.admin.shop.currency')}
             help={t('pos.admin.shop.currencyHelp')}
-            style={{ flex: '1 1 120px' }}
+            style={{ flex: '1 1 200px' }}
           >
-            <input
-              className="cpos-input"
+            <PosSelect
               value={draft.currency}
-              onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })}
+              options={currencies}
+              onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
             />
           </PosField>
         </div>

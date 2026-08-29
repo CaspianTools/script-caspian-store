@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import {
-  useT,
   useFormatDate,
   Button,
   Input,
   FieldDescription,
   useToast,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import type { PosLicenseState } from './use-pos-license';
 
 export interface PosLicenseSectionProps {

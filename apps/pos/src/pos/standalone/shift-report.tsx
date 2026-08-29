@@ -1,8 +1,18 @@
 'use client';
 
-import { useT } from '@caspian-explorer/script-caspian-store';
+import {
+  useFormatDate,
+} from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { summariseShift, type ShiftTotals } from './shift-totals';
 import type { LocalShift } from './types';
+
+/**
+ * Hoisted, not inline. `useFormatDate` memoises on `[locale, options]`, and an
+ * object literal written at the call site is a new reference every render --
+ * which would rebuild an `Intl.DateTimeFormat` on every paint.
+ */
+const WHEN: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
 
 export interface ShiftReportProps {
   shift: LocalShift;
@@ -32,6 +42,7 @@ export interface ShiftReportProps {
  */
 export function ShiftReport({ shift, totals, formatPrice }: ShiftReportProps) {
   const t = useT();
+  const formatWhen = useFormatDate(WHEN);
   const closed = shift.status === 'closed';
 
   // A closed shift is read off its own frozen fields; an open one off the
@@ -62,12 +73,12 @@ export function ShiftReport({ shift, totals, formatPrice }: ShiftReportProps) {
       <Row label={t('pos.shift.report.day')} value={shift.businessDay} />
       <Row
         label={t('pos.shift.report.opened')}
-        value={new Date(shift.openedAtMillis).toLocaleString()}
+        value={formatWhen.format(shift.openedAtMillis)}
       />
       {closed && shift.closedAtMillis ? (
         <Row
           label={t('pos.shift.report.closed')}
-          value={new Date(shift.closedAtMillis).toLocaleString()}
+          value={formatWhen.format(shift.closedAtMillis)}
         />
       ) : null}
 

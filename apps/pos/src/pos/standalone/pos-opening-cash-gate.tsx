@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { useT, useCaspianStandalone, useToast, cn } from '@caspian-explorer/script-caspian-store';
+import { useCallback, useId, useState, type FormEvent, type ReactNode } from 'react';
+import { useCaspianStandalone, useToast, cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { CashDrawerIcon } from '../../icons';
 import { parseAmount } from '../parse-amount';
 import { usePosLocalSession } from './local-session-context';
 import type { OpeningCashGate } from './opening-cash';
 import { usePosOpeningCash } from './opening-cash-context';
+import { usePosMoney } from '../use-pos-money';
 
 /** Why the register is shut, narrowed off the gate's own union so the two cannot drift. */
 export type PosOpeningCashReason = Extract<OpeningCashGate, { satisfied: false }>['reason'];
@@ -59,16 +61,8 @@ export function PosOpeningCashGate({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatPrice = useMemo(() => {
-    if (formatPriceProp) return formatPriceProp;
-    return (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    };
-  }, [formatPriceProp, currency]);
+  const fallbackPrice = usePosMoney(currency);
+  const formatPrice = formatPriceProp ?? fallbackPrice;
 
   const onConfirm = useCallback(
     async (amount: number) => {

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useT, useToast } from '@caspian-explorer/script-caspian-store';
+import { useToast } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../../i18n/use-pos-t';
 import { PosField } from '../../ui/pos-field';
 import { listLocalCategories, makeLocalCategory, saveLocalCategory } from '../../local-db';
 import type { LocalCategory } from '../../types';

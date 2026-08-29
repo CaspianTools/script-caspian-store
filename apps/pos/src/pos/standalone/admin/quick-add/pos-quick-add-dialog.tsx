@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useT, cn } from '@caspian-explorer/script-caspian-store';
+import { cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../../i18n/use-pos-t';
 import {
   ChevronRightIcon,
   FolderIcon,

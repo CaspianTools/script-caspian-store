@@ -3,11 +3,11 @@
 import { useCallback, useState } from 'react';
 import {
   useCaspianNavigation,
-  useT,
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import {
   ChevronDownIcon,
   LogOutIcon,
@@ -117,7 +117,7 @@ export function PosLocalTopbar({ title, whoIsHere, initials, onExit }: PosLocalT
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('pos.scan.placeholder')}
-          aria-label={t('pos.scan.placeholder')}
+          aria-label={t('pos.search.labelFindItem')}
         />
         {search ? (
           <button

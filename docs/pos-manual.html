@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v1.10.0"
+      "version": "v1.11.0"
     },
     "parts": [
       {
@@ -1180,7 +1180,9 @@ const MANUAL = {
               "If your website sets the language from its own web addresses, the Settings screen shows a line saying the choice is stored but will not change what you see. That is expected, not a fault.",
               "If the browser blocks stored site data, the language still applies for the current session but is forgotten when the page is reloaded. The other settings on this screen behave worse: the register name, the scanner speed and where sales are stored are not kept at all, and go back to their usual values as soon as you leave the Settings screen.",
               "The register's own menu across the top shows only two items, Register and Settings, plus a link to the admin panel for administrators and a button to leave the register.",
-              "There is no shift report anywhere in the product, and no per-till sales report either, so do not expect the register name to turn up in one. The name is printed on receipts and nowhere else: it is not stored with the sale, so the Point of sale page in the admin panel cannot tell you which till took which sale. A printed receipt is the only place the name appears."
+              "There is no shift report anywhere in the product, and no per-till sales report either, so do not expect the register name to turn up in one. The name is printed on receipts and nowhere else: it is not stored with the sale, so the Point of sale page in the admin panel cannot tell you which till took which sale. A printed receipt is the only place the name appears.",
+              "From v1.11.0 the language setting reaches the numbers too. Prices, totals and dates are now written the way the chosen language writes them - before, only the words changed and the figures stayed in whatever format the browser was set to, so an Azerbaijani till still showed $23.00.",
+              "Counts read correctly in every language. Russian needs four different forms of a word depending on the number and now gets them; Azerbaijani and Turkish need two and get two. Previously the register only ever chose between \"one\" and \"everything else\", which is right for English and wrong for Russian."
             ]
           },
           {
@@ -1576,7 +1578,8 @@ const MANUAL = {
               "An account that can open App admin but does not hold \"Change roles\" gets this page read-only: every switch is greyed, there is no \"Add role\" button, and a line at the top says so. Opening a row to read what a role may do still works.",
               "A capability a role does not hold is not greyed out anywhere else - it is simply not there. The export button on Sales, the add, edit and delete buttons on Store, the role menu, password resets, Block and Delete on People, and most of the entries in Quick add are all absent for anybody without the matching switch.",
               "These roles live on this machine and nowhere else. Another till, even in the same shop, keeps its own separate list, and nothing here shows up in an online admin panel.",
-              "The list of roles is part of the shop’s own records, not a cache. Only a factory reset erases it, it travels in the backup file, and there is no copy anywhere else."
+              "The list of roles is part of the shop’s own records, not a cache. Only a factory reset erases it, it travels in the backup file, and there is no copy anywhere else.",
+              "The role that was called \"Cashier (duplicate)\" is now \"Cashier (old)\", and the People screen finally tells it apart from the ordinary Cashier. Until v1.11.0 both were simply called \"Cashier\" there, so an owner giving somebody access chose between two identical options; only this screen showed which was which."
             ]
           }
         ]
@@ -2098,7 +2101,9 @@ const MANUAL = {
               "The password is scrambled on this computer and cannot be read back by anybody, including whoever installed the till.",
               "A space at the start or end of a password is allowed and the screen warns when there is one, because it then has to be typed the same way every time.",
               "The sign-in box slows down repeated wrong passwords. Three tries are free, then it asks for five seconds, fifteen, thirty, and a minute at the very most - it never asks for longer and it never locks an account. The count is kept against the name that was typed rather than against the machine, so one cashier fumbling their password does not hold up the next person in a queue, and it is forgotten after a quarter of an hour of quiet. It is there to stop somebody working through the passwords they can think of at an unattended till, and it is honest about being no more than that.",
-              "Nothing on this screen is sent anywhere. There is no server to ask, so a till with no internet connection sets up and signs in exactly as one with."
+              "Nothing on this screen is sent anywhere. There is no server to ask, so a till with no internet connection sets up and signs in exactly as one with.",
+              "From v1.11.0 setting up a new till asks for your shop's name and the currency you trade in, on a screen between the account details and the recovery code. Both can be skipped, and both can be changed later in Settings - but a till set up without them used to open on US dollars and stay there until somebody found the right screen.",
+              "The currency offered is a guess based on the language you chose on the first screen: Azerbaijani suggests AZN, Turkish TRY, Russian RUB, anything else US dollars. It is only ever a suggestion shown to you, never applied quietly."
             ]
           },
           {
@@ -2853,7 +2858,9 @@ const MANUAL = {
               "Cash rounding is real. With a value set, the payment window rounds the change and the printed receipt shows the same rounded figure.",
               "Receipt numbers never go backwards. They are counted on this computer, and restoring a backup can only move the counter forward, so a number already in a customer’s hand is never issued twice.",
               "The shop name box being inert is worth knowing before you go looking for it on a receipt. Put the shop name in the top-of-the-receipt box instead.",
-              "This section is only on a till that runs on its own, and only for a role holding \"Change shop and receipt details\". A shop with a website keeps the same wording in its admin panel, on the Point of sale page."
+              "This section is only on a till that runs on its own, and only for a role holding \"Change shop and receipt details\". A shop with a website keeps the same wording in its admin panel, on the Point of sale page.",
+              "Currency is a list now, not a box you type into. It used to accept anything and only turn it into capitals, and a typo made every price on the till lose its currency symbol - on every screen, silently. The list is written in the register's own language, with the currencies this till is used with at the top.",
+              "The date a till was commissioned is now recorded when it is commissioned. It used to be stamped the first time somebody saved this screen, so a shop that never opened it looked as though it had never been set up."
             ]
           },
           {
@@ -3326,7 +3333,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v1.10.0"
+      "version": "v1.11.0"
     },
     "parts": [
       {
@@ -3691,7 +3698,9 @@ const MANUAL = {
               "Saytınız dili öz veb ünvanlarından götürürsə, Tənzimləmələr ekranında seçimin saxlandığını, amma gördüyünüzü dəyişməyəcəyini bildirən sətir görünür. Bu gözlənilən haldır, nasazlıq deyil.",
               "Brauzer saxlanan sayt məlumatlarını bloklayırsa, dil cari sessiya üçün yenə tətbiq olunur, amma səhifə yeniləndikdə unudulur. Bu ekrandakı digər tənzimləmələrin vəziyyəti daha pisdir: kassa adı, skaner sürəti və satışların harada saxlanması ümumiyyətlə yadda qalmır və Tənzimləmələr ekranından çıxan kimi adi dəyərlərinə qayıdır.",
               "Kassanın yuxarısındakı öz menyusunda cəmi iki bənd var — Kassa (Register) və Tənzimləmələr (Settings) — üstəgəl administratorlar üçün idarə panelinə keçid və kassadan çıxmaq düyməsi.",
-              "Məhsulun heç bir yerində nə növbə hesabatı, nə də kassa üzrə satış hesabatı yoxdur, ona görə kassa adının hansısa hesabatda çıxacağını gözləməyin. Ad yalnız qəbzlərdə çap olunur, başqa heç yerdə: satışla birlikdə saxlanmadığı üçün idarə panelindəki Kassa (Point of sale) səhifəsi hansı satışın hansı kassadan keçdiyini sizə deyə bilməz. Adın göründüyü yeganə yer çap olunmuş qəbzdir."
+              "Məhsulun heç bir yerində nə növbə hesabatı, nə də kassa üzrə satış hesabatı yoxdur, ona görə kassa adının hansısa hesabatda çıxacağını gözləməyin. Ad yalnız qəbzlərdə çap olunur, başqa heç yerdə: satışla birlikdə saxlanmadığı üçün idarə panelindəki Kassa (Point of sale) səhifəsi hansı satışın hansı kassadan keçdiyini sizə deyə bilməz. Adın göründüyü yeganə yer çap olunmuş qəbzdir.",
+              "v1.11.0-dan etibarən dil tənzimləməsi rəqəmlərə də çatır. Qiymətlər, cəmlər və tarixlər indi seçilmiş dilin qaydası ilə yazılır - əvvəllər yalnız sözlər dəyişirdi, rəqəmlər isə brauzerin formatında qalırdı, ona görə Azərbaycan dilindəki kassa hələ də $23.00 göstərirdi.",
+              "Saylar hər dildə düzgün oxunur. Rus dilində rəqəmdən asılı olaraq sözün dörd fərqli forması lazımdır və indi onlar var; Azərbaycan və türk dillərində iki forma lazımdır və iki forma var. Əvvəllər kassa yalnız \"bir\" və \"qalan hamısı\" arasında seçim edirdi - bu, ingilis dili üçün doğru, rus dili üçün yanlışdır."
             ]
           },
           {
@@ -4430,7 +4439,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v1.10.0"
+      "version": "v1.11.0"
     },
     "parts": [
       {
@@ -4795,7 +4804,9 @@ const MANUAL = {
               "Если ваш сайт задаёт язык через собственные адреса страниц, на экране Settings появится строка о том, что выбор сохранён, но на то, что вы видите, не повлияет. Так и должно быть, это не ошибка.",
               "Если браузер блокирует хранение данных сайта, язык всё равно применяется в текущем сеансе, но забывается при перезагрузке страницы. С остальными настройками на этом экране хуже: название кассы, скорость сканера и место хранения продаж не сохраняются вовсе и возвращаются к обычным значениям, как только вы уходите с экрана Settings.",
               "В верхнем меню самой кассы только два пункта — Register и Settings, — плюс ссылка на админ-панель для администраторов и кнопка выхода из кассы.",
-              "Ни отчёта по смене, ни отчёта о продажах по кассам в продукте нет, так что не ждите, что название кассы где-то в них появится. Название печатается на чеках и больше нигде: в продаже оно не сохраняется, поэтому страница Point of sale в админ-панели не подскажет, какая касса провела какую продажу. Напечатанный чек — единственное место, где встречается это название."
+              "Ни отчёта по смене, ни отчёта о продажах по кассам в продукте нет, так что не ждите, что название кассы где-то в них появится. Название печатается на чеках и больше нигде: в продаже оно не сохраняется, поэтому страница Point of sale в админ-панели не подскажет, какая касса провела какую продажу. Напечатанный чек — единственное место, где встречается это название.",
+              "С версии 1.11.0 языковая настройка влияет и на числа. Цены, итоги и даты теперь записываются так, как это принято в выбранном языке - раньше менялись только слова, а числа оставались в том формате, который был у браузера, поэтому касса на азербайджанском всё равно показывала $23.00.",
+              "Количества читаются правильно на каждом языке. Русскому нужны четыре формы слова в зависимости от числа, и теперь они есть; азербайджанскому и турецкому нужны две, и их две. Раньше касса выбирала только между «один» и «всё остальное» - это верно для английского и неверно для русского."
             ]
           },
           {
@@ -5534,7 +5545,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v1.10.0"
+      "version": "v1.11.0"
     },
     "parts": [
       {
@@ -5899,7 +5910,9 @@ const MANUAL = {
               "Web siteniz dili kendi web adreslerinden belirliyorsa, Ayarlar ekranında seçimin saklandığını ama gördüğünüz dili değiştirmeyeceğini söyleyen bir satır görünür. Bu beklenen bir durumdur, arıza değildir.",
               "Tarayıcı saklanan site verilerini engelliyorsa dil yine geçerli oturum boyunca uygulanır, ancak sayfa yenilendiğinde unutulur. Bu ekrandaki diğer ayarlar daha kötü davranır: kasa adı, okuyucu hızı ve satışların saklandığı yer hiç tutulmaz; Ayarlar ekranından ayrılır ayrılmaz her zamanki değerlerine döner.",
               "Kasanın üst menüsünde yalnızca iki başlık vardır: Kasa (Register) ve Ayarlar (Settings); ayrıca yöneticiler için yönetim paneline bir bağlantı ve kasadan çıkmak için bir düğme bulunur.",
-              "Üründe hiçbir yerde vardiya raporu yoktur, kasa bazında satış raporu da yoktur; bu yüzden kasa adının böyle bir raporda çıkmasını beklemeyin. Ad yalnızca fişlere basılır, başka hiçbir yere: satışla birlikte saklanmadığı için yönetim panelindeki Satış Noktası (Point of sale) sayfası hangi satışı hangi kasanın aldığını size söyleyemez. Adın göründüğü tek yer basılı fiştir."
+              "Üründe hiçbir yerde vardiya raporu yoktur, kasa bazında satış raporu da yoktur; bu yüzden kasa adının böyle bir raporda çıkmasını beklemeyin. Ad yalnızca fişlere basılır, başka hiçbir yere: satışla birlikte saklanmadığı için yönetim panelindeki Satış Noktası (Point of sale) sayfası hangi satışı hangi kasanın aldığını size söyleyemez. Adın göründüğü tek yer basılı fiştir.",
+              "v1.11.0'dan itibaren dil ayarı sayılara da ulaşıyor. Fiyatlar, toplamlar ve tarihler artık seçilen dilin yazım biçimine göre yazılıyor - önceden yalnızca kelimeler değişiyor, sayılar tarayıcının biçiminde kalıyordu; bu yüzden Azerice bir kasa hâlâ $23.00 gösteriyordu.",
+              "Sayılar her dilde doğru okunuyor. Rusça, sayıya göre bir kelimenin dört ayrı biçimine ihtiyaç duyar ve artık bunlara sahip; Azerice ve Türkçe ikiye ihtiyaç duyar ve ikisi var. Önceden kasa yalnızca \"bir\" ile \"geri kalan her şey\" arasında seçim yapıyordu - bu İngilizce için doğru, Rusça için yanlıştır."
             ]
           },
           {

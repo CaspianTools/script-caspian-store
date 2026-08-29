@@ -19,9 +19,9 @@
  *   npm run check          (from apps/pos -- builds the bundle, then runs this)
  */
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 // `.check/` is the SSR bundle of `src/check-entry.ts` -- the till's own build,
@@ -58,6 +58,9 @@ const {
   displayAmount,
   usableCurrency,
   splitTenders,
+  POS_MESSAGES_EN,
+  POS_OVERLAYS,
+  formatPosMessage,
   validateProductDraft,
   summariseSoldLines,
   buildReceiptModel,
@@ -649,6 +652,129 @@ check('an oversold item can still have its name and price corrected', () => {
   );
   assert.ok(r.ok);
   assert.equal(r.values.price, 9.99);
+});
+
+console.log('the dictionaries');
+// Against the RAW overlays, not POS_MESSAGES -- that one is composed over
+// English in `i18n/index.ts`, so it always shows full parity and could never
+// reveal a missing translation.
+const LOCALES = ['az', 'ru', 'tr'];
+const PLACEHOLDER = /\{(\w+)\}/g;
+const PLURAL_VAR = /\{(\w+),\s*plural,/g;
+const ARM_NAME = /(=\d+|zero|one|two|few|many|other)\s*\{/g;
+const ALLOWED_ARMS = { az: ['one', 'other'], tr: ['one', 'other'], ru: ['one', 'few', 'many', 'other'] };
+
+const varsOf = (text) => {
+  const out = new Set();
+  for (const m of text.matchAll(PLACEHOLDER)) if (m[1] !== 'plural') out.add(m[1]);
+  for (const m of text.matchAll(PLURAL_VAR)) out.add(m[1]);
+  return out;
+};
+
+check('every English key is translated in every locale', () => {
+  // Collected across all three before asserting: failing on the first locale
+  // hides the other two, and a translation sweep wants the whole list at once.
+  const gaps = [];
+  for (const locale of LOCALES) {
+    const dict = POS_OVERLAYS[locale];
+    for (const key of Object.keys(POS_MESSAGES_EN)) {
+      if (!(key in dict)) gaps.push(`${locale}:${key}`);
+    }
+  }
+  assert.deepEqual(gaps, [], `${gaps.length} untranslated key(s): ${gaps.slice(0, 8).join(', ')}`);
+});
+check('no locale carries a key English does not have', () => {
+  for (const locale of LOCALES) {
+    const orphans = Object.keys(POS_OVERLAYS[locale]).filter((k) => !(k in POS_MESSAGES_EN));
+    assert.deepEqual(orphans, [], `${locale} has orphans: ${orphans.slice(0, 5)}`);
+  }
+});
+// The check that actually catches damage. A translator dropping `{amount}`
+// prints a sentence with no number in it, and nothing else would notice.
+check('every placeholder survives translation', () => {
+  for (const locale of LOCALES) {
+    for (const [key, english] of Object.entries(POS_MESSAGES_EN)) {
+      const translated = POS_OVERLAYS[locale][key];
+      if (translated === undefined) continue;
+      const want = varsOf(english);
+      const got = varsOf(translated);
+      for (const name of want) {
+        assert.ok(got.has(name), `${locale} ${key}: lost {${name}}`);
+      }
+    }
+  }
+});
+check('every plural keeps an other arm, and uses arms its language has', () => {
+  for (const locale of LOCALES) {
+    for (const [key, english] of Object.entries(POS_MESSAGES_EN)) {
+      const translated = POS_OVERLAYS[locale][key];
+      if (translated === undefined || !/\{\w+,\s*plural,/.test(english)) continue;
+      assert.ok(/\{\w+,\s*plural,/.test(translated), `${locale} ${key}: plural dropped`);
+      const arms = [...translated.matchAll(ARM_NAME)].map((m) => m[1]).filter((a) => !a.startsWith('='));
+      assert.ok(arms.includes('other'), `${locale} ${key}: no other arm`);
+      for (const arm of arms) {
+        assert.ok(ALLOWED_ARMS[locale].includes(arm), `${locale} ${key}: ${arm} is not a ${locale} category`);
+      }
+    }
+  }
+});
+// Russian needs four arms where English has two. Warned, not failed: whether a
+// given string actually inflects is a judgement only a translator can make.
+check('russian plurals are inspected for the arms its grammar wants', () => {
+  const thin = [];
+  for (const [key, english] of Object.entries(POS_MESSAGES_EN)) {
+    const translated = POS_OVERLAYS.ru[key];
+    if (translated === undefined || !/\{\w+,\s*plural,/.test(english)) continue;
+    const arms = [...translated.matchAll(ARM_NAME)].map((m) => m[1]);
+    if (!arms.includes('few') || !arms.includes('many')) thin.push(key);
+  }
+  if (thin.length) console.log(`      note: ${thin.length} russian plural(s) with no few/many arm`);
+  assert.ok(true);
+});
+check('the arm chosen matches the language, not english', () => {
+  const ru = '{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}';
+  assert.equal(formatPosMessage('ru', ru, { count: 1 }), '1 товар');
+  assert.equal(formatPosMessage('ru', ru, { count: 2 }), '2 товара');
+  assert.equal(formatPosMessage('ru', ru, { count: 5 }), '5 товаров');
+  // The library's rule would have returned the `other` arm for all three, which
+  // is why this shim exists.
+  const en = '{count, plural, one {# item} other {# items}}';
+  assert.equal(formatPosMessage('en', en, { count: 1 }), '1 item');
+  assert.equal(formatPosMessage('en', en, { count: 3 }), '3 items');
+  // Turkish has no `few`; an exact `=0` arm still wins everywhere.
+  const tr = '{count, plural, =0 {yok} one {# ürün} other {# ürün}}';
+  assert.equal(formatPosMessage('tr', tr, { count: 0 }), 'yok');
+  assert.equal(formatPosMessage('tr', tr, { count: 4 }), '4 ürün');
+});
+check('a plain placeholder still substitutes, and an unknown one is left alone', () => {
+  assert.equal(formatPosMessage('en', 'Hello {name}', { name: 'Ada' }), 'Hello Ada');
+  assert.equal(formatPosMessage('en', 'Hello {name}', { other: 1 }), 'Hello {name}');
+  assert.equal(formatPosMessage('en', 'no values here'), 'no values here');
+});
+
+// Adoption of the plural shim has to be TOTAL. Partial adoption is the worst
+// outcome available: a translator adds a correct `few` arm and whether it
+// renders depends on which file the string happens to live on. This is the only
+// check here that reads source rather than a bundle.
+check('no screen imports useT from the library directly', () => {
+  const walk = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+
+  const offenders = [];
+  for (const file of walk(join(root, 'src'))) {
+    if (file.split(sep).join('/').includes('/i18n/')) continue;
+    const text = readFileSync(file, 'utf8');
+    const imported = text.match(/import \{([^}]*)\} from '@caspian-explorer\/script-caspian-store';/s);
+    if (!imported) continue;
+    if (imported[1].split(',').some((n) => n.trim() === 'useT')) {
+      offenders.push(relative(root, file));
+    }
+  }
+  assert.deepEqual(offenders, [], `import { usePosT as useT } instead: ${offenders.join(', ')}`);
 });
 
 console.log('money primitives');

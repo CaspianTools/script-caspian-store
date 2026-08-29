@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useT, useFormatDate } from '@caspian-explorer/script-caspian-store';
+import { useFormatDate } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import type { PosReceiptModel } from './build-receipt-model';
 
 export interface PosReceiptProps {

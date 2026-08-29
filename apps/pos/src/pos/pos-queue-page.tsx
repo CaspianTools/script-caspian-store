@@ -1,11 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import {
+  useFormatDate,
+} from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { InboxIcon, RefreshIcon, WifiOffIcon } from '../icons';
 import { usePosAdapter } from './pos-adapter-context';
 import { usePosQueue } from './offline/use-pos-queue';
 import type { QueuedSale } from './offline/types';
+
+/**
+ * Hoisted, not inline. `useFormatDate` memoises on `[locale, options]`, and an
+ * object literal written at the call site is a new reference every render --
+ * which would rebuild an `Intl.DateTimeFormat` on every paint.
+ */
+const WHEN: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
 
 /**
  * Held sales on this till: `/pos/queue`.
@@ -165,6 +175,7 @@ function Section({
   rows: QueuedSale[];
   children: (row: QueuedSale) => React.ReactNode;
 }) {
+  const formatWhen = useFormatDate(WHEN);
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
       <div className="cpos-cardhead">
@@ -183,7 +194,7 @@ function Section({
                     {row.receiptNumber || `#${row.localRef}`}
                   </span>
                   <span className="cpos-line__meta" style={{ display: 'block' }}>
-                    {new Date(row.capturedAtMillis).toLocaleString()} · {row.capturedTotal.toFixed(2)}
+                    {formatWhen.format(row.capturedAtMillis)} · {row.capturedTotal.toFixed(2)}
                     {row.capturedByName ? ` · ${row.capturedByName}` : ''}
                   </span>
                 </span>

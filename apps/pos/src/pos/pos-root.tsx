@@ -4,10 +4,10 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import {
   useCaspianNavigation,
   useAuth,
-  useT,
   useCaspianFirebaseOptional,
   stripLocalePrefix,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { PosLockGate } from './standalone/pos-lock-gate';
 import { usePosRoles } from './standalone/role-context';

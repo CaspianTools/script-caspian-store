@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useT, useInstallPrompt } from '@caspian-explorer/script-caspian-store';
+import { useInstallPrompt } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 
 /**
  * "Install" in the register's top bar.

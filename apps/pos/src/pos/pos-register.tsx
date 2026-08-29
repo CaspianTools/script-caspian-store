@@ -5,7 +5,6 @@ import {
   useAuth,
   useCaspianFirebaseOptional,
   useCaspianNavigation,
-  useT,
   getSiteSettings,
   reportServiceError,
   cn,
@@ -13,6 +12,7 @@ import {
   type PosSettings,
   type Product,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import {
   CheckIcon,
   InboxIcon,
@@ -42,6 +42,7 @@ import {
 import { PosReceipt } from './receipt/pos-receipt';
 import { readScannerGapMs } from './pos-preferences';
 import { usePosConfirm } from './standalone/ui/pos-confirm';
+import { usePosMoney } from './use-pos-money';
 
 type Phase =
   | { kind: 'selling' }
@@ -208,16 +209,8 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
     };
   }, [db]);
 
-  const formatPrice = useMemo(() => {
-    if (formatPriceProp) return formatPriceProp;
-    return (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    };
-  }, [formatPriceProp, currency]);
+  const fallbackPrice = usePosMoney(currency);
+  const formatPrice = formatPriceProp ?? fallbackPrice;
 
   // --- Scanning ---
   const handleScan = useCallback(
@@ -495,7 +488,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             placeholder={t('pos.scan.placeholder')}
-            aria-label={t('pos.scan.placeholder')}
+            aria-label={t('pos.scan.labelAddToSale')}
           />
           <button type="submit" className="cpos-btn cpos-btn--primary" disabled={!manualCode.trim()}>
             {t('pos.scan.submit')}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useT, cn } from '@caspian-explorer/script-caspian-store';
+import { cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { WifiOffIcon } from '../icons';
 import { LEASE_LOW_AT, type PosSaleQueue } from './offline/pos-sale-queue';
 import { usePosQueue } from './offline/use-pos-queue';

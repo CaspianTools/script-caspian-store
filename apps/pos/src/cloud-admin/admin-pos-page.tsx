@@ -10,7 +10,6 @@ import {
   useCaspianFirebase,
   useCaspianLink,
   useScriptSettings,
-  useT,
   Badge,
   Skeleton,
   Button,
@@ -23,8 +22,17 @@ import {
   TR,
   DEFAULT_POS_SETTINGS,
   type PosSettings,
+  useFormatDate,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { AdminPosLicenses } from './admin-pos-licenses';
+
+/**
+ * Hoisted, not inline. `useFormatDate` memoises on `[locale, options]`, and an
+ * object literal written at the call site is a new reference every render --
+ * which would rebuild an `Intl.DateTimeFormat` on every paint.
+ */
+const WHEN: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
 
 export interface AdminPosPageProps {
   className?: string;
@@ -43,6 +51,7 @@ export function AdminPosPage({ className }: AdminPosPageProps) {
   const { settings, save: saveScriptSettings } = useScriptSettings();
   const Link = useCaspianLink();
   const t = useT();
+  const formatWhen = useFormatDate(WHEN);
 
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [posSettings, setPosSettings] = useState<PosSettings | null>(null);
@@ -217,7 +226,7 @@ export function AdminPosPage({ className }: AdminPosPageProps) {
                   <Link href={`/admin/orders/${order.id}`}>{order.receiptNumber || order.id}</Link>
                 </TD>
                 <TD style={{ fontSize: 13, color: '#666' }}>
-                  {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : '—'}
+                  {order.createdAt?.toDate ? formatWhen.format(order.createdAt.toDate()) : '—'}
                 </TD>
                 <TD>{order.items?.length ?? 0}</TD>
                 <TD>

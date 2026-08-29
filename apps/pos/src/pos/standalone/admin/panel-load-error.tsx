@@ -1,6 +1,6 @@
 'use client';
 
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 
 /**
  * "This screen could not read the database", instead of a spinner that never

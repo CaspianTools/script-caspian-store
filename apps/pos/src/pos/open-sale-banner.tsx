@@ -1,6 +1,7 @@
 'use client';
 
-import { useT, useFormatDate, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { useFormatDate, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { usePosOpenSale } from './open-sale-context';
 
 /**

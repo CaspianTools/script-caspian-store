@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { useT, useToast, FieldDescription } from '@caspian-explorer/script-caspian-store';
+import { useToast, FieldDescription } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { PosDialog } from '../ui/pos-dialog';
 import {
   MIN_LOCAL_PASSWORD_LENGTH,

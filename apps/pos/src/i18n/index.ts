@@ -17,8 +17,12 @@ import tr from './pos-tr';
  * the tender screen. Composing here restores the fallback the library used to
  * provide.
  *
- * The overlays are partial on purpose. An honest gap in English beats a
- * machine-translated one that reads as finished.
+ * The overlays used to be partial on purpose, on the argument that an honest
+ * gap in English beats a machine-translated one that reads as finished. As of
+ * v1.10.0 there are no gaps: all four dictionaries carry every key, and
+ * `check-standalone.mjs` fails the build if that stops being true. The
+ * composition above stays anyway -- it is what makes a key added tomorrow
+ * render in English rather than as `pos.tender.due`.
  */
 export const POS_MESSAGES: Record<string, MessageDict> = {
   en: POS_MESSAGES_EN,
@@ -26,5 +30,12 @@ export const POS_MESSAGES: Record<string, MessageDict> = {
   ru: { ...POS_MESSAGES_EN, ...ru },
   tr: { ...POS_MESSAGES_EN, ...tr },
 };
+
+/**
+ * The RAW overlays, uncomposed. Only the guard wants these: `POS_MESSAGES`
+ * above is composed over English, so it always shows full parity and can never
+ * reveal a missing translation.
+ */
+export const POS_OVERLAYS: Record<string, MessageDict> = { az, ru, tr };
 
 export { POS_MESSAGES_EN };

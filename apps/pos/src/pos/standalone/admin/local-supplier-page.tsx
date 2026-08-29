@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useToast, useCaspianNavigation } from '@caspian-explorer/script-caspian-store';
+import {
+  useToast,
+  useCaspianNavigation,
+  useFormatDate,
+} from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { ChevronLeftIcon, TruckIcon } from '../../../icons';
 import { PosDialog } from '../ui/pos-dialog';
 import {
@@ -25,10 +30,18 @@ import type {
   LocalSupplier,
 } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
-import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
 import { LocalSupplierForm } from './quick-add/local-supplier-form';
 import { usePosConfirm } from '../ui/pos-confirm';
+import { usePosMoney } from '../../use-pos-money';
+
+/**
+ * Hoisted, not inline. `useFormatDate` memoises on `[locale, options]`, and an
+ * object literal written at the call site is a new reference every render --
+ * which would rebuild an `Intl.DateTimeFormat` on every paint.
+ */
+const WHEN: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
+const DAY: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
 /**
  * One supplier: what they have delivered, and what happened to it.
@@ -48,6 +61,8 @@ import { usePosConfirm } from '../ui/pos-confirm';
  */
 export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
   const t = useT();
+  const formatWhen = useFormatDate(WHEN);
+  const formatDay = useFormatDate(DAY);
   const confirm = usePosConfirm();
   const { toast } = useToast();
   const { push } = useCaspianNavigation();
@@ -121,7 +136,7 @@ export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
     [products],
   );
 
-  const money = (amount: number) => formatLocalMoney(amount, settings.currency);
+  const money = usePosMoney(settings.currency);
 
   const toggle = async () => {
     if (!supplier) return;
@@ -260,7 +275,7 @@ export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
             {totals.lastAtMillis ? (
               <span className="cpos-stat__hint">
                 {t('pos.store.supplier.lastOn', {
-                  date: new Date(totals.lastAtMillis).toLocaleDateString(),
+                  date: formatDay.format(totals.lastAtMillis),
                 })}
               </span>
             ) : null}
@@ -337,7 +352,7 @@ export function LocalSupplierPage({ supplierId }: { supplierId: string }) {
                     <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
                       {receipt.reference || '—'}
                     </td>
-                    <td>{new Date(receipt.receivedAtMillis).toLocaleString()}</td>
+                    <td>{formatWhen.format(receipt.receivedAtMillis)}</td>
                     <td className="cpos-table__num">{receipt.lines.length}</td>
                     <td className="cpos-table__num">
                       {receipt.lines.reduce((n, l) => n + l.quantity, 0)}

@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useCaspianNavigation, cn } from '@caspian-explorer/script-caspian-store';
+import {
+  useCaspianNavigation,
+  cn,
+  useFormatDate,
+} from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { ChevronLeftIcon, PackageIcon } from '../../../icons';
 import { PosSelect } from '../ui/pos-field';
 import {
@@ -35,9 +40,18 @@ import type {
 import { LocalProductFormDialog } from './local-product-form-dialog';
 import { LocalStockAdjustDialog } from './local-stock-adjust-dialog';
 import { StoreScreenNav } from './store-screen-nav';
-import { formatLocalMoney, formatSignedQuantity } from './local-money';
+import { formatSignedQuantity } from '../../money';
 import { PanelLoadError } from './panel-load-error';
 import { usePosConfirm } from '../ui/pos-confirm';
+import { usePosMoney } from '../../use-pos-money';
+
+/**
+ * Hoisted, not inline. `useFormatDate` memoises on `[locale, options]`, and an
+ * object literal written at the call site is a new reference every render --
+ * which would rebuild an `Intl.DateTimeFormat` on every paint.
+ */
+const WHEN: Intl.DateTimeFormatOptions = { dateStyle: 'short', timeStyle: 'short' };
+const DAY: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
 /** How many ledger rows a page shows before asking to be shown more. */
 const HISTORY_PAGE = 25;
@@ -52,6 +66,8 @@ const HISTORY_PAGE = 25;
  */
 export function LocalProductPage({ productId }: { productId: string }) {
   const t = useT();
+  const formatWhen = useFormatDate(WHEN);
+  const formatDay = useFormatDate(DAY);
   const confirm = usePosConfirm();
   const { push } = useCaspianNavigation();
   const session = usePosLocalSession();
@@ -131,7 +147,7 @@ export function LocalProductPage({ productId }: { productId: string }) {
   const onHand = product
     ? (Object.values(product.stock) as number[]).reduce((a, b) => a + b, 0)
     : 0;
-  const money = (amount: number) => formatLocalMoney(amount, settings.currency);
+  const money = usePosMoney(settings.currency);
 
   const remove = async () => {
     if (!product) return;
@@ -410,7 +426,7 @@ export function LocalProductPage({ productId }: { productId: string }) {
           <div className="cpos-stat">
             <span className="cpos-stat__label">{t('pos.store.product.lastSold')}</span>
             <span className="cpos-stat__value" style={{ fontSize: 16 }}>
-              {sold?.lastAtMillis ? new Date(sold.lastAtMillis).toLocaleDateString() : '—'}
+              {sold?.lastAtMillis ? formatDay.format(sold.lastAtMillis) : '—'}
             </span>
           </div>
         </div>
@@ -435,7 +451,7 @@ export function LocalProductPage({ productId }: { productId: string }) {
                     <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
                       {sale.receiptNumber}
                     </td>
-                    <td>{new Date(sale.atMillis).toLocaleString()}</td>
+                    <td>{formatWhen.format(sale.atMillis)}</td>
                     <td>{sale.cashierName || '—'}</td>
                     <td className="cpos-table__num">{sale.quantity}</td>
                     <td className="cpos-table__num">{money(sale.total)}</td>
@@ -555,7 +571,7 @@ export function LocalProductPage({ productId }: { productId: string }) {
                 <tbody>
                   {visibleMovements.map((movement) => (
                     <tr key={movement.id}>
-                      <td>{new Date(movement.atMillis).toLocaleString()}</td>
+                      <td>{formatWhen.format(movement.atMillis)}</td>
                       <td>
                         <span
                           className={

@@ -33,8 +33,8 @@ const az: MessageDict = {
   'pos.queue.offline': 'İnternet yoxdur',
   'pos.queue.offlineHolding': 'İnternet yoxdur — {count} gözləyir',
   'pos.queue.sending': '{count} göndərilir',
-  'pos.queue.blockedCount': '{count} diqqət tələb edir',
-  'pos.queue.lowNumbers': '{count} qəbz nömrəsi qalıb',
+  'pos.queue.blockedCount': '{count, plural, one {# diqqət tələb edir} other {# diqqət tələb edir}}',
+  'pos.queue.lowNumbers': '{count, plural, one {# qəbz nömrəsi qalıb} other {# qəbz nömrəsi qalıb}}',
   'pos.queue.noNumbers': 'Qəbz nömrəsi ehtiyata alına bilmir',
   'pos.queue.paused': 'Göndərmə dayandırılıb',
   'pos.queue.pausedBody': 'Bu hesabın artıq satış qeyd etmək icazəsi yoxdur, ona görə heç nə göndərilmir. İşçi rolu olan hesabla daxil olun və gözləyən satışlar keçəcək.',
@@ -146,7 +146,7 @@ const az: MessageDict = {
   'pos.lock.someoneElse': 'Başqası kimi daxil ol',
   'pos.settings.idleLock': 'İşlədilməyəndə ekranı kilidlə',
   'pos.settings.idleLockNever': 'Heç vaxt',
-  'pos.settings.idleLockMinutes': '{count} dəqiqə',
+  'pos.settings.idleLockMinutes': '{count, plural, one {# dəqiqə} other {# dəqiqə}}',
   'pos.settings.idleLockHelp':
     'Şifrə yenidən yazılana qədər ekranı örtür. Heç kimi çıxarmır: açıq satış, kassir və kassadakı pulun sayı yerində qalır. Burada vaxt seçilməyincə söndürülüdür və yalnız bu kompüterə aiddir.',
   'pos.admin.people.lastSupport':
@@ -325,10 +325,8 @@ const az: MessageDict = {
     'Başqa bir tab kassanı açıq saxlayır. Digər tabları bağlayın və yenidən yoxlayın.',
   'pos.settings.storage.used': 'İstifadə olunan yer',
   'pos.settings.storage.usedOf': '{total} içindən {used}',
-  'pos.openSale.found':
-    '{when} tarixində {count} məhsulluq yarımçıq satış qalıb. Davam edin və ya təmizləyin.',
-  'pos.openSale.foundOther':
-    '{name} {when} tarixində {count} məhsulluq satışı yarımçıq qoyub. Davam edin və ya təmizləyin.',
+  'pos.openSale.found': '{when} tarixində {count, plural, one {# məhsulluq} other {# məhsulluq}} satış yarımçıq qalıb. Davam edin və ya silin.',
+  'pos.openSale.foundOther': '{name} {when} tarixində {count, plural, one {# məhsulluq} other {# məhsulluq}} satışı yarımçıq qoyub. Davam edin və ya silin.',
   'pos.openSale.resume': 'Satışa davam et',
   'pos.openSale.discard': 'Təmizlə',
   'pos.openSale.dismiss': 'Oldu',
@@ -484,8 +482,7 @@ const az: MessageDict = {
   'pos.store.category.emptyHelp': 'Bir qrup əlavə edin, ya da malların üstündə yazılanları götürün.',
   'pos.store.category.duplicate': 'Bu qrup siyahıda var.',
   'pos.store.category.renamed': 'Qrupun adı dəyişdi, malların üstündə də',
-  'pos.store.category.confirmDelete':
-    '"{name}" siyahıdan silinsin? Bu qrupda olan {count} mal adı saxlayır.',
+  'pos.store.category.confirmDelete': '"{name}" siyahıdan silinsin? {count, plural, =0 {Bu qrupda heç nə yoxdur.} one {Bu qrupdakı bir məhsul adı saxlayır.} other {Bu qrupdakı # məhsul adı saxlayır.}}',
 
   'pos.store.supplier.title': 'Təchizatçılar',
   'pos.store.supplier.subtitle': 'Bu mağazanın mal aldığı yerlər.',
@@ -1057,7 +1054,7 @@ const az: MessageDict = {
   'pos.admin.sales.listTitle': 'Satışlar',
   'pos.admin.sales.month': 'Son 30 gün',
   'pos.admin.sales.receipt': 'Qəbz',
-  'pos.admin.sales.takings': '{count} satışdan yığılan',
+  'pos.admin.sales.takings': '{count, plural, one {# satışdan} other {# satışdan}} yığılan',
   'pos.admin.sales.today': 'Bu gün',
   'pos.admin.sales.total': 'Cəmi',
   'pos.admin.sales.truncated': '{total} qeyddən ən yeni {shown} göstərilir. Qalanı üçün cədvələ çıxarın.',
@@ -1142,6 +1139,14 @@ const az: MessageDict = {
   'pos.ticket.clearDetail': '{count, plural, one {# sətir} other {# sətir}}, {total}. Heç nə qeyd olunmur.',
   'pos.ticket.clearTitle': 'Bu satış silinsin?',
   'pos.ticket.clearVerb': 'Satışı sil',
+  'pos.admin.shop.currencyInvalid': 'Siyahıdan valyuta seçin.',
+  'pos.local.shopTitle': 'Mağazanız haqqında',
+  'pos.local.shopBody': 'İlk satışdan əvvəl kassaya lazım olan iki şey. Hər ikisini sonra Tənzimləmələrdə dəyişə bilərsiniz.',
+  'pos.local.shopSkip': 'Bunu sonra edərəm',
+  'pos.scan.labelAddToSale': 'Bu satışa əlavə etmək üçün kodu skan edin və ya yazın',
+  'pos.search.labelFindItem': 'Kataloqda axtarın',
+  'pos.scan.labelReceive': 'Bu qəbula əlavə etmək üçün kodu skan edin və ya yazın',
+  'pos.local.shopContinue': 'Davam et',
 };
 
 export default az;

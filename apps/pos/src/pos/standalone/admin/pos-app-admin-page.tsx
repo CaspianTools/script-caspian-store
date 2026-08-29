@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  useT,
   FieldDescription,
   useToast,
   cn,
   useCaspianNavigation,
   useCaspianFirebaseOptional,
   useInstallPrompt,
+  useFormatDate,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import {
   ChevronRightIcon,
   DownloadIcon,
@@ -42,6 +43,8 @@ import {
   type RoleDefinition,
 } from '../types';
 import { usePosConfirm } from '../ui/pos-confirm';
+
+const DAY: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
 
 /**
  * Roles that cannot be switched off.
@@ -769,6 +772,7 @@ function InstallSection() {
  */
 function RecoverySection() {
   const t = useT();
+  const formatDay = useFormatDate(DAY);
   const { toast } = useToast();
   const session = usePosLocalSession();
   const { settings, loading, refresh } = usePosShopSettings();
@@ -844,7 +848,7 @@ function RecoverySection() {
         <FieldDescription>
           {t('pos.appAdmin.recovery.mintedFor', {
             name: belongsTo,
-            date: new Date(settings.recoveryMintedAtMillis).toLocaleDateString(),
+            date: formatDay.format(settings.recoveryMintedAtMillis),
           })}
         </FieldDescription>
       ) : null}

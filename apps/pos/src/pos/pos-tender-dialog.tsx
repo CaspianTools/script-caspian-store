@@ -1,7 +1,8 @@
 'use client';
 
 import { useId, useMemo, useRef, useState } from 'react';
-import { useT, cn } from '@caspian-explorer/script-caspian-store';
+import { cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { CheckIcon, PlusIcon, XIcon } from '../icons';
 import type { PosTenderInput } from './storage/types';
 import { fromMinor, toMinor } from './money';

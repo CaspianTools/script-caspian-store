@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useT, useCaspianNavigation, cn } from '@caspian-explorer/script-caspian-store';
+import { useCaspianNavigation, cn } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { PackageIcon, PlusIcon, StoreIcon } from '../../../icons';
 import { PosSelect } from '../ui/pos-field';
 import { deleteLocalProduct, listAllLocalLots, listLocalProducts } from '../local-db';
@@ -12,10 +13,10 @@ import { localDayKey } from '../opening-cash';
 import { lotExpiryState, sortLotsFefo, type LotExpiryState } from '../lot-allocation';
 import type { LocalProduct, LocalStockLot } from '../types';
 import { StoreScreenNav } from './store-screen-nav';
-import { formatLocalMoney } from './local-money';
 import { PanelLoadError } from './panel-load-error';
 import { usePosQuickAdd } from './quick-add/pos-quick-add-context';
 import { usePosConfirm } from '../ui/pos-confirm';
+import { usePosMoney } from '../../use-pos-money';
 
 /**
  * Storekeeper inventory page.
@@ -32,6 +33,7 @@ export function LocalStorePanel() {
   const session = usePosLocalSession();
   const { can } = usePosRoles();
   const { settings } = usePosShopSettings();
+  const money = usePosMoney(settings.currency);
   const quickAdd = usePosQuickAdd();
   // Seeing the shelf and restocking it are separate grants, so a role can be
   // given the stock list to count against without also being able to rewrite it.
@@ -247,7 +249,7 @@ export function LocalStorePanel() {
                       <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>{p.barcode}</td>
                       {showCategory ? <td>{p.category}</td> : null}
                       <td className="cpos-table__num">
-                        {formatLocalMoney(p.price, settings.currency)}
+                        {money(p.price)}
                       </td>
                       <td className={cn('cpos-table__num', totalStock(p) < 0 && 'cpos-neg')}>
                         {totalStock(p)}

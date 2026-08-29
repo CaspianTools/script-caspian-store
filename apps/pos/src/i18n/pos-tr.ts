@@ -25,8 +25,8 @@ const tr: MessageDict = {
   'pos.queue.offline': 'İnternet yok',
   'pos.queue.offlineHolding': 'İnternet yok — {count} bekliyor',
   'pos.queue.sending': '{count} gönderiliyor',
-  'pos.queue.blockedCount': '{count} ilgi bekliyor',
-  'pos.queue.lowNumbers': '{count} fiş numarası kaldı',
+  'pos.queue.blockedCount': '{count, plural, one {# ilgi bekliyor} other {# ilgi bekliyor}}',
+  'pos.queue.lowNumbers': '{count, plural, one {# fiş numarası kaldı} other {# fiş numarası kaldı}}',
   'pos.queue.noNumbers': 'Fiş numarası ayrılamıyor',
   'pos.queue.paused': 'Gönderim duraklatıldı',
   'pos.queue.pausedBody': 'Bu hesabın artık satış kaydetme izni yok, bu yüzden hiçbir şey gönderilmiyor. Personel rolü olan bir hesapla giriş yapın; bekleyen satışlar geçecektir.',
@@ -137,7 +137,7 @@ const tr: MessageDict = {
   'pos.lock.someoneElse': 'Başka biri olarak giriş yap',
   'pos.settings.idleLock': 'Kullanılmadığında ekranı kilitle',
   'pos.settings.idleLockNever': 'Asla',
-  'pos.settings.idleLockMinutes': '{count} dakika',
+  'pos.settings.idleLockMinutes': '{count, plural, one {# dakika} other {# dakika}}',
   'pos.settings.idleLockHelp':
     'Parola yeniden yazılana kadar ekranı örter. Kimsenin oturumunu kapatmaz: açık satış, kasiyer ve çekmecedeki para sayımı yerinde kalır. Burada bir süre seçilene kadar kapalıdır ve yalnızca bu bilgisayar için geçerlidir.',
   'pos.admin.people.lastSupport':
@@ -313,10 +313,8 @@ const tr: MessageDict = {
     'Kasa başka bir sekmede açık ve onu tutuyor. Diğer sekmeleri kapatıp yeniden denetleyin.',
   'pos.settings.storage.used': 'Kullanılan alan',
   'pos.settings.storage.usedOf': '{total} içinden {used}',
-  'pos.openSale.found':
-    '{when} saatinde {count} ürünlük yarım kalmış bir satış var. Devam edin ya da temizleyin.',
-  'pos.openSale.foundOther':
-    '{name}, {when} saatinde {count} ürünlük bir satışı yarım bıraktı. Devam edin ya da temizleyin.',
+  'pos.openSale.found': '{when} saatinde {count, plural, one {# ürünlük} other {# ürünlük}} bir satış yarım kaldı. Devam edin veya temizleyin.',
+  'pos.openSale.foundOther': '{name}, {when} saatinde {count, plural, one {# ürünlük} other {# ürünlük}} bir satışı yarım bıraktı. Devam edin veya temizleyin.',
   'pos.openSale.resume': 'Satışa devam et',
   'pos.openSale.discard': 'Temizle',
   'pos.openSale.dismiss': 'Tamam',
@@ -768,7 +766,7 @@ const tr: MessageDict = {
   'pos.admin.sales.listTitle': 'Satışlar',
   'pos.admin.sales.month': 'Son 30 gün',
   'pos.admin.sales.receipt': 'Fiş',
-  'pos.admin.sales.takings': '{count} satıştan toplandı',
+  'pos.admin.sales.takings': '{count, plural, one {# satıştan} other {# satıştan}} elde edilen',
   'pos.admin.sales.today': 'Bugün',
   'pos.admin.sales.total': 'Toplam',
   'pos.admin.sales.truncated': '{total} satıştan en yeni {shown} tanesi gösteriliyor. Gerisi için dışa aktarın.',
@@ -969,7 +967,7 @@ const tr: MessageDict = {
   'pos.store.category.adoptHelp': 'Ürünlerin üstünde zaten yazılı gruplar var. Bu, o adları listeye alır ki seçim listesi onları önersin.',
   'pos.store.category.adopted': '{count, plural, one {# grup} other {# grup}} alındı',
   'pos.store.category.adoptedNone': 'Alınacak yeni grup yok',
-  'pos.store.category.confirmDelete': '"{name}" listeden silinsin mi? Bu gruptaki {count} ürün adı taşımaya devam eder.',
+  'pos.store.category.confirmDelete': '"{name}" listeden silinsin mi? {count, plural, =0 {Bu grupta hiçbir şey yok.} one {Bu gruptaki # ürün adını korur.} other {Bu gruptaki # ürün adını korur.}}',
   'pos.store.category.down': 'Aşağı',
   'pos.store.category.duplicate': 'Bu grup zaten listede.',
   'pos.store.category.empty': 'Henüz grup yok',
@@ -1115,6 +1113,16 @@ const tr: MessageDict = {
   'pos.ticket.clearDetail': '{count, plural, one {# satır} other {# satır}}, {total}. Hiçbir şey kaydedilmez.',
   'pos.ticket.clearTitle': 'Bu satış temizlensin mi?',
   'pos.ticket.clearVerb': 'Satışı temizle',
+  'pos.admin.shop.currencyInvalid': 'Listeden bir para birimi seçin.',
+  'pos.store.adjust.reason.customer-return': 'Müşteri geri getirdi',
+  'pos.store.adjust.reason.count-correction': 'Sayım düzeltmesi',
+  'pos.local.shopTitle': 'Mağazanız hakkında',
+  'pos.local.shopBody': 'Kasanın ilk satıştan önce ihtiyaç duyduğu iki şey. İkisini de sonra Ayarlar\'dan değiştirebilirsiniz.',
+  'pos.local.shopSkip': 'Bunu sonra yaparım',
+  'pos.scan.labelAddToSale': 'Bu satışa eklemek için kodu okutun veya yazın',
+  'pos.search.labelFindItem': 'Katalogda ara',
+  'pos.scan.labelReceive': 'Bu teslimata eklemek için kodu okutun veya yazın',
+  'pos.local.shopContinue': 'Devam et',
 };
 
 export default tr;

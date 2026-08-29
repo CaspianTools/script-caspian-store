@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useT, useToast, FieldDescription } from '@caspian-explorer/script-caspian-store';
+import { useToast, FieldDescription } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../../i18n/use-pos-t';
 import { PosField, PosSelect } from '../../ui/pos-field';
 import { createLocalUser, MIN_LOCAL_PASSWORD_LENGTH } from '../../local-auth';
 import { usePosLocalSession } from '../../local-session-context';

@@ -1,18 +1,19 @@
 'use client';
 
-import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useId, useState, type FormEvent, type ReactNode } from 'react';
 import {
-  useT,
   useCaspianNavigation,
   useCaspianStandalone,
   useToast,
   cn,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { CashDrawerIcon } from '../../icons';
 import { parseAmount } from '../parse-amount';
 import { usePosLocalSession } from './local-session-context';
 import { usePosShift } from './shift-context';
 import { usePosTerminal } from './terminal-context';
+import { usePosMoney } from '../use-pos-money';
 
 /**
  * A float nobody could plausibly have counted. Above this the cashier has hit a
@@ -56,16 +57,7 @@ export function PosShiftGate({ children }: { children: ReactNode }): ReactNode {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formatPrice = useMemo(
-    () => (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    },
-    [currency],
-  );
+  const formatPrice = usePosMoney(currency);
 
   const openShift = useCallback(
     async (event: FormEvent) => {

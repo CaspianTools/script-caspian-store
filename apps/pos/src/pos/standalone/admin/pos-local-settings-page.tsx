@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   useLocaleControls,
-  useT,
   BUILTIN_LOCALE_CODES,
   BUILTIN_LOCALE_NAMES,
   useToast,
@@ -11,6 +10,7 @@ import {
   cn,
   useCaspianNavigation,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import {
   GlobeIcon,
   InboxIcon,

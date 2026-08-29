@@ -1,7 +1,7 @@
 'use client';
 
 import { useId } from 'react';
-import { useT } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { PosDialog } from '../ui/pos-dialog';
 import { LocalProductForm } from './quick-add/local-product-form';
 import type { LocalProduct } from '../types';

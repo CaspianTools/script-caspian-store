@@ -73,6 +73,31 @@ Two things deliberately did **not** come from the library:
   [src/i18n/index.ts](src/i18n/index.ts) for why a bare overlay would put
   `pos.tender.due` on a cashier's tender screen.
 
+  **All four dictionaries are complete, and `npm run check` keeps them that
+  way.** Since v1.11.0 the guard asserts full key parity, no orphans,
+  placeholder parity (a translation that drops `{amount}` prints a sentence with
+  no number in it), an `other` arm on every plural, and no locale using a plural
+  category its grammar does not have. Add an English key and the build fails
+  until az, ru and tr have it too — that is deliberate, and the reason the
+  "partial overlays are honest" note in `index.ts` is gone.
+
+  **Plurals go through the till's own `useT`.** The library's `interpolate`
+  parses `few`/`many` and then never selects them, so every screen imports
+  `import { usePosT as useT } from '…/i18n/use-pos-t'` — aliased, so no call
+  site knows. `use-pos-t.ts` and `plural.ts` are a shim with an exit: when the
+  library learns `Intl.PluralRules`, delete both and drop the alias. Adoption is
+  enforced by a source scan in the guard, because partial adoption would make a
+  correct translation render correctly or not depending on which file it is in.
+
+- **Money and dates are formatted through the till's own hooks**, never inline.
+  `usePosMoney(currency)` ([src/pos/use-pos-money.ts](src/pos/use-pos-money.ts))
+  and the library's `useFormatDate`. Twenty-two call sites each built their own
+  `Intl.NumberFormat(undefined, …)` before v1.11.0, and `undefined` is the
+  *browser's* locale, not the register's. `usePosMoney` also guards the currency
+  with `usableCurrency()`: the library's `useFormatCurrency` passes the same
+  code into both its `try` and its `catch`, so a malformed one throws twice and
+  unmounts the tree.
+
 **The cloud register is dormant, and it lives here too.**
 [src/cloud-admin/](src/cloud-admin/) holds the two admin screens the cloud-backed
 register used, and `src/pos/storage/cloud-adapter.ts`, `queued-cloud-adapter.ts`,

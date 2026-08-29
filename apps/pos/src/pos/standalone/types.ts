@@ -158,7 +158,11 @@ export const BUILTIN_ROLES: RoleDefinition[] = [
   },
   {
     id: 'cashier',
-    name: 'Cashier',
+    // Not "Cashier". The People screen renders `RoleDefinition.name` straight
+    // into its picker, so two rows both called Cashier gave an owner two
+    // identical options with nothing to choose between -- only App admin, which
+    // uses the i18n label, could tell them apart.
+    name: 'Cashier (old)',
     enabled: true,
     capabilities: ['register', 'settings.view'],
     builtIn: true,

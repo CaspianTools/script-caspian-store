@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
-  useT,
   useCaspianNavigation,
   useCaspianStandalone,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { usePosShift } from './shift-context';
+import { usePosMoney } from '../use-pos-money';
 
 /**
  * The line above the sale screen while a shift is open.
@@ -28,16 +28,7 @@ export function PosShiftStrip() {
   const { push } = useCaspianNavigation();
   const { required, shift, totals, currency } = usePosShift();
 
-  const formatPrice = useMemo(
-    () => (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    },
-    [currency],
-  );
+  const formatPrice = usePosMoney(currency);
 
   if (!standalone || !required || !shift) return null;
 

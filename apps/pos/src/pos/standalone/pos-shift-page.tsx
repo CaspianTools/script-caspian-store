@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  useT,
   useCaspianNavigation,
   useCaspianStandalone,
   useToast,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../i18n/use-pos-t';
 import { CashDrawerIcon } from '../../icons';
 import { parseAmount } from '../parse-amount';
 import { PosAdminPage } from './admin/pos-admin-page';
@@ -15,6 +15,7 @@ import { ShiftReport } from './shift-report';
 import type { ShiftTotals } from './shift-totals';
 import type { LocalShift } from './types';
 import { PosDialog } from './ui/pos-dialog';
+import { usePosMoney } from '../use-pos-money';
 
 /**
  * The open shift: what it has taken, the money moved in and out of the drawer,
@@ -37,16 +38,7 @@ export function PosShiftPage() {
   /** The shift just closed on this screen, kept so its report can be read. */
   const [justClosed, setJustClosed] = useState<LocalShift | null>(null);
 
-  const formatPrice = useMemo(
-    () => (amount: number) => {
-      try {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
-      } catch {
-        return amount.toFixed(2);
-      }
-    },
-    [currency],
-  );
+  const formatPrice = usePosMoney(currency);
 
   const onClose = useCallback(
     async (countedCash: number) => {

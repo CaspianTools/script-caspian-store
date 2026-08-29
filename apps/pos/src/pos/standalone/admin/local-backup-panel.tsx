@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useT,
   useToast,
   cn,
   FieldDescription,
   useFormatDate,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../../../i18n/use-pos-t';
 import {
   buildLocalBackup,
   localBackupFilename,

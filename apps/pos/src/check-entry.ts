@@ -16,6 +16,8 @@
  * needs something, and delete from it when one stops.
  */
 
+export { POS_MESSAGES_EN, POS_OVERLAYS } from './i18n';
+export { formatPosMessage } from './i18n/plural';
 export { OPEN_SALE_KEY } from './pos/open-sale-store';
 export { resolvePosStorageMode } from './pos/pos-preferences';
 export {

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import {
   useCaspianFirebase,
-  useT,
   useFormatDate,
   reportServiceError,
   Badge,
@@ -18,6 +17,7 @@ import {
   TR,
   useToast,
 } from '@caspian-explorer/script-caspian-store';
+import { usePosT as useT } from '../i18n/use-pos-t';
 import { isLicensingConfigured } from '../pos/license/public-key';
 
 interface LicenseRow {
