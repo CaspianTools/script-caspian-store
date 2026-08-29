@@ -23,6 +23,65 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v2.0.1 — Returns actually reach the drawer
+
+Two faults in v2.0.0 that both had the same shape: the return looked like it
+worked, and the money did not follow. **If you are on v2.0.0, update before
+taking another return.**
+
+### Action needed on each till
+
+Nothing to install — the update strip picks this up between customers. But if
+you took any return on v2.0.0:
+
+1. **Check the shifts you closed.** Every return was missing from its shift, so
+   the drawer was reported SHORT by exactly the amount handed back, with the
+   cashier's name against it. Those closed shifts are not rewritten — a closed
+   shift never is — so the variance stays on the record and is worth a note
+   beside it.
+2. **Check for a return you took twice.** If a customer returned one item and
+   later returned another from the same sale, the second was silently ignored:
+   the register said it had worked and named the first return's receipt. The
+   money went over the counter and nothing was recorded. Take that return again
+   now, and it will land.
+
+### Fixed
+
+- **A return never reached the shift it was taken on**, so the shift report and
+  the expected drawer figure carried on as though nothing had gone out. At close
+  the drawer was short by exactly the return. This was the single failure the
+  whole 2.0.0 release existed to fix, and it did not.
+- **A second identical return on the same sale did nothing at all.** Return one
+  of three items, then later return another one, and the second was treated as a
+  repeat of the first: no record, no stock, no money — and a success message
+  quoting the first return's receipt number.
+- **Returns on a shop that runs shifts are refused when no shift is open**, with
+  a message saying so, rather than booking cash against no drawer.
+- **A return handed back to the same batch twice.** Returning one item, then
+  later another, could put more units back on a batch than the sale ever took off
+  it, so the shelf and the batch records disagreed.
+- **Two lines of the same item on one return** put back half the stock they
+  should have.
+- The Return button no longer appears for a role that can give money back but
+  cannot see the Sales list — it used to lead nowhere.
+
+### Changed
+
+- Taking a return no longer reads the shop's entire stock history to find the
+  batches. On a till with a year of trading that was a long pause with the
+  records locked.
+- Five places in the manual and the app still told a shop the register has no
+  returns screen. They now say what it does and when to use it.
+
+### Internal
+
+- The two checks that would have caught the shift fault. The first draft's
+  assertions handed `summariseShift` a return that already carried a `shiftId`,
+  because the test helper defaulted it — so they proved the arithmetic and left
+  the wiring untested, and the wiring was the bug. One of the new checks reads
+  the screen's own source, because the defect lived in a React component the
+  bundle guard cannot reach.
+
 ## v2.0.0 — Returns, and a receipt you can print again
 
 The register could take money and never give it back. A return reached the

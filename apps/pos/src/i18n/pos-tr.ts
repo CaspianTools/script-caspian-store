@@ -953,7 +953,8 @@ const tr: MessageDict = {
   'pos.store.adjust.reason.damaged': 'Hasarlı ya da atıldı',
   'pos.store.adjust.reason.expired': 'Tarihi geçmiş',
   'pos.store.adjust.reason.other': 'Başka bir şey',
-  'pos.store.adjust.returnNote': 'Bir iadenin kayıtlara geçmesinin tek yolu budur. Kasada iade ekranı yok, o yüzden para ayrıca ele alınır.',
+  'pos.store.adjust.returnNote':
+    'Fişi olmayan iadeler için. Müşteride fiş varsa satışın kendi sayfasındaki "İade al" düğmesini kullanın — o, parayı da geri verir.',
   'pos.store.adjust.saved': 'Stok düzeltildi',
   'pos.store.adjust.savedPartly': '{asked} adetten yalnızca {moved} adet hareket etti — partilerde geri kalanı yoktu. Parti listesine bakın.',
   'pos.store.adjust.title': 'Stok düzeltmesi — {name}',
@@ -1167,6 +1168,8 @@ const tr: MessageDict = {
   'pos.shift.refunds': 'Geri verilen',
   'pos.admin.products.costPrice': 'Alış fiyatı',
   'pos.admin.products.costPriceHelp': 'Bir adet için ödediğiniz tutar. Stok değeri ve kâr için kullanılır. Bir teslimat aldığınızda bu değer o teslimattaki fiyatla değişir.',
+  'pos.refund.alreadyDone': 'Bu iade zaten {receipt} olarak kaydedilmiş.',
+  'pos.refund.noShift': 'İade almadan önce bir vardiya açın ki para bir çekmeceden çıksın.',
 };
 
 export default tr;

@@ -100,7 +100,13 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const t = useT();
   const confirm = usePosConfirm();
   const { can: canDo } = usePosRoles();
-  const canRefund = local.standalone && canDo(local.user?.role, 'sales.refund');
+  // BOTH capabilities. The button goes to the Sales list, and that route is
+  // gated on `sales.view` -- so a role granted only `sales.refund` would get a
+  // button that bounces straight back to the register.
+  const canRefund =
+    local.standalone &&
+    canDo(local.user?.role, 'sales.refund') &&
+    canDo(local.user?.role, 'sales.view');
   // The open sale lives above this component, and on disk. `PosRoot` swaps
   // this whole component out for every other /pos screen, so a ticket owned
   // here would not survive a cashier glancing at Settings.

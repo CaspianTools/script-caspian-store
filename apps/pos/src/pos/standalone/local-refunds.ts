@@ -17,7 +17,6 @@ import {
   STORE_LOCAL_PRODUCTS,
   STORE_LOCAL_SALES,
   idbGet,
-  idbGetAll,
   idbGetAllByIndex,
   idbPut,
   posTx,
@@ -114,6 +113,7 @@ export async function commitLocalRefund(input: LocalRefundInput): Promise<LocalR
         input.originalSaleId,
       );
       const returned = summariseReturnedLines(original, priors);
+      const priorIds = new Set(priors.map((row) => row.saleId));
       const priced = priceLocalRefund(original, input.lines, returned);
       if (!priced) return { ok: false, reason: 'nothing-returnable' };
 
@@ -152,20 +152,35 @@ export async function commitLocalRefund(input: LocalRefundInput): Promise<LocalR
 
         if (!product.tracksLots) continue;
 
-        // Units go back on the lots the ORIGINAL sale drew them from, in draw
-        // order. A hand adjustment cannot know the batch and mints an undated
-        // lot; a receipt-linked return does know, and putting a jar back on the
-        // batch it left keeps the expiry dates honest.
-        //
-        // Draw order and reverse-draw order give the same answer for a full
-        // return and differ only on a partial, where there is no fact of the
-        // matter about which physical unit came back. Draw order is chosen
-        // because it restores the shelf to its pre-sale state monotonically.
-        const drawn = (
-          await idbGetAll<LocalStockMovement>(tx, STORE_LOCAL_MOVEMENTS)
-        ).filter(
-          (m) => m.kind === 'sale' && m.productId === productId && m.reference === original.receiptNumber,
+        // Through the `by-product` index, not `idbGetAll`. The whole ledger is
+        // every movement a shop has ever made, and reading it inside a
+        // readwrite transaction holding five stores -- once per lot-tracked
+        // product on the refund -- is a transaction held open across a scan
+        // that grows without bound.
+        const ledger = await idbGetAllByIndex<LocalStockMovement>(
+          tx,
+          STORE_LOCAL_MOVEMENTS,
+          'by-product',
+          productId,
         );
+
+        // Matched on the movement id rather than on `reference`. Both work
+        // today, but the id carries the sale's own key and a receipt number is
+        // a display string a shop can re-sequence.
+        const drawn = ledger.filter((m) => m.id.startsWith(`sale:${original.saleId}:`));
+
+        // How much earlier refunds against THIS sale already put back on each
+        // lot. Without it a second partial return refills a lot from the same
+        // draw a second time, and a lot ends up holding more than the sale ever
+        // took off it -- so the shelf and the ledger disagree, and the next
+        // restore reconciles the difference away.
+        const backAlready = new Map<string, number>();
+        for (const movement of ledger) {
+          if (!movement.id.startsWith('refund:')) continue;
+          const refundId = movement.id.slice('refund:'.length).split(':')[0];
+          if (!priorIds.has(refundId)) continue;
+          backAlready.set(movement.lotId, (backAlready.get(movement.lotId) ?? 0) + movement.quantity);
+        }
 
         for (const [sizeKey, qty] of sizes) {
           let left = qty;
@@ -173,7 +188,11 @@ export async function commitLocalRefund(input: LocalRefundInput): Promise<LocalR
             if (left <= 0) break;
             const lot = await idbGet<LocalStockLot>(tx, STORE_LOCAL_LOTS, draw.lotId);
             if (!lot) continue;
-            const back = Math.min(left, Math.abs(draw.quantity));
+            // Room on this lot is what the sale took off it MINUS what has
+            // already gone back.
+            const room = Math.abs(draw.quantity) - (backAlready.get(draw.lotId) ?? 0);
+            if (room <= 0) continue;
+            const back = Math.min(left, room);
             await idbPut(tx, STORE_LOCAL_LOTS, {
               ...lot,
               remainingQty: lot.remainingQty + back,
@@ -215,20 +234,26 @@ export async function commitLocalRefund(input: LocalRefundInput): Promise<LocalR
         }
       }
 
-      // Products with no lot tracking get one movement per line.
-      for (const line of priced.lines) {
-        const product = await idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, line.productId);
-        if (product?.tracksLots) continue;
-        movements.push(
-          refundMovement(
-            input,
-            { id: line.productId },
-            line.selectedSize || '_default',
-            '',
-            Math.abs(line.quantity),
-            receiptNumber(receiptPrefix, next),
-          ),
-        );
+      // Products with no lot tracking get one movement per product+size, NOT
+      // per line: a refund covering two lines of the same product and size
+      // would otherwise write two movements with the same id -- they share
+      // `refund:<id>:<product>:<size>:` and an empty lot -- and the second
+      // would silently overwrite the first, halving the stock put back.
+      for (const [productId, sizes] of wanted) {
+        const product = await idbGet<LocalProduct>(tx, STORE_LOCAL_PRODUCTS, productId);
+        if (!product || product.tracksLots) continue;
+        for (const [sizeKey, qty] of sizes) {
+          movements.push(
+            refundMovement(
+              input,
+              { id: productId },
+              sizeKey,
+              '',
+              qty,
+              receiptNumber(receiptPrefix, next),
+            ),
+          );
+        }
       }
 
       const refund: LocalSale = {
