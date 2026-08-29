@@ -832,8 +832,10 @@ export interface LocalShift {
    *
    * No refund term, because this till cannot make one: `priceLocalSale` clamps
    * a total at zero, so there is no negative sale to subtract. A permanently
-   * zero "refunds" line on the Z-report would imply a returns screen the
-   * manual is explicit does not exist.
+   * zero "refunds" line on the Z-report would have implied a returns screen
+   * that did not exist. Returns arrived in v2.0.0, and the Z-report now
+   * shows Given back and Net -- but only on a shift that actually had one,
+   * for the same reason.
    */
   expectedCash?: number;
   /** `countedCash − expectedCash`. Negative means the drawer is short. */

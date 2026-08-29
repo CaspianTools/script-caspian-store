@@ -455,7 +455,7 @@ const az: MessageDict = {
   'pos.store.adjust.lotOutHelp': 'Toxunmasanız, vaxtı ən tez bitən partiyadan çıxılır.',
   'pos.store.adjust.lotInHelp': 'Hansı partiyadan gəldiyini seçin, ya da boş qoyun — tarixsiz yeni partiya yaradılsın.',
   'pos.store.adjust.returnNote':
-    'Qaytarma qeydə yalnız bu yolla düşür. Kassada geri ödəmə ekranı yoxdur, ona görə pul ayrıca verilir.',
+    'Qəbzi olmayan qaytarma üçün. Müştəridə qəbz varsa, satışın öz səhifəsindəki "Malı geri qəbul et" düyməsini istifadə edin — o, pulu da geri qaytarır.',
   'pos.store.adjust.invalid': 'Sıfırdan böyük tam ədəd yazın.',
   'pos.store.adjust.saved': 'Stok tənzimləndi',
   'pos.store.adjust.savedPartly':
@@ -1191,6 +1191,8 @@ const az: MessageDict = {
   'pos.shift.refunds': 'Geri verilib',
   'pos.admin.products.costPrice': 'Maya dəyəri',
   'pos.admin.products.costPriceHelp': 'Bir ədədə ödədiyiniz məbləğ. Stok dəyəri və mənfəət üçün istifadə olunur. Mal qəbulu bu rəqəmi həmin qəbuldakı qiymətlə əvəz edir.',
+  'pos.refund.alreadyDone': 'Bu qaytarma artıq {receipt} kimi qeyd olunub.',
+  'pos.refund.noShift': 'Qaytarma qəbul etməzdən əvvəl növbə açın ki, pul bir kassadan çıxsın.',
 };
 
 export default az;

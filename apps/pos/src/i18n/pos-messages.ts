@@ -385,7 +385,7 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.store.adjust.lotOutHelp': 'Left alone, this comes off the batch that goes out of date soonest.',
   'pos.store.adjust.lotInHelp': 'Pick the batch it came from, or leave it and a new undated batch is made.',
   'pos.store.adjust.returnNote':
-    'This is the only way a return reaches the books. The till has no refund screen, so the money is handled separately.',
+    'For a return with no receipt to link it to. If the customer has their receipt, use Take something back on the sale itself - that puts the money back too.',
   'pos.store.adjust.invalid': 'Enter how many, as a whole number above zero.',
   'pos.store.adjust.confirm': 'Save the adjustment',
   'pos.store.adjust.saved': 'Stock adjusted',
@@ -1196,4 +1196,6 @@ export const POS_MESSAGES_EN: MessageDict = {
   'pos.shift.refunds': 'Given back',
   'pos.admin.products.costPrice': 'Cost price',
   'pos.admin.products.costPriceHelp': 'What you pay for one. Used for stock value and profit. Receiving a delivery replaces it with the price on that delivery.',
+  'pos.refund.alreadyDone': 'That return was already recorded as {receipt}.',
+  'pos.refund.noShift': 'Open a shift before taking a return, so the cash comes out of a drawer.',
 };

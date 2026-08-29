@@ -960,7 +960,8 @@ const ru: MessageDict = {
   'pos.store.adjust.reason.damaged': 'Повреждено или выброшено',
   'pos.store.adjust.reason.expired': 'Истёк срок годности',
   'pos.store.adjust.reason.other': 'Другое',
-  'pos.store.adjust.returnNote': 'Только так возврат попадает в учёт. Экрана возврата денег на кассе нет, поэтому деньги отдаются отдельно.',
+  'pos.store.adjust.returnNote':
+    'Для возврата без чека. Если у покупателя есть чек, используйте «Принять возврат» на самой продаже — это вернёт и деньги.',
   'pos.store.adjust.saved': 'Остаток изменён',
   'pos.store.adjust.savedPartly': 'Удалось провести только {moved} из {asked} — в партиях не хватило остального. Проверьте список партий.',
   'pos.store.adjust.title': 'Коррекция остатка — {name}',
@@ -1174,6 +1175,8 @@ const ru: MessageDict = {
   'pos.shift.refunds': 'Возвращено',
   'pos.admin.products.costPrice': 'Закупочная цена',
   'pos.admin.products.costPriceHelp': 'Сколько вы платите за одну штуку. Используется для стоимости остатка и прибыли. Приёмка поставки заменяет это значение ценой из поставки.',
+  'pos.refund.alreadyDone': 'Этот возврат уже записан как {receipt}.',
+  'pos.refund.noShift': 'Откройте смену перед приёмом возврата, чтобы деньги вышли из ящика.',
 };
 
 export default ru;

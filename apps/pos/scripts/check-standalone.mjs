@@ -2092,6 +2092,42 @@ check('the report separates what was sold from what was given back', () => {
   assert.equal(totals.refundCount, 1);
   assert.equal(totals.netTotal, 60);
 });
+// The one the first draft did NOT have, and the reason it shipped broken.
+//
+// `refundRow` above defaults `shiftId` to 's1', so every assertion around it
+// handed `summariseShift` a refund already carrying the field the SCREEN never
+// set. They proved the arithmetic and left the wiring untested, and the wiring
+// was the bug: refunds went in with no `shiftId`, `salesForShift` filters on
+// that field alone, and the drawer counted SHORT by exactly the refund at close
+// -- with the cashier's name against it.
+//
+// A source scan, because the defect lived in a React component the bundle guard
+// cannot reach.
+check('the refund screen stamps the shift the cash leaves', () => {
+  const dialog = readFileSync(
+    join(root, 'src', 'pos', 'standalone', 'admin', 'local-refund-dialog.tsx'),
+    'utf8',
+  );
+  assert.ok(
+    /shiftId: shift\.id/.test(dialog),
+    'commitLocalRefund must be given the OPEN shift, or no drawer ever sees the money go out',
+  );
+  assert.ok(
+    /usePosShift\(\)/.test(dialog),
+    'the dialog has to read the open shift to be able to stamp it',
+  );
+});
+check('a refund with no shift is invisible to the shift that paid it', () => {
+  // The failure itself, pinned as arithmetic so the reason the screen must
+  // stamp the field is written down and not just asserted about.
+  const stray = { total: -20, tenders: [cash(-20)], kind: 'refund' };
+  const totals = summariseShift(shiftOf(100), salesForShift([saleOf(50, [cash(50)]), stray], 's1'));
+  assert.equal(totals.expectedCash, 150, 'the 20 handed over is nowhere in this figure');
+  assert.equal(totals.refundsTotal, 0);
+  // Which is to say: counting the drawer would report it 20 short.
+  assert.equal(shiftVariance(130, totals.expectedCash), -20);
+});
+
 check('a shift with no returns reports none, rather than zeroes it invented', () => {
   const totals = summariseShift(shiftOf(0), [saleOf(50, [cash(50)])]);
   assert.equal(totals.refundsTotal, 0);
