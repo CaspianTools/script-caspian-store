@@ -26,6 +26,12 @@ export interface PosSaleLine {
   selectedSize?: string | null;
   selectedColor?: string | null;
   lineDiscount?: number;
+  /**
+   * Why the markdown, from the fixed vocabulary in `standalone/types.ts`.
+   * A plain string here because this file is the storage seam and must not
+   * import from `standalone/`; the pricing narrows it.
+   */
+  discountReason?: string;
   sku?: string;
   barcode?: string;
   imageUrl?: string;

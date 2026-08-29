@@ -241,6 +241,11 @@ export function LocalSalePage({ saleId }: { saleId: string }) {
                     {line.selectedSize ? (
                       <span className="cpos-muted"> · {line.selectedSize}</span>
                     ) : null}
+                    {line.discountReason ? (
+                      <div className="cpos-muted">
+                        {t('pos.ticket.discount')} · {t(`pos.discount.reason.${line.discountReason}`)}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="cpos-table__num">{line.quantity}</td>
                   {refunds.length ? (

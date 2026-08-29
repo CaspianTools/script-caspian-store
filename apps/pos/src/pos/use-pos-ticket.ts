@@ -17,7 +17,7 @@ export interface PosTicket {
   totals: PosTicketTotals;
   addProduct: (product: Product, selectedSize?: string | null) => void;
   setQuantity: (index: number, quantity: number) => void;
-  setLineDiscount: (index: number, discount: number) => void;
+  setLineDiscount: (index: number, discount: number, reason?: string) => void;
   removeLine: (index: number) => void;
   /**
    * Put a whole ticket back, for a sale recovered from disk after a reload or a
@@ -81,14 +81,21 @@ export function usePosTicket(): PosTicket {
     });
   }, []);
 
-  const setLineDiscount = useCallback((index: number, discount: number) => {
+  const setLineDiscount = useCallback((index: number, discount: number, reason?: string) => {
     setLines((current) =>
       current.map((line, i) => {
         if (i !== index) return line;
         // A markdown can take a line to zero but never below — a negative line
         // would turn a sale into a partial refund with no audit trail.
         const cap = line.unitPrice * line.quantity;
-        return { ...line, lineDiscount: Math.max(0, Math.min(discount, cap)) };
+        const applied = Math.max(0, Math.min(discount, cap));
+        // The reason lives and dies with the discount: clearing one clears the
+        // other, so no line carries a reason for a markdown it no longer has.
+        return {
+          ...line,
+          lineDiscount: applied,
+          ...(applied > 0 && reason ? { discountReason: reason } : { discountReason: undefined }),
+        };
       }),
     );
   }, []);

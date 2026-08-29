@@ -23,6 +23,50 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v2.1.0 — A PIN for the lock screen, and a why on every discount
+
+The last two items from the v1.7.0 audit: unlocking a till mid-shift meant
+typing a full password with a queue watching, and any cashier could take a sale
+to zero without a word recorded about why.
+
+### Nothing to do on a till
+
+The update strip in the register's own header picks this up between customers.
+Both features are opt-in: nobody has a PIN until they set one, and the discount
+question only appears when somebody takes a discount.
+
+### Added
+
+- **An unlock PIN.** Set it under Settings → Account, behind your password. From
+  then on the locked screen asks for the PIN first, with "Use my password
+  instead" underneath. Three things it deliberately is not:
+  - **It never signs anyone in.** The sign-in page still takes the password, so
+    a stolen machine faces the same credential it always did.
+  - **Five wrong tries switch it off** until the password unlocks the screen
+    once. A short code cannot survive unlimited guessing, so it does not get to
+    face any.
+  - **Nobody can set anyone else's.** It is on your own account page only, and
+    asks for your password — otherwise an owner could unlock as a cashier and
+    every receipt rung that way would carry the wrong name.
+
+  Changing a password removes the PIN that was set under it, for the same
+  reason the password was changed.
+- **A discount now asks why.** Six choices — damaged, price match, staff,
+  regular customer, goodwill, something else — picked before Apply will work.
+  One extra tap, and it is the whole audit trail.
+- **The Sales page shows the discounts.** A new section, only when there are
+  any: how much was given away in the period, by reason and by cashier. This is
+  deliberately visibility rather than a manager-approval step: an approval on a
+  till like this is only as strong as the role list on the same machine, and
+  the pattern worth catching — one person, many discounts — is caught by
+  counting, not by gating.
+
+### Notes for a shop
+
+- Discounts taken before this version show as "No reason recorded" in the new
+  section. Nothing is guessed backwards.
+- A sale's own page now shows the reason beside each marked-down line.
+
 ## v2.0.1 — Returns actually reach the drawer
 
 Two faults in v2.0.0 that both had the same shape: the return looked like it

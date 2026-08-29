@@ -108,6 +108,9 @@ const {
   categoryTotals,
   supplierTotals,
   passwordIsWeak,
+  MIN_LOCAL_PIN_LENGTH,
+  pinIsValidShape,
+  pinIsWeak,
   verifyStoredCredentials,
   formatRecoveryCode,
   normaliseRecoveryCode,
@@ -579,6 +582,58 @@ check('the strict reader separates blank from zero', () => {
   assert.equal(parseAmountStrict('abc'), null);
   assert.equal(parseAmountStrict('-5'), null);
   assert.equal(parseAmountStrict('12,50'), 12.5);
+});
+
+console.log('the unlock PIN');
+// Pure rules only. The PIN hashes and verifies through the exact functions the
+// password already round-trips through above, so no extra derive is spent here
+// -- the file caps PBKDF2 calls for a reason.
+check('a PIN is digits, and at least the minimum of them', () => {
+  assert.equal(MIN_LOCAL_PIN_LENGTH, 6);
+  assert.ok(pinIsValidShape('482913'));
+  assert.ok(pinIsValidShape('4829137'));
+  assert.ok(!pinIsValidShape('48291'), 'too short');
+  assert.ok(!pinIsValidShape('48291a'), 'not digits');
+  assert.ok(!pinIsValidShape(''), 'empty');
+});
+check('the PINs everyone tries first are refused', () => {
+  assert.ok(pinIsWeak('000000'), 'all one digit');
+  assert.ok(pinIsWeak('777777'));
+  assert.ok(pinIsWeak('123456'), 'ascending run');
+  assert.ok(pinIsWeak('654321'), 'descending run');
+  assert.ok(pinIsWeak('901234'), 'a run through the wrap');
+  assert.ok(!pinIsWeak('482913'), 'an ordinary PIN passes');
+  assert.ok(!pinIsWeak('112358'));
+});
+
+console.log('why a markdown happened');
+// The reason travels only when the discount survives the clamp: a reason on a
+// markdown taken to zero would be a record of something that never happened.
+check('the reason is frozen onto the line with its discount', () => {
+  const products = new Map([['p1', undefined]]);
+  const priced = priceLocalSale(
+    [{ productId: 'p1', name: 'Thing', unitPrice: 10, quantity: 2, lineDiscount: 3, discountReason: 'damaged' }],
+    products,
+  );
+  assert.equal(priced.lines[0].lineDiscount, 3);
+  assert.equal(priced.lines[0].discountReason, 'damaged');
+});
+check('a clamped-to-zero discount drops its reason', () => {
+  const products = new Map([['p1', undefined]]);
+  const priced = priceLocalSale(
+    [{ productId: 'p1', name: 'Thing', unitPrice: 10, quantity: 1, lineDiscount: -5, discountReason: 'damaged' }],
+    products,
+  );
+  assert.equal(priced.lines[0].lineDiscount, 0);
+  assert.equal(priced.lines[0].discountReason, undefined);
+});
+check('no reason given writes no reason field', () => {
+  const products = new Map([['p1', undefined]]);
+  const priced = priceLocalSale(
+    [{ productId: 'p1', name: 'Thing', unitPrice: 10, quantity: 1, lineDiscount: 2 }],
+    products,
+  );
+  assert.ok(!('discountReason' in priced.lines[0]));
 });
 
 console.log('what a refund is worth');

@@ -12,6 +12,9 @@ import {
 import { useCaspianStandalone } from '@caspian-explorer/script-caspian-store';
 import {
   attemptLocalSignIn,
+  type LocalPinUnlockResult,
+  attemptLocalPinUnlock,
+  clearPinFailures,
   clearLocalSession,
   createLocalUser,
   isCommissioned,
@@ -72,6 +75,8 @@ export interface PosLocalSessionValue {
   lock: () => void;
   /** Uncover it. Same password, same delay ladder, same `signInId`. */
   unlock: (password: string) => Promise<LocalSignInResult>;
+  /** The lock screen's short way back in. See the PIN note in `local-auth.ts`. */
+  unlockWithPin: (pin: string) => Promise<LocalPinUnlockResult>;
   signOut: () => void;
   /**
    * Create the first account — the Technical Support one. Refuses once any
@@ -111,6 +116,7 @@ const INERT: PosLocalSessionValue = {
   attemptSignIn: async () => ({ ok: false, reason: 'bad-credentials' }),
   lock: () => undefined,
   unlock: async () => ({ ok: false, reason: 'bad-credentials' }),
+  unlockWithPin: async () => ({ ok: false, reason: 'no-pin' }),
   signOut: () => undefined,
   commission: async () => ({ ok: false, reason: 'not-standalone' }),
   refresh: async () => undefined,
@@ -287,6 +293,23 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
         setUser(result.user);
         touchLocalSession();
         setLocked(false);
+        // The password proving itself is the ONLY thing that re-arms a PIN
+        // that five bad guesses shut off.
+        clearPinFailures(result.user.id);
+      }
+      return result;
+    },
+    [user],
+  );
+
+  const unlockWithPin = useCallback(
+    async (pin: string): Promise<LocalPinUnlockResult> => {
+      if (!user) return { ok: false, reason: 'no-pin' };
+      const result = await attemptLocalPinUnlock(user.id, pin);
+      if (result.ok) {
+        setUser(result.user);
+        touchLocalSession();
+        setLocked(false);
       }
       return result;
     },
@@ -368,6 +391,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
             attemptSignIn,
             lock,
             unlock,
+      unlockWithPin,
             signOut,
             commission,
             refresh,
@@ -385,6 +409,7 @@ export function PosLocalSessionProvider({ children }: { children: ReactNode }) {
       attemptSignIn,
       lock,
       unlock,
+      unlockWithPin,
       signOut,
       commission,
       refresh,

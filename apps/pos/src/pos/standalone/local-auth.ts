@@ -239,17 +239,178 @@ export async function createLocalUser(input: {
   return { ok: true, user };
 }
 
+/**
+ * The unlock PIN.
+ *
+ * A convenience for the LOCK SCREEN and nothing else. `attemptLocalSignIn`
+ * knows nothing about it, deliberately: the sign-in page authenticates a
+ * session and must face the password, while the lock screen re-opens a session
+ * that already exists on a machine already behind the counter.
+ *
+ * Honest framing, because the numbers matter: six digits is 10^6, and at this
+ * PBKDF2 cost a stolen IndexedDB file yields the PIN offline in a couple of
+ * days. No iteration count fixes that -- the entropy is in the secret -- which
+ * is why the PIN can never be more than a screen-cover convenience, and why
+ * online guessing gets a hard CAP rather than the password's delay ladder:
+ * five failures disable the PIN until the password unlocks once. The ladder
+ * slows an attack; a cap on a 10^6 space ends it.
+ */
+export const MIN_LOCAL_PIN_LENGTH = 6;
+
+const PIN_FAILURES_KEY = 'caspian:pos:pinFailures';
+const PIN_FAILURE_CAP = 5;
+
+/** Digits only. A PIN with letters in it is a worse password, not a better PIN. */
+export function pinIsValidShape(pin: string): boolean {
+  return pin.length >= MIN_LOCAL_PIN_LENGTH && /^[0-9]+$/.test(pin);
+}
+
+/**
+ * PINs a till refuses. Same posture as `passwordIsWeak`: a short list of the
+ * shapes anybody standing at the counter tries first, not a blocklist that
+ * looks thorough while stopping nothing.
+ */
+export function pinIsWeak(pin: string): boolean {
+  if (/^(.)\1*$/.test(pin)) return true; // 000000, 111111
+  const up = '01234567890123456789';
+  const down = '98765432109876543210';
+  if (up.includes(pin) || down.includes(pin)) return true; // runs, either way
+  return false;
+}
+
+function readPinFailures(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(PIN_FAILURES_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writePinFailures(state: Record<string, number>): void {
+  try {
+    localStorage.setItem(PIN_FAILURES_KEY, JSON.stringify(state));
+  } catch {
+    // Storage blocked. The count resets with the tab, which fails towards the
+    // password -- the stronger credential -- not away from it.
+  }
+}
+
+/** Device state, like the throttle: per machine, not part of the shop's records. */
+export function pinIsLockedOut(userId: string): boolean {
+  return (readPinFailures()[userId] ?? 0) >= PIN_FAILURE_CAP;
+}
+
+/**
+ * Called on a successful PASSWORD unlock. The password proving itself is what
+ * re-arms the PIN -- nothing else does, and nothing about time does.
+ */
+export function clearPinFailures(userId: string): void {
+  const state = readPinFailures();
+  if (userId in state) {
+    delete state[userId];
+    writePinFailures(state);
+  }
+}
+
+export type LocalPinUnlockResult =
+  | { ok: true; user: LocalUser }
+  | { ok: false; reason: 'no-pin' | 'bad-pin' | 'pin-locked' };
+
+/**
+ * Unlock with the PIN. Reads the account fresh rather than trusting the copy
+ * in React state, so a PIN removed from another tab stops working here too.
+ */
+export async function attemptLocalPinUnlock(
+  userId: string,
+  pin: string,
+): Promise<LocalPinUnlockResult> {
+  const user = await getLocalUser(userId);
+  if (!user || user.disabled) return { ok: false, reason: 'no-pin' };
+  if (!user.pinHash || !user.pinSalt || !user.pinIterations) {
+    return { ok: false, reason: 'no-pin' };
+  }
+  if (pinIsLockedOut(userId)) return { ok: false, reason: 'pin-locked' };
+
+  const good = await verifyStoredCredentials(pin, {
+    hash: user.pinHash,
+    salt: user.pinSalt,
+    iterations: user.pinIterations,
+  });
+
+  if (!good) {
+    const state = readPinFailures();
+    state[userId] = (state[userId] ?? 0) + 1;
+    writePinFailures(state);
+    return {
+      ok: false,
+      reason: state[userId] >= PIN_FAILURE_CAP ? 'pin-locked' : 'bad-pin',
+    };
+  }
+
+  clearPinFailures(userId);
+  return { ok: true, user };
+}
+
+export type SetLocalPinResult =
+  | { ok: true }
+  | { ok: false; reason: 'bad-shape' | 'weak' | 'no-user' };
+
+/**
+ * Set the PIN. The CALLER proves the current password first -- the dialog does
+ * it the way the change-password dialog does -- because somebody who sat down
+ * at an unlocked till must not be able to mint themselves a way back in.
+ */
+export async function setLocalPin(userId: string, pin: string): Promise<SetLocalPinResult> {
+  if (!pinIsValidShape(pin)) return { ok: false, reason: 'bad-shape' };
+  if (pinIsWeak(pin)) return { ok: false, reason: 'weak' };
+  const user = await getLocalUser(userId);
+  if (!user) return { ok: false, reason: 'no-user' };
+  // The same derive as a password, at the same cost. `hashLocalPassword` is
+  // hashing, not password-specific -- one derive-and-compare in the till.
+  const credentials = await hashLocalPassword(pin);
+  await saveLocalUser({
+    ...user,
+    pinHash: credentials.hash,
+    pinSalt: credentials.salt,
+    pinIterations: credentials.iterations,
+  });
+  clearPinFailures(userId);
+  return { ok: true };
+}
+
+export async function clearLocalPin(userId: string): Promise<boolean> {
+  const user = await getLocalUser(userId);
+  if (!user) return false;
+  const { pinHash, pinSalt, pinIterations, ...rest } = user;
+  void pinHash;
+  void pinSalt;
+  void pinIterations;
+  await saveLocalUser(rest as LocalUser);
+  clearPinFailures(userId);
+  return true;
+}
+
 export async function setLocalPassword(userId: string, password: string): Promise<boolean> {
   if (password.length < MIN_LOCAL_PASSWORD_LENGTH) return false;
   const user = await getLocalUser(userId);
   if (!user) return false;
   const credentials = await hashLocalPassword(password);
+  // The PIN goes with the old password. A reset is taken because the old
+  // credential can no longer be trusted, and a PIN minted under it is the same
+  // trust in a shorter form -- leaving it standing would leave a way back in
+  // for exactly the person the reset is shutting out.
+  const { pinHash, pinSalt, pinIterations, ...rest } = user;
+  void pinHash;
+  void pinSalt;
+  void pinIterations;
   await saveLocalUser({
-    ...user,
+    ...(rest as LocalUser),
     passwordHash: credentials.hash,
     passwordSalt: credentials.salt,
     passwordIterations: credentials.iterations,
   });
+  clearPinFailures(userId);
   return true;
 }
 

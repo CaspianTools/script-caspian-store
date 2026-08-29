@@ -44,6 +44,9 @@ export {
   normaliseUsername,
   parseLocalSession,
   passwordIsWeak,
+  MIN_LOCAL_PIN_LENGTH,
+  pinIsValidShape,
+  pinIsWeak,
   verifyLocalPassword,
   verifyStoredCredentials,
 } from './pos/standalone/local-auth';
