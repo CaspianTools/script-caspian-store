@@ -87,8 +87,17 @@ import type {
  * and a v5 file is refused by a v4 reader rather than being read with the
  * drawer counts silently dropped. Losing a closed shift loses the only record
  * of what a cashier counted and what it came to against expectation.
+ *
+ * v6 changed nothing in the file's SHAPE and everything in what `sales` can
+ * hold: a row may now be a refund -- a negative sale linked to the one it
+ * reverses. So this bump is a compatibility fence rather than a new field, and
+ * it is the same rule as the four above arrived at from the other side. Those
+ * were about data being silently DROPPED; this one is about data being silently
+ * MISREAD. A v5 file restores onto a v6 reader fine and simply carries no
+ * refunds. A v6 file offered to a v5 reader is refused, rather than read as a
+ * list of unexplained negative sales that reconcile against nothing.
  */
-export const LOCAL_BACKUP_VERSION = 5;
+export const LOCAL_BACKUP_VERSION = 6;
 
 export interface LocalBackup {
   format: 'caspian-standalone-till';

@@ -12,7 +12,7 @@
  */
 
 export const DB_NAME = 'caspian-pos';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 export const STORE_QUEUE = 'queue';
 export const STORE_LEASES = 'leases';
@@ -124,6 +124,11 @@ export function openPosDb(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
+      // The version-change transaction. Every branch below is create-only and
+      // needs nothing but `db`; the ONE that reaches into a store an earlier
+      // version already made needs this handle, because `db.createObjectStore`
+      // cannot reopen an existing store to add an index to it.
+      const upgrade = req.transaction;
       if (!db.objectStoreNames.contains(STORE_QUEUE)) {
         const queue = db.createObjectStore(STORE_QUEUE, { keyPath: 'saleId' });
         queue.createIndex('by-state', 'state');
@@ -158,6 +163,21 @@ export function openPosDb(): Promise<IDBDatabase> {
         const sales = db.createObjectStore(STORE_LOCAL_SALES, { keyPath: 'saleId' });
         sales.createIndex('by-committedAt', 'committedAtMillis');
         sales.createIndex('by-receiptNumber', 'receiptNumber');
+        sales.createIndex('by-original', 'originalSaleId');
+      } else if (upgrade) {
+        // v7: refunds. `by-original` answers "what has already been returned
+        // against this sale", which `commitLocalRefund` has to ask INSIDE its
+        // own transaction -- a full scan there would hold five stores open
+        // while it ran.
+        //
+        // The index costs a shop with a year of trading nothing to build:
+        // `originalSaleId` is absent on every ordinary sale, and IndexedDB
+        // leaves a record out of an index when its key path is `undefined`. So
+        // this index contains refunds and nothing else.
+        const sales = upgrade.objectStore(STORE_LOCAL_SALES);
+        if (!sales.indexNames.contains('by-original')) {
+          sales.createIndex('by-original', 'originalSaleId');
+        }
       }
       if (!db.objectStoreNames.contains(STORE_LOCAL_COUNTERS)) {
         db.createObjectStore(STORE_LOCAL_COUNTERS, { keyPath: 'key' });

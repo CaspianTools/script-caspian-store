@@ -89,6 +89,11 @@ export {
 } from './pos/standalone/opening-cash';
 export { priceLocalSale } from './pos/standalone/price-local-sale';
 export {
+  priceLocalRefund,
+  returnableQuantities,
+  summariseReturnedLines,
+} from './pos/standalone/price-local-refund';
+export {
   RECOVERY_CODE_ALPHABET,
   RECOVERY_CODE_PREFIX,
   RECOVERY_CODE_SYMBOLS,
@@ -134,4 +139,5 @@ export {
   DEFAULT_LOCAL_SHOP_SETTINGS,
   POS_LOCAL_ROLES,
   canAccess,
+  isRefundSale,
 } from './pos/standalone/types';

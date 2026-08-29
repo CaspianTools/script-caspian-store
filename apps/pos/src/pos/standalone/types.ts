@@ -388,8 +388,11 @@ export type LocalStockMovementKind = 'receipt' | 'sale' | 'return' | 'adjustment
  * Why someone changed a quantity by hand.
  *
  * `customer-return` is the one that is not an adjustment: it writes a `return`
- * movement, and it is the only thing the product page's Returned figure counts.
- * The register has no refund flow, so a return reaches the books through here.
+ * movement, and it is one of the two things the product page's Returned figure
+ * counts. The other is a receipt-linked refund, which since v2.0.0 puts the
+ * stock back itself. This route stays for the return that has no receipt --
+ * the customer who lost it, or a sale rung up before the till was installed --
+ * and it is the route that moves stock WITHOUT moving money.
  */
 export type LocalStockAdjustReason =
   | 'customer-return'
@@ -513,6 +516,39 @@ export interface LocalSupplier {
   updatedAtMillis: number;
 }
 
+/**
+ * What a row in `localSales` is. Absent means `'sale'`, so every record already
+ * on disk is valid without being rewritten.
+ */
+export type LocalSaleKind = 'sale' | 'refund';
+
+/** Why goods came back. */
+export type LocalRefundReason =
+  | 'faulty'
+  | 'wrong-item'
+  | 'changed-mind'
+  | 'overcharged'
+  | 'other';
+
+/**
+ * Why a line was marked down.
+ *
+ * A fixed vocabulary rather than free text, because the point is to be able to
+ * COUNT them: a cashier under queue pressure types nothing an owner can total
+ * up at the end of the week. Recorded on the line, never on the sale, because
+ * that is where the discount is.
+ */
+export type LocalDiscountReason =
+  | 'damaged'
+  | 'price-match'
+  | 'staff'
+  | 'loyalty'
+  | 'goodwill'
+  | 'other';
+
+/** Where a sale has got to with the tax authority. Carried, never computed. */
+export type LocalFiscalStatus = 'pending' | 'sent' | 'failed' | 'exempt';
+
 /** One priced line on a committed local sale. */
 export interface LocalSaleLine {
   productId: string;
@@ -526,6 +562,10 @@ export interface LocalSaleLine {
   selectedColor: string | null;
   lineDiscount: number;
   lineTotal: number;
+  /** On a refund row: which line of the original sale this reverses. */
+  originalLineIndex?: number;
+  /** Set only when the discount survived the clamp -- see `priceLocalSale`. */
+  discountReason?: LocalDiscountReason;
 }
 
 /**
@@ -534,6 +574,29 @@ export interface LocalSaleLine {
  * Written once and never edited: a correction is another sale, not a rewrite of
  * this one. That is what makes the receipt a shop hands a customer match the
  * record a tax inspector later reads.
+ *
+ * **A refund is a row in here too**, with `kind: 'refund'` and negative money.
+ * That is the whole design, and it is worth saying why rather than leaving the
+ * next reader to wonder.
+ *
+ * Six independent readers already sum `total` or `lineTotal` -- `shift-totals`,
+ * the Sales page's takings, its CSV, and three in `store-stats`. A separate
+ * `localRefunds` store would mean teaching each of them to subtract a second
+ * query, and each is a place somebody can forget. Forgetting OVERSTATES
+ * REVENUE, which is the exact failure refunds exist to fix. Negative rows here
+ * make all six correct without touching them.
+ *
+ * Three more reasons, each sufficient on its own. A refund slip needs an
+ * ordinal from the same receipt sequence, and `commitLocalSale` already spends
+ * one atomically. No new `local*` store means `factoryResetLocalStore`, the
+ * backup and the fourteen-store count in CLAUDE.md are all untouched. And it
+ * degrades safely: an older build reads a refund as a sale with a negative
+ * total, so its figures stay RIGHT even where the label is missing -- a
+ * separate store would be invisible to it and would silently overstate.
+ *
+ * This does not contradict "written once and never edited". Nothing ever writes
+ * to the original row: how much of each line has already been returned is
+ * derived from the refunds pointing at it, never stored on it.
  */
 export interface LocalSale {
   saleId: string;
@@ -562,6 +625,40 @@ export interface LocalSale {
   terminalId?: string;
   terminalName?: string;
   shiftId?: string;
+
+  /** Absent means `'sale'`, so every row written before refunds existed is valid. */
+  kind?: LocalSaleKind;
+  /** Refund rows only: the sale being reversed. Indexed as `by-original`. */
+  originalSaleId?: string;
+  /** Frozen beside the id, so the Sales list reads without a second lookup. */
+  originalReceiptNumber?: string;
+  refundReason?: LocalRefundReason;
+  refundNote?: string;
+
+  /**
+   * Fiscal fields, carried and never computed.
+   *
+   * Nothing in the till writes these today and no tax is calculated anywhere --
+   * `showTaxOnReceipt` remains the switch it always was. They are here because
+   * adding a field to this type costs nothing now and costs a migration across
+   * every live shop later, and because `fiscalStatus: 'pending'` IS the
+   * "sold, not yet fiscalised" marker; a separate boolean would be a second
+   * source of truth for one fact.
+   */
+  fiscalDocumentNumber?: string;
+  fiscalStatus?: LocalFiscalStatus;
+  fiscalisedAtMillis?: number;
+  fiscalError?: string;
+}
+
+/**
+ * Whether a `localSales` row is a refund.
+ *
+ * A function rather than `sale.kind === 'refund'` scattered about, so the
+ * string appears once and every reader that must branch on it is findable.
+ */
+export function isRefundSale(row: Pick<LocalSale, 'kind'>): boolean {
+  return row.kind === 'refund';
 }
 
 /**

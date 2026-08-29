@@ -58,6 +58,10 @@ const {
   displayAmount,
   usableCurrency,
   splitTenders,
+  priceLocalRefund,
+  summariseReturnedLines,
+  returnableQuantities,
+  isRefundSale,
   POS_MESSAGES_EN,
   POS_OVERLAYS,
   formatPosMessage,
@@ -575,6 +579,125 @@ check('the strict reader separates blank from zero', () => {
   assert.equal(parseAmountStrict('abc'), null);
   assert.equal(parseAmountStrict('-5'), null);
   assert.equal(parseAmountStrict('12,50'), 12.5);
+});
+
+console.log('what a refund is worth');
+// A refund is a row in `localSales` with negative money, so six existing
+// readers net it out untouched. The arithmetic is pinned here before any screen
+// exists, which is the same discipline `priceLocalSale` has.
+const refundSaleOf = (lines, over = {}) => ({
+  saleId: 's1',
+  receiptNumber: 'R-000001',
+  deviceId: 'd1',
+  lines: lines.map((l, i) => ({
+    productId: l.productId ?? `p${i}`,
+    name: l.name ?? `Item ${i}`,
+    sku: '',
+    barcode: '',
+    unitPrice: l.unitPrice,
+    quantity: l.quantity,
+    selectedSize: null,
+    selectedColor: null,
+    lineDiscount: l.lineDiscount ?? 0,
+    lineTotal: l.lineTotal ?? l.unitPrice * l.quantity - (l.lineDiscount ?? 0),
+  })),
+  tenders: [{ kind: 'cash', amount: 0 }],
+  subtotal: 0,
+  discount: 0,
+  total: 0,
+  committedAtMillis: 1,
+  cashierId: 'u1',
+  cashierName: 'Ada',
+  stockShortfall: [],
+  ...over,
+});
+
+const priceRefundOf = (sale, requests, priorRefunds = []) =>
+  priceLocalRefund(sale, requests, summariseReturnedLines(sale, priorRefunds));
+
+check('a refund line is negative, and so is the total', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 1 }]);
+  const r = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }]);
+  assert.equal(r.lines[0].quantity, -1);
+  assert.equal(r.lines[0].lineTotal, -10);
+  assert.equal(r.total, -10);
+});
+check('a refund cannot return more than was sold', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 3 }]);
+  const r = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 5 }]);
+  assert.equal(r.lines[0].quantity, -3);
+  assert.equal(r.total, -30);
+});
+check('a repeat return cannot exceed what is left', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 3 }]);
+  const first = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }]);
+  const second = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 3 }], [first]);
+  assert.equal(second.lines[0].quantity, -2);
+});
+// The penny rule. Without the "last unit carries the remainder" branch this is
+// 3.33 x 3 = 9.99 and the shop keeps a penny on every third return.
+check('three partial returns add back to exactly the line total', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 3, lineTotal: 10 }]);
+  const priors = [];
+  let sum = 0;
+  for (let i = 0; i < 3; i += 1) {
+    const r = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }], priors);
+    sum += r.total;
+    priors.push(r);
+  }
+  assert.equal(Math.round(sum * 100), -1000);
+});
+check('a discounted line refunds what was charged, not the list price', () => {
+  // 19.99 x 2 less 5.00 = 34.98. Returning one gives back half of that.
+  const sale = refundSaleOf([{ unitPrice: 19.99, quantity: 2, lineDiscount: 5, lineTotal: 34.98 }]);
+  const r = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }]);
+  assert.equal(r.total, -17.49);
+});
+// The inverse of `priceLocalSale`'s own rule, and the reason this function
+// takes no products map: the customer is owed what they PAID.
+check('a refund is priced from the sale, never from the catalogue', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 1, lineTotal: 10 }]);
+  const r = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }]);
+  // Nothing about today's price can reach this figure -- there is nowhere to
+  // pass it in.
+  assert.equal(r.lines[0].unitPrice, 10);
+  assert.equal(r.total, -10);
+  assert.equal(priceLocalRefund.length, 3);
+});
+check('a fully returned sale nets to zero', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 2, lineTotal: 20 }], { total: 20 });
+  const r = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 2 }]);
+  assert.equal(sale.total + r.total, 0);
+});
+check('returning nothing yields null, so no receipt number is spent', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 1 }]);
+  assert.equal(priceRefundOf(sale, []), null);
+  assert.equal(priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 0 }]), null);
+  const full = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }]);
+  assert.equal(priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }], [full]), null);
+});
+check('a line that is not on the sale is ignored, not guessed at', () => {
+  const sale = refundSaleOf([{ unitPrice: 10, quantity: 1 }]);
+  assert.equal(priceRefundOf(sale, [{ originalLineIndex: 7, quantity: 1 }]), null);
+});
+check('what is left to return is derived from the refunds, not stored', () => {
+  const sale = refundSaleOf([{ unitPrice: 5, quantity: 4 }, { unitPrice: 8, quantity: 1 }]);
+  const first = priceRefundOf(sale, [{ originalLineIndex: 0, quantity: 1 }]);
+  assert.deepEqual(returnableQuantities(sale, summariseReturnedLines(sale, [first])), [3, 1]);
+  // and the original row is untouched by any of it
+  assert.equal(sale.lines[0].quantity, 4);
+});
+check('summarising against no refunds is all zeros and mutates nothing', () => {
+  const sale = refundSaleOf([{ unitPrice: 5, quantity: 2 }]);
+  assert.deepEqual(summariseReturnedLines(sale, []), [{ quantity: 0, amount: 0 }]);
+  assert.equal(sale.lines[0].quantity, 2);
+});
+check('a refund row is recognisable, and an ordinary sale is not one', () => {
+  assert.equal(isRefundSale({ kind: 'refund' }), true);
+  assert.equal(isRefundSale({ kind: 'sale' }), false);
+  // Absent means sale, which is what makes every row written before refunds
+  // existed valid without being rewritten.
+  assert.equal(isRefundSale({}), false);
 });
 
 console.log('what a product form will save');

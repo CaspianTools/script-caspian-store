@@ -48,6 +48,7 @@ import {
   type LocalSupplier,
   type LocalUser,
   type RoleDefinition,
+  isRefundSale,
 } from './types';
 import { latestOpeningCash, localDayKey } from './opening-cash';
 import { fromMinor, toMinor } from '../money';
@@ -763,11 +764,12 @@ export interface LocalStockAdjustInput {
 /**
  * Move stock by hand, and say why.
  *
- * The one route a return reaches the books by: the register has no refund flow,
- * so a customer handing something back is recorded here, and `customer-return`
- * is the only reason that counts towards the Returned figure on a product page.
- * Everything else is an adjustment — a write-off, a recount, a case that went
- * out of date on the shelf.
+ * One of the two routes a return reaches the books by, and the one that moves
+ * stock without moving money. A receipt-linked refund (`commitLocalRefund`)
+ * does both; this is for the return that has no receipt to link to. Both feed
+ * the Returned figure on a product page, through the same `return` movement
+ * kind. Everything else here is an adjustment — a write-off, a recount, a case
+ * that went out of date on the shelf.
  *
  * A negative adjustment on a lot-tracked product comes off the earliest expiry
  * first, the same order a sale would take it, unless a lot was named. A positive
@@ -944,6 +946,13 @@ export async function backfillLocalStockMovements(): Promise<number> {
   await posTx([STORE_LOCAL_MOVEMENTS, STORE_LOCAL_COUNTERS], 'readwrite', async (tx) => {
     for (const sale of sales) {
       if (known.has(sale.saleId)) continue;
+      // A refund writes its own `return` movements inside `commitLocalRefund`,
+      // and this pass has nothing to add to one. It happens to be safe without
+      // the guard -- `saleStockMovements` returns nothing for negative
+      // quantities -- but accidental safety at a doubling boundary is not
+      // safety, and the next person to touch either function should not have to
+      // rediscover the coincidence.
+      if (isRefundSale(sale)) continue;
       // No draws: a sale this pass has anything to say about predates lots.
       for (const movement of saleStockMovements(sale)) {
         await idbPut(tx, STORE_LOCAL_MOVEMENTS, movement);

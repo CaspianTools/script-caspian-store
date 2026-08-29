@@ -1,9 +1,10 @@
-import type {
-  LocalProduct,
-  LocalSale,
-  LocalStockLot,
-  LocalStockMovement,
-  LocalStockReceipt,
+import {
+  isRefundSale,
+  type LocalProduct,
+  type LocalSale,
+  type LocalStockLot,
+  type LocalStockMovement,
+  type LocalStockReceipt,
 } from './types';
 
 /**
@@ -76,16 +77,24 @@ export function salesByProduct(
     // shirt. Counted once towards `saleCount`, or "sold on 40 sales" quietly
     // becomes "sold on 40 lines" and stops matching the receipts list.
     const seen = new Set<string>();
+    const refund = isRefundSale(sale);
     for (const line of sale.lines) {
       const row = out.get(line.productId) ?? emptyProductTotals();
+      // Units, revenue and discount NET by construction: a refund line carries
+      // negative figures, so the same three additions that count a sale
+      // subtract a return. That is the whole reason a refund is a row in
+      // `localSales` rather than a store of its own.
       row.units += line.quantity;
       row.revenue += line.lineTotal;
       row.discount += line.lineDiscount;
-      if (!seen.has(line.productId)) {
+      // These two do not net, and must be guarded. "Sold on 40 sales" counts
+      // receipts, and a return is not one of them; nor is it the day the item
+      // last sold.
+      if (!refund && !seen.has(line.productId)) {
         row.saleCount += 1;
         seen.add(line.productId);
       }
-      row.lastAtMillis = Math.max(row.lastAtMillis, sale.committedAtMillis);
+      if (!refund) row.lastAtMillis = Math.max(row.lastAtMillis, sale.committedAtMillis);
       out.set(line.productId, row);
     }
   }

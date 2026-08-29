@@ -36,9 +36,11 @@ export interface ShiftReportProps {
  * the shift is open, because nobody has counted yet -- rather than being shown
  * as zero, which would read as a drawer that came to nothing.
  *
- * There is no refunds line. `priceLocalSale` clamps a total at zero, so this
- * till cannot make a negative sale, and a permanently empty row would imply a
- * returns screen the manual is explicit does not exist.
+ * Refunds and Net are shown only once a shift has had one. `priceLocalSale`
+ * still clamps a sale at zero -- the only thing in the till that can produce a
+ * negative total is `priceLocalRefund`, deliberately -- so a shift with no
+ * returns has genuinely nothing to put in those rows, and a permanent pair of
+ * zeroes would read as a report that did not know.
  */
 export function ShiftReport({ shift, totals, formatPrice }: ShiftReportProps) {
   const t = useT();

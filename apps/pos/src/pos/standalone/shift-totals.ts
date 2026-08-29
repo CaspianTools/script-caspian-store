@@ -12,7 +12,7 @@
  * is a drawer that will not balance, and somebody answering for it.
  */
 
-import type { LocalSale, LocalShift } from './types';
+import { isRefundSale, type LocalSale, type LocalShift } from './types';
 import { fromMinor, toMinor } from '../money';
 
 export interface ShiftTotals {
@@ -20,9 +20,20 @@ export interface ShiftTotals {
   expectedCash: number;
   /** Applied amount per tender kind, over the whole shift. */
   totalsByTender: Record<string, number>;
+  /** Sales only. Refunds are counted separately rather than netted in here. */
   salesTotal: number;
   saleCount: number;
-  /** Cash that went into the drawer through the register. */
+  /** What went back to customers, as a positive magnitude. */
+  refundsTotal: number;
+  refundCount: number;
+  /** `salesTotal - refundsTotal`. What the shift actually took. */
+  netTotal: number;
+  /**
+   * Cash that went into the drawer through the register.
+   *
+   * Already NET of refunds without any code saying so: a refund's cash tender
+   * is negative, so the same accumulation that adds a sale subtracts a return.
+   */
   cashTaken: number;
   movementsIn: number;
   movementsOut: number;
@@ -58,12 +69,25 @@ export function summariseShift(
 ): ShiftTotals {
   const byTenderMinor = new Map<string, number>();
   let salesMinor = 0;
+  let refundsMinor = 0;
+  let saleCount = 0;
+  let refundCount = 0;
   let cashMinor = 0;
 
   for (const sale of sales) {
-    salesMinor += toMinor(sale.total);
+    // Sales and refunds are counted apart so the report can say what happened,
+    // but the DRAWER arithmetic below is untouched: a refund's tenders are
+    // negative, so `cashMinor += applied` already takes the money out.
+    if (isRefundSale(sale)) {
+      refundsMinor += Math.abs(toMinor(sale.total));
+      refundCount += 1;
+    } else {
+      salesMinor += toMinor(sale.total);
+      saleCount += 1;
+    }
     for (const tender of sale.tenders) {
       const applied = toMinor(tender.amount);
+      // Kept NET per kind, because net is what is in the drawer.
       byTenderMinor.set(tender.kind, (byTenderMinor.get(tender.kind) ?? 0) + applied);
       if (tender.kind === 'cash') cashMinor += applied;
     }
@@ -87,7 +111,10 @@ export function summariseShift(
     expectedCash: fromMinor(toMinor(shift.openingFloat) + cashMinor + inMinor - outMinor),
     totalsByTender,
     salesTotal: fromMinor(salesMinor),
-    saleCount: sales.length,
+    saleCount,
+    refundsTotal: fromMinor(refundsMinor),
+    refundCount,
+    netTotal: fromMinor(salesMinor - refundsMinor),
     cashTaken: fromMinor(cashMinor),
     movementsIn: fromMinor(inMinor),
     movementsOut: fromMinor(outMinor),
