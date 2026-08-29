@@ -28,6 +28,12 @@ export interface PosReceiptModel {
    * by the server. The renderer labels it rather than letting it pass for one.
    */
   provisionalReceipt?: boolean;
+  /**
+   * A copy of a slip already handed over. Marked for the same reason
+   * `provisionalReceipt` is: an unmarked reprint is a second original, and a
+   * customer can present it as one.
+   */
+  reprint?: boolean;
   orderId: string;
   /** Epoch millis. Rendered by the view with the active locale's date format. */
   at: number;
@@ -65,6 +71,7 @@ export interface BuildReceiptArgs {
    */
   cashRounding?: number;
   provisionalReceipt?: boolean;
+  reprint?: boolean;
 }
 
 /**
@@ -104,7 +111,15 @@ export function summariseSoldLines(lines: PosSoldLine[]): { subtotal: number; di
 export function buildReceiptModel(args: BuildReceiptArgs): PosReceiptModel {
   const lines: PosReceiptLine[] = args.lines.map((line) => {
     const grossMinor = toMinor(line.unitPrice) * line.quantity;
-    const discountMinor = Math.min(toMinor(line.lineDiscount ?? 0), grossMinor);
+    // Clamped by MAGNITUDE, not by `Math.min`. On a refund every figure on the
+    // line is negative, and `Math.min(-500, -1999)` is -1999 -- so the naive
+    // clamp would enlarge the markdown instead of capping it, and the slip's
+    // own lines would not add up to its own total.
+    const rawDiscountMinor = toMinor(line.lineDiscount ?? 0);
+    const discountMinor =
+      grossMinor >= 0
+        ? Math.min(rawDiscountMinor, grossMinor)
+        : Math.max(rawDiscountMinor, grossMinor);
     return {
       name: line.name,
       qty: line.quantity,
@@ -142,6 +157,7 @@ export function buildReceiptModel(args: BuildReceiptArgs): PosReceiptModel {
   return {
     receiptNumber: args.receiptNumber,
     ...(args.provisionalReceipt ? { provisionalReceipt: true } : {}),
+    ...(args.reprint ? { reprint: true } : {}),
     orderId: args.orderId,
     at: args.at ?? Date.now(),
     storeHeader: splitLines(args.receiptHeader),

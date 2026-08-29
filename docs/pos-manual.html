@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v1.11.0"
+      "version": "v2.0.0"
     },
     "parts": [
       {
@@ -1579,7 +1579,8 @@ const MANUAL = {
               "A capability a role does not hold is not greyed out anywhere else - it is simply not there. The export button on Sales, the add, edit and delete buttons on Store, the role menu, password resets, Block and Delete on People, and most of the entries in Quick add are all absent for anybody without the matching switch.",
               "These roles live on this machine and nowhere else. Another till, even in the same shop, keeps its own separate list, and nothing here shows up in an online admin panel.",
               "The list of roles is part of the shop’s own records, not a cache. Only a factory reset erases it, it travels in the backup file, and there is no copy anywhere else.",
-              "The role that was called \"Cashier (duplicate)\" is now \"Cashier (old)\", and the People screen finally tells it apart from the ordinary Cashier. Until v1.11.0 both were simply called \"Cashier\" there, so an owner giving somebody access chose between two identical options; only this screen showed which was which."
+              "The role that was called \"Cashier (duplicate)\" is now \"Cashier (old)\", and the People screen finally tells it apart from the ordinary Cashier. Until v1.11.0 both were simply called \"Cashier\" there, so an owner giving somebody access chose between two identical options; only this screen showed which was which.",
+              "\"Give money back\" is a permission of its own, and it starts switched ON for Manager, Admin and Support only. No cashier can take a return until somebody turns it on for their role. That is deliberate: the till has never had returns before, so granting nothing to nobody changes nothing for anybody, and a shop chooses this rather than discovering it."
             ]
           }
         ]
@@ -2029,12 +2030,12 @@ const MANUAL = {
             "audience": "staff",
             "summary": "An honest list of the things this register does not have, so that you find out here rather than in front of a queue. With one exception, called out below, none of these are settings that can be switched on: the screens simply do not exist in this version.",
             "notes": [
-              "There is no returns or refunds screen at the counter. Nothing recalls a receipt, and no button gives money back - a refund is handled outside the register, by whatever means your shop already uses. A till that runs on its own can put the goods back on the shelf afterwards and record why, on the item\u2019s own page - see \"Putting stock right by hand\". That moves the stock and nothing else; the money is still yours to hand over.",
+              "From v2.0.0 there IS a returns screen. Open a sale from the Sales list and press \"Take something back\". It puts the stock back and takes the money out of the drawer, and the shift report shows what went back. What it still will not do is take a return with no receipt to link it to - for that, use Adjust stock on the item's own page, which moves the stock and leaves the money to you.",
               "There is no shift, no cash-up and no Z-report, and nothing opens or closes a till session. The one exception on this page: a till that runs on its own can be set to ask you what is in the drawer at the start of a day. That figure is written down and never compared with anything - see \"Confirming the cash in the drawer\".",
               "There is no promo code box at the counter and no way to attach a customer to a sale. You can take a fixed amount off a single line with the tag button on it, and that is the only discount there is - no percentages, and nothing that comes off the sale as a whole.",
               "There is no way to attach a customer to a counter sale. Every sale is recorded as a walk-in, even for a regular you know by name.",
               "There is a search box in the bar across the top and it finds items by name. What there is not is a browse list: nothing shows you the whole catalogue to pick from, so an item you cannot scan, cannot name and whose code you do not know cannot be got onto the sale.",
-              "There is no reprint. Once you press \"New sale\" the receipt is gone, and no button anywhere brings it back. Print it before you move on.",
+              "From v2.0.0 you can print a receipt again. Open the sale from the Sales list and press \"Print this again\". The copy carries the original date and the original counter, and says on it that it is a copy, so it cannot be passed off as a second original.",
               "The register does keep selling offline, but it cannot do everything offline. An item it has never downloaded cannot be found, and if the till runs out of reserved receipt numbers the customer gets a reference slip rather than a receipt.",
               "The register does not talk to your card machine. Choosing Card records that a card was used; you still take the payment on the machine yourself.",
               "The register cannot open a cash drawer.",
@@ -2350,7 +2351,8 @@ const MANUAL = {
               "Below the stock figures is a second block, Sales, with its own period menu: how many units sold, what was taken for them, what was left after the stock cost, the average price actually charged, when it last sold, and the receipts it appeared on. It is kept apart from the figures above it on purpose - those count what left the shelf, and these count what was paid. The two disagree when something was sold that the shelf did not have, and putting them under one heading would hide that.",
               "The profit line only appears once a delivery has told the till what the item costs. Working it out against a cost of nothing would report the whole takings as profit, which is a number somebody would act on.",
               "An item whose count has gone below zero shows the count in red with a \"Short\" badge beside it, and its stock value reads as a dash rather than a figure - the till has no cost price for an item that has never arrived on a delivery, and 0.00 would look like an answer.",
-              "Up to v1.8.0 an oversold item could not be edited at all: the form refused any count below zero, so its name and price were stuck too. It now saves the count back exactly as it found it, and says why it is there. Put it right with Receive stock or Adjust stock."
+              "Up to v1.8.0 an oversold item could not be edited at all: the form refused any count below zero, so its name and price were stuck too. It now saves the count back exactly as it found it, and says why it is there. Put it right with Receive stock or Adjust stock.",
+              "Cost price can be typed on the item form from v2.0.0. Before, it could only be set by receiving a delivery, so a shop that added its items by hand saw a stock value of zero with nowhere to fix it. Receiving a delivery still replaces whatever is typed here with the price on that delivery, which is what \"the last price you paid\" means."
             ]
           },
           {
@@ -2483,7 +2485,8 @@ const MANUAL = {
               "This moves stock and nothing else. The register has no refund screen, so the money is still yours to hand over by whatever means your shop uses - see \"What the register cannot do\".",
               "Taking stock off an item received in batches can move less than you asked for, because the batches only hold what they hold. The till says so rather than quietly doing less, and the difference is a sign the batch list needs a look.",
               "Every adjustment is written into the item\u2019s history with the reason, the note and your name. Nothing here is silent.",
-              "Adjusting needs \"Add and edit items\". A role that may only see the store does not get the button."
+              "Adjusting needs \"Add and edit items\". A role that may only see the store does not get the button.",
+              "From v2.0.0 this is no longer the only way a return reaches the books, and for a customer with a receipt it is no longer the right one. Use the sale's own page instead: it puts the stock back AND takes the money out of the drawer, and it records which sale the goods came from. This screen moves stock and nothing else, which is what you want when there is no receipt to link to."
             ]
           },
           {
@@ -2746,7 +2749,9 @@ const MANUAL = {
               "The money is shown in the currency on the shop record. If that box is empty the screen falls back to US dollars.",
               "The file lands wherever your browser puts downloads, as plain text. A spreadsheet opens it, and so does Notepad.",
               "This screen is only on a till that runs on its own, and only for a role holding \"See sales\".",
-              "The opening-cash figures are a list of their own. They are never mixed into the sales table and never added into the takings total - a drawer float folded into a day's takings would overstate what the shop actually sold. The two boxes answer for the same period, they are read side by side, and nothing in the software joins them up."
+              "The opening-cash figures are a list of their own. They are never mixed into the sales table and never added into the takings total - a drawer float folded into a day's takings would overstate what the shop actually sold. The two boxes answer for the same period, they are read side by side, and nothing in the software joins them up.",
+              "Press a receipt number to open that sale. Until v2.0.0 the rows went nowhere - the list was the end of the road, and once \"Sale complete\" had been dismissed there was no way back to a sale at all.",
+              "A return shows in the list as a row with a negative total, in red, and the takings figure has it taken off. So the number at the top of this screen is what the shop actually took, not what it rang up."
             ]
           },
           {
@@ -3333,7 +3338,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v1.11.0"
+      "version": "v2.0.0"
     },
     "parts": [
       {
@@ -4439,7 +4444,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v1.11.0"
+      "version": "v2.0.0"
     },
     "parts": [
       {
@@ -5545,7 +5550,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v1.11.0"
+      "version": "v2.0.0"
     },
     "parts": [
       {

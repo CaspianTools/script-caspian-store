@@ -28,6 +28,7 @@ import { useBarcodeScanner, DEFAULT_SCAN_GAP_MS } from './hardware/use-barcode-s
 import { usePosAdapter } from './pos-adapter-context';
 import type { PosCommittedSale, PosSaleLine, PosTenderInput } from './storage/types';
 import { usePosLocalSession } from './standalone/local-session-context';
+import { usePosRoles } from './standalone/role-context';
 import { readLocalShopSettings } from './standalone/local-db';
 import { announcePosSaleCommitted } from './standalone/use-pos-auto-backup';
 import { usePosOpenSale } from './open-sale-context';
@@ -98,6 +99,8 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   const local = usePosLocalSession();
   const t = useT();
   const confirm = usePosConfirm();
+  const { can: canDo } = usePosRoles();
+  const canRefund = local.standalone && canDo(local.user?.role, 'sales.refund');
   // The open sale lives above this component, and on disk. `PosRoot` swaps
   // this whole component out for every other /pos screen, so a ticket owned
   // here would not survive a cashier glancing at Settings.
@@ -823,6 +826,23 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
             <span className="cpos-totals__grandvalue">{formatPrice(ticket.totals.total)}</span>
           </div>
 
+          {/*
+            A return starts at the counter, because that is where the customer
+            is. It goes to the Sales list rather than opening a lookup here: the
+            list already has the search, the dates and the cashier names a
+            cashier needs to find the right receipt, and a second lookup box on
+            the register would be a third scan-shaped field on a screen that
+            already has two.
+          */}
+          {canRefund ? (
+            <button
+              type="button"
+              className="cpos-btn cpos-btn--ghost cpos-btn--sm"
+              onClick={() => replace('/pos/sales')}
+            >
+              {t('pos.refund.start')}
+            </button>
+          ) : null}
           <div className="cpos-totals__actions">
             <button
               type="button"

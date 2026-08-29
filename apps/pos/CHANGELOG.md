@@ -23,6 +23,81 @@ be false. What a shop wants to know is whether somebody has to walk to each
 counter.
 -->
 
+## v2.0.0 — Returns, and a receipt you can print again
+
+The register could take money and never give it back. A return reached the
+books through Adjust stock, which moves inventory and not money — so the sales
+figures overstated takings on any day with a return, and the drawer did not
+balance at close. That is the gap this release closes.
+
+### Action needed on each till
+
+Nothing to install — the update strip in the register's own header picks this up
+between customers. Three things to do once it has:
+
+1. **Decide who may give money back.** No cashier can, out of the box. The new
+   permission is called "Give money back" and it starts switched on for Manager,
+   Admin and Support only. If your cashiers should be able to take returns, turn
+   it on for their role in App admin → Roles.
+2. **Update every till before you move a backup between them.** A backup file
+   written by this version cannot be restored onto an older one. That is
+   deliberate: an old register would read the returns in it as unexplained
+   negative sales.
+3. **Stop using Adjust stock for returns that have a receipt.** It still works,
+   and it is still the right thing when there is no receipt — but it only moves
+   stock. A receipt-linked return moves the money too.
+
+### Added
+
+- **Returns.** Open a sale, press "Take something back", pick what is coming
+  back and say why. The register writes a return linked to the original sale,
+  puts the stock on the shelf and takes the money out of the drawer. Part of a
+  sale can come back, and then more of it later; the register keeps track of
+  what is left and will not let you return more than was sold.
+- **Every sale now has its own page**, reached by pressing its receipt number in
+  the Sales list. It shows what was bought, how it was paid, what has been
+  returned since, and any returns made against it.
+- **Print a receipt again.** The commonest request at a counter, and until now
+  impossible — once "Sale complete" was dismissed the receipt was gone. A
+  reprint carries the original date and the original counter, and is marked as
+  a copy so it cannot be presented as a second original.
+- **A cost price you can type.** The item page has always promised "Stock value
+  — what is on the shelf, at the last price you paid", but that figure could
+  only be set by receiving a delivery. A shop that adds its items by hand saw
+  zero, with nowhere to fix it.
+- **The Z-report shows Given back and Net** on any shift that had a return.
+
+### Changed
+
+- Returns on a shift report and in the sales figures are **netted out**, so the
+  takings are what the shop actually took.
+- The Sales list marks a return in red and links each row to its sale.
+
+### Notes for a shop
+
+- **A return cannot itself be returned.** If a return was a mistake, sell the
+  goods again — that is what the register records, and it leaves an honest
+  trail. There is no undo button and there deliberately is not one.
+- **Returned batches go back where they came from.** For an item tracked by
+  expiry date, the register puts the units back on the exact batch the sale took
+  them from, so the dates on your shelf stay right.
+- **Nothing about a past sale is rewritten.** A return is a new record pointing
+  at the old one, which is what keeps the receipt a customer holds matching the
+  record an inspector reads.
+
+### Internal
+
+- A refund is a row in `localSales` with negative money rather than a store of
+  its own, so the six places that already total sales net it out untouched.
+  `expectedCash` needed no change at all — a refund's cash tender is negative,
+  so the same accumulation that adds a sale subtracts a return.
+- 16 new checks in `npm run check`, including the one that matters most: three
+  partial returns of a 10.00 × 3 line add back to exactly 10.00, because the
+  last unit carries the remainder. Proportional rounding gives 9.99 and the shop
+  quietly keeps a penny on every third return.
+- `DB_VERSION` 6 → 7 for an index that holds only refunds, and backup format
+  5 → 6 as a compatibility fence.
+
 ## v1.11.0 — It speaks your language
 
 Switching the register to Azerbaijani used to change the words and nothing else.

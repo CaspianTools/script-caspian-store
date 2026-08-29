@@ -54,6 +54,11 @@ export function ShiftReport({ shift, totals, formatPrice }: ShiftReportProps) {
   const expected = closed ? (shift.expectedCash ?? 0) : running.expectedCash;
   const salesTotal = closed ? (shift.salesTotal ?? 0) : running.salesTotal;
   const saleCount = closed ? (shift.saleCount ?? 0) : running.saleCount;
+  // Off the running figures either way: a shift closed before v2.0.0 has
+  // no frozen refund fields, and `?? 0` on a closed one is the honest
+  // answer -- it had no returns because it could not have had any.
+  const refundsTotal = closed ? (shift.refundsTotal ?? 0) : running.refundsTotal;
+  const netTotal = closed ? (shift.netTotal ?? shift.salesTotal ?? 0) : running.netTotal;
   const byTender = closed ? (shift.totalsByTender ?? {}) : running.totalsByTender;
 
   // Summed off the row either way: the movements live on the shift, so an open
@@ -87,6 +92,14 @@ export function ShiftReport({ shift, totals, formatPrice }: ShiftReportProps) {
       <Row label={t('pos.shift.report.float')} value={formatPrice(shift.openingFloat)} />
       <Row label={t('pos.shift.report.saleCount')} value={String(saleCount)} />
       <Row label={t('pos.shift.report.salesTotal')} value={formatPrice(salesTotal)} />
+      {/* Shown only once a shift has had a return. A permanent pair of
+          zeroes would read as a report that did not know. */}
+      {refundsTotal > 0 ? (
+        <>
+          <Row label={t('pos.shift.refunds')} value={formatPrice(-refundsTotal)} />
+          <Row label={t('pos.shift.net')} value={formatPrice(netTotal)} />
+        </>
+      ) : null}
 
       {Object.entries(byTender).map(([kind, amount]) => (
         // Only ever cash, card or other -- `LocalSale.tenders[].kind` is that

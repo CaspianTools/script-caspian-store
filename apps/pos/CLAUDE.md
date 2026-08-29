@@ -213,7 +213,16 @@ cashier is standing there ringing up.
 The **fourteen** `local*` stores are the opposite. They hold a shop's only copy
 of its catalogue, staff, trading history, stock lots, counters and drawer counts;
 erasing them is `factoryResetLocalStore`, a separate call. Never widen
-`clearPosDb` to cover them. A new `local*` store joins `factoryResetLocalStore`
+`clearPosDb` to cover them.
+
+**Still fourteen after returns shipped**, and that is the strongest argument for
+how a refund is stored: it is a row in `localSales` with negative money, not a
+`localRefunds` store. Six readers already summed `LocalSale.total`, and a
+separate store would have meant teaching each of them to subtract a second
+query — plus a fifteenth entry here, in `factoryResetLocalStore`, and in the
+backup. See the note on `LocalSale` for the rest of the argument.
+
+A new `local*` store joins `factoryResetLocalStore`
 and the backup in the same change — `local-backup.ts` records what it cost the
 one time roles were left out of the backup. That count moves; if you add one,
 correct it here rather than leaving the next reader a stale number.
@@ -306,10 +315,14 @@ the till:
   `apps/pos/package.json#version`. The user manual's four track the library.
   `check-manuals.mjs` enforces both.
 - **Document only what the code renders, and keep deliberate gaps visible.** The
-  till has no returns screen and no offline queue, the local-storage option and
-  the non-browser printer transports at `/pos/settings` are disabled placeholders,
-  and a POS licence problem never blocks a sale because `commitPosSale` does not
-  consult licence state at all. Say so plainly rather than omitting it.
+  till has no offline queue, the local-storage option and the non-browser
+  printer transports at `/pos/settings` are disabled placeholders, and a POS
+  licence problem never blocks a sale because `commitPosSale` does not consult
+  licence state at all. Say so plainly rather than omitting it. **The returns
+  gap closed in v2.0.0** — two manual notes and four source comments had said
+  in as many words that this till could not make a negative sale, and all six
+  had to be rewritten in the same change. When a gap this file names gets
+  filled, grep for the sentences that named it.
 
 ## Checklist for a till change
 

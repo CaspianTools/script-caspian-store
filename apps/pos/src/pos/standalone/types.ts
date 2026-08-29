@@ -55,6 +55,7 @@ export type PosLocalCapability =
   | 'stock.receive'
   | 'sales.view'
   | 'sales.export'
+  | 'sales.refund'
   | 'people.view'
   | 'people.edit'
   | 'settings.view'
@@ -69,7 +70,7 @@ export const CAPABILITY_GROUPS: ReadonlyArray<{
   group: 'counter' | 'shop' | 'system';
   capabilities: readonly PosLocalCapability[];
 }> = [
-  { group: 'counter', capabilities: ['register'] },
+  { group: 'counter', capabilities: ['register', 'sales.refund'] },
   {
     group: 'shop',
     capabilities: [
@@ -121,6 +122,7 @@ const MANAGER_CAPABILITIES: readonly PosLocalCapability[] = [
   'stock.receive',
   'sales.view',
   'sales.export',
+  'sales.refund',
   'people.view',
   'people.edit',
   'settings.view',
@@ -839,6 +841,14 @@ export interface LocalShift {
   totalsByTender?: Record<string, number>;
   salesTotal?: number;
   saleCount?: number;
+  /**
+   * Frozen at close, like the rest. Absent on every shift closed before
+   * returns existed -- which is not a gap to be filled in but the truth: those
+   * shifts had no returns because the till could not make one.
+   */
+  refundsTotal?: number;
+  refundCount?: number;
+  netTotal?: number;
 }
 
 /** Shop-wide settings on a standalone till. The local twin of `SiteSettings.pos`. */

@@ -2053,6 +2053,52 @@ check('expected cash is the float plus what went into the drawer', () => {
   assert.equal(totals.saleCount, 2);
 });
 
+// A refund is a `localSales` row with negative money, so the SAME accumulation
+// that adds a sale subtracts a return. These four assertions exist because that
+// is the whole argument for the design -- if the drawer needed special-casing,
+// a separate store would have been the better shape.
+const refundRow = (total, tenders, shiftId = 's1') => ({
+  total,
+  tenders,
+  shiftId,
+  kind: 'refund',
+});
+
+check('a cash refund takes money out of the drawer', () => {
+  const totals = summariseShift(shiftOf(100), [
+    saleOf(50, [cash(50)]),
+    refundRow(-20, [cash(-20)]),
+  ]);
+  assert.equal(totals.expectedCash, 130, 'float 100 + 50 sold - 20 given back');
+  assert.equal(totals.cashTaken, 30);
+});
+check('a card refund does not move the cash drawer', () => {
+  const totals = summariseShift(shiftOf(100), [
+    saleOf(50, [{ kind: 'card', amount: 50 }]),
+    refundRow(-20, [{ kind: 'card', amount: -20 }]),
+  ]);
+  assert.equal(totals.expectedCash, 100, 'the float, and nothing else');
+  assert.equal(totals.totalsByTender.card, 30, 'net per kind, because net is what happened');
+});
+check('the report separates what was sold from what was given back', () => {
+  const totals = summariseShift(shiftOf(0), [
+    saleOf(50, [cash(50)]),
+    saleOf(30, [cash(30)]),
+    refundRow(-20, [cash(-20)]),
+  ]);
+  assert.equal(totals.salesTotal, 80, 'sales only');
+  assert.equal(totals.saleCount, 2, 'a return is not a sale');
+  assert.equal(totals.refundsTotal, 20, 'a magnitude, like movementsIn/Out');
+  assert.equal(totals.refundCount, 1);
+  assert.equal(totals.netTotal, 60);
+});
+check('a shift with no returns reports none, rather than zeroes it invented', () => {
+  const totals = summariseShift(shiftOf(0), [saleOf(50, [cash(50)])]);
+  assert.equal(totals.refundsTotal, 0);
+  assert.equal(totals.refundCount, 0);
+  assert.equal(totals.netTotal, totals.salesTotal);
+});
+
 check('change handed back is not counted as cash taken', () => {
   // The drawer nets the applied amount. Counting `tendered` would say the shift
   // took six pounds more than it did, every time anybody paid with a note.

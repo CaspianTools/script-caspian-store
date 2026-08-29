@@ -32,6 +32,7 @@ import { PosQuickAddProvider } from './standalone/admin/quick-add/pos-quick-add-
 import { PosConfirmProvider } from './standalone/ui/pos-confirm';
 import { PosLocalTopbar } from './standalone/chrome/pos-local-topbar';
 import { LocalSalesPage } from './standalone/admin/local-sales-panel';
+import { LocalSalePage } from './standalone/admin/local-sale-page';
 import { LocalPeoplePage } from './standalone/admin/local-people-panel';
 import { usePosLicense } from './license/use-pos-license';
 import { PosLicenseBanner } from './license/pos-license-banner';
@@ -417,7 +418,11 @@ export function PosRoot(): ReactNode {
       return sub ? <LocalProductPage productId={sub} /> : <LocalStorePanel />;
     }
     case 'sales':
-      return opens('sales.view') ? <LocalSalesPage /> : register;
+      if (!opens('sales.view')) return register;
+      // `PosSidebar`'s items array does NOT gain an entry: `screenOf`
+      // keys on the first segment, so /pos/sales/<id> keeps Sales lit,
+      // exactly as /pos/store/<id> already does.
+      return sub ? <LocalSalePage saleId={sub} /> : <LocalSalesPage />;
     case 'people':
       return opens('people.view') ? <LocalPeoplePage /> : register;
     case 'shift':

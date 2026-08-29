@@ -6,6 +6,7 @@ import {
   toCsv,
   type CsvCell,
   useFormatDate,
+  useCaspianNavigation,
 } from '@caspian-explorer/script-caspian-store';
 import { usePosT as useT } from '../../../i18n/use-pos-t';
 import { CashDrawerIcon, ReceiptIcon } from '../../../icons';
@@ -14,7 +15,7 @@ import { saveTextFile } from '../local-backup';
 import { usePosLocalSession } from '../local-session-context';
 import { usePosRoles } from '../role-context';
 import { usePosShopSettings } from '../shop-settings-context';
-import type { LocalOpeningCash, LocalSale } from '../types';
+import { isRefundSale, type LocalOpeningCash, type LocalSale } from '../types';
 import { PanelLoadError } from './panel-load-error';
 import { PosAdminPage } from './pos-admin-page';
 import { LocalShiftsPanel } from './local-shifts-panel';
@@ -50,6 +51,7 @@ function startOf(range: Range): number {
  */
 export function LocalSalesPanel() {
   const t = useT();
+  const { push } = useCaspianNavigation();
   const formatWhen = useFormatDate(WHEN);
   const { can } = usePosRoles();
   const session = usePosLocalSession();
@@ -310,13 +312,21 @@ export function LocalSalesPanel() {
               <tbody>
               {visible.slice(0, 200).map((s) => (
                 <tr key={s.saleId}>
+                  {/* A link on the cell, not a click on the row -- DESIGN.md
+                      SS5. The Sales list has been a dead end since it shipped. */}
                   <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
-                    {s.receiptNumber}
+                    <button
+                      type="button"
+                      className="cpos-rowlink"
+                      onClick={() => push(`/pos/sales/${s.saleId}`)}
+                    >
+                      {s.receiptNumber}
+                    </button>
                   </td>
                   <td>{formatWhen.format(s.committedAtMillis)}</td>
                   <td>{s.cashierName || '—'}</td>
                   <td>{s.lines.reduce((n, l) => n + l.quantity, 0)}</td>
-                  <td>{format(s.total)}</td>
+                  <td className={isRefundSale(s) ? 'cpos-neg' : undefined}>{format(s.total)}</td>
                 </tr>
               ))}
               </tbody>

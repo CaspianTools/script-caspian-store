@@ -13,11 +13,13 @@ import {
 import { DEFAULT_SIZE_KEY } from '../../lot-allocation';
 import { usePosShopSettings } from '../../shop-settings-context';
 import type { LocalCategory, LocalProduct } from '../../types';
+import { parseAmountStrict } from '../../../parse-amount';
 import { validateProductDraft } from './validate-product-draft';
 
 interface Draft {
   name: string;
   price: string;
+  costPrice: string;
   sku: string;
   barcode: string;
   category: string;
@@ -35,6 +37,7 @@ interface Draft {
 const BLANK: Draft = {
   name: '',
   price: '',
+  costPrice: '',
   sku: '',
   barcode: '',
   category: '',
@@ -82,6 +85,7 @@ export function LocalProductForm({
       ? {
           name: product.name,
           price: String(product.price),
+          costPrice: product.costPrice ? String(product.costPrice) : '',
           sku: product.sku,
           barcode: product.barcode,
           category: product.category,
@@ -205,6 +209,9 @@ export function LocalProductForm({
       ...(editingId ? { id: editingId } : {}),
       name: draft.name,
       price,
+      // Blank leaves whatever a delivery last stamped, rather than zeroing it:
+      // clearing the box is not the same act as saying the item cost nothing.
+      ...(draft.costPrice.trim() ? { costPrice: parseAmountStrict(draft.costPrice) ?? 0 } : {}),
       sku: draft.sku,
       barcode: draft.barcode,
       category: draft.category,
@@ -321,6 +328,19 @@ export function LocalProductForm({
             autoComplete="off"
             aria-invalid={errors.price ? true : undefined}
             onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+          />
+        </PosField>
+        <PosField
+          label={t('pos.admin.products.costPrice')}
+          help={t('pos.admin.products.costPriceHelp')}
+          style={{ flex: '1 1 100px' }}
+        >
+          <input
+            className="cpos-input"
+            value={draft.costPrice}
+            inputMode="decimal"
+            autoComplete="off"
+            onChange={(e) => setDraft({ ...draft, costPrice: e.target.value })}
           />
         </PosField>
         <PosField

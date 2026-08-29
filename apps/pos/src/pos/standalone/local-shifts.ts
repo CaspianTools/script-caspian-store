@@ -195,6 +195,9 @@ export async function closeLocalShift(
     totalsByTender: totals.totalsByTender,
     salesTotal: totals.salesTotal,
     saleCount: totals.saleCount,
+    refundsTotal: totals.refundsTotal,
+    refundCount: totals.refundCount,
+    netTotal: totals.netTotal,
   };
   await posTx(STORE_LOCAL_SHIFTS, 'readwrite', (tx) => idbPut(tx, STORE_LOCAL_SHIFTS, closed));
   return { ok: true, shift: closed };
