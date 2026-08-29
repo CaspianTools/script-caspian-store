@@ -29,6 +29,8 @@ import { usePosAdapter } from './pos-adapter-context';
 import type { PosCommittedSale, PosSaleLine, PosTenderInput } from './storage/types';
 import { usePosLocalSession } from './standalone/local-session-context';
 import { usePosRoles } from './standalone/role-context';
+import { PosSelect } from './standalone/ui/pos-field';
+import type { LocalDiscountReason } from './standalone/types';
 import { readLocalShopSettings } from './standalone/local-db';
 import { announcePosSaleCommitted } from './standalone/use-pos-auto-backup';
 import { usePosOpenSale } from './open-sale-context';
@@ -131,6 +133,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   // Which line is having a markdown keyed into it, and the raw text so far.
   const [discountLine, setDiscountLine] = useState<number | null>(null);
   const [discountDraft, setDiscountDraft] = useState('');
+  const [discountReason, setDiscountReason] = useState<LocalDiscountReason | ''>('');
 
   // Attribution for the sale record is the adapter's job — it reads identity at
   // capture time, so a sale drained tomorrow still names tonight's cashier.
@@ -275,20 +278,34 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
   });
 
   // --- Line markdowns ---
-  const openDiscount = useCallback((index: number, current: number | undefined) => {
-    setDiscountLine(index);
-    setDiscountDraft(current ? String(current) : '');
-  }, []);
+  const openDiscount = useCallback(
+    (index: number, current: number | undefined, reason?: string) => {
+      setDiscountLine(index);
+      setDiscountDraft(current ? String(current) : '');
+      setDiscountReason((reason as LocalDiscountReason | undefined) ?? '');
+    },
+    [],
+  );
 
   const applyDiscount = useCallback(
     (index: number) => {
       // Parsed with the tender screen's reader so `12,50` means the same thing
       // in both places on the same keyboard.
-      ticket.setLineDiscount(index, parseAmount(discountDraft));
+      const amount = parseAmount(discountDraft);
+      // A markdown needs a WHY before it lands. One extra tap on a rare action,
+      // and it is the whole audit trail: a fixed vocabulary an owner can total
+      // at the end of the week, where free text would collect empty strings.
+      // Visibility rather than approval, deliberately -- on a standalone till
+      // an approval is only as strong as a role table the person at the counter
+      // may hold the keys to, and the pattern worth catching (one cashier, many
+      // discounts) is caught by counting, not by gating.
+      if (amount > 0 && !discountReason) return;
+      ticket.setLineDiscount(index, amount, discountReason || undefined);
       setDiscountLine(null);
       setDiscountDraft('');
+      setDiscountReason('');
     },
-    [discountDraft, ticket],
+    [discountDraft, discountReason, ticket],
   );
 
   // --- Commit ---
@@ -753,7 +770,7 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                       onClick={() =>
                         discountLine === index
                           ? setDiscountLine(null)
-                          : openDiscount(index, line.lineDiscount)
+                          : openDiscount(index, line.lineDiscount, line.discountReason)
                       }
                     >
                       <TagIcon size={17} />
@@ -772,6 +789,12 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                 {line.lineDiscount ? (
                   <div className="cpos-line__discount">
                     {t('pos.ticket.discount')} −{formatPrice(line.lineDiscount)}
+                    {line.discountReason ? (
+                      <span className="cpos-muted">
+                        {' · '}
+                        {t(`pos.discount.reason.${line.discountReason}`)}
+                      </span>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -793,7 +816,45 @@ export function PosRegister({ className, formatPrice: formatPriceProp }: PosRegi
                       aria-label={t('pos.ticket.discount')}
                       style={{ flex: 1, textAlign: 'end' }}
                     />
-                    <button type="button" className="cpos-btn cpos-btn--primary cpos-btn--sm" onClick={() => applyDiscount(index)}>
+                    {/*
+                      Six options is past .cpos-choices' documented 2-4 range,
+                      so a select -- the same call the stock-adjust reason
+                      picker made. It starts blank and Apply stays dead until
+                      it is answered.
+                    */}
+                    <PosSelect
+                      value={discountReason}
+                      aria-label={t('pos.discount.reason')}
+                      options={[
+                        { value: '', label: t('pos.discount.reason') },
+                        ...(
+                          [
+                            'damaged',
+                            'price-match',
+                            'staff',
+                            'loyalty',
+                            'goodwill',
+                            'other',
+                          ] as const
+                        ).map((value) => ({
+                          value,
+                          label: t(`pos.discount.reason.${value}`),
+                        })),
+                      ]}
+                      onChange={(e) => setDiscountReason(e.target.value as LocalDiscountReason | '')}
+                      style={{ maxWidth: 150 }}
+                    />
+                    <button
+                      type="button"
+                      className="cpos-btn cpos-btn--primary cpos-btn--sm"
+                      onClick={() => applyDiscount(index)}
+                      disabled={parseAmount(discountDraft) > 0 && !discountReason}
+                      title={
+                        parseAmount(discountDraft) > 0 && !discountReason
+                          ? t('pos.discount.reasonRequired')
+                          : undefined
+                      }
+                    >
                       {t('pos.ticket.discountApply')}
                     </button>
                     <button

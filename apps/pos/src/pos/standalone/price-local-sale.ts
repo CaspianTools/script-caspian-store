@@ -7,7 +7,13 @@
  * around it is mechanical; this part is not.
  */
 
-import type { LocalProduct, LocalSale, LocalSaleLine, LocalStockLot } from './types';
+import type {
+  LocalDiscountReason,
+  LocalProduct,
+  LocalSale,
+  LocalSaleLine,
+  LocalStockLot,
+} from './types';
 import { allocateFefo } from './lot-allocation';
 import { fromMinor, toMinor } from '../money';
 
@@ -22,6 +28,7 @@ export interface PricedLineInput {
   selectedSize?: string | null;
   selectedColor?: string | null;
   lineDiscount?: number;
+  discountReason?: LocalDiscountReason;
 }
 
 /** One draw against one lot, for the stock ledger. */
@@ -97,6 +104,11 @@ export function priceLocalSale(
       selectedColor: line.selectedColor ?? null,
       lineDiscount: fromMinor(lineDiscountMinor),
       lineTotal: fromMinor(lineGrossMinor - lineDiscountMinor),
+      // Only when a markdown actually landed. A reason on a discount the clamp
+      // took to zero would be a record of something that never happened.
+      ...(lineDiscountMinor > 0 && line.discountReason
+        ? { discountReason: line.discountReason }
+        : {}),
     };
   });
 

@@ -6,6 +6,7 @@ import { LockIcon } from '../../icons';
 import { IDLE_LOCK_CHANGED_EVENT, readIdleLockMinutes } from '../pos-preferences';
 import { throttleWaitSeconds } from './sign-in-throttle';
 import { usePosLocalSession } from './local-session-context';
+import { pinIsLockedOut } from './local-auth';
 import { PasswordField } from './password-field';
 
 /**
@@ -79,12 +80,24 @@ export function PosLockGate({ children }: { children: ReactNode }) {
 
 function PosLockScreen() {
   const t = useT();
-  const { user, unlock, signOut } = usePosLocalSession();
+  const { user, unlock, unlockWithPin, signOut } = usePosLocalSession();
   const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const headingId = useId();
   const passwordId = useId();
+  const pinId = useId();
+
+  /**
+   * PIN-first only when the account has one AND it is not shut off. Five bad
+   * guesses disable it until the password unlocks once -- see the note in
+   * `local-auth.ts`: a delay ladder slows an attack on a 10^6 space, a cap
+   * ends it. `mode` is state rather than derived, so "Use my password" sticks
+   * for the visit.
+   */
+  const hasPin = !!user?.pinHash && !pinIsLockedOut(user.id);
+  const [mode, setMode] = useState<'pin' | 'password'>(hasPin ? 'pin' : 'password');
 
   const submit = useCallback(
     async (event: FormEvent) => {
@@ -93,6 +106,23 @@ function PosLockScreen() {
       setBusy(true);
       setError('');
       try {
+        if (mode === 'pin') {
+          const result = await unlockWithPin(pin);
+          if (!result.ok) {
+            setPin('');
+            if (result.reason === 'pin-locked') {
+              // Shut off, not merely wrong. Move to the password rather than
+              // leaving a dead keypad on screen.
+              setMode('password');
+              setError(t('pos.lock.pinLocked'));
+            } else {
+              setError(t('pos.lock.wrongPin'));
+            }
+          } else {
+            setPin('');
+          }
+          return;
+        }
         const result = await unlock(password);
         if (!result.ok) {
           setError(
@@ -107,7 +137,7 @@ function PosLockScreen() {
         setBusy(false);
       }
     },
-    [busy, password, t, unlock],
+    [busy, mode, password, pin, t, unlock, unlockWithPin],
   );
 
   return (
@@ -128,15 +158,39 @@ function PosLockScreen() {
           </p>
         </div>
 
-        <PasswordField
-          id={passwordId}
-          label={t('pos.local.password')}
-          value={password}
-          onChange={setPassword}
-          autoComplete="current-password"
-          invalid={!!error}
-          autoFocus
-        />
+        {mode === 'pin' ? (
+          <label className="cpos-field" htmlFor={pinId}>
+            <span className="cpos-field__label">{t('pos.lock.pin')}</span>
+            {/*
+              A plain numeric input, not an on-screen keypad: the OS pad on a
+              tablet, the physical numpad on a desktop till. `one-time-code`
+              keeps password managers from offering to save a six-digit code
+              as a password.
+            */}
+            <input
+              id={pinId}
+              className="cpos-input"
+              type="password"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={pin}
+              onChange={(event) => setPin(event.target.value.replace(/[^0-9]/g, ''))}
+              aria-invalid={error ? true : undefined}
+              autoFocus
+              style={{ textAlign: 'center', fontSize: 22, letterSpacing: '0.3em' }}
+            />
+          </label>
+        ) : (
+          <PasswordField
+            id={passwordId}
+            label={t('pos.local.password')}
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+            invalid={!!error}
+            autoFocus
+          />
+        )}
 
         {error ? (
           <div className="cpos-note cpos-note--danger" role="alert">
@@ -147,11 +201,24 @@ function PosLockScreen() {
         <button
           type="submit"
           className="cpos-btn cpos-btn--primary cpos-btn--lg cpos-btn--block"
-          disabled={busy || !password}
+          disabled={busy || (mode === 'pin' ? !pin : !password)}
         >
           {busy ? <span className="cpos-spinner" aria-hidden="true" /> : null}
           {t('pos.lock.unlock')}
         </button>
+
+        {hasPin ? (
+          <button
+            type="button"
+            className="cpos-btn cpos-btn--ghost cpos-btn--block"
+            onClick={() => {
+              setError('');
+              setMode(mode === 'pin' ? 'password' : 'pin');
+            }}
+          >
+            {mode === 'pin' ? t('pos.lock.usePassword') : t('pos.lock.usePin')}
+          </button>
+        ) : null}
 
         {/*
           The handover case. This one really does sign out and mint a new

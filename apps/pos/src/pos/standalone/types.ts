@@ -276,6 +276,18 @@ export interface LocalUser {
   passwordHash: string;
   passwordSalt: string;
   passwordIterations: number;
+  /**
+   * An optional short code that UNLOCKS a locked screen. Never a way in from
+   * the sign-in page: the front door keeps the full-entropy password, so a
+   * stolen laptop faces the same credential it always did. Hashed exactly as
+   * the password is -- same PBKDF2, same cost -- because a weaker secret is no
+   * excuse for cheaper protection. All three absent on any account whose
+   * holder never set one, and they ride the backup for free because `users` is
+   * carried wholesale.
+   */
+  pinHash?: string;
+  pinSalt?: string;
+  pinIterations?: number;
   createdAtMillis: number;
   /**
    * A disabled account keeps its sales attribution but cannot sign in. Staff

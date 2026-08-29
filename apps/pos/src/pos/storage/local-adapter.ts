@@ -8,7 +8,7 @@ import {
 } from '../standalone/local-db';
 import { openLocalShift } from '../standalone/local-shifts';
 import { claimedLocalTerminal } from '../standalone/local-terminals';
-import type { LocalSale } from '../standalone/types';
+import type { LocalDiscountReason, LocalSale } from '../standalone/types';
 import type { PosCommittedSale, PosSaleDraft, PosSoldLine, PosStorageAdapter } from './types';
 
 /** `LocalSaleLine` is already the priced shape; only the optional fields differ. */
@@ -89,6 +89,9 @@ export class PosLocalAdapter implements PosStorageAdapter {
           selectedSize: line.selectedSize ?? null,
           selectedColor: line.selectedColor ?? null,
           lineDiscount: line.lineDiscount ?? 0,
+          ...(line.discountReason
+            ? { discountReason: line.discountReason as LocalDiscountReason }
+            : {}),
         })),
         tenders: draft.tenders,
         cashierId: draft.capturedByUid || who.uid,

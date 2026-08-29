@@ -666,7 +666,7 @@ const MANUAL = {
         "The version above is the register’s own. From v1.0.0 the till is counted separately from the rest of the shop: a register that runs on its own is not updated alongside the website, so a shared number said nothing useful about the software in front of you. If that number looks smaller than one you saw before, nothing has been taken away — it is a new count, not a downgrade.",
         "One part of this manual now describes a shop that already has something rather than a shop that can still get it. Until store version 13.6.0 the register could also run as a page of your own website, switched on in the admin panel under Sales, then Point of sale. That way of running it is no longer offered: from store version 14.0.0 the shop software serves no register at all. Every section here that sends you to an admin page - Point of sale, the licence table, the counter sales list - applies only to a shop that set the register up before that change and is still running it. A new till is the standalone one in \"A till that runs on its own\", which needs no website and no Firebase project."
       ],
-      "version": "v2.0.1"
+      "version": "v2.1.0"
     },
     "parts": [
       {
@@ -1218,7 +1218,9 @@ const MANUAL = {
               "Locking is not signing out. The sale on screen is still there when the password is typed, and the cashier is not asked to count the drawer again — that only happens on a fresh sign-in.",
               "The lock only exists on a till that runs with no website behind it. A register backed by a website signs in through the website, and there is no local password for it to ask for.",
               "It does not protect the machine from somebody who takes it away. Anything on the disk is still on the disk; this stops the person who walks past an unattended counter, and that is all it claims.",
-              "Only the register is covered. The rest of the computer, and any other browser tab, are untouched."
+              "Only the register is covered. The rest of the computer, and any other browser tab, are untouched.",
+              "From v2.1.0 you can set an unlock PIN under Settings, on your own account and behind your password. The locked screen then asks for the PIN first, with \"Use my password instead\" underneath. Five wrong PINs switch it off until the password unlocks the screen once - a short code does not get to face unlimited guessing.",
+              "The PIN only reopens a locked screen. Signing in - at the start of the day, or as somebody else - always takes the password, so a stolen machine faces the same credential it always did. Nobody can set another person's PIN, and changing a password removes the PIN that was set under it."
             ]
           },
           {
@@ -1842,7 +1844,8 @@ const MANUAL = {
               "If a product is deleted from the catalogue while it is sitting on the sale, completing the sale fails. The message names the product's id code, not its name - it reads \"Product ... no longer exists\" with a long jumble of letters and numbers in place of the item. So you will not be told which item it was in plain words. If it happens, clear the sale and scan the items again to find the one that will not go on.",
               "Everywhere the register can take you is in the menu down the left, grouped under Counter, Shop and System. What is listed depends on the till and on your account, so two cashiers can see different menus. \"Exit register\" is not in the menu - it is in the card under your initials at the top right.",
               "If your account does not have the Staff role (Admin also works), the screen shows \"Not a register account\" along with your account id and a Copy id button - give that id to the owner so they can grant you access.",
-              "If the owner has switched the register off, /pos shows \"Register is switched off\" instead."
+              "If the owner has switched the register off, /pos shows \"Register is switched off\" instead.",
+              "From v2.1.0, taking a discount asks why - six choices, picked before Apply will work. The reason is kept on the sale and totalled up on the Sales page, so an owner can see at a week's end what was given away and by whom. One extra tap, and it is the whole audit trail."
             ]
           },
           {
@@ -2751,7 +2754,8 @@ const MANUAL = {
               "This screen is only on a till that runs on its own, and only for a role holding \"See sales\".",
               "The opening-cash figures are a list of their own. They are never mixed into the sales table and never added into the takings total - a drawer float folded into a day's takings would overstate what the shop actually sold. The two boxes answer for the same period, they are read side by side, and nothing in the software joins them up.",
               "Press a receipt number to open that sale. Until v2.0.0 the rows went nowhere - the list was the end of the road, and once \"Sale complete\" had been dismissed there was no way back to a sale at all.",
-              "A return shows in the list as a row with a negative total, in red, and the takings figure has it taken off. So the number at the top of this screen is what the shop actually took, not what it rang up."
+              "A return shows in the list as a row with a negative total, in red, and the takings figure has it taken off. So the number at the top of this screen is what the shop actually took, not what it rang up.",
+              "A Discounts section appears above the sales list whenever the period has any: how much was given away, by reason and by cashier. Discounts taken before v2.1.0 show as \"No reason recorded\" - nothing is guessed backwards."
             ]
           },
           {
@@ -3338,7 +3342,7 @@ const MANUAL = {
         "Yuxarıdakı versiya kassanın özününküdür. v1.0.0-dan etibarən kassa mağazanın qalan hissəsindən ayrıca nömrələnir: öz-özünə işləyən kassa vebsaytla birlikdə yenilənmir, ona görə də ortaq nömrə qarşınızdakı proqram haqqında heç nə demirdi. Əgər bu nömrə əvvəl gördüyünüzdən kiçik görünürsə, heç nə əlinizdən alınmayıb — bu, geriyə addım deyil, yeni bir sayımdır.",
         "Bu təlimatın bir hissəsi indi kassanı ala biləcək mağazanı deyil, artıq ona sahib olan mağazanı təsvir edir. Mağaza proqramının 13.6.0 versiyasına qədər kassa sizin öz saytınızın bir səhifəsi kimi də işləyə bilirdi və idarə panelində Satış, sonra Kassa bölməsindən qoşulurdu. Bu variant artıq təklif olunmur: 14.0.0 versiyasından etibarən mağaza proqramı ümumiyyətlə kassa vermir. Burada sizi idarə panelinə yönləndirən hər bölmə - Kassa səhifəsi, lisenziya cədvəli, piştaxta satışlarının siyahısı - yalnız kassanı bu dəyişiklikdən əvvəl qurmuş və hələ də işlədən mağazaya aiddir. Yeni kassa \"Öz-özünə işləyən kassa\" hissəsindəki müstəqil kassadır: ona nə sayt, nə də Firebase layihəsi lazımdır."
       ],
-      "version": "v2.0.1"
+      "version": "v2.1.0"
     },
     "parts": [
       {
@@ -3955,7 +3959,8 @@ const MANUAL = {
               "Məhsul satışın üzərində dayanarkən kataloqdan silinsə, satış tamamlanmır. Mesajda məhsulun adı yox, identifikator kodu göstərilir — \"Product ... no longer exists\" yazılır və məhsulun yerində hərf-rəqəmdən ibarət uzun yığın olur. Yəni hansı məhsul olduğu sizə adi sözlərlə deyilməyəcək. Belə hal olsa, satışı təmizləyin və məhsulları yenidən skan edərək keçməyəni tapın.",
               "Kassanın apara biləcəyi hər yer soldakı menyudadır və Kassa, Mağaza, Sistem başlıqları altında qruplaşdırılıb. Siyahı kassadan və hesabınızdan asılıdır, ona görə iki kassir fərqli menyu görə bilər. \"Kassadan çıx\" menyuda deyil - sağ yuxarıda, baş hərflərinizin altındakı kartdadır.",
               "Hesabınızda İşçi (Staff) rolu yoxdursa (Admin rolu da işə yarayır), ekranda \"Bu hesab kassa üçün deyil\" (Not a register account) yazısı, hesab identifikatorunuz və Kopyala (Copy id) düyməsi görünür — həmin identifikatoru mağaza sahibinə verin ki, sizə icazə versin.",
-              "Mağaza sahibi kassanı söndürübsə, /pos ünvanında bunun əvəzinə \"Kassa söndürülüb\" (Register is switched off) yazısı çıxır."
+              "Mağaza sahibi kassanı söndürübsə, /pos ünvanında bunun əvəzinə \"Kassa söndürülüb\" (Register is switched off) yazısı çıxır.",
+              "v2.1.0-dan etibarən endirim edərkən səbəb soruşulur - altı seçim, Tətbiq et işləməzdən əvvəl seçilməlidir. Səbəb satışın üzərində qalır və Satışlar səhifəsində cəmlənir, beləcə sahibkar həftənin sonunda nəyin kimə güzəşt edildiyini görə bilir. Bir əlavə toxunuş - və bütöv bir uçot izi."
             ]
           },
           {
@@ -4444,7 +4449,7 @@ const MANUAL = {
         "Версия выше — собственная версия кассы. Начиная с v1.0.0 касса нумеруется отдельно от остального магазина: касса, работающая сама по себе, не обновляется вместе с сайтом, поэтому общий номер ничего не говорил о программе перед вами. Если этот номер кажется меньше того, что вы видели раньше, ничего не убрали — это новый отсчёт, а не откат.",
         "Одна часть этого руководства теперь описывает магазин, у которого касса уже есть, а не магазин, который может её получить. До версии 13.6.0 программы магазина касса могла работать и как страница вашего собственного сайта, включаемая в панели управления в разделе Продажи, затем Касса. Такой способ больше не предлагается: начиная с версии 14.0.0 программа магазина не отдаёт кассу вообще. Каждый раздел здесь, который отправляет вас в панель управления - страница Кассы, таблица лицензий, список продаж за прилавком, - относится только к магазину, который настроил кассу до этого изменения и до сих пор её использует. Новая касса - это автономная касса из части \"Касса, которая работает сама по себе\", которой не нужны ни сайт, ни проект Firebase."
       ],
-      "version": "v2.0.1"
+      "version": "v2.1.0"
     },
     "parts": [
       {
@@ -5061,7 +5066,8 @@ const MANUAL = {
               "Если товар удалят из каталога, пока он находится в открытой продаже, завершить её не удастся. В сообщении будет указан внутренний код товара (id), а не название: «Product ... no longer exists», где вместо товара стоит длинный набор букв и цифр. То есть словами вам не скажут, о каком товаре речь. Если такое случилось, очистите продажу и отсканируйте товары заново, чтобы найти тот, который не проходит.",
               "Всё, куда можно перейти из кассы, находится в меню слева и сгруппировано под заголовками «Касса», «Магазин» и «Система». Состав зависит от кассы и от вашей учётной записи, поэтому два кассира могут видеть разные меню. «Выйти из кассы» в меню больше нет - он в карточке под вашими инициалами справа вверху.",
               "Если у вашей учётной записи нет роли Staff (Admin тоже подходит), на экране появится «Not a register account» вместе с идентификатором вашей учётной записи и кнопкой Copy id — передайте этот идентификатор владельцу, чтобы он выдал вам доступ.",
-              "Если владелец выключил кассу, по адресу /pos вместо неё показывается «Register is switched off»."
+              "Если владелец выключил кассу, по адресу /pos вместо неё показывается «Register is switched off».",
+              "С версии 2.1.0 при скидке касса спрашивает причину - шесть вариантов, выбрать нужно до того, как сработает «Применить». Причина остаётся на продаже и суммируется на странице «Продажи», так что владелец в конце недели видит, что и кем было уступлено. Одно лишнее нажатие - и полный учёт."
             ]
           },
           {
@@ -5550,7 +5556,7 @@ const MANUAL = {
         "Yukarıdaki sürüm kasanın kendi sürümüdür. v1.0.0'dan itibaren kasa, mağazanın geri kalanından ayrı numaralanır: kendi başına çalışan bir kasa web sitesiyle birlikte güncellenmez, bu yüzden ortak bir numara önünüzdeki yazılım hakkında hiçbir şey söylemiyordu. Bu numara daha önce gördüğünüzden küçük görünüyorsa hiçbir şey elinizden alınmadı; bu bir geri adım değil, yeni bir sayımdır.",
         "Bu kılavuzun bir bölümü artık kasayı edinebilecek bir mağazayı değil, kasası hâlihazırda olan bir mağazayı anlatıyor. Mağaza yazılımının 13.6.0 sürümüne kadar kasa, kendi web sitenizin bir sayfası olarak da çalışabiliyor ve yönetim panelinde Satış, ardından Kasa altından açılıyordu. Bu yol artık sunulmuyor: 14.0.0 sürümünden itibaren mağaza yazılımı hiçbir kasa sunmuyor. Burada sizi yönetim paneline gönderen her bölüm - Kasa sayfası, lisans tablosu, tezgâh satışları listesi - yalnızca kasayı bu değişiklikten önce kuran ve hâlâ kullanan bir mağaza için geçerlidir. Yeni bir kasa, \"Kendi başına çalışan bir kasa\" bölümündeki bağımsız kasadır; ne web sitesi ne de Firebase projesi gerektirir."
       ],
-      "version": "v2.0.1"
+      "version": "v2.1.0"
     },
     "parts": [
       {
@@ -6167,7 +6173,8 @@ const MANUAL = {
               "Satışta beklerken bir ürün katalogdan silinirse satışın tamamlanması başarısız olur. Mesajda ürünün adı değil kimlik kodu geçer: ürünün yerinde harf ve rakamlardan oluşan uzun bir karışımla \"Product ... no longer exists\" (Ürün ... artık yok) yazar. Yani hangi ürün olduğu size açık sözcüklerle söylenmez. Bu olursa satışı temizleyin ve hangisinin eklenmediğini bulmak için ürünleri yeniden okutun.",
               "Kasanın gidebileceği her yer soldaki menüdedir ve Kasa, Mağaza, Sistem başlıkları altında gruplanmıştır. Listelenenler kasaya ve hesabınıza göre değişir, bu yüzden iki kasiyer farklı menü görebilir. \"Kasadan çık\" menüde değildir - sağ üstte, baş harflerinizin altındaki karttadır.",
               "Hesabınızda Personel (Staff) rolü yoksa (Yönetici/Admin de olur), ekranda hesap kimliğinizle birlikte \"Not a register account\" (kasa hesabı değil) yazısı ve bir Kimliği kopyala (Copy id) düğmesi görünür; size erişim verebilmesi için o kimliği mağaza sahibine iletin.",
-              "Mağaza sahibi kasayı kapattıysa /pos bunun yerine \"Register is switched off\" (Kasa kapalı) yazısını gösterir."
+              "Mağaza sahibi kasayı kapattıysa /pos bunun yerine \"Register is switched off\" (Kasa kapalı) yazısını gösterir.",
+              "v2.1.0'dan itibaren indirim yaparken neden sorulur - altı seçenek, Uygula çalışmadan önce seçilmelidir. Neden satışın üzerinde kalır ve Satışlar sayfasında toplanır; böylece sahip hafta sonunda neyin kim tarafından verildiğini görür. Fazladan bir dokunuş - ve eksiksiz bir kayıt."
             ]
           },
           {

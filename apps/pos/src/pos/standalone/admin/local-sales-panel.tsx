@@ -111,6 +111,43 @@ export function LocalSalesPanel() {
    */
   const takings = visible.reduce((sum, s) => sum + s.total, 0);
 
+  /**
+   * Markdowns in the window, by reason and by cashier.
+   *
+   * This table is the discount control, and it is deliberately visibility
+   * rather than approval. An approval gate on a standalone till is only as
+   * strong as a role table the person at the counter may hold the keys to, and
+   * it costs every honest markdown a manager's walk to the counter. The pattern
+   * worth catching -- one cashier, many discounts -- is caught by counting.
+   * Refund rows are skipped: their negative "discounts" are the mechanics of a
+   * return, not somebody marking things down.
+   */
+  const discounts = useMemo(() => {
+    const byReason = new Map<string, { count: number; amount: number }>();
+    const byCashier = new Map<string, { count: number; amount: number }>();
+    let total = 0;
+    for (const sale of visible) {
+      if (isRefundSale(sale)) continue;
+      for (const line of sale.lines) {
+        if (!line.lineDiscount) continue;
+        total += line.lineDiscount;
+        const reason = line.discountReason ?? 'unrecorded';
+        const r = byReason.get(reason) ?? { count: 0, amount: 0 };
+        r.count += 1;
+        r.amount += line.lineDiscount;
+        byReason.set(reason, r);
+        const who = sale.cashierName || '—';
+        const c = byCashier.get(who) ?? { count: 0, amount: 0 };
+        c.count += 1;
+        c.amount += line.lineDiscount;
+        byCashier.set(who, c);
+      }
+    }
+    const sorted = (m: Map<string, { count: number; amount: number }>) =>
+      [...m.entries()].sort((a, b) => b[1].amount - a[1].amount);
+    return { total, byReason: sorted(byReason), byCashier: sorted(byCashier) };
+  }, [visible]);
+
   const exportCsv = () => {
     // `terminal` and `shift` are appended rather than slotted in beside the
     // cashier, so a spreadsheet somebody built against the old export keeps
@@ -195,6 +232,45 @@ export function LocalSalesPanel() {
           </div>
         ) : null}
       </section>
+
+      {/*
+        Only once anything has been marked down: a permanent block of zeroes
+        would read as a report that did not know.
+      */}
+      {discounts.total > 0 ? (
+        <section className="cpos-section">
+          <div className="cpos-row" style={{ alignItems: 'baseline' }}>
+            <h2 className="cpos-section__title">{t('pos.discount.sectionTitle')}</h2>
+            <strong style={{ marginInlineStart: 'auto' }}>{format(discounts.total)}</strong>
+          </div>
+          <div className="cpos-row">
+            <div style={{ flex: '1 1 220px' }}>
+              <div className="cpos-field__label">{t('pos.discount.byReason')}</div>
+              {discounts.byReason.map(([reason, row]) => (
+                <div key={reason} style={{ display: 'flex', gap: 12, fontSize: 13.5 }}>
+                  <span style={{ flex: 1 }}>
+                    {reason === 'unrecorded'
+                      ? t('pos.discount.reason.unrecorded')
+                      : t(`pos.discount.reason.${reason}`)}
+                  </span>
+                  <span className="cpos-muted">{row.count}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{format(row.amount)}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: '1 1 220px' }}>
+              <div className="cpos-field__label">{t('pos.discount.byCashier')}</div>
+              {discounts.byCashier.map(([who, row]) => (
+                <div key={who} style={{ display: 'flex', gap: 12, fontSize: 13.5 }}>
+                  <span style={{ flex: 1 }}>{who}</span>
+                  <span className="cpos-muted">{row.count}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{format(row.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/*
         Between the summary and the sales list. The Monday-morning question is

@@ -43,6 +43,7 @@ import { PosField, PosSelect } from '../ui/pos-field';
 import { LocalShopPanel } from './local-shop-panel';
 import { LocalBackupPanel } from './local-backup-panel';
 import { LocalPasswordDialog } from './local-password-dialog';
+import { LocalPinDialog } from './local-pin-dialog';
 
 type Section =
   | 'appearance'
@@ -173,6 +174,7 @@ export function PosLocalSettingsPage({ className }: { className?: string }) {
   const [gapMs, setGapMs] = useState(40);
   const [idleLock, setIdleLock] = useState(0);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
 
   useEffect(() => {
     setDeviceId(getPosDeviceId());
@@ -400,8 +402,16 @@ export function PosLocalSettingsPage({ className }: { className?: string }) {
                 >
                   {t('pos.settings.changePassword')}
                 </button>
+                <button
+                  type="button"
+                  className="cpos-btn cpos-btn--outline"
+                  onClick={() => setPinOpen(true)}
+                >
+                  {local.user?.pinHash ? t('pos.pin.changeTitle') : t('pos.pin.setTitle')}
+                </button>
               </div>
               <FieldDescription>{t('pos.settings.changePasswordHelp')}</FieldDescription>
+              <FieldDescription>{t('pos.pin.help')}</FieldDescription>
             </section>
           ) : null}
 
@@ -442,6 +452,13 @@ export function PosLocalSettingsPage({ className }: { className?: string }) {
         user={local.user}
         self
       />
+
+      {/*
+        Own account only, never from People -- see the note on the dialog. A
+        saved PIN lands in the session on the next unlock; nothing here needs
+        refreshing.
+      */}
+      <LocalPinDialog open={pinOpen} onOpenChange={setPinOpen} user={local.user} onSaved={() => void local.refresh()} />
     </div>
   );
 }
