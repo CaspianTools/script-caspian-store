@@ -16,6 +16,38 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v15.0.1 — The store manual stops pointing at a file that left
+
+v15.0.0 removed `docs/pos-manual.html` and left `docs/user-manual.html` telling
+people to open it. A shop owner following the manual was sent to a file that is
+not in the package: a button in the header bar, and twenty sentences across four
+languages saying the register manual sits "in the same folder as this file".
+
+It does not. It ships with the register.
+
+### No consumer action required
+
+Documentation only; no code, no exports and no Firebase surface changed.
+
+### Fixed
+
+- The header button in `docs/user-manual.html` pointed at `pos-manual.html`. It
+  now points at `docs/index.html`, which still ships and whose footer says where
+  the register manual went. Relabelled "Contents" in all four languages.
+- Twenty content strings — five statements in English plus their `az`/`ru`/`tr`
+  overlays — described the register manual as a file next to this one. They now
+  say it ships with the register. Overlay parity is preserved: every one was
+  rewritten in all four languages in the same change, which is the rule that
+  stops a stale overlay rendering as authoritative.
+
+### Notes
+
+- All of it lands inside the `DOC` and `MANUAL` fences, so the shared shell is
+  untouched and its hash still matches the copy in the till repo. The two
+  references to `pos-manual.html` that remain are both shell — a placeholder
+  `href` the renderer overwrites at load, and the fence comment naming the other
+  file — and changing either would break that hash for no gain.
+
 ## v15.0.0 — The register moves to a repository of its own
 
 The standalone till has been a separate product since it started at 1.0.0 — its
