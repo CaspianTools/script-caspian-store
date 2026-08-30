@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Caspian Store — Manuals</title>
-<meta name="description" content="The two Caspian Store manuals: running the shop, and running the register.">
+<meta name="description" content="The Caspian Store manual: running the shop.">
 <style>
 /* TOKENS:START — the design tokens, shared verbatim with docs/index.html. */
 :root {
@@ -174,32 +174,28 @@ const LANGS = [
 
 const PICK = {
   en: {
-    title: 'Which manual do you need?',
-    lede: 'Two manuals, one for each side of the product. Every screen described in them was opened in the software and checked.',
+    title: 'The Caspian Store manual',
+    lede: 'Everything outside the register. Every screen described here was opened in the software and checked.',
     store: { name: 'Store manual', blurb: 'Products, orders, customers, content, themes and settings — everything outside the register.' },
-    pos: { name: 'Register manual', blurb: 'The in-person till: installing it, the hardware, cashiers, a day at the counter, and closing it down.' },
-    foot: 'Hand the register manual to a cashier and nothing else.',
+    foot: 'The register has a manual of its own, and it ships with the register.',
   },
   az: {
-    title: 'Hansı təlimat lazımdır?',
-    lede: 'İki təlimat, məhsulun hər tərəfi üçün biri. Onlarda təsvir olunan hər ekran proqramda açılıb və yoxlanılıb.',
+    title: 'Caspian Store təlimatı',
+    lede: 'Kassadan kənarda qalan hər şey. Burada təsvir olunan hər ekran proqramda açılıb və yoxlanılıb.',
     store: { name: 'Mağaza təlimatı', blurb: 'Məhsullar, sifarişlər, müştərilər, məzmun, mövzular və tənzimlər - kassadan kənarda qalan hər şey.' },
-    pos: { name: 'Kassa təlimatı', blurb: 'Piştaxta kassası: quraşdırılması, avadanlıq, kassirlər, piştaxtada bir gün və bağlanması.' },
-    foot: 'Kassirə yalnız kassa təlimatını verin, başqa heç nə.',
+    foot: 'Kassanın öz təlimatı var və o, kassa ilə birlikdə gəlir.',
   },
   ru: {
-    title: 'Какое руководство вам нужно?',
-    lede: 'Два руководства, по одному на каждую сторону продукта. Каждый описанный в них экран был открыт в программе и проверен.',
+    title: 'Руководство Caspian Store',
+    lede: 'Всё, что вне кассы. Каждый описанный здесь экран был открыт в программе и проверен.',
     store: { name: 'Руководство по магазину', blurb: 'Товары, заказы, покупатели, содержимое, темы и настройки - всё, что вне кассы.' },
-    pos: { name: 'Руководство по кассе', blurb: 'Касса за прилавком: установка, оборудование, кассиры, рабочий день и закрытие.' },
-    foot: 'Кассиру достаточно дать руководство по кассе и больше ничего.',
+    foot: 'У кассы есть собственное руководство, и оно поставляется вместе с кассой.',
   },
   tr: {
-    title: 'Hangi kılavuza ihtiyacınız var?',
-    lede: 'İki kılavuz, ürünün her bir tarafı için bir tane. İçlerinde anlatılan her ekran yazılımda açıldı ve doğrulandı.',
+    title: 'Caspian Store kılavuzu',
+    lede: 'Kasanın dışındaki her şey. Burada anlatılan her ekran yazılımda açıldı ve doğrulandı.',
     store: { name: 'Mağaza kılavuzu', blurb: 'Ürünler, siparişler, müşteriler, içerik, temalar ve ayarlar - kasanın dışındaki her şey.' },
-    pos: { name: 'Kasa kılavuzu', blurb: 'Tezgâh kasası: kurulumu, donanım, kasiyerler, tezgâhta bir gün ve kapatılması.' },
-    foot: 'Bir kasiyere yalnızca kasa kılavuzunu verin, başka bir şey değil.',
+    foot: 'Kasanın kendi kılavuzu vardır ve kasayla birlikte gelir.',
   },
 };
 
@@ -284,7 +280,6 @@ function render() {
   renderLangSwitch();
   $('#cards').replaceChildren(
     card('user-manual.html', 'i-store', t.store.name, t.store.blurb),
-    card('pos-manual.html', 'i-scan', t.pos.name, t.pos.blurb),
   );
 }
 

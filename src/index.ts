@@ -393,7 +393,7 @@ export {
 
 // --- Point of sale ---
 //
-// Nothing. The register moved out of this package into `apps/pos` in v14.0.0
+// Nothing. The register moved out of this package in v14.0.0, to a repo of its own,
 // and the cloud-backed one was stood down with it, so there is no `PosGuard`,
 // no adapters, no offline queue and no `/admin/pos` here any more. The till
 // consumes this library rather than shipping inside it, and the dependency
@@ -1033,7 +1033,7 @@ export {
 export { DEFAULT_SCRIPT_SETTINGS, SOCIAL_PLATFORMS } from './types';
 
 // --- The cloud register's contract (v14.1.0) ---
-// The till moved out to apps/pos in v14.0.0 and now consumes this package the
+// The till lives in CaspianTools/caspian-pos and consumes this package the
 // way any consumer does, but these five never left the barrel's inside: it
 // imported them while it was still part of src/. Without them the till does not
 // build at all -- `POS_ROLES is not exported by dist/index.mjs`.

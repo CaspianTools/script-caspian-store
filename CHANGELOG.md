@@ -16,6 +16,76 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v15.0.0 — The register moves to a repository of its own
+
+The standalone till has been a separate product since it started at 1.0.0 — its
+own version, its own changelog, its own release cycle — while living in a folder
+in this repository. v14.0.0 made that a directory boundary. This release makes it
+a repository boundary: the till is at
+[CaspianTools/caspian-pos](https://github.com/CaspianTools/caspian-pos) and
+consumes this library the way any other consumer does, through a pinned tag.
+
+Nothing about a storefront changes. The cloud register stays exactly as v14.0.0
+left it: `firebase/functions-pos/` still ships, the POS Firestore rules and
+indexes are untouched, `listPosOrders` is still exported, and the POS fields on
+`Order` are still there. A store that deployed any of it keeps working with no
+redeploy.
+
+### Consumer action required on upgrade
+
+Only if you linked the register manual directly. The `./pos-manual.html` export
+and `docs/pos-manual.html` are gone from this package — the manual ships with the
+register now. Everything else, including `./user-manual.html` and
+`./manuals.html`, is unchanged.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v15.0.0 firebase
+```
+
+### Removed
+
+- `apps/pos/` and `docs/pos-manual.html`, which moved to the till's own repo.
+- The `./pos-manual.html` entry from `package.json#exports`.
+- `.github/workflows/standalone-smoke.yml`, which guarded the till and moved with it.
+- The two blocks in `tsup.config.ts` that read `apps/pos/package.json` and wrote
+  `apps/pos/src/pos/standalone/pos-version.ts`. **This was the dangerous one.**
+  The read was unguarded and `tsup` runs from the `prepare` hook on every
+  `npm install` — including a consumer's `npm install github:...` — so removing
+  the directory without removing the generator would have failed every consumer
+  install with a raw ENOENT. Both went in the same commit as the directory.
+
+### Changed
+
+- `scripts/check-manuals.mjs` guards one manual instead of two. The check that
+  compared the two manuals' shared shell byte-for-byte cannot exist with one
+  manual per repo, so the shell is hashed against a checked-in constant instead.
+  Both repos hold the same constant; if they ever differ, the shells have
+  diverged. The hash is CRLF-normalised so it holds on Linux CI as well as on
+  Windows. The cross-manual section-id uniqueness check went the same way.
+- `docs/index.html` is a single-card front page. The register card pointed at a
+  file that is no longer here, and its title, lede and footer promised two
+  manuals in four languages.
+- `.github/workflows/manuals-smoke.yml` no longer triggers on `apps/pos/package.json`.
+- `README.md`, `INSTALL.md` §13 and `CLAUDE.md` describe a repo boundary rather
+  than a directory one, and point at the till's repository.
+
+### Fixed
+
+- `create-caspian-store/README.md` documented `--with-pos` and `--pos-only` as
+  working flags, and told readers "the register cannot record a sale without this
+  deployed" and to flip a switch at `/admin/pos`. Both flags were removed in
+  v14.0.0 and that screen has never existed in this package. Anyone following it
+  hit an unrecognised-flag error. Sibling bumped to 0.3.2.
+
+### Notes
+
+- The till's CSV round-trip is built on `src/utils/csv.ts` and
+  `src/services/import-export/helpers.ts`, and a path filter used to run its
+  guard whenever either changed. Across a repo boundary it cannot. **A change to
+  either file should say so in the release notes**; the till repo also runs a
+  weekly job against this library's `main` to surface the break before an
+  upgrade rather than during one.
+
 ## v14.1.0 — The five exports the register move left behind
 
 v14.0.0 moved the till out to `apps/pos/` and had it consume this package the way

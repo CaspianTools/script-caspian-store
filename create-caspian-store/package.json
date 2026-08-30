@@ -1,6 +1,6 @@
 {
   "name": "create-caspian-store",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "One-command scaffolder for @caspian-explorer/script-caspian-store. Enables `npm create caspian-store@latest <project-dir>`.",
   "type": "module",
   "bin": {

@@ -22,20 +22,6 @@ if (existing !== versionContents) {
   writeFileSync(versionFile, versionContents);
 }
 
-// The standalone till carries its own version in `apps/pos/package.json`,
-// because a shop running it never installs this library and the storefront's
-// release number tells it nothing true. App admin and /pos/settings print it at
-// the foot of the screen, so it needs a constant, and the constant is generated
-// here for the same reason CASPIAN_STORE_VERSION is — a hand-copied one drifts
-// the moment somebody bumps the other file and forgets.
-//
-// The till's source left this package in v14.0.0, so this writes across the
-// boundary into `apps/pos/`. That is deliberate: the number lives over there,
-// the till has no build step of its own that runs before `tsc`, and one
-// generator beats two that can disagree.
-const posPkgVersion = JSON.parse(readFileSync(join('apps', 'pos', 'package.json'), 'utf8'))
-  .version as string;
-
 // Generate the deployable rules/indexes constants straight from the files
 // consumers actually deploy, so the two can never diverge.
 //
@@ -61,12 +47,6 @@ function writeIfChanged(file: string, contents: string): void {
   })();
   if (current !== contents) writeFileSync(file, contents);
 }
-
-writeIfChanged(
-  join('apps', 'pos', 'src', 'pos', 'standalone', 'pos-version.ts'),
-  `// Auto-generated from apps/pos/package.json by tsup.config.ts. Do not edit.\n` +
-    `export const CASPIAN_POS_VERSION = '${posPkgVersion}';\n`,
-);
 
 const GENERATED_BANNER =
   '// Auto-generated from the files under firebase/ by tsup.config.ts. Do not edit.\n' +

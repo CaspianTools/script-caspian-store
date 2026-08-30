@@ -18,7 +18,7 @@ npm run dev                  # http://localhost:3000
 ### Manual install (v7.0.0+ — one route file owns every page)
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v14.1.0 firebase
+npm install github:CaspianTools/script-caspian-store#v15.0.0 firebase
 ```
 
 Two files are all you ever need. **No per-page route files, ever, for any library version.** New library pages land automatically.
@@ -99,12 +99,12 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | **Order confirmation:** `<OrderConfirmationPage />` — polls Firestore for the webhook-created order | ✅ |
 | **Order history:** `<OrderHistoryList />` for signed-in customers; `<GuestOrderLookupPage />` at `/order-status` for guests (order # + email) | ✅ |
 | **Wishlist:** `useWishlist()` + `<WishlistButton />` + `<WishlistPanel />` (account page section) | ✅ |
-| **Point of sale:** the in-person register shipped here from v10.0.0 and **left in v14.0.0**. It is a separate app in [`apps/pos/`](apps/pos/) with its own version and release cycle — this package routes no `/pos`, exports no register, and has no admin screen to enable one. `firebase/functions-pos/` and the POS Firestore rules stay so stores that deployed them keep working. Owner + cashier documentation in [`docs/pos-manual.html`](docs/pos-manual.html) | — (moved out) |
-| **Standalone till (no shop, no website, no Firebase):** a register that runs entirely on one computer — catalogue, staff, sales and receipt numbers in IndexedDB, contacting nothing. Local sign-in against roles built from fine-grained capabilities, screens for the catalogue, the takings, the staff and the stock ledger, batch tracking with expiry dates, and backups the shop keeps as files. It is **not installed from this package**: it lives in [`apps/pos/`](apps/pos/), consumes this library as a dependency, and a shop running it installs nothing from npm. See [The register](INSTALL.md#13-the-register) | ✅ (in `apps/pos/`) |
+| **Point of sale:** the in-person register shipped here from v10.0.0 and **left in v14.0.0**. Since v15.0.0 it is a separate repository, [caspian-pos](https://github.com/CaspianTools/caspian-pos), with its own version and release cycle — this package routes no `/pos`, exports no register, and has no admin screen to enable one. `firebase/functions-pos/` and the POS Firestore rules stay so stores that deployed them keep working. Owner + cashier documentation ships with the register. | — (moved out) |
+| **Standalone till (no shop, no website, no Firebase):** a register that runs entirely on one computer — catalogue, staff, sales and receipt numbers in IndexedDB, contacting nothing. It is **not installed from this package**: it lives in [caspian-pos](https://github.com/CaspianTools/caspian-pos), consumes this library as a pinned dependency, and a shop running it installs nothing from npm. See [The register](INSTALL.md#13-the-register) | ✅ (separate repo) |
 | **Staff role:** `staff` accounts read the catalog but reach no admin surface; three-role picker in `<AdminUsersPage />`, enforced in `firestore.rules` via `isStaff()` | ✅ (v10.0.0+) |
 | **Admin:** `<AdminGuard />`, `<AdminShell />`, `<AdminDashboard />`, product CRUD, orders (table + drag-and-drop Kanban board) + status, reviews moderation, `<AdminAboutPage />` (installed version + GitHub release feed + one-click self-update) | ✅ |
 | **Auth:** `<LoginPage />`, `<RegisterPage />`, `<ForgotPasswordPage />`, `<AccountPage />` — sidebar-driven: profile (name/email/phone/photo), orders, addresses, wishlist, security | ✅ |
-| **i18n:** `<LocaleProvider>` + `useT()` + `DEFAULT_MESSAGES` + `<LocaleSwitcher />`; **per-device persisted locale** via `useLocaleControls()` with a store default from `ScriptSettings.defaultLocale`; built-in **az / ru / tr** dictionaries covering the shared `common.*` / `auth.*` strings (everything else falls back to English — the register's ~1,800 translated strings went with it to `apps/pos/`) | ✅ (persistence + locales v10.0.0+) |
+| **i18n:** `<LocaleProvider>` + `useT()` + `DEFAULT_MESSAGES` + `<LocaleSwitcher />`; **per-device persisted locale** via `useLocaleControls()` with a store default from `ScriptSettings.defaultLocale`; built-in **az / ru / tr** dictionaries covering the shared `common.*` / `auth.*` strings (everything else falls back to English — the register's ~1,800 translated strings went with it) | ✅ (persistence + locales v10.0.0+) |
 | **Theming:** 10-theme `THEME_CATALOG` + Avada-style `<AdminAppearancePage>` grid + popup `<AdminAppearancePreviewPage>` with dummy-data storefront | ✅ |
 | **Profile photo:** `<ProfilePhotoCard />` (Firebase Storage, JPEG/PNG/WebP ≤5 MB) | ✅ |
 | **Delete account:** `<DeleteAccountCard />` with reauth + typed confirmation | ✅ |
@@ -215,25 +215,23 @@ Stripe is handled by Firebase Cloud Functions (callable + webhook), so the packa
 
 ## User manuals
 
-Two manuals, one per product, written for the person **running** the shop rather than the person installing it. **Hand the register manual to a cashier and nothing else** — that separation is the whole reason there are two.
+Written for the person **running** the shop rather than the person installing it. The register has a manual of its own, and since v15.0.0 it ships with the register — see [caspian-pos](https://github.com/CaspianTools/caspian-pos).
 
 | File | Covers |
 | --- | --- |
-| [`docs/index.html`](docs/index.html) | A picker. Start here; it links to both and carries your language across. |
+| [`docs/index.html`](docs/index.html) | The front page. Start here; it carries your language across. |
 | [`docs/user-manual.html`](docs/user-manual.html) | **The store** — products, orders, customers, content, the page builder, themes and settings. 7 parts / 57 sections. |
-| [`docs/pos-manual.html`](docs/pos-manual.html) | **The register** — a full lifecycle: installing it, the hardware, cashier access, a day at the counter, store management, sales records, and winding a till down again. 8 parts / 59 sections. |
 
 They ship in the package, so installed copies sit at:
 
 ```
 node_modules/@caspian-explorer/script-caspian-store/docs/index.html
 node_modules/@caspian-explorer/script-caspian-store/docs/user-manual.html
-node_modules/@caspian-explorer/script-caspian-store/docs/pos-manual.html
 ```
 
-Open them straight from disk — each is one self-contained file, no build step and no network requests. Each has a sidebar, a search box, light and dark modes, a print stylesheet, and a language switch covering **English, Azerbaijani, Russian and Turkish**.
+Open it straight from disk — it is one self-contained file, no build step and no network requests. It has a sidebar, a search box, light and dark modes, a print stylesheet, and a language switch covering **English, Azerbaijani, Russian and Turkish**.
 
-Every screen they describe was checked against the source. Where a control is deliberately not available yet — a disabled option, a feature that does not exist — the manual says so plainly rather than describing it as working.
+Every screen it describes was checked against the source. Where a control is deliberately not available yet — a disabled option, a feature that does not exist — the manual says so plainly rather than describing it as working.
 
 ## Release history
 

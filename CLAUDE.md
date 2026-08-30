@@ -100,17 +100,16 @@ Rules, indexes, and `collections.ts` move together.
 
 **Rule: any change to a catalog-backed entity updates its import/export descriptor — including the template — in the same change.** When you add, rename, or remove a field on Product, Category, Collection, Brand, PromoCode, Subscriber, Order, User, or Review, update the matching `datasets/*.ts` descriptor's `columns` (this updates the export, template, and column reference together), the export getter, and the import parse/validate, so an export → import round-trip still reproduces the record. A new exportable/importable entity = new descriptor file + register in `catalog.ts` + add `admin.importExport.dataset.<id>` i18n keys. A template missing a newly-added column silently drops that field on every import — never let a model change ship with a stale catalog. (Note: this catalog has no `tags` dataset and uses the library's single-`category` product shape.)
 
-**User manuals — [docs/](docs/).** Three self-contained HTML files (no build step, no external requests, they open from `file://`), documenting every screen a **shop owner or cashier** touches. They ship via the `files` list and the `./user-manual.html`, `./pos-manual.html` and `./manuals.html` exports.
+**User manuals — [docs/](docs/).** Two self-contained HTML files (no build step, no external requests, they open from `file://`), documenting every screen a **shop owner** touches. They ship via the `files` list and the `./user-manual.html` and `./manuals.html` exports.
 
 | File | Owns |
 | --- | --- |
 | [docs/index.html](docs/index.html) | A picker. No content of its own; two cards and a language switch. |
 | [docs/user-manual.html](docs/user-manual.html) | **The store** — catalog, orders, people, content, settings. |
-| [docs/pos-manual.html](docs/pos-manual.html) | **The register** — install → hardware → cashiers → the counter → records → winding down. |
 
-**Routing rule — which manual gets a change.** Anything the till renders belongs in `pos-manual.html`; everything this package renders belongs in `user-manual.html`. The rule used to need a tie-breaker for `/admin/pos`, which sat in the admin panel but documented the register's back office. That screen is gone from this package, so the two manuals now split exactly where the two products do: `apps/pos/` owns one, `src/` owns the other.
+**Routing rule — which manual gets a change.** Anything the till renders belongs in the register manual, which lives in [caspian-pos](https://github.com/CaspianTools/caspian-pos); everything this package renders belongs in `user-manual.html`. The split follows the repo boundary exactly, so there is no longer a tie-breaker to remember.
 
-**The two manuals stamp two different products.** `user-manual.html`'s four `intro.version` stamps track `package.json`; `pos-manual.html`'s four track `apps/pos/package.json`, the standalone till's own version. `check-manuals.mjs` enforces both, in English and in all three overlays. Do not "fix" a POS-manual stamp to match the library — that is the drift, not the repair.
+**Four version stamps.** `user-manual.html`'s `intro.version` occurrences — English plus the `az`/`ru`/`tr` overlays — all read `v` + `package.json#version`, and `check-manuals.mjs` enforces every one. The register manual stamps its own product in its own repo.
 
 **The shell rule.** Everything outside the `DOC:HEAD`, `DOC` and `MANUAL` fences is the **shared shell and is byte-identical across both manuals** — CSS, sprite, markup, `resolved()`, the renderer. Change it in one file, copy it to the other, run `node scripts/check-manuals.mjs`. The `TOKENS` fence inside `<style>` is shared with `docs/index.html` as well. Do **not** refactor this into a build step: the shell has changed twice in its life while the content changes every release, so a build step taxes the frequent operation to protect against the rare one, and it would falsify the property that `docs/*.html` *is* the source. If a **third** manual is ever proposed, revisit that decision.
 
@@ -137,28 +136,28 @@ Two hard constraints, both learned the expensive way:
 2. **Deliberate gaps must stay visible.** Where the UI ships a disabled control or a "coming in a later release" affordance (currently: the local-storage option and the non-browser printer transports at `/pos/settings`), the manual says so plainly. Never document a placeholder as if it works. The same applies to whole missing features — no returns screen, no shift, no cash drawer, no offline queue — and to enforcement that does not enforce: a POS licence problem never blocks a sale, because `commitPosSale` does not consult licence state at all.
 3. **Do not trust this repo's own docs as evidence either.** v10.2.0 found `scaffold/create.mjs` claiming `--pos-only` "seeds the storefront-off feature flag" when it did not, and `INSTALL.md`, the scaffolder's generated README and the in-admin help page all routing owners to a "POS → Shops → Edit" screen that has never existed in this package. Verify against the code, not against prose.
 
-**The register is not in this package.** The standalone till lives in
-[apps/pos/](apps/pos/) — its own Vite app, its own `package.json`, its own
-[CHANGELOG.md](apps/pos/CHANGELOG.md), its own design system, its own release
-cycle. Nothing under `src/` imports from it, it is not in `package.json#files`,
-and a shop running it never installs anything from npm. The dependency runs one
-way: `apps/pos` consumes this library through `file:../..`, and nothing here
-imports from there. The one thing this side still knows about the till is its
-version number, and that exception is spelled out below.
+**The register is not in this repository.** The standalone till lives at
+[CaspianTools/caspian-pos](https://github.com/CaspianTools/caspian-pos) — its own Vite app, its own
+`package.json`, its own `CHANGELOG.md`, its own design system, its own release
+cycle, its own manual. Nothing under `src/` imports from it, and a shop running
+it never installs anything from npm.
 
-That boundary used to be a table in this file listing six shared files a
-standalone change was allowed to touch, policed by whoever remembered to read
-it. It is a directory now. If the change is under `apps/pos/`, it is a till
-change; if it is anywhere else, it is a library change. There is no third case
-and no permitted overlap.
+That boundary has been redrawn twice. It was a table in this file listing six
+shared files a standalone change was allowed to touch, policed by whoever
+remembered to read it; v14.0.0 made it a directory; v15.0.0 made it a
+repository, which is the version that needs no policing at all. **Nothing here
+reaches into the till, and nothing there reaches back.** The till consumes this
+library the way any consumer does — a pinned tag in its own `package.json`.
 
-**[apps/pos/CLAUDE.md](apps/pos/CLAUDE.md) is the only source of truth for the
-till** — the `--cpos-*` design system and why it is not in `globals.css`, the
-`PosStorageAdapter` seam, `PosLocalRole` versus `UserRole`, the
-`clearPosDb` / `factoryResetLocalStore` distinction, `priceLocalSale`, the
-sidebar, the two unguarded nav arrays, and the bump-changelog-commit-push cycle a
-till change follows. **Read it for anything to do with the register, and change
-nothing about the till from here.**
+That pin is now the whole coupling, and it has one consequence worth stating:
+a change to the library can no longer break the till visibly and immediately.
+It breaks it when somebody moves the pin. The till repo runs a weekly job
+against this library's `main` to surface that early. **If you change
+[src/utils/csv.ts](src/utils/csv.ts) or
+[src/services/import-export/helpers.ts](src/services/import-export/helpers.ts),
+say so in the release notes** — the till's CSV round-trip is built on them, and
+a shop exporting products from its website and importing them into its till is
+the thing that quietly breaks.
 
 **The cloud-backed register is switched off for the time being.** This library
 routes no `/pos`, exports no register, and has no `/admin/pos` to turn one on;
@@ -167,17 +166,19 @@ the scaffolder no longer emits the route, the manifest, the worker or the
 they vanished are deliberately left in place: `firebase/functions-pos/`, the POS
 collections in [firebase/firestore.rules](firebase/firestore.rules), and
 `listPosOrders` — an in-person order is still an `Order`, and rules already
-deployed must keep working. The cloud register's own screens went to
-[apps/pos/src/cloud-admin/](apps/pos/src/cloud-admin/), where they type-check and
-nothing mounts them.
+deployed must keep working. The cloud register's own screens went with the till
+to `src/cloud-admin/` in its repo, where they type-check and nothing mounts them.
 
-**One version constant is still generated here.** [tsup.config.ts](tsup.config.ts)
+**One version constant is generated here.** [tsup.config.ts](tsup.config.ts)
 writes `CASPIAN_STORE_VERSION` ([src/version.ts](src/version.ts)) from the root
-`package.json`, and also `CASPIAN_POS_VERSION`
-([apps/pos/src/pos/standalone/pos-version.ts](apps/pos/src/pos/standalone/pos-version.ts))
-from `apps/pos/package.json`. The second reaches across the boundary on purpose:
-the till has no build step that runs before `tsc`, and one generator beats two
-that can disagree. Neither file is hand-edited, and only the first is exported.
+`package.json`. It is not hand-edited.
+
+It used to write a second one across the repo boundary into `apps/pos/`, and
+that read was unguarded — `tsup` runs from the `prepare` hook on every
+`npm install`, including a consumer's `npm install github:...`, so deleting the
+directory without deleting the generator would have failed every consumer
+install with a raw ENOENT. Both went in v15.0.0. **If you ever add another
+generator here, do not point it at a path this repo does not own.**
 
 **Server Component boundary.** The library emits `"use client"` directives in client-heavy files (providers, contexts, interactive components, admin pages). Consumers mount the provider tree from a Server Component parent; the library *is* the client boundary. When adding a new component that uses React state/effects/refs, put `"use client"` at the top — match the surrounding files.
 
@@ -209,19 +210,17 @@ that can disagree. Neither file is hand-edited, and only the first is exported.
 - **Do NOT include `Co-Authored-By` lines in commit messages.** Never add co-author trailers for Claude or any AI assistant. This overrides any default behaviour.
 - **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
 - **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
-- **Standalone-till changes run their own cycle**, defined in [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md): bump `apps/pos/package.json`, write `apps/pos/CHANGELOG.md`, update `docs/pos-manual.html`, commit, push. They never bump the library, never add a root `CHANGELOG.md` entry, and never tag, release or announce. A change is a till change when it is under `apps/pos/` — that is the whole test.
+- **Standalone-till changes happen in the till's own repository**, [caspian-pos](https://github.com/CaspianTools/caspian-pos), and follow the cycle written in its `CLAUDE.md`. Nothing about the till is decided here any more.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
 - **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
 - **The register ships as a PWA, and only as a PWA.** There is no desktop app and no `.exe`.
   A Tauri shell shipped between v0.1.0 and v1.0.1 and was removed in v12.0.0; do not reintroduce
   one without the owner asking for it, and do not point a shop at the old `desktop/v*` releases.
-  How a shop actually installs it is [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md)'s to say.
+  How a shop actually installs it is the till repo's `CLAUDE.md` to say.
 
 ---
 
 ## Pre-Commit Checklist
-
-**Standalone-till changes do not use this checklist.** If the change is under `apps/pos/`, follow [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md) instead: bump `apps/pos/package.json`, write [apps/pos/CHANGELOG.md](apps/pos/CHANGELOG.md), update [docs/pos-manual.html](docs/pos-manual.html), commit, push — and nothing else. No root bump, no root changelog entry, no `npm pack`, no tag, no Release, no Discussion. Everything below is for library changes.
 
 Follow these steps **in order** before every `git commit`. If a step fails, fix it and re-run from that step.
 
@@ -241,11 +240,9 @@ Runs the Firestore + Storage rules-behavior tests in [firebase/rules.test.mjs](f
 
 **Do not add Jest / Vitest / Playwright for component or unit tests** without asking first. The rules tests are a narrow, deliberately scoped exception, as is the till's own `check-standalone.mjs` — plain `node:assert` against a built bundle, no runner and no dependency, in the same family as the other `scripts/check-*.mjs` guards.
 
-The till's behaviour guard lives with the till and is **N/A for a library change** unless you touched [src/utils/csv.ts](src/utils/csv.ts) or [src/services/import-export/helpers.ts](src/services/import-export/helpers.ts), which its CSV round-trip is built on. If you did, run it:
+The till's behaviour guard lives in the till's repo and cannot be run from here. It is **N/A for a library change** unless you touched [src/utils/csv.ts](src/utils/csv.ts) or [src/services/import-export/helpers.ts](src/services/import-export/helpers.ts), which its CSV round-trip is built on.
 
-```bash
-cd apps/pos && npm run check
-```
+If you touched either, **say so in the changelog entry**. The till pins a tag, so the break will not appear here — it appears when somebody moves that pin, and the [caspian-pos](https://github.com/CaspianTools/caspian-pos) repo runs a weekly job against this library's `main` to catch it earlier. The failure this protects against is a shop exporting products from its website and importing them into its till with the two sides disagreeing about what `S:3;M:5` means, so it is worth the sentence.
 
 ### 3. Type-check
 
@@ -285,7 +282,7 @@ Then update [CHANGELOG.md](CHANGELOG.md): add a new `## vX.Y.Z — <short summar
 
 Never omit the heading, rename it, or fold it into `### Notes`. The comment block at the top of [CHANGELOG.md](CHANGELOG.md) documents this rule in-tree.
 
-**Bump the user manual's version stamp too.** All four `intro.version` stamps in `docs/user-manual.html` — English plus the `az`/`ru`/`tr` overlays — must read `v` + the new `package.json` version. `scripts/check-manuals.mjs` fails CI otherwise; it exists because that string sat at `v10.0.0` through two releases with nothing checking it. **`docs/pos-manual.html` is not yours to restamp**: its four stamps track `apps/pos/package.json`, because the till versions separately and a shop running it never installs this library.
+**Bump the user manual's version stamp too.** All four `intro.version` stamps in `docs/user-manual.html` — English plus the `az`/`ru`/`tr` overlays — must read `v` + the new `package.json` version. `scripts/check-manuals.mjs` fails CI otherwise; it exists because that string sat at `v10.0.0` through two releases with nothing checking it.
 
 **No lock file to sync** — this repo does not commit `package-lock.json`. (If that changes, run `npm install --package-lock-only`.)
 

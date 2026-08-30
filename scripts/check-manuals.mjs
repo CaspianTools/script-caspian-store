@@ -1,21 +1,19 @@
 #!/usr/bin/env node
-// Drift guard for the three files in docs/.
+// Drift guard for the two files in docs/.
 //
-// The manuals are hand-maintained single HTML files with no build step. That is
+// The manual is a hand-maintained single HTML file with no build step. That is
 // deliberate — the shell has changed twice in its life while the content changes
 // every release, so a build step would tax the frequent operation to protect
-// against the rare one. What a build step would *guarantee* (the two shells are
-// identical) this script instead *verifies*, for about a thousandth of the cost.
+// against the rare one.
 //
 // It catches, in order of how much damage each one does:
-//   A  the two manuals' shared shell drifting apart
-//   B  the picker's design tokens drifting from the manuals'
+//   A  the shared shell drifting — see the note on SHELL_SHA256 below
+//   B  the picker's design tokens drifting from the manual's
 //   C5 a translation overlay going stale — the failure that renders confidently
 //      and wrongly, hiding newly-added English text with no warning at all
 //   C4 the footer version string rotting (it sat at v10.0.0 through two releases)
 //   C7 the install examples in README/INSTALL pinning a version three majors old
 //   C3 a part icon with no <symbol> — how v10.0.1 shipped every icon clipped
-//   C6 the same section id landing in both files, breaking a deep link
 //
 // What it does NOT check, and cannot: whether the prose still describes the
 // screen. Only opening the component does that. See the manual rules in
@@ -23,14 +21,39 @@
 //
 // Usage: node scripts/check-manuals.mjs
 import { readFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = join(ROOT, 'docs');
-const MANUALS = ['user-manual.html', 'pos-manual.html'];
-const ALL = ['index.html', ...MANUALS];
+const MANUAL = 'user-manual.html';
+const ALL = ['index.html', MANUAL];
 const LOCALES = ['az', 'ru', 'tr'];
+
+// The shell — everything outside the DOC:HEAD, DOC and MANUAL fences, TOKENS
+// included — is shared verbatim with docs/pos-manual.html, which now lives in
+// the standalone till's own repo (CaspianTools/caspian-pos).
+//
+// While both manuals lived here this was checked by comparing the two files to
+// each other, which is strictly better than a hash because it needs no upkeep
+// and cannot go stale. v15.0.0 took that away: there is one manual in this repo
+// now, so there is nothing to compare against.
+//
+// This is the replacement, and it is weaker on purpose rather than by accident.
+// It cannot prove the two shells match — only that THIS one is what was last
+// blessed. Copying a shell change between the repos is a human step; this
+// catches the accidental half, where the shell is edited without anyone meaning
+// to change it.
+//
+// When you deliberately change the shell: change it in one repo, copy it to the
+// other verbatim, then update this constant in BOTH repos to the new hash the
+// failure message prints. If the two repos ever hold different hashes, the
+// shells have diverged.
+//
+// The hash is taken over CRLF-normalised text, so it holds on a Linux runner as
+// well as on Windows.
+const SHELL_SHA256 = '00cd14b66e9793646361120205e7a344d9950b35d712ce8c93f741d2475d5640';
 
 const errors = [];
 const fail = (msg) => errors.push(msg);
@@ -46,17 +69,6 @@ if (errors.length) {
 
 const text = Object.fromEntries(ALL.map((f) => [f, readFileSync(join(DOCS, f), 'utf8')]));
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-const posPkg = JSON.parse(readFileSync(join(ROOT, 'apps', 'pos', 'package.json'), 'utf8'));
-
-// The two manuals stamp two different products. The store manual carries the
-// library's version; the register manual carries the standalone till's, which
-// versions and ships on its own (see apps/pos/CLAUDE.md). A shop running the till
-// never installs the library, so stamping it with the library's number told
-// that reader nothing true.
-const VERSION_SOURCE = {
-  'user-manual.html': ['package.json', pkg.version],
-  'pos-manual.html': ['apps/pos/package.json', posPkg.version],
-};
 
 const FENCES = [
   ['DOC:HEAD', /<!-- DOC:HEAD:START[\s\S]*?<!-- DOC:HEAD:END -->/g],
@@ -74,29 +86,33 @@ function fenceOnce(file, name, re) {
   return hits[0];
 }
 
-// --------------------------------------------------------------- A. shell equality
-const stripped = {};
-for (const f of MANUALS) {
-  let s = text[f];
+// --------------------------------------------------------------- A. shell hash
+let shellLines = 0;
+{
+  let s = text[MANUAL];
+  let ok = true;
   for (const [name, re] of FENCES) {
     if (name === 'TOKENS') continue; // tokens are part of the shared shell
-    if (fenceOnce(f, name, re) === null) continue;
+    if (fenceOnce(MANUAL, name, re) === null) {
+      ok = false;
+      continue;
+    }
     s = s.replace(new RegExp(re.source), '');
   }
-  stripped[f] = s;
-}
-
-if (stripped[MANUALS[0]] && stripped[MANUALS[1]] && stripped[MANUALS[0]] !== stripped[MANUALS[1]]) {
-  const a = stripped[MANUALS[0]].split('\n');
-  const b = stripped[MANUALS[1]].split('\n');
-  let i = 0;
-  while (i < a.length && i < b.length && a[i] === b[i]) i++;
-  fail(
-    `The shared shell differs between the two manuals, first at stripped line ${i + 1}.\n` +
-      `      user-manual.html: ${JSON.stringify((a[i] || '(end of file)').slice(0, 90))}\n` +
-      `      pos-manual.html : ${JSON.stringify((b[i] || '(end of file)').slice(0, 90))}\n` +
-      `      Fix: change the shell in one file, copy it to the other. Do not "improve" only one copy.`,
-  );
+  if (ok) {
+    shellLines = s.split('\n').length;
+    const got = createHash('sha256').update(s.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
+    if (got !== SHELL_SHA256) {
+      fail(
+        `The shared shell has changed (${shellLines} lines).\n` +
+          `      expected ${SHELL_SHA256}\n` +
+          `      got      ${got}\n` +
+          `      If this was deliberate: copy the shell to docs/pos-manual.html in the\n` +
+          `      caspian-pos repo verbatim, then set SHELL_SHA256 to the "got" value in\n` +
+          `      BOTH repos' scripts/check-manuals.mjs. If it was not deliberate, revert it.`,
+      );
+    }
+  }
 }
 
 // --------------------------------------------------------------- B. token equality
@@ -122,90 +138,87 @@ function parseManual(file) {
   }
 }
 
-const idsByFile = {};
-
-for (const f of MANUALS) {
-  const M = parseManual(f);
-  if (!M) continue;
+const M = parseManual(MANUAL);
+if (M) {
   const en = M.en;
-  if (!en) {
-    fail(`docs/${f}: MANUAL.en is missing.`);
-    continue;
-  }
+  if (!en) fail(`docs/${MANUAL}: MANUAL.en is missing.`);
 
-  const symbols = new Set([...text[f].matchAll(/<symbol id="([^"]+)"/g)].map((m) => m[1]));
-  for (const [, id, attrs] of text[f].matchAll(/<symbol id="([^"]+)"([^>]*)>/g)) {
-    if (!/viewBox=/.test(attrs)) {
-      fail(`docs/${f}: <symbol id="${id}"> has no viewBox — it will render cropped, not scaled.`);
-    }
-  }
-
-  const partIds = new Set();
-  const sectionIds = new Set();
-  for (const p of en.parts || []) {
-    if (partIds.has(p.id)) fail(`docs/${f}: duplicate part id "${p.id}".`);
-    partIds.add(p.id);
-    if (!(p.sections || []).length) {
-      fail(`docs/${f}: part "${p.id}" has no sections — its intro card would link to #undefined.`);
-    }
-    if (p.icon && !symbols.has(p.icon)) {
-      fail(`docs/${f}: part "${p.id}" uses icon "${p.icon}" but no matching <symbol> is defined.`);
-    }
-    for (const s of p.sections || []) {
-      if (sectionIds.has(s.id)) fail(`docs/${f}: duplicate section id "${s.id}".`);
-      sectionIds.add(s.id);
-      if (!s.title || !s.summary) fail(`docs/${f}: section "${s.id}" is missing a title or summary.`);
-    }
-  }
-  idsByFile[f] = sectionIds;
-
-  // C4 — the footer stamp, in English and in all three overlays. Only the
-  // English one was ever checked, and the other three rot exactly the same way:
-  // an az reader was told "v10.0.0" long after en said otherwise.
-  const [source, sourceVersion] = VERSION_SOURCE[f];
-  const want = 'v' + sourceVersion;
-  for (const lang of ['en', ...LOCALES]) {
-    const intro = M[lang]?.intro;
-    if (!intro) continue;
-    if (intro.version !== want) {
-      fail(
-        `docs/${f}: MANUAL.${lang}.intro.version is ${JSON.stringify(intro.version)}, expected ` +
-          `"${want}" to match ${source}. Bump all four stamps alongside the version.`,
-      );
-    }
-  }
-
-  // C5 — overlay integrity. A stale overlay renders as authoritative; an absent
-  // one renders with the "not translated yet" notice. Only the second is safe.
-  const enParts = new Map((en.parts || []).map((p) => [p.id, p]));
-  for (const lang of LOCALES) {
-    const over = M[lang];
-    if (!over) continue;
-    for (const tp of over.parts || []) {
-      const bp = enParts.get(tp.id);
-      if (!bp) {
-        fail(`docs/${f}: ${lang} overlay has part "${tp.id}", which does not exist in English — its translations are dead.`);
-        continue;
+  if (en) {
+    const symbols = new Set([...text[MANUAL].matchAll(/<symbol id="([^"]+)"/g)].map((m) => m[1]));
+    for (const [, id, attrs] of text[MANUAL].matchAll(/<symbol id="([^"]+)"([^>]*)>/g)) {
+      if (!/viewBox=/.test(attrs)) {
+        fail(`docs/${MANUAL}: <symbol id="${id}"> has no viewBox — it will render cropped, not scaled.`);
       }
-      const bSections = new Map((bp.sections || []).map((s) => [s.id, s]));
-      for (const ts of tp.sections || []) {
-        const bs = bSections.get(ts.id);
-        if (!bs) {
-          fail(`docs/${f}: ${lang} section "${ts.id}" is not under English part "${tp.id}" — its translation is dead.`);
+    }
+
+    const partIds = new Set();
+    const sectionIds = new Set();
+    for (const p of en.parts || []) {
+      if (partIds.has(p.id)) fail(`docs/${MANUAL}: duplicate part id "${p.id}".`);
+      partIds.add(p.id);
+      if (!(p.sections || []).length) {
+        fail(`docs/${MANUAL}: part "${p.id}" has no sections — its intro card would link to #undefined.`);
+      }
+      if (p.icon && !symbols.has(p.icon)) {
+        fail(`docs/${MANUAL}: part "${p.id}" uses icon "${p.icon}" but no matching <symbol> is defined.`);
+      }
+      for (const s of p.sections || []) {
+        if (sectionIds.has(s.id)) fail(`docs/${MANUAL}: duplicate section id "${s.id}".`);
+        sectionIds.add(s.id);
+        if (!s.title || !s.summary) {
+          fail(`docs/${MANUAL}: section "${s.id}" is missing a title or summary.`);
+        }
+      }
+    }
+
+    // C4 — the footer stamp, in English and in all three overlays. Only the
+    // English one was ever checked, and the other three rot exactly the same
+    // way: an az reader was told "v10.0.0" long after en said otherwise.
+    const want = 'v' + pkg.version;
+    for (const lang of ['en', ...LOCALES]) {
+      const intro = M[lang]?.intro;
+      if (!intro) continue;
+      if (intro.version !== want) {
+        fail(
+          `docs/${MANUAL}: MANUAL.${lang}.intro.version is ${JSON.stringify(intro.version)}, expected ` +
+            `"${want}" to match package.json. Bump all four stamps alongside the version.`,
+        );
+      }
+    }
+
+    // C5 — overlay integrity. A stale overlay renders as authoritative; an
+    // absent one renders with the "not translated yet" notice. Only the second
+    // is safe.
+    const enParts = new Map((en.parts || []).map((p) => [p.id, p]));
+    for (const lang of LOCALES) {
+      const over = M[lang];
+      if (!over) continue;
+      for (const tp of over.parts || []) {
+        const bp = enParts.get(tp.id);
+        if (!bp) {
+          fail(`docs/${MANUAL}: ${lang} overlay has part "${tp.id}", which does not exist in English — its translations are dead.`);
           continue;
         }
-        for (const key of ['steps', 'fields', 'notes']) {
-          const bn = (bs[key] || []).length;
-          const tn = (ts[key] || []).length;
-          if (bn !== tn) {
-            fail(
-              `docs/${f}: ${lang} section "${ts.id}" has ${tn} ${key} but English has ${bn}. ` +
-                `Re-translate it, or delete the overlay section so the fallback notice shows. ` +
-                `A stale overlay hides the new English text with no warning.`,
-            );
+        const bSections = new Map((bp.sections || []).map((s) => [s.id, s]));
+        for (const ts of tp.sections || []) {
+          const bs = bSections.get(ts.id);
+          if (!bs) {
+            fail(`docs/${MANUAL}: ${lang} section "${ts.id}" is not under English part "${tp.id}" — its translation is dead.`);
+            continue;
           }
+          for (const key of ['steps', 'fields', 'notes']) {
+            const bn = (bs[key] || []).length;
+            const tn = (ts[key] || []).length;
+            if (bn !== tn) {
+              fail(
+                `docs/${MANUAL}: ${lang} section "${ts.id}" has ${tn} ${key} but English has ${bn}. ` +
+                  `Re-translate it, or delete the overlay section so the fallback notice shows. ` +
+                  `A stale overlay hides the new English text with no warning.`,
+              );
+            }
+          }
+          if (!ts.summary) fail(`docs/${MANUAL}: ${lang} section "${ts.id}" is present but has no summary.`);
         }
-        if (!ts.summary) fail(`docs/${f}: ${lang} section "${ts.id}" is present but has no summary.`);
       }
     }
   }
@@ -233,14 +246,6 @@ for (const f of MANUALS) {
   }
 }
 
-// --------------------------------------------------------------- C6. cross-file ids
-if (idsByFile[MANUALS[0]] && idsByFile[MANUALS[1]]) {
-  const clash = [...idsByFile[MANUALS[0]]].filter((id) => idsByFile[MANUALS[1]].has(id));
-  if (clash.length) {
-    fail(`Section ids appear in BOTH manuals: ${clash.join(', ')}. Deep-link anchors must be unique across the set.`);
-  }
-}
-
 // --------------------------------------------------------------- report
 if (errors.length) {
   console.error(`[check-manuals] ${errors.length} problem${errors.length === 1 ? '' : 's'}:\n`);
@@ -248,14 +253,9 @@ if (errors.length) {
   process.exit(1);
 }
 
-const counts = MANUALS.map((f) => {
-  const M = parseManual(f);
-  const n = (M.en.parts || []).reduce((a, p) => a + p.sections.length, 0);
-  return `${f} ${M.en.parts.length} parts / ${n} sections`;
-});
-const shellLines = stripped[MANUALS[0]].split('\n').length;
+const sections = (M.en.parts || []).reduce((a, p) => a + p.sections.length, 0);
 console.log(
-  `[check-manuals] OK — shell identical (${shellLines} lines), tokens identical across all 3 files, ` +
-    `${counts.join(', ')}, 4 locales at parity, user-manual v${pkg.version} matches package.json, ` +
-    `pos-manual v${posPkg.version} matches apps/pos/package.json.`,
+  `[check-manuals] OK — shell hash matches (${shellLines} lines), tokens identical across ` +
+    `${ALL.length} files, ${MANUAL} ${M.en.parts.length} parts / ${sections} sections, ` +
+    `4 locales at parity, v${pkg.version} matches package.json.`,
 );

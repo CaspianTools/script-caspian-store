@@ -258,7 +258,7 @@ function inferCheckoutCancelUrl(): string {
  * storefront to read.
  *
  * It used to point staff at `/pos`. It no longer does: the register moved out
- * of this package into `apps/pos`, and a link to a route this library does not
+ * of this package into `CaspianTools/caspian-pos`, and a link to a route this library does not
  * serve is worse than no link.
  */
 function StorefrontDisabled() {

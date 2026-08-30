@@ -46,7 +46,7 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 
 ```bash
 npm install github:CaspianTools/script-caspian-store#v14.1.0 firebase
-# v14.1.0 is the current release. For other versions, see:
+# v15.0.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -1152,26 +1152,18 @@ export async function GET(request: Request) {
 
 ## 13. The register
 
-**The register is a separate app and is not installed from this package.** It
-lives in [apps/pos/](apps/pos/) in the repository — a Vite PWA that a shop
-installs from Chrome or Edge and then runs on one computer, with its catalogue,
-staff, sales and receipt numbers in that machine's IndexedDB, contacting nothing.
-It carries its own version, its own changelog and its own release cycle, and a
-shop running it never installs anything from npm.
+**The register is a separate repository and is not installed from this
+package.** It lives at [CaspianTools/caspian-pos](https://github.com/CaspianTools/caspian-pos) — a Vite PWA that a
+shop installs from Chrome or Edge and then runs on one computer, with its
+catalogue, staff, sales and receipt numbers in that machine's IndexedDB,
+contacting nothing. It carries its own version, its own changelog and its own
+release cycle, and a shop running it never installs anything from npm.
 
-- **To work on it:** [apps/pos/CLAUDE.md](apps/pos/CLAUDE.md) is the source of
-  truth — what it is, how it is built, and the cycle a change to it follows.
-- **To run a shop with it:** [docs/pos-manual.html](docs/pos-manual.html) covers
-  the whole lifecycle for owners and cashiers — installing it, the hardware,
-  cashier access, a day at the counter, store management, the sales records, and
-  winding a till down again.
-
-```bash
-cd apps/pos
-npm install
-npm run dev        # http://localhost:5183
-npm run build      # dist/, with the entry document at /pos/
-```
+It moved out of this repository in v15.0.0. Until then it was a folder here
+(`apps/pos/`) that consumed this library through a `file:` link; it now
+consumes a pinned tag like any other consumer. Its README, its `CLAUDE.md` and
+its owner-and-cashier manual all travelled with it, so that repository is the
+only place to look for anything about the till.
 
 **The cloud-backed register is switched off.** Until v14.0.0 this package also
 served an in-person register at `/pos` on a store's own site, gated on a
@@ -1186,7 +1178,7 @@ change keeps working.
 Two things, because they are provider-level and a consumer can still meet them:
 
 - **`standalone` on the provider.** `<CaspianStoreProvider standalone>` boots the
-  tree with no Firebase project. It is what `apps/pos` mounts, and it is
+  tree with no Firebase project. It is what the register mounts, and it is
   **explicit, never inferred**: a missing or broken `firebaseConfig` throws
   loudly at mount rather than falling back. Falling back would mean a real shop
   whose credentials broke came up as an empty local register and started taking

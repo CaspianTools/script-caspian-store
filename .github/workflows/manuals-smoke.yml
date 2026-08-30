@@ -14,14 +14,12 @@ on:
       - 'docs/**'
       - 'scripts/check-manuals.mjs'
       - 'package.json'
-      - 'apps/pos/package.json'
       - '.github/workflows/manuals-smoke.yml'
   pull_request:
     paths:
       - 'docs/**'
       - 'scripts/check-manuals.mjs'
       - 'package.json'
-      - 'apps/pos/package.json'
       - '.github/workflows/manuals-smoke.yml'
   workflow_dispatch:
 
