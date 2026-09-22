@@ -107,6 +107,16 @@ export function AdminAboutPage({
           variant: 'destructive',
         });
       }
+    } catch (err) {
+      // `triggerSelfUpdate` re-throws AbortError (and anything unexpected);
+      // without this the button would stay in its loading state forever.
+      const aborted = err instanceof Error && err.name === 'AbortError';
+      if (!aborted) console.error('[caspian-store] Self-update failed:', err);
+      toast({
+        title: aborted ? 'Update cancelled' : 'Update failed',
+        description: !aborted && err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
     } finally {
       setUpdating(false);
     }

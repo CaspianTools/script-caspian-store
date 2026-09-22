@@ -5,7 +5,8 @@ import type { Order } from '../types';
 import { getOrdersByUser } from '../services/order-service';
 import { useAuth } from '../context/auth-context';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
-import { useT } from '../i18n/locale-context';
+import { useScriptSettings } from '../context/script-settings-context';
+import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Skeleton, Badge } from '../ui/misc';
 
 export interface OrderHistoryListProps {
@@ -18,7 +19,7 @@ export interface OrderHistoryListProps {
 
 export function OrderHistoryList({
   getOrderHref = (id) => `/orders/${id}`,
-  formatPrice = (n) => `$${n.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   max = 50,
   emptyMessage,
   className,
@@ -27,8 +28,13 @@ export function OrderHistoryList({
   const { db } = useCaspianFirebase();
   const Link = useCaspianLink();
   const t = useT();
+  const locale = useLocale();
+  const { settings } = useScriptSettings();
+  const currencyFormat = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((n: number) => currencyFormat.format(n));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -38,9 +44,13 @@ export function OrderHistoryList({
     let alive = true;
     (async () => {
       setLoading(true);
+      setFailed(false);
       try {
         const data = await getOrdersByUser(db, user.uid, max);
         if (alive) setOrders(data);
+      } catch (err) {
+        console.error('[caspian-store] Failed to load order history:', err);
+        if (alive) setFailed(true);
       } finally {
         if (alive) setLoading(false);
       }
@@ -62,6 +72,14 @@ export function OrderHistoryList({
 
   if (!user) {
     return <p className={className} style={{ color: '#888' }}>{t('orderHistory.signInHint')}</p>;
+  }
+
+  if (failed) {
+    return (
+      <p className={className} role="alert" style={{ color: '#b91c1c' }}>
+        {t('orderHistory.loadFailed')}
+      </p>
+    );
   }
 
   if (orders.length === 0) {
@@ -91,7 +109,7 @@ export function OrderHistoryList({
                     {t('orderHistory.orderPrefix')}{order.id.slice(0, 10)}
                   </p>
                   <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>
-                    {placed?.toLocaleDateString()} · {t('orderHistory.itemsCount', { count })}
+                    {placed?.toLocaleDateString(locale)} · {t('orderHistory.itemsCount', { count })}
                   </p>
                 </div>
                 <Badge variant="secondary">{order.status}</Badge>

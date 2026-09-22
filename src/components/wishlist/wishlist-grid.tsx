@@ -1,21 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '../../context/cart-context';
+import { useScriptSettings } from '../../context/script-settings-context';
 import { useWishlist } from '../../context/wishlist-context';
-import { useT } from '../../i18n/locale-context';
-import { useCaspianImage, useCaspianLink } from '../../provider/caspian-store-provider';
-import type { Product } from '../../types';
+import { useFormatCurrency, useT } from '../../i18n/locale-context';
+import {
+  useCaspianFirebase,
+  useCaspianImage,
+  useCaspianLink,
+  useCaspianNavigation,
+} from '../../provider/caspian-store-provider';
+import { getSiteSettings } from '../../services/site-settings-service';
+import type { InventorySettings, Product } from '../../types';
 import { Button } from '../../ui/button';
 import { useToast } from '../../ui/toast';
+import { isProductOutOfStock, isSizeOutOfStock } from '../../utils/inventory';
+import { EmptyState } from '../empty-state';
 
 export interface WishlistGridProps {
   /** Product-page URL builder. Default: `/product/{id}`. */
   getProductHref?: (productSlugOrId: string) => string;
   /** Browse-products destination for the empty-state CTA. Default: `/shop`. */
   browseHref?: string;
-  /** Currency formatter. Default: `$price.toFixed(2)`. */
+  /** Currency formatter. Default: the store currency via `Intl.NumberFormat`. */
   formatPrice?: (price: number) => string;
+  /** Override `SiteSettings.inventory`. When omitted, fetched on mount. */
+  inventory?: InventorySettings;
   className?: string;
 }
 
@@ -30,16 +41,41 @@ export interface WishlistGridProps {
 export function WishlistGrid({
   getProductHref = (id) => `/product/${id}`,
   browseHref = '/shop',
-  formatPrice = (p) => `$${p.toFixed(2)}`,
+  formatPrice: formatPriceProp,
+  inventory: inventoryOverride,
   className,
 }: WishlistGridProps) {
   const t = useT();
   const Link = useCaspianLink();
   const Image = useCaspianImage();
+  const nav = useCaspianNavigation();
+  const { db } = useCaspianFirebase();
   const { toast } = useToast();
+  const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const { wishlist, products, loading, remove } = useWishlist();
   const { addToCart } = useCart();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<InventorySettings | undefined>(inventoryOverride);
+
+  useEffect(() => {
+    if (inventoryOverride !== undefined) {
+      setInventory(inventoryOverride);
+      return undefined;
+    }
+    let alive = true;
+    getSiteSettings(db)
+      .then((s) => {
+        if (alive) setInventory(s?.inventory);
+      })
+      .catch(() => {
+        /* no stock gating without settings */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [db, inventoryOverride]);
 
   const items: Product[] = wishlist
     .map((id) => products[id])
@@ -59,8 +95,24 @@ export function WishlistGrid({
   };
 
   const handleAddToCart = (product: Product) => {
-    addToCart(product, 1);
-    toast({ title: t('product.addedToCart') });
+    const sizes = product.sizes ?? [];
+    const tracked = inventory?.trackStock === true;
+    if (tracked && isProductOutOfStock(product, inventory)) {
+      toast({ title: t('storefront.stock.outOfStock'), variant: 'destructive' });
+      return;
+    }
+    // A sized product needs a choice the grid cannot make; send them to the PDP.
+    if (sizes.length > 1) {
+      nav.push(getProductHref(product.slug ?? product.id));
+      return;
+    }
+    const selectedSize = sizes[0];
+    if (tracked && selectedSize && isSizeOutOfStock(product.stock, selectedSize, inventory)) {
+      toast({ title: t('storefront.stock.outOfStock'), variant: 'destructive' });
+      return;
+    }
+    addToCart(product, 1, selectedSize);
+    toast({ title: t('product.addedToCart'), description: product.name, variant: 'success' });
   };
 
   // Loading: only show when we have IDs but no hydrated products yet.
@@ -74,16 +126,17 @@ export function WishlistGrid({
 
   if (wishlist.length === 0) {
     return (
-      <div className={className} style={{ padding: '24px 0', textAlign: 'center' }}>
-        <p style={{ color: '#666', margin: 0 }}>{t('wishlist.panel.empty')}</p>
-        <div style={{ marginTop: 12 }}>
+      <EmptyState
+        className={className}
+        title={t('wishlist.panel.empty')}
+        action={
           <Link href={browseHref} style={{ textDecoration: 'none' }}>
             <Button variant="outline" size="sm">
               {t('wishlist.panel.emptyCta')}
             </Button>
           </Link>
-        </div>
-      </div>
+        }
+      />
     );
   }
 

@@ -5,8 +5,9 @@ import type { InventorySettings, Product, ProductCategoryDoc, TaxConfig } from '
 import { getProducts, type ProductFilters } from '../services/product-service';
 import { getSiteSettings } from '../services/site-settings-service';
 import { listActiveCategories } from '../services/category-service';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { ProductGrid } from './product-grid';
+import { EmptyState } from './empty-state';
 import {
   ShopFilterSidebar,
   EMPTY_SHOP_FILTERS,
@@ -73,6 +74,7 @@ export function ProductListPage({
   hideFilters,
 }: ProductListPageProps) {
   const { db } = useCaspianFirebase();
+  const nav = useCaspianNavigation();
   const t = useT();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +123,20 @@ export function ProductListPage({
   }, [db]);
 
   const { byType: attrTermsByType } = useTaxonomyTermsByType(enabledAttrIds);
+
+  // `/shop?category=<slug|id>` (featured-category cards, external links)
+  // pre-selects the category filter. Resolved against the loaded category
+  // list so a slug in the URL maps to the id the filter is keyed on.
+  const urlCategory =
+    nav.searchParams?.get('category') ??
+    (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('category')
+      : null);
+  useEffect(() => {
+    if (!urlCategory) return;
+    const match = categories.find((c) => c.id === urlCategory || c.slug === urlCategory);
+    setFilterState((s) => ({ ...s, category: match?.id ?? urlCategory }));
+  }, [urlCategory, categories]);
 
   useEffect(() => {
     if (inventoryOverride !== undefined && taxConfigOverride !== undefined) {
@@ -227,17 +243,29 @@ export function ProductListPage({
     });
   }, [products, filterState]);
 
-  const grid = (
-    <ProductGrid
-      products={visibleProducts}
-      loading={loading}
-      getProductHref={getProductHref}
-      formatPrice={formatPrice}
-      emptyMessage={emptyMessage}
-      inventory={inventory}
-      taxConfig={taxConfig}
-    />
-  );
+  const activeFilterCount = countActiveShopFilters(filterState);
+  const grid =
+    !loading && visibleProducts.length === 0 ? (
+      <EmptyState
+        title={emptyMessage ?? t('storefront.empty')}
+        action={
+          activeFilterCount > 0 ? (
+            <Button variant="outline" size="sm" onClick={() => setFilterState(EMPTY_SHOP_FILTERS)}>
+              {t('shop.filters.reset')}
+            </Button>
+          ) : undefined
+        }
+      />
+    ) : (
+      <ProductGrid
+        products={visibleProducts}
+        loading={loading}
+        getProductHref={getProductHref}
+        formatPrice={formatPrice}
+        inventory={inventory}
+        taxConfig={taxConfig}
+      />
+    );
 
   return (
     <div className={className}>
@@ -252,7 +280,7 @@ export function ProductListPage({
       ) : (
         <>
           <MobileFilterToolbar
-            activeCount={countActiveShopFilters(filterState)}
+            activeCount={activeFilterCount}
             resultCount={loading ? undefined : visibleProducts.length}
             onOpen={() => setMobileFiltersOpen(true)}
           />

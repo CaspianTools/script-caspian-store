@@ -2,6 +2,7 @@
 
 import { useCaspianLink } from '../../provider/caspian-store-provider';
 import { EditableImage, EditableText } from '../editor/editable';
+import { safeLinkHref } from '../safe-url';
 import type { SectionComponentProps, SectionType } from '../types';
 
 function EditorialSplitSection({ props, editing }: SectionComponentProps) {
@@ -19,7 +20,7 @@ function EditorialSplitSection({ props, editing }: SectionComponentProps) {
             <EditableText fieldKey="linkLabel" value={s('linkLabel')} />
           </span>
         ) : (
-          <Link href={s('linkHref') || '/journal'} className="link">
+          <Link href={safeLinkHref(s('linkHref')) || '/journal'} className="link">
             {s('linkLabel')}
           </Link>
         )}

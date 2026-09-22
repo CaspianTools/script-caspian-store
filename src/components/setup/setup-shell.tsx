@@ -29,7 +29,7 @@ export function SetupShell({
 }: SetupShellProps) {
   return (
     <div style={page}>
-      <div style={card}>
+      <div className="caspian-setup-shell" style={card}>
         <SetupStepper
           steps={steps}
           currentIndex={currentIndex}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ProductImage } from '../types';
 import { useCaspianImage } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
 
 export interface ProductGalleryProps {
@@ -30,8 +31,16 @@ export function ProductGallery({
   aspectRatio = '4 / 5',
 }: ProductGalleryProps) {
   const Image = useCaspianImage();
+  const t = useT();
   const [active, setActive] = useState(0);
-  const main = images[active];
+
+  // A new image set (product change) must not keep pointing at whatever
+  // index the previous product was on.
+  useEffect(() => {
+    setActive(0);
+  }, [images]);
+
+  const main = images[active] ?? images[0];
 
   if (!main) {
     return (
@@ -47,7 +56,7 @@ export function ProductGallery({
           color: '#999',
         }}
       >
-        No images
+        {t('product.gallery.noImages')}
       </div>
     );
   }
@@ -56,7 +65,7 @@ export function ProductGallery({
 
   return (
     <div
-      className={cn('caspian-product-gallery', className)}
+      className={cn('caspian-product-gallery', 'caspian-gallery', className)}
       style={{
         display: 'grid',
         gridTemplateColumns: hasRail ? '80px minmax(0, 1fr)' : 'minmax(0, 1fr)',
@@ -66,7 +75,7 @@ export function ProductGallery({
     >
       {hasRail && (
         <div
-          className="caspian-product-gallery-rail"
+          className="caspian-product-gallery-rail caspian-gallery-rail"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -83,8 +92,9 @@ export function ProductGallery({
                 key={img.id}
                 type="button"
                 onClick={() => setActive(i)}
-                aria-label={`View image ${i + 1}`}
+                aria-label={t('product.gallery.viewImage', { index: i + 1 })}
                 aria-pressed={isActive}
+                className="caspian-gallery-thumb"
                 style={{
                   position: 'relative',
                   width: 80,

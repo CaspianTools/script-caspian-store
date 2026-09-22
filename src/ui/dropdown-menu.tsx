@@ -65,9 +65,17 @@ export function DropdownMenu({
   const [panelPos, setPanelPos] = useState<PanelPos | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const menuId = useId();
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => {
+    // The panel is portaled to <body>, so without this the browser drops
+    // focus to <body> when the focused item unmounts.
+    if (panelRef.current?.contains(document.activeElement)) {
+      returnFocusRef.current?.focus();
+    }
+    setOpen(false);
+  }, []);
   const toggle = useCallback(() => setOpen((v) => !v), []);
 
   useEffect(() => {
@@ -115,6 +123,7 @@ export function DropdownMenu({
 
   useEffect(() => {
     if (!open) return;
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
     const id = requestAnimationFrame(() => {
       const first = panelRef.current?.querySelector<HTMLElement>(
         '[role="menuitem"]:not([aria-disabled="true"])',
@@ -189,6 +198,7 @@ export function DropdownMenu({
             ref={panelRef}
             id={menuId}
             role="menu"
+            className="caspian-dropdown-panel"
             tabIndex={-1}
             onKeyDown={handlePanelKeyDown}
             style={{

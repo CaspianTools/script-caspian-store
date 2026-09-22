@@ -185,6 +185,8 @@ export interface ShippingInfo {
   country: string;
   shippingMethod: string;
   orderNotes?: string;
+  /** Contact number typed at checkout. Stored from v15.1; absent on older orders. */
+  phone?: string;
 }
 
 export interface Order {
@@ -1231,9 +1233,27 @@ export interface HeroTokens {
   title: string;
   subtitle: string;
   cta: string;
-  /** Optional call-to-action destination (default: /products). */
+  /** Optional call-to-action destination (default: /shop). */
   ctaHref?: string;
   imageUrl?: string;
+}
+
+/**
+ * Merchant-authored copy for the decorative bands some storefront templates
+ * render (announcement bar, pre-footer tagline, editorial pull-quote). Every
+ * field is optional; a band with nothing to say is not rendered. These exist
+ * because the template chrome used to ship hard-coded claims ("free shipping
+ * over $50", "12-month warranty") that no store could edit or remove.
+ */
+export interface StorefrontCopy {
+  /** Short line for the top announcement bar (electronics-tech chrome). */
+  announcement?: string;
+  /** One-line tagline for the pre-footer / spec strip (electronics-tech). */
+  tagline?: string;
+  /** Pull-quote for the editorial homepage + sign-off block (home-goods). */
+  quote?: string;
+  /** Attribution under the pull-quote. Falls back to the brand name. */
+  quoteAttribution?: string;
 }
 
 /** Rows of a single size table rendered by `<SizeGuidePage>`. */
@@ -1302,6 +1322,8 @@ export interface ScriptSettings {
   fonts?: FontTokens;
   /** Optional — added in v1.1 for later phases. Consumers can ignore. */
   hero?: HeroTokens;
+  /** Optional merchant copy for template chrome bands. See {@link StorefrontCopy}. */
+  copy?: StorefrontCopy;
   /** Optional — added in v1.4. Drives the `<SizeGuidePage />`. */
   sizeGuide?: SizeGuideConfig;
   features: FeatureFlags;
@@ -1342,7 +1364,7 @@ export const DEFAULT_SCRIPT_SETTINGS: Omit<ScriptSettings, 'updatedAt'> = {
     title: 'Shop our latest collection',
     subtitle: 'Curated essentials delivered to your door.',
     cta: 'Shop now',
-    ctaHref: '/products',
+    ctaHref: '/shop',
   },
   features: {
     reviews: true,

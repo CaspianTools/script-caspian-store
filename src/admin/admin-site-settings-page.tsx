@@ -121,6 +121,8 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
   const [draft, setDraft] = useState<SiteSettings | null>(null);
+  const [loaded, setLoaded] = useState<SiteSettings | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
 
@@ -143,16 +145,43 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   );
 
   useEffect(() => {
+    let alive = true;
+    setLoadError(false);
     (async () => {
       try {
         const existing = await getSiteSettings(db);
-        setDraft(existing ?? emptySettings);
+        if (!alive) return;
+        // No doc yet on a fresh store is fine — the save is a merge write.
+        // A failed read is not: saving an empty draft over it would wipe
+        // settings we simply couldn't see.
+        const initial = existing ?? emptySettings;
+        setDraft(initial);
+        setLoaded(initial);
       } catch (error) {
         console.error('[caspian-store] Failed to load site settings:', error);
-        setDraft(emptySettings);
+        if (alive) setLoadError(true);
       }
     })();
+    return () => {
+      alive = false;
+    };
   }, [db]);
+
+  const dirty = useMemo(
+    () => draft !== null && loaded !== null && JSON.stringify(draft) !== JSON.stringify(loaded),
+    [draft, loaded],
+  );
+
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Legacy browsers only show the prompt when returnValue is set.
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
 
   const patch = (p: Partial<SiteSettings>) =>
     setDraft((d) => (d ? { ...d, ...p } : d));
@@ -166,6 +195,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
     setSaving(true);
     try {
       await saveSiteSettings(db, draft);
+      setLoaded(draft);
       toast({ title: 'Site settings saved' });
     } catch (error) {
       console.error('[caspian-store] Save failed:', error);
@@ -199,6 +229,34 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
       d ? { ...d, socialLinks: d.socialLinks.filter((_, i) => i !== idx) } : d,
     );
   };
+
+  if (loadError) {
+    return (
+      <div className={className}>
+        <header style={{ marginBottom: 16 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Site settings</h1>
+        </header>
+        <p
+          role="alert"
+          style={{
+            margin: 0,
+            padding: 12,
+            borderRadius: 'var(--caspian-radius, 8px)',
+            background: '#fee2e2',
+            color: '#991b1b',
+            fontSize: 14,
+            maxWidth: 720,
+          }}
+        >
+          Could not load the current site settings. Reload the page to try again — saving is
+          disabled so nothing gets overwritten with blank values.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', maxWidth: 720, marginTop: 16 }}>
+          <Button disabled>Save settings</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!draft) {
     return (
@@ -350,7 +408,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
             Used by the storefront for price formatting and checkout defaults. Safe to change
             later — existing orders retain the currency they were placed in.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-3" style={{ display: 'grid', gap: 12 }}>
             <div>
               <Label>Currency</Label>
               <SearchableSelect
@@ -408,7 +466,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
               <span>Override automatic formatting</span>
             </label>
             {draft.currencyDisplay && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+              <div className="caspian-admin-grid-4" style={{ display: 'grid', gap: 12 }}>
                 <div>
                   <Label>Symbol position</Label>
                   <Select
@@ -906,7 +964,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button onClick={handleSave} loading={saving}>
+          <Button onClick={handleSave} loading={saving} disabled={!dirty}>
             Save settings
           </Button>
         </div>

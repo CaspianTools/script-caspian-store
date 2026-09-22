@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { deleteField } from 'firebase/firestore';
 import type { PaymentPluginInstall } from '../types';
 import {
   createPaymentPluginInstall,
   deletePaymentPluginInstall,
   listPaymentPluginInstalls,
   updatePaymentPluginInstall,
+  type PaymentPluginInstallUpdateInput,
   type PaymentPluginInstallWriteInput,
 } from '../services/payment-plugin-service';
 import { PAYMENT_PLUGIN_CATALOG, getPaymentPlugin } from '../payments/catalog';
@@ -15,6 +17,7 @@ import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-st
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input, Label, Textarea } from '../ui/input';
 import { Select } from '../ui/select';
 import { Badge, Skeleton } from '../ui/misc';
@@ -120,6 +123,12 @@ export function AdminPaymentPluginsPage({
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [saving, setSaving] = useState(false);
   const [autoConfigureHandled, setAutoConfigureHandled] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<PaymentPluginInstall | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const formId = useId();
+  const nameId = `${formId}-name`;
+  const descriptionId = `${formId}-description`;
+  const orderId = `${formId}-order`;
 
   const load = async () => {
     try {
@@ -210,7 +219,11 @@ export function AdminPaymentPluginsPage({
     setSaving(true);
     try {
       if (editingId) {
-        await updatePaymentPluginInstall(db, editingId, payload);
+        const update: PaymentPluginInstallUpdateInput = {
+          ...payload,
+          description: payload.description ?? deleteField(),
+        };
+        await updatePaymentPluginInstall(db, editingId, update);
         toast({ title: t('admin.paymentPlugins.toasts.updated') });
         setConfigOpen(false);
         await load();
@@ -231,19 +244,37 @@ export function AdminPaymentPluginsPage({
     }
   };
 
-  const handleDelete = async (install: PaymentPluginInstall) => {
-    if (!confirm(`${t('admin.paymentPlugins.confirmRemove')}\n\n"${install.name}"`)) return;
+  const handleDelete = async () => {
+    const install = removeTarget;
+    if (!install) return;
+    setRemoving(true);
     try {
       await deletePaymentPluginInstall(db, install.id);
       setInstalls((prev) => (prev ? prev.filter((x) => x.id !== install.id) : prev));
       toast({ title: t('admin.paymentPlugins.toasts.removed') });
+      setRemoveTarget(null);
     } catch (error) {
       console.error('[caspian-store] Payment plugin remove failed:', error);
       toast({ title: t('admin.paymentPlugins.errors.removeFailed'), variant: 'destructive' });
+    } finally {
+      setRemoving(false);
     }
   };
 
   const toggleEnabled = async (install: PaymentPluginInstall) => {
+    if (!install.enabled) {
+      const plugin = getPaymentPlugin(install.pluginId);
+      try {
+        plugin?.validateConfig(install.config);
+      } catch (error) {
+        toast({
+          title: t('admin.paymentPlugins.errors.invalidConfig'),
+          description: error instanceof Error ? error.message : undefined,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
     try {
       await updatePaymentPluginInstall(db, install.id, { enabled: !install.enabled });
       setInstalls((prev) =>
@@ -354,7 +385,7 @@ export function AdminPaymentPluginsPage({
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(install)}
+                        onClick={() => setRemoveTarget(install)}
                       >
                         {t('admin.paymentPlugins.action.remove')}
                       </Button>
@@ -428,16 +459,24 @@ export function AdminPaymentPluginsPage({
               >
                 {t('common.cancel')}
               </Button>
-              <Button onClick={handleSave} loading={saving}>
+              <Button type="submit" form={formId} loading={saving}>
                 {t('common.save')}
               </Button>
             </>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <form
+            id={formId}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSave();
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+          >
             <div>
-              <Label>{t('admin.paymentPlugins.field.name')}</Label>
+              <Label htmlFor={nameId}>{t('admin.paymentPlugins.field.name')}</Label>
               <Input
+                id={nameId}
                 value={draft.name}
                 onChange={(e) => setDraft((d) => (d ? { ...d, name: e.target.value } : d))}
                 placeholder={activePlugin?.name}
@@ -447,8 +486,9 @@ export function AdminPaymentPluginsPage({
               </p>
             </div>
             <div>
-              <Label>Checkout description (optional)</Label>
+              <Label htmlFor={descriptionId}>Checkout description (optional)</Label>
               <Textarea
+                id={descriptionId}
                 rows={2}
                 value={draft.description}
                 placeholder={activePlugin?.description ?? 'Shown to shoppers at checkout.'}
@@ -460,8 +500,9 @@ export function AdminPaymentPluginsPage({
               </FieldDescription>
             </div>
             <div>
-              <Label>{t('admin.paymentPlugins.field.order')}</Label>
+              <Label htmlFor={orderId}>{t('admin.paymentPlugins.field.order')}</Label>
               <Input
+                id={orderId}
                 type="number"
                 value={draft.order}
                 onChange={(e) =>
@@ -471,9 +512,22 @@ export function AdminPaymentPluginsPage({
             </div>
 
             <ConfigFields draft={draft} setDraft={setDraft} />
-          </div>
+          </form>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setRemoveTarget(null);
+        }}
+        title={t('admin.confirm.removeTitle')}
+        description={`${t('admin.paymentPlugins.confirmRemove')} "${removeTarget?.name ?? ''}"`}
+        confirmLabel={t('admin.confirm.remove')}
+        destructive
+        loading={removing}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
@@ -486,6 +540,7 @@ function ConfigFields({
   setDraft: React.Dispatch<React.SetStateAction<DraftState | null>>;
 }) {
   const t = useT();
+  const baseId = useId();
   const setConfigValue = (key: string, value: string) =>
     setDraft((d) => (d ? { ...d, config: { ...d.config, [key]: value } } : d));
 
@@ -495,8 +550,9 @@ function ConfigFields({
       return (
         <>
           <div>
-            <Label>{t('admin.paymentPlugins.field.stripe.mode')}</Label>
+            <Label htmlFor={`${baseId}-mode`}>{t('admin.paymentPlugins.field.stripe.mode')}</Label>
             <Select
+              id={`${baseId}-mode`}
               value={mode}
               onChange={(e) => setConfigValue('mode', e.target.value)}
               options={[
@@ -509,7 +565,7 @@ function ConfigFields({
             </p>
           </div>
           <div>
-            <Label>
+            <Label htmlFor={`${baseId}-publishableKeyTest`}>
               {t('admin.paymentPlugins.field.stripe.publishableKeyTest')}
               {mode === 'test' && (
                 <span style={{ color: '#b91c1c', marginLeft: 4 }} aria-hidden>
@@ -518,13 +574,14 @@ function ConfigFields({
               )}
             </Label>
             <Input
+              id={`${baseId}-publishableKeyTest`}
               value={draft.config.publishableKeyTest ?? ''}
               onChange={(e) => setConfigValue('publishableKeyTest', e.target.value)}
               placeholder="pk_test_..."
             />
           </div>
           <div>
-            <Label>
+            <Label htmlFor={`${baseId}-publishableKeyLive`}>
               {t('admin.paymentPlugins.field.stripe.publishableKeyLive')}
               {mode === 'live' && (
                 <span style={{ color: '#b91c1c', marginLeft: 4 }} aria-hidden>
@@ -533,6 +590,7 @@ function ConfigFields({
               )}
             </Label>
             <Input
+              id={`${baseId}-publishableKeyLive`}
               value={draft.config.publishableKeyLive ?? ''}
               onChange={(e) => setConfigValue('publishableKeyLive', e.target.value)}
               placeholder="pk_live_..."
@@ -548,8 +606,9 @@ function ConfigFields({
       return (
         <>
           <div>
-            <Label>Instructions shown to shoppers</Label>
+            <Label htmlFor={`${baseId}-instructions`}>Instructions shown to shoppers</Label>
             <Textarea
+              id={`${baseId}-instructions`}
               rows={3}
               value={draft.config.instructions ?? ''}
               onChange={(e) => setConfigValue('instructions', e.target.value)}
@@ -558,16 +617,18 @@ function ConfigFields({
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <Label>Account name *</Label>
+              <Label htmlFor={`${baseId}-accountName`}>Account name *</Label>
               <Input
+                id={`${baseId}-accountName`}
                 value={draft.config.accountName ?? ''}
                 onChange={(e) => setConfigValue('accountName', e.target.value)}
                 placeholder="Acme Trading Co."
               />
             </div>
             <div>
-              <Label>Account number</Label>
+              <Label htmlFor={`${baseId}-accountNumber`}>Account number</Label>
               <Input
+                id={`${baseId}-accountNumber`}
                 value={draft.config.accountNumber ?? ''}
                 onChange={(e) => setConfigValue('accountNumber', e.target.value)}
                 placeholder="12345678"
@@ -576,24 +637,27 @@ function ConfigFields({
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <div>
-              <Label>Sort code</Label>
+              <Label htmlFor={`${baseId}-sortCode`}>Sort code</Label>
               <Input
+                id={`${baseId}-sortCode`}
                 value={draft.config.sortCode ?? ''}
                 onChange={(e) => setConfigValue('sortCode', e.target.value)}
                 placeholder="12-34-56"
               />
             </div>
             <div>
-              <Label>IBAN</Label>
+              <Label htmlFor={`${baseId}-iban`}>IBAN</Label>
               <Input
+                id={`${baseId}-iban`}
                 value={draft.config.iban ?? ''}
                 onChange={(e) => setConfigValue('iban', e.target.value)}
                 placeholder="GB82 WEST …"
               />
             </div>
             <div>
-              <Label>SWIFT/BIC</Label>
+              <Label htmlFor={`${baseId}-swift`}>SWIFT/BIC</Label>
               <Input
+                id={`${baseId}-swift`}
                 value={draft.config.swift ?? ''}
                 onChange={(e) => setConfigValue('swift', e.target.value)}
                 placeholder="ABCDEF2L"
@@ -609,8 +673,9 @@ function ConfigFields({
       return (
         <>
           <div>
-            <Label>Instructions shown to shoppers</Label>
+            <Label htmlFor={`${baseId}-instructions`}>Instructions shown to shoppers</Label>
             <Textarea
+              id={`${baseId}-instructions`}
               rows={3}
               value={draft.config.instructions ?? ''}
               onChange={(e) => setConfigValue('instructions', e.target.value)}
@@ -618,16 +683,18 @@ function ConfigFields({
             />
           </div>
           <div>
-            <Label>Make cheques payable to</Label>
+            <Label htmlFor={`${baseId}-payableTo`}>Make cheques payable to</Label>
             <Input
+              id={`${baseId}-payableTo`}
               value={draft.config.payableTo ?? ''}
               onChange={(e) => setConfigValue('payableTo', e.target.value)}
               placeholder="Acme Trading Co."
             />
           </div>
           <div>
-            <Label>Postal address</Label>
+            <Label htmlFor={`${baseId}-postalAddress`}>Postal address</Label>
             <Textarea
+              id={`${baseId}-postalAddress`}
               rows={3}
               value={draft.config.postalAddress ?? ''}
               onChange={(e) => setConfigValue('postalAddress', e.target.value)}
@@ -640,8 +707,9 @@ function ConfigFields({
       return (
         <>
           <div>
-            <Label>Instructions shown to shoppers</Label>
+            <Label htmlFor={`${baseId}-instructions`}>Instructions shown to shoppers</Label>
             <Textarea
+              id={`${baseId}-instructions`}
               rows={3}
               value={draft.config.instructions ?? ''}
               onChange={(e) => setConfigValue('instructions', e.target.value)}
@@ -649,8 +717,9 @@ function ConfigFields({
             />
           </div>
           <div>
-            <Label>Eligible shipping methods (comma-separated)</Label>
+            <Label htmlFor={`${baseId}-enabledForShippingMethods`}>Eligible shipping methods (comma-separated)</Label>
             <Input
+              id={`${baseId}-enabledForShippingMethods`}
               value={draft.config.enabledForShippingMethods ?? ''}
               onChange={(e) => setConfigValue('enabledForShippingMethods', e.target.value)}
               placeholder="Local delivery, Courier"

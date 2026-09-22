@@ -11,6 +11,7 @@ import {
 import { useT } from '../../i18n/locale-context';
 import { Badge, Skeleton } from '../../ui/misc';
 import { cn } from '../../utils/cn';
+import { EmptyState } from '../empty-state';
 
 export interface JournalListPageProps {
   title?: string;
@@ -79,9 +80,7 @@ export function JournalListPage({
             ))}
           </div>
         ) : articles.length === 0 ? (
-          <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>
-            {emptyMessage ?? t('journal.empty')}
-          </p>
+          <EmptyState title={emptyMessage ?? t('journal.empty')} />
         ) : (
           <div style={gridStyle}>
             {articles.map((article) => (

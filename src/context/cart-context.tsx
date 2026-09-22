@@ -27,8 +27,13 @@ interface CartContextValue {
   count: number;
   subtotal: number;
   addToCart: (product: Product, quantity?: number, selectedSize?: string, selectedColor?: string) => void;
-  updateQuantity: (productId: string, quantity: number, selectedSize?: string) => void;
-  removeFromCart: (productId: string, selectedSize?: string) => void;
+  /**
+   * `selectedColor` narrows the match to one colour line. Omit it (undefined)
+   * to keep the pre-v15.1 behaviour of touching every colour of that size;
+   * pass `''` to target the line that has no colour.
+   */
+  updateQuantity: (productId: string, quantity: number, selectedSize?: string, selectedColor?: string) => void;
+  removeFromCart: (productId: string, selectedSize?: string, selectedColor?: string) => void;
   clearCart: () => void;
 }
 
@@ -63,6 +68,17 @@ function clearLocal() {
   }
 }
 
+// Lines are distinct per product × size × colour (see `sameLine`), so a
+// quantity change or removal has to match on colour too — otherwise "M / Red"
+// and "M / Blue" move together. `selectedColor === undefined` keeps the older
+// size-only match for callers that predate the colour argument.
+function matchesLine(r: CartItemRef, productId: string, selectedSize?: string, selectedColor?: string) {
+  if (r.productId !== productId) return false;
+  if ((r.selectedSize ?? '') !== (selectedSize ?? '')) return false;
+  if (selectedColor === undefined) return true;
+  return (r.selectedColor ?? '') === selectedColor;
+}
+
 function sameLine(a: CartItemRef, b: CartItemRef) {
   return (
     a.productId === b.productId &&
@@ -82,6 +98,10 @@ export function CartProvider({
   const { user } = useAuth();
   const [refs, setRefs] = useState<CartItemRef[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
+  // Ids already requested from Firestore. A product that is deleted or
+  // deactivated is never returned, so without this the effect below would
+  // re-query it on every render for as long as the page stays open.
+  const requestedIds = useRef(new Set<string>());
   const [loading, setLoading] = useState(true);
   // Track the prior auth identity + in-memory cart snapshot so we can carry an
   // anon shopper's lines across the anon → real sign-in transition. We can't
@@ -151,8 +171,11 @@ export function CartProvider({
 
   // Load product details for refs whenever refs change
   useEffect(() => {
-    const ids = Array.from(new Set(refs.map((r) => r.productId).filter((id) => !products[id])));
+    const ids = Array.from(
+      new Set(refs.map((r) => r.productId).filter((id) => !products[id] && !requestedIds.current.has(id))),
+    );
     if (ids.length === 0 || !db) return;
+    for (const id of ids) requestedIds.current.add(id);
     let alive = true;
     (async () => {
       try {
@@ -164,6 +187,8 @@ export function CartProvider({
           return next;
         });
       } catch (error) {
+        // Let a transient failure retry on the next refs change.
+        for (const id of ids) requestedIds.current.delete(id);
         reportServiceError(db, 'cart-context.hydrate', error);
       }
     })();
@@ -209,16 +234,13 @@ export function CartProvider({
   );
 
   const updateQuantity = useCallback(
-    (productId: string, quantity: number, selectedSize?: string) => {
+    (productId: string, quantity: number, selectedSize?: string, selectedColor?: string) => {
       setRefs((prev) => {
+        const hit = (r: CartItemRef) => matchesLine(r, productId, selectedSize, selectedColor);
         const next =
           quantity <= 0
-            ? prev.filter((r) => !(r.productId === productId && (r.selectedSize ?? '') === (selectedSize ?? '')))
-            : prev.map((r) =>
-                r.productId === productId && (r.selectedSize ?? '') === (selectedSize ?? '')
-                  ? { ...r, quantity }
-                  : r,
-              );
+            ? prev.filter((r) => !hit(r))
+            : prev.map((r) => (hit(r) ? { ...r, quantity } : r));
         void persist(next);
         return next;
       });
@@ -227,11 +249,9 @@ export function CartProvider({
   );
 
   const removeFromCart = useCallback(
-    (productId: string, selectedSize?: string) => {
+    (productId: string, selectedSize?: string, selectedColor?: string) => {
       setRefs((prev) => {
-        const next = prev.filter(
-          (r) => !(r.productId === productId && (r.selectedSize ?? '') === (selectedSize ?? '')),
-        );
+        const next = prev.filter((r) => !matchesLine(r, productId, selectedSize, selectedColor));
         void persist(next);
         return next;
       });
@@ -265,7 +285,10 @@ export function CartProvider({
 
   return (
     <CartContext.Provider
-      value={{ items, loading, count, subtotal, addToCart, updateQuantity, removeFromCart, clearCart }}
+      value={useMemo(
+        () => ({ items, loading, count, subtotal, addToCart, updateQuantity, removeFromCart, clearCart }),
+        [items, loading, count, subtotal, addToCart, updateQuantity, removeFromCart, clearCart],
+      )}
     >
       {children}
     </CartContext.Provider>

@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import type { ProductCategoryDoc } from '../types';
 import { deleteCategory, listAllCategories } from '../services/category-service';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Badge, Skeleton } from '../ui/misc';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { useToast } from '../ui/toast';
@@ -13,13 +15,18 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
   const { db } = useCaspianFirebase();
   const nav = useCaspianNavigation();
   const { toast } = useToast();
+  const t = useT();
   const [cats, setCats] = useState<ProductCategoryDoc[] | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProductCategoryDoc | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     try {
       setCats(await listAllCategories(db));
     } catch (error) {
       console.error('[caspian-store] Failed to list categories:', error);
+      setCats([]);
+      toast({ title: t('admin.loadFailed'), variant: 'destructive' });
     }
   };
 
@@ -28,17 +35,33 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDelete = async (c: ProductCategoryDoc) => {
-    if (!confirm(`Delete category "${c.name}"?`)) return;
+  const handleDelete = async () => {
+    const c = deleteTarget;
+    if (!c) return;
+    setDeleting(true);
     try {
       await deleteCategory(db, c.id);
-      setCats((prev) => (prev ? prev.filter((x) => x.id !== c.id) : prev));
+      // Children were promoted to top level server-side; mirror that locally.
+      setCats((prev) =>
+        prev
+          ? prev
+              .filter((x) => x.id !== c.id)
+              .map((x) => (x.parentId === c.id ? { ...x, parentId: null } : x))
+          : prev,
+      );
       toast({ title: 'Category deleted' });
+      setDeleteTarget(null);
     } catch (error) {
       console.error('[caspian-store] Delete failed:', error);
       toast({ title: 'Delete failed', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
+
+  const deleteChildCount = deleteTarget
+    ? (cats ?? []).filter((x) => x.parentId === deleteTarget.id).length
+    : 0;
 
   const nameById = new Map<string, string>();
   (cats ?? []).forEach((c) => nameById.set(c.id, c.name));
@@ -117,7 +140,7 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
                     >
                       Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(c)}>
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteTarget(c)}>
                       Delete
                     </Button>
                   </div>
@@ -127,6 +150,26 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
           </TBody>
         </Table>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null);
+        }}
+        title={t('admin.confirm.deleteTitle')}
+        description={
+          deleteChildCount > 0
+            ? t('admin.categories.confirmDeleteWithChildren', {
+                name: deleteTarget?.name ?? '',
+                count: deleteChildCount,
+              })
+            : t('admin.categories.confirmDelete', { name: deleteTarget?.name ?? '' })
+        }
+        confirmLabel={t('admin.confirm.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

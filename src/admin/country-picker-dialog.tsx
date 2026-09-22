@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
 import { useT } from '../i18n/locale-context';
@@ -54,14 +54,19 @@ export function CountryPickerDialog({
   const t = useT();
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Set<string>>(new Set(selected));
+  // Callers pass `selected` as a fresh array literal on every render, so it
+  // cannot be an effect dependency: any parent re-render (e.g. a toast
+  // dismissing) would wipe the admin's in-progress ticks. Read the latest
+  // value through a ref and reset only on the closed → open transition.
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
 
-  // Reset draft to latest selected when dialog opens.
   useEffect(() => {
     if (open) {
-      setDraft(new Set(selected));
+      setDraft(new Set(selectedRef.current));
       setQuery('');
     }
-  }, [open, selected]);
+  }, [open]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

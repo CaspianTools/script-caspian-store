@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { TEMPLATE_LIST } from '../templates/catalog';
 import {
@@ -14,6 +14,7 @@ import type {
 } from '../templates/types';
 import { Badge } from '../ui/misc';
 import { Button } from '../ui/button';
+import { Dialog } from '../ui/dialog';
 import { useToast } from '../ui/toast';
 
 export interface AdminTemplatesPageProps {
@@ -41,6 +42,33 @@ export function AdminTemplatesPage({ className }: AdminTemplatesPageProps) {
   const selected = selectedId
     ? TEMPLATE_LIST.find((t) => t.id === selectedId) ?? null
     : null;
+
+  // Stable identities: ApplyDialog's dry-run effect keys on these, and the
+  // ToastProvider re-renders this page on every toast, so an inline arrow
+  // here would re-run the dry-run (and re-toast on failure) forever.
+  const handleApplied = useCallback(
+    (result: ApplyTemplateResult) => {
+      const w = result.written;
+      const s = result.skipped;
+      toast({
+        title: `Applied "${result.templateId}"`,
+        description: `Wrote ${w.brands} brands, ${w.products} products, ${w.categories} categories, ${w.pages} pages, ${w.journal} journal posts. Skipped ${s.brands + s.products + s.categories + s.pages + s.journal} existing docs.`,
+      });
+      setSelectedId(null);
+    },
+    [toast],
+  );
+  const handleError = useCallback(
+    (err: Error) => {
+      toast({
+        title: 'Apply failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+    [toast],
+  );
+  const handleClose = useCallback(() => setSelectedId(null), []);
 
   return (
     <div className={className}>
@@ -74,23 +102,9 @@ export function AdminTemplatesPage({ className }: AdminTemplatesPageProps) {
         <ApplyDialog
           template={selected}
           db={db}
-          onClose={() => setSelectedId(null)}
-          onApplied={(result) => {
-            const w = result.written;
-            const s = result.skipped;
-            toast({
-              title: `Applied "${result.templateId}"`,
-              description: `Wrote ${w.brands} brands, ${w.products} products, ${w.categories} categories, ${w.pages} pages, ${w.journal} journal posts. Skipped ${s.brands + s.products + s.categories + s.pages + s.journal} existing docs.`,
-            });
-            setSelectedId(null);
-          }}
-          onError={(err) => {
-            toast({
-              title: 'Apply failed',
-              description: err.message,
-              variant: 'destructive',
-            });
-          }}
+          onClose={handleClose}
+          onApplied={handleApplied}
+          onError={handleError}
         />
       )}
     </div>
@@ -183,6 +197,11 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
     journal: number;
   } | null>(null);
   const [dryRun, setDryRun] = useState<ApplyTemplateResult | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const applyingRef = useRef(false);
+  applyingRef.current = applying;
 
   // Load both the dry-run diff and the wipe-impact counts as soon as the
   // dialog opens. The dry-run tells us what merge mode would write/skip;
@@ -201,13 +220,14 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
         setWipeImpact(impact);
       } catch (err) {
         if (cancelled) return;
-        onError(err instanceof Error ? err : new Error(String(err)));
+        setLoadFailed(true);
+        onErrorRef.current(err instanceof Error ? err : new Error(String(err)));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [db, template.id, onError]);
+  }, [db, template.id]);
 
   const handleApply = useCallback(async () => {
     setApplying(true);
@@ -221,123 +241,113 @@ function ApplyDialog({ template, db, onClose, onApplied, onError }: ApplyDialogP
     }
   }, [db, template.id, mode, onApplied, onError]);
 
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && !applyingRef.current) onClose();
+    },
+    [onClose],
+  );
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        padding: 16,
-      }}
-      onClick={onClose}
+    <Dialog
+      open
+      onOpenChange={handleOpenChange}
+      maxWidth={640}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={applying}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleApply}
+            loading={applying}
+            disabled={loadFailed}
+            variant={mode === 'replace' ? 'destructive' : 'primary'}
+          >
+            {applying
+              ? 'Applying…'
+              : mode === 'replace'
+                ? `Wipe + apply ${template.name}`
+                : `Apply ${template.name}`}
+          </Button>
+        </>
+      }
     >
       <div
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#fff',
-          borderRadius: 'var(--caspian-radius, 8px)',
-          maxWidth: 640,
           width: '100%',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
+          aspectRatio: '21 / 9',
+          borderRadius: 'var(--caspian-radius, 6px)',
+          background: `url(${template.preview.heroImageUrl}) center / cover, ${template.preview.swatch[0]}`,
         }}
-      >
+      />
+      <div style={{ paddingTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <Badge variant="outline">{template.vertical}</Badge>
+          <span style={{ fontSize: 11, color: '#999' }}>v{template.version}</span>
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{template.name}</h2>
+        <p style={{ margin: '6px 0 16px', color: '#444', fontSize: 14 }}>
+          {template.description}
+        </p>
+
+        <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#666', margin: '16px 0 8px' }}>
+          What this template includes
+        </h3>
+        <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#333' }}>
+          <li>{template.products.length} products across {template.categories.length} categories ({template.brands.length} brand{template.brands.length === 1 ? '' : 's'})</li>
+          <li>{template.pages.length} editable content pages (about, terms, privacy, shipping)</li>
+          {template.journal && template.journal.length > 0 && (
+            <li>{template.journal.length} journal articles</li>
+          )}
+          <li>Theme tokens + hero copy applied to your site settings</li>
+          <li>Feature flag preset (reviews / wishlist / questions as configured)</li>
+        </ul>
+
         <div
           style={{
-            width: '100%',
-            aspectRatio: '21 / 9',
-            background: `url(${template.preview.heroImageUrl}) center / cover, ${template.preview.swatch[0]}`,
+            marginTop: 20,
+            padding: 14,
+            border: '1px solid #eee',
+            borderRadius: 'var(--caspian-radius, 6px)',
+            background: '#fafafa',
           }}
-        />
-        <div style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Badge variant="outline">{template.vertical}</Badge>
-            <span style={{ fontSize: 11, color: '#999' }}>v{template.version}</span>
-          </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{template.name}</h2>
-          <p style={{ margin: '6px 0 16px', color: '#444', fontSize: 14 }}>
-            {template.description}
-          </p>
-
-          <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#666', margin: '16px 0 8px' }}>
-            What this template includes
+        >
+          <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#666', margin: 0 }}>
+            Apply mode
           </h3>
-          <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#333' }}>
-            <li>{template.products.length} products across {template.categories.length} categories ({template.brands.length} brand{template.brands.length === 1 ? '' : 's'})</li>
-            <li>{template.pages.length} editable content pages (about, terms, privacy, shipping)</li>
-            {template.journal && template.journal.length > 0 && (
-              <li>{template.journal.length} journal articles</li>
-            )}
-            <li>Theme tokens + hero copy applied to your site settings</li>
-            <li>Feature flag preset (reviews / wishlist / questions as configured)</li>
-          </ul>
-
-          <div
-            style={{
-              marginTop: 20,
-              padding: 14,
-              border: '1px solid #eee',
-              borderRadius: 'var(--caspian-radius, 6px)',
-              background: '#fafafa',
-            }}
-          >
-            <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#666', margin: 0 }}>
-              Apply mode
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-              <ModeOption
-                value="merge"
-                current={mode}
-                onChange={setMode}
-                label="Merge (recommended)"
-                description={
-                  dryRun
-                    ? `Writes ${dryRun.written.brands + dryRun.written.products + dryRun.written.categories + dryRun.written.pages + dryRun.written.journal} new docs. Skips ${dryRun.skipped.brands + dryRun.skipped.products + dryRun.skipped.categories + dryRun.skipped.pages + dryRun.skipped.journal} that already exist. Idempotent.`
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+            <ModeOption
+              value="merge"
+              current={mode}
+              onChange={setMode}
+              label="Merge (recommended)"
+              description={
+                dryRun
+                  ? `Writes ${dryRun.written.brands + dryRun.written.products + dryRun.written.categories + dryRun.written.pages + dryRun.written.journal} new docs. Skips ${dryRun.skipped.brands + dryRun.skipped.products + dryRun.skipped.categories + dryRun.skipped.pages + dryRun.skipped.journal} that already exist. Idempotent.`
+                  : loadFailed
+                    ? 'Could not load the diff.'
                     : 'Loading diff…'
-                }
-              />
-              <ModeOption
-                value="replace"
-                current={mode}
-                onChange={setMode}
-                label="Replace (destructive)"
-                description={
-                  wipeImpact
-                    ? `Deletes ${wipeImpact.products} existing products, ${wipeImpact.brands} brands, ${wipeImpact.categories} categories, ${wipeImpact.pages} pages, ${wipeImpact.journal} journal posts FIRST, then writes the template's content. Can't be undone.`
+              }
+            />
+            <ModeOption
+              value="replace"
+              current={mode}
+              onChange={setMode}
+              label="Replace (destructive)"
+              description={
+                wipeImpact
+                  ? `Deletes ${wipeImpact.products} existing products, ${wipeImpact.brands} brands, ${wipeImpact.categories} categories, ${wipeImpact.pages} pages, ${wipeImpact.journal} journal posts FIRST, then writes the template's content. Can't be undone.`
+                  : loadFailed
+                    ? 'Could not load current site contents.'
                     : 'Loading current site contents…'
-                }
-                destructive
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-            <Button variant="ghost" onClick={onClose} disabled={applying}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleApply}
-              loading={applying}
-              variant={mode === 'replace' ? 'destructive' : 'primary'}
-            >
-              {applying
-                ? 'Applying…'
-                : mode === 'replace'
-                  ? `Wipe + apply ${template.name}`
-                  : `Apply ${template.name}`}
-            </Button>
+              }
+              destructive
+            />
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 

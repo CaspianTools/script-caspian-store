@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type ReactElement,
 } from 'react';
+import { useT } from '../../i18n';
 import { cn } from '../../utils/cn';
 import { useSectionEdit } from '../section-edit-context';
 
@@ -42,29 +43,32 @@ export function EditableText({
 }: EditableTextProps): ReactElement {
   const { editing, onFieldChange, onSelect } = useSectionEdit();
   const ref = useRef<HTMLElement>(null);
+  // `innerText` (not `textContent`) so the <br>/<div> breaks a contentEditable
+  // inserts on Enter round-trip as "\n"; pre-line then renders them in view mode.
+  const textStyle: CSSProperties | undefined = multiline ? { whiteSpace: 'pre-line', ...style } : style;
 
   useEffect(() => {
     if (!editing) return;
     const el = ref.current;
     if (!el) return;
     const next = value ?? '';
-    if (next !== el.textContent) {
-      el.textContent = next;
+    if (next !== el.innerText) {
+      el.innerText = next;
     }
   }, [value, editing]);
 
   if (!editing) {
-    return createElement(as, { className, style }, value);
+    return createElement(as, { className, style: textStyle }, value);
   }
 
   const emit = (e: { currentTarget: HTMLElement }) => {
-    onFieldChange(fieldKey, e.currentTarget.textContent ?? '');
+    onFieldChange(fieldKey, e.currentTarget.innerText ?? '');
   };
 
   return createElement(as, {
     ref,
     className: cn('pb-editable', className),
-    style,
+    style: textStyle,
     contentEditable: true,
     suppressContentEditableWarning: true,
     spellCheck: false,
@@ -103,6 +107,7 @@ export function EditableImage({
   style,
 }: EditableImageProps): ReactElement {
   const { editing, onSelect } = useSectionEdit();
+  const t = useT();
 
   if (!editing) {
     /* eslint-disable-next-line @next/next/no-img-element */
@@ -119,7 +124,7 @@ export function EditableImage({
       alt={alt}
       className={cn('pb-editable-image', className)}
       style={style}
-      title="Click to edit image (panel)"
+      title={t('pageBuilder.editImageHint')}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(fieldKey);

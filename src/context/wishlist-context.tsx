@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -75,6 +76,9 @@ export function WishlistProvider({
   const { user } = useAuth();
   const [ids, setIds] = useState<string[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
+  // Same guard as cart-context: an id Firestore never returns (deleted or
+  // deactivated product) must not be re-queried on every render.
+  const requestedIds = useRef(new Set<string>());
   const [loading, setLoading] = useState(true);
 
   // Hydrate on auth change. Sign-in merges the local (anon) list into the
@@ -113,8 +117,9 @@ export function WishlistProvider({
   // need product docs when actually rendering — but pre-fetching here keeps
   // them ready so the grid doesn't flash empty cells.
   useEffect(() => {
-    const missing = ids.filter((id) => !products[id]);
+    const missing = ids.filter((id) => !products[id] && !requestedIds.current.has(id));
     if (missing.length === 0 || !db) return;
+    for (const id of missing) requestedIds.current.add(id);
     let alive = true;
     (async () => {
       try {
@@ -126,6 +131,7 @@ export function WishlistProvider({
           return next;
         });
       } catch (error) {
+        for (const id of missing) requestedIds.current.delete(id);
         reportServiceError(db, 'wishlist-context.hydrateProducts', error);
       }
     })();

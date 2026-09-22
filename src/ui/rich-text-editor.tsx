@@ -15,8 +15,44 @@ import { cn } from '../utils/cn';
  */
 const ALLOWED_TAGS = new Set(['P', 'BR', 'STRONG', 'B', 'UL', 'LI']);
 
+const ENTITY_MAP: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&nbsp;': ' ',
+};
+
+/**
+ * Server-safe reduction of rich HTML to plain text: block boundaries become
+ * newlines, every tag is dropped, the handful of entities the editor emits
+ * are decoded. There is no DOM on the server, so this is deliberately a
+ * text-only fallback rather than a second sanitizer.
+ */
+export function richHtmlToText(input: string): string {
+  return input
+    .replace(/<\/(p|li|div|ul)\s*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) => ENTITY_MAP[m] ?? m)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export function sanitizeRichHtml(input: string): string {
-  if (typeof window === 'undefined' || !input) return input;
+  if (!input) return input;
+  // No DOMParser on the server — never echo stored markup back unsanitized.
+  // Escaped plain text is safe to inject anywhere the HTML would have gone.
+  if (typeof window === 'undefined') return escapeHtml(richHtmlToText(input));
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${input}</div>`, 'text/html');
   const root = doc.body.firstElementChild;
@@ -31,7 +67,13 @@ function cleanNode(node: Element): void {
   const children = Array.from(node.children);
   for (const child of children) {
     cleanNode(child);
-    if (!ALLOWED_TAGS.has(child.tagName)) {
+    if (child.tagName === 'DIV') {
+      // contentEditable's Enter inserts <div> in Chrome/Safari; unwrapping it
+      // would merge the paragraphs, so promote it to the <p> the toolbar means.
+      const p = child.ownerDocument.createElement('p');
+      while (child.firstChild) p.appendChild(child.firstChild);
+      child.replaceWith(p);
+    } else if (!ALLOWED_TAGS.has(child.tagName)) {
       // Unwrap: move children up, drop the wrapper.
       while (child.firstChild) {
         child.parentNode?.insertBefore(child.firstChild, child);

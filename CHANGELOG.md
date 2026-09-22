@@ -16,6 +16,335 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v15.1.0 — Full review: the bugs a shop would have hit, and a storefront that feels finished
+
+A top-to-bottom review of the library — storefront, cart and checkout, admin
+panel, services, Firestore rules, Cloud Functions, scaffolder and the UI
+primitives — with every confirmed defect fixed in the same release, and a
+polish pass that gives the whole surface hover, focus, motion and a proper
+mobile layout. Nothing in the public API is removed or renamed.
+
+### Consumer action required on upgrade
+
+Redeploy the rules and indexes, and the Stripe and admin Functions if you run
+them: `orders` creation is now validated, `users/{uid}` can be deleted by its
+owner, `subscribers` and `searchTerms` writes are shape-checked, and the Stripe
+checkout no longer puts the cart in session metadata.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v15.1.0 firebase
+npm run firebase:sync          # or copy firestore.rules / firestore.indexes.json by hand
+firebase deploy --only firestore:rules,firestore:indexes
+firebase deploy --only functions:caspian-stripe,functions:caspian-admin,functions:caspian-email,functions:caspian-pos
+```
+
+Behaviour that changes on redeploy, so you know what to expect:
+
+- Stripe now charges in the currency under **Settings → General** (then
+  `scriptSettings.defaultCurrency`, then USD). Every session was USD before.
+- A `shippingCost` that does not match one of your enabled delivery methods
+  is rejected at Stripe checkout instead of trusted.
+- Guest orders attach to a new account only when its email is verified. The
+  library calls the new `linkMyGuestOrders` callable itself once a password
+  account verifies, so nothing changes for shoppers; deploy `caspian-admin`
+  or password sign-ups will not pick up their guest orders.
+- The review "verified purchase" badge is stamped server-side a moment after
+  the review is written. **Deploy the rules and `caspian-admin` together with
+  this library version**: the new rule rejects `isVerifiedPurchase: true`
+  from a client, and v15.0 and earlier wrote it.
+- Shoppers can no longer read `promoCodes` (staff and admins still can).
+- The contact auto-reply no longer echoes the sender's message.
+- The admin dashboard's revenue card uses `sum()` aggregation, which needs
+  `firebase` 10.5 or newer; the peer range is unchanged and 11/12 are fine.
+
+CSV note for the till: `src/services/import-export/helpers.ts` changed —
+list cells now split on `;` only, falling back to `,` when a cell has no `;`
+(see Fixed). `src/utils/csv.ts` is untouched.
+
+### Fixed
+
+**Storefront, cart and checkout**
+
+- A promo code typed on the cart page never reached checkout; it now rides
+  `?promo=` into the checkout, shows in the order summary and is passed to
+  the payment plugin.
+- The cart was cleared *before* the Stripe redirect, so cancelling at Stripe
+  landed on an empty cart. It is cleared once, on the confirmation page, when
+  the order document is found.
+- The order confirmation page polled Firestore forever on a stale closure; it
+  now stops after six attempts and shows the "still processing" state.
+- Checkout flashed "No payment provider is configured" on every load while
+  installs were still loading.
+- Every price defaulted to `$x.xx` whatever the store currency. Product cards,
+  product pages, cart, checkout, order pages and wishlist now format with
+  `useFormatCurrency(defaultCurrency)`; `CheckoutPage` also stopped printing
+  the currency code next to a dollar sign.
+- Manual-payment orders (bank transfer, cheque, cash on delivery) were saved
+  without tax, so the admin, the emails and the export disagreed with what the
+  shopper saw. `tax` is written and included in `total`; `promoCode` is `null`
+  on those orders since no discount is applied.
+- The phone number typed at checkout was dropped; it is stored on
+  `shippingInfo.phone`.
+- Hero "Shop now" buttons, featured-category cards and account order rows
+  linked to `/products`, `/categories/:slug` and `/orders/:id`, none of which
+  `CaspianRoot` served. They now point at `/shop`, `/shop?category=` (the
+  shop page reads it) and a new `/orders/:id` read-only order view;
+  `/orders/success` without a session renders Not found instead of a blank.
+- Product-page state (size, quantity, tab, review summary, gallery index)
+  leaked from one product to the next; the page is keyed on the slug and the
+  hook resets on change. The rating line on the default product page never
+  showed until the Reviews tab was opened.
+- Quick-add and the wishlist grid added out-of-stock or unsized items; they
+  now respect stock and send multi-size products to the product page.
+- Cart lines are keyed by size **and** colour, but quantity changes and
+  removals matched on size only, so "M / Red" and "M / Blue" moved together.
+- The cart drawer's Checkout button did a full page reload.
+- The cart and wishlist re-queried Firestore in a tight loop for any product
+  that had been deleted or deactivated while still in the shopper's list.
+- Newsletter sign-up was permission-denied for every visitor: the duplicate
+  check was a read on a collection only admins may read. The email is now the
+  document id and the rules' refusal of a second write is the "already
+  subscribed" signal.
+- The wishlist merge on first sign-in threw "No document to update" because
+  the profile document did not exist yet.
+- Deleting a Google-signed-in account destroyed the Firestore profile and
+  cart, then failed on `auth/requires-recent-login`; the account re-authenticates
+  and retries, and the profile document can now actually be deleted (rules).
+- The address dialog's Save sat outside its form, so `required` never ran.
+- Shipping rates were re-fetched on every postal-code keystroke.
+- The Electronics template's product page said "In stock · 12mo warranty" on
+  every product, including ones that were out of stock.
+- Template chrome shipped fabricated claims ("Free shipping $50+", "Every
+  product tested for 30 days", a signed "Workshop Six" quote) that no store
+  could edit. They are gone; the bands render the new **Appearance → Storefront
+  copy** fields or the brand description, and stay hidden when empty.
+- The coming-soon splash read `--caspian-bg` / `--caspian-fg`, tokens that do
+  not exist.
+- Brand and taxonomy lookups cached a rejected promise forever and were not
+  keyed by Firestore instance.
+- Search: a failed catalog load showed "No results" for every query with no
+  way to retry.
+- `LayoutShell` bypassed the chrome for `/administration` as well as `/admin`.
+- `journal.empty` was used but never defined, so an empty journal showed the
+  key.
+- Dates in reviews, questions and order pages used the browser locale rather
+  than the store locale.
+
+**Admin**
+
+- The templates page looped on a failed dry run (re-reading five collections
+  and toasting until the dialog closed); its hand-rolled modal is now the
+  shared `Dialog`.
+- Configuring a disabled shipping method silently re-enabled it. Clearing its
+  eligible countries, or a payment method's checkout description, did not
+  persist.
+- Three settings pages each overwrote the whole `settings/site` document from
+  a snapshot taken at mount, reverting each other's changes. Saves are now
+  per-key merges; Shipping options and Taxonomies write only their own keys;
+  a failed load shows an error with Save disabled instead of seeding blank
+  settings that could wipe the document.
+- Clearing an optional product field (sku, barcode, short description,
+  details, colour, weight, the stock grid, term pickers) did not persist; the
+  editor sends `deleteField()` on update.
+- The order detail page omitted `on-hold` from its status options, so a bank
+  transfer order displayed as "pending"; it also hid tax, payment method,
+  delivery method, promo code and the shopper's notes. All shown now, with a
+  back link. Order list: search by id or email, a Channel badge (Online /
+  POS), and a status dropdown on every board card so the board works without
+  drag and drop.
+- Shipping options: Save was permanently disabled on a store that had never
+  saved General settings.
+- Deleting a parent category orphaned its children out of the product editor's
+  dropdown; children are re-parented to the top level and the confirmation
+  says how many.
+- More than one language could be Default and the same code could be created
+  twice.
+- The Enable toggle on payment and email plugins skipped config validation.
+- Dashboard: sections that should auto-open never did; the notifications
+  bell's "View all" landed on the wrong anchor; "Recent contacts" linked to
+  Users; deleting the last setup task re-seeded all ten defaults; the counts
+  read every product and order just to count them (now `count()` / `sum()`
+  aggregations).
+- The country picker's draft reset whenever a toast dismissed.
+- Reviews moderation showed raw product ids; it resolves names and links to
+  the editor.
+- Inactive brands were flagged "legacy — not migrated" in the product editor.
+- Promo codes accepted a percentage over 100 or a negative value.
+- The help page described a quick-add button, a header search, an
+  "Abandoned carts" screen, a Tags entity and a Returns setting, none of which
+  exist. Rewritten against the actual pages.
+- Import failures toasted the export error; the journal dialog proposed the
+  date the module was loaded rather than today; a dozen list pages spun a
+  skeleton forever on a failed load and now settle with an error toast.
+- Settings sub-navigation ignored the translation keys the main sidebar
+  honoured.
+- `AdminHelpPage` was not exported from the package entry.
+
+**Import / Export**
+
+- List cells (sizes, images, product ids, term columns) were split on commas
+  as well as semicolons, so an image URL containing `,w=800` or a size like
+  `40,5` was cut in two on import and an export no longer round-tripped. Split
+  on `;` only; a cell with no `;` still parses as a legacy comma list.
+- `docToProduct` never mapped `barcode` or `weightKg`, so both exported blank,
+  reopened blank in the editor, and weight-based shipping could never see a
+  weight.
+- Promo import with an unknown explicit id could create a second document with
+  the same code.
+- The orders export carried totals but nothing a packer could ship from; nine
+  fulfilment columns added (payment method, delivery method, name, address,
+  city, postcode, country, phone, notes).
+
+**Services and data**
+
+- `listActiveCategories` needed a composite index no consumer had, and every
+  caller swallowed the resulting `failed-precondition` — a fresh store showed
+  no categories anywhere. Sorted in memory, like brands. Same for
+  `listAllReviews` / `listAllQuestions` with a status filter and
+  `getProducts({ isNew | limited })`.
+- Search-term logging threw on `.` and `..`; clearing more than 500 terms
+  failed the whole batch.
+- The auth provider could apply a stale profile after auth moved on; auth and
+  cart context values are memoised.
+- The generated rules constant embedded CRLF line endings from a Windows
+  build; the generator normalises them.
+
+**Firestore rules and Cloud Functions**
+
+- Any signed-in user, anonymous guests included, could create an `orders`
+  document with any `userId`, `status: 'paid'` and any total, which showed as
+  a paid order in admin and emailed the merchant and any address chosen.
+  Creation is validated: own uid, `on-hold`, a manual payment method, a
+  non-empty item list, non-negative totals, no `channel`.
+- Stripe checkout put the whole cart in session metadata, which exceeds
+  Stripe's 500-character limit from the second item; multi-item carts could
+  not check out. The cart is written to a server-only `pendingCheckouts`
+  document and only its id travels in metadata; old sessions still parse.
+- `shippingCost` was trusted from the browser; it is recomputed from the
+  enabled shipping installs and rejected on mismatch. Zero-decimal and
+  three-decimal currencies are converted correctly.
+- The webhook's duplicate check was a non-transactional query, so a retried
+  delivery could create two orders and decrement stock twice; a
+  `stripeEvents/{id}` marker created inside the transaction makes the second
+  delivery fail fast.
+- Guest orders attached to any new account whose *unverified* email matched,
+  and the match was case-sensitive so most never linked at all.
+- The legacy first-user-wins path could promote an anonymous guest to admin.
+- POS promo lookup used the code as a document id, but promo documents have
+  auto ids, so till promo codes never applied.
+- The contact auto-reply echoed the sender's message to a sender-chosen
+  address, an open relay behind a public create rule.
+- Reviews could self-stamp "verified purchase"; subscribers and search-term
+  writes had no shape validation; users could not delete their own profile.
+- Retention cleanup needed a `users (role, createdAt)` index and stopped at
+  the first bucket when it failed.
+- Scaffolder: the generated layout never mounted `ServiceWorkerRegister`, so
+  the emitted service worker was never registered; the dev-only
+  `write-env` route accepted cross-origin posts and newline-injected values;
+  the generated README told owners email needed no secrets; the Next Link
+  adapter dropped `aria-current`.
+- `scripts/check-exports.mjs` picked the tarball by string sort, so with two
+  tarballs present it could pass against a stale one; the scaffold-routes
+  workflow did not watch `admin-root.tsx`.
+
+**UI primitives, theme, page builder**
+
+- The rich-text sanitizer returned raw HTML on the server; a Next.js consumer
+  rendering a server-fetched product emitted unsanitized markup. Server render
+  now emits escaped text and the sanitized HTML is injected after mount.
+- Enter in the rich-text editor produced `<div>`s the allow-list unwrapped, so
+  paragraph breaks were lost on save.
+- The "Minimal dark" theme set white text with no background: white on white.
+  Activating a theme could not clear a previous theme's background or font,
+  and Academy, Editorial and Runway declared Google fonts that were never
+  loaded.
+- The page builder emitted about sixty class names that no stylesheet in the
+  package defined, so the editor panel, toolbar, columns and focal-point
+  picker rendered unstyled. A full stylesheet now ships in `globals.css`.
+  Multi-line editable text lost its line breaks; left and right margins from
+  the Style tab never applied; publishing while an autosave was in flight
+  produced a spurious conflict; a rejected insert still selected a block and
+  pushed an undo entry; `javascript:` URLs were accepted for links and embeds
+  (the embed iframe is now sandboxed).
+- `useFormatCurrency` crashed on an invalid currency code; the theme update
+  tracker crashed when localStorage was blocked; `Skeleton` referenced a
+  keyframe that did not exist, so loading placeholders never shimmered.
+- Escape inside a searchable select inside a dialog closed both; the dropdown
+  menu never returned focus to its trigger; keyboard navigation in the
+  searchable select did not scroll the highlighted option into view.
+
+### Added
+
+- **Interaction polish layer** in `globals.css`: hover, active and
+  focus-visible states for every button, input, select, switch, tab, table
+  row, nav item and product card; entry animations for dialogs, sheets, menus
+  and toasts; a loading spinner on `<Button loading>`; all behind
+  `prefers-reduced-motion`.
+- **Base typography.** Nothing in the package or the scaffolded site ever
+  applied a font, so a fresh store rendered in the browser's default serif
+  with an 8px white frame, and the font chosen under Appearance loaded but was
+  never used. `body` gets the store font and a margin reset; the default
+  chrome wraps the page in `.caspian-storefront`, which carries the theme's
+  background and text colour; the admin uses a system stack.
+- **Admin on a phone.** Below 900px the sidebar is an off-canvas drawer with a
+  backdrop, Escape to close and auto-close on navigation; the sub-shells
+  (Settings, Taxonomies, Appearance, Help) collapse to one column; settings
+  grids and the products filter bar wrap.
+- **Responsive storefront.** Cart, checkout, product page, review summary,
+  setup wizard and the gallery rail collapse to one column under 820px.
+- `Dialog`: focus trap, focus restore, `aria-labelledby`, a close button.
+  `Toast`: dismiss button, `success` variant, per-toast timers, safe-area
+  bottom offset. `ConfirmDialog` (`src/ui/confirm-dialog.tsx`) replaces every
+  native `confirm()` in the admin. `EmptyState` replaces the lone grey
+  paragraph on every storefront list. `Badge` gains `success` and `warning`.
+  `Tabs` get arrow-key navigation and ARIA wiring.
+- The site header uses real icons instead of ♥ and 🛒, labels the wishlist
+  button, translates its default nav and underlines the current page.
+- `Appearance → Storefront copy`: announcement bar, tagline, pull-quote and
+  attribution for the template chrome bands (`ScriptSettings.copy`).
+- Stock labels, size-selector tooltips, gallery labels, footer defaults, FAQ
+  categories, the setup wizard, guest order lookup, the checkout form, the
+  admin dashboard, notifications bell, profile menu, guard, promo codes,
+  subscribers, FAQs and the multi-select all go through `useT()` with new
+  keys (English; overlays fall back).
+- `updateQuantity` / `removeFromCart` take an optional `selectedColor`;
+  `useCheckout()` returns `ready`; `StartCheckoutOptions.tax`,
+  `CheckoutShippingInfoInput.phone`, `ShippingInfo.phone`;
+  `AdminOrderDetail.ordersHref`; `updateSiteSettings(db, partial)`;
+  `validatePromoCodeInput`; `tryLinkGuestOrders`; `richHtmlToText`;
+  `ORDER_STATUSES`.
+
+### Changed
+
+- Theme presets bumped: `minimal-dark` 1.1.0 (background), `academy`,
+  `editorial`, `runway` 1.1.0 (Google font families). Applying a template now
+  also writes `fonts` derived from its stack.
+- `saveSiteSettings` merges per top-level key instead of replacing the
+  document. `deleteCategory` re-parents children. `createLanguage` /
+  `updateLanguage` enforce a single default.
+- `subscribeEmail` writes `subscribers/{encodeURIComponent(email)}`; an
+  address subscribed before this release keeps its old random id, so a
+  repeat sign-up of such an address creates a second row once.
+- The default navigation adapter's `searchParams` is stable between
+  navigations and reactive to `popstate` / `caspian:locationchange`.
+- The notifications bell's "View all" defaults to `/admin#notifications`.
+
+### Notes
+
+- Verified: `npm run typecheck` (strict), `npm run build`, `npm pack`,
+  `node scripts/check-exports.mjs`, `node scripts/check-manuals.mjs`,
+  `node scripts/check-scaffold-routes.mjs`, all four changed Functions
+  projects build, and the rules suite passes 94/94 against the emulator.
+- The user manual is updated where what an owner sees changed: orders list
+  and detail, cart and checkout, categories, languages, shipping plugins,
+  the import/export column notes and the clearing-fields note, in all four
+  languages.
+- Left as is on purpose: `neonShop` keeps its light background (its tokens
+  are black-on-white and legible; matching the dark thumbnail is a palette
+  redesign). Abandoned `pendingCheckouts` documents are not yet swept.
+- The `az` / `ru` / `tr` message overlays were not extended; every new key
+  falls back to English through the existing merge.
+
 ## v15.0.1 — The store manual stops pointing at a file that left
 
 v15.0.0 removed `docs/pos-manual.html` and left `docs/user-manual.html` telling

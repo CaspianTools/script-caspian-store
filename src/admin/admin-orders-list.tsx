@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import type { Order, OrderStatus } from '../types';
 import { listAllOrders, updateOrderStatus } from '../services/order-service';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
+import { Input } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
 import { Select } from '../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { useToast } from '../ui/toast';
+import { ORDER_STATUSES } from './order-statuses';
 
 type OrderView = 'table' | 'board';
 
@@ -18,18 +20,6 @@ export interface AdminOrdersListProps {
   /** Which view to render first — the table list or the Kanban board. Defaults to `'table'`. Added in v8.11. */
   defaultView?: OrderView;
 }
-
-// Ordered left-to-right for the board's pipeline and used as the filter list.
-// `on-hold` (manual-payment orders awaiting confirmation) was missing before v8.11.
-const STATUS_OPTIONS: OrderStatus[] = [
-  'pending',
-  'on-hold',
-  'paid',
-  'processing',
-  'shipped',
-  'delivered',
-  'cancelled',
-];
 
 // Column accent per status. Keeps the board scannable without hard-coding
 // brand colors — these are status semantics, not theme.
@@ -54,6 +44,7 @@ export function AdminOrdersList({
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
+  const [search, setSearch] = useState('');
   const [view, setView] = useState<OrderView>(defaultView);
 
   useEffect(() => {
@@ -75,9 +66,17 @@ export function AdminOrdersList({
     };
   }, [db, toast]);
 
+  const searched = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter(
+      (o) => o.id.toLowerCase().includes(q) || (o.userEmail ?? '').toLowerCase().includes(q),
+    );
+  }, [orders, search]);
+
   const filtered = useMemo(
-    () => (statusFilter === 'all' ? orders : orders.filter((o) => o.status === statusFilter)),
-    [orders, statusFilter],
+    () => (statusFilter === 'all' ? searched : searched.filter((o) => o.status === statusFilter)),
+    [searched, statusFilter],
   );
 
   // Optimistically move an order to a new status, rolling back on write failure.
@@ -113,18 +112,27 @@ export function AdminOrdersList({
         <ViewToggle view={view} onChange={setView} />
       </header>
 
-      {view === 'table' && (
-        <div style={{ marginBottom: 12 }}>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by order id or email"
+          aria-label="Search orders"
+          style={{ width: 280, maxWidth: '100%' }}
+        />
+        {view === 'table' && (
           <Select
             value={statusFilter}
+            aria-label="Filter by status"
             onChange={(e) => setStatusFilter(e.target.value as 'all' | OrderStatus)}
             options={[
               { value: 'all', label: 'All statuses' },
-              ...STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+              ...ORDER_STATUSES.map((s) => ({ value: s, label: s })),
             ]}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -133,7 +141,7 @@ export function AdminOrdersList({
         </div>
       ) : view === 'board' ? (
         <OrdersBoard
-          orders={orders}
+          orders={searched}
           getOrderHref={getOrderHref}
           formatPrice={formatPrice}
           onMove={moveOrder}
@@ -166,6 +174,7 @@ function OrdersTable({
           <TH>Date</TH>
           <TH>Items</TH>
           <TH>Total</TH>
+          <TH>Channel</TH>
           <TH>Status</TH>
         </TR>
       </THead>
@@ -184,6 +193,11 @@ function OrdersTable({
               <TD style={{ color: '#888', fontSize: 13 }}>{placed?.toLocaleDateString() ?? '—'}</TD>
               <TD>{count}</TD>
               <TD>{formatPrice(o.total)}</TD>
+              <TD>
+                <Badge variant={o.channel === 'pos' ? 'outline' : 'secondary'}>
+                  {o.channel === 'pos' ? 'POS' : 'Online'}
+                </Badge>
+              </TD>
               <TD>
                 <Badge variant="secondary">{o.status}</Badge>
               </TD>
@@ -210,7 +224,7 @@ function OrdersBoard({
   const [dragOver, setDragOver] = useState<OrderStatus | null>(null);
 
   const byStatus = useMemo(() => {
-    const map = new Map<OrderStatus, Order[]>(STATUS_OPTIONS.map((s) => [s, []]));
+    const map = new Map<OrderStatus, Order[]>(ORDER_STATUSES.map((s) => [s, []]));
     for (const o of orders) map.get(o.status)?.push(o);
     return map;
   }, [orders]);
@@ -225,7 +239,7 @@ function OrdersBoard({
 
   return (
     <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, alignItems: 'flex-start' }}>
-      {STATUS_OPTIONS.map((status) => {
+      {ORDER_STATUSES.map((status) => {
         const columnOrders = byStatus.get(status) ?? [];
         const isOver = dragOver === status;
         const accent = STATUS_ACCENT[status];
@@ -274,6 +288,7 @@ function OrdersBoard({
                     href={getOrderHref(o.id)}
                     formatPrice={formatPrice}
                     dragging={draggingId === o.id}
+                    onMove={(status) => onMove(o, status)}
                     onDragStart={(e) => {
                       e.dataTransfer.setData('text/plain', o.id);
                       e.dataTransfer.effectAllowed = 'move';
@@ -299,6 +314,7 @@ function OrderCard({
   href,
   formatPrice,
   dragging,
+  onMove,
   onDragStart,
   onDragEnd,
 }: {
@@ -306,6 +322,7 @@ function OrderCard({
   href: string;
   formatPrice: (n: number) => string;
   dragging: boolean;
+  onMove: (status: OrderStatus) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
 }) {
@@ -348,6 +365,14 @@ function OrderCard({
           {count} item{count === 1 ? '' : 's'} · <strong style={{ color: '#444' }}>{formatPrice(order.total)}</strong>
         </span>
       </div>
+      {/* Keyboard / touch alternative to drag-and-drop. */}
+      <Select
+        value={order.status}
+        aria-label={`Status for order ${order.id.slice(0, 10)}`}
+        onChange={(e) => onMove(e.target.value as OrderStatus)}
+        options={ORDER_STATUSES.map((s) => ({ value: s, label: s }))}
+        style={{ marginTop: 8, width: '100%', padding: '4px 24px 4px 8px', fontSize: 12 }}
+      />
     </div>
   );
 }

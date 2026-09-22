@@ -9,6 +9,7 @@ import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-pr
 import { useAuth } from '../context/auth-context';
 import { useT } from '../i18n/locale-context';
 import { Badge, Skeleton } from '../ui/misc';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input } from '../ui/input';
 import { Select } from '../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
@@ -28,6 +29,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
+  const [pendingRole, setPendingRole] = useState<{ target: UserProfile; role: UserRole } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -65,8 +67,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
   };
 
   const runRoleChange = async (target: UserProfile, nextRole: UserRole) => {
-    if (typeof window !== 'undefined' && !window.confirm(t(CONFIRM_KEY[nextRole]))) return;
-
+    setPendingRole(null);
     setRowState((s) => ({ ...s, [target.uid]: { kind: 'busy' } }));
     try {
       // `setUserRole` supersedes the two-role promoteUserToAdmin /
@@ -96,7 +97,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
       <header style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.users.title')}</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
-          {users === null ? t('admin.users.subtitle') : `${users.length} total`}
+          {users === null ? t('admin.users.subtitle') : t('admin.users.total', { count: users.length })}
         </p>
       </header>
 
@@ -170,7 +171,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
                         aria-label={t('admin.users.action.setRole')}
                         value={u.role ?? 'customer'}
                         disabled={busy}
-                        onChange={(e) => runRoleChange(u, e.target.value as UserRole)}
+                        onChange={(e) => setPendingRole({ target: u, role: e.target.value as UserRole })}
                         options={USER_ROLES.map((r) => ({
                           value: r,
                           label: t(`admin.users.role.${r}`),
@@ -189,6 +190,19 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
           </TBody>
         </Table>
       )}
+
+      <ConfirmDialog
+        open={pendingRole !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingRole(null);
+        }}
+        title={t('admin.users.action.setRole')}
+        description={pendingRole ? t(CONFIRM_KEY[pendingRole.role]) : undefined}
+        confirmLabel={pendingRole ? t(`admin.users.role.${pendingRole.role}`) : ''}
+        onConfirm={() => {
+          if (pendingRole) void runRoleChange(pendingRole.target, pendingRole.role);
+        }}
+      />
     </div>
   );
 }

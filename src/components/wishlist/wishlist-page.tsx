@@ -31,8 +31,12 @@ export function WishlistPage({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const dismissed = window.sessionStorage.getItem(BANNER_DISMISS_KEY) === '1';
-    setBannerDismissed(dismissed);
+    try {
+      setBannerDismissed(window.sessionStorage.getItem(BANNER_DISMISS_KEY) === '1');
+    } catch {
+      // Storage blocked (private mode, sandboxed iframe): treat as not dismissed.
+      setBannerDismissed(false);
+    }
   }, []);
 
   const handleDismissBanner = () => {

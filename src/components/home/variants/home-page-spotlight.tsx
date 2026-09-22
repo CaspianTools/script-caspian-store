@@ -1,5 +1,6 @@
 'use client';
 
+import { useScriptSettings } from '../../../context/script-settings-context';
 import { Hero } from '../hero';
 import { FeaturedCategoriesSection } from '../featured-categories-section';
 import { TrendingProductsSection } from '../trending-products-section';
@@ -13,9 +14,9 @@ import type { HomePageProps } from '../home-page';
  *
  *   **Hero → Trending Products → Featured Categories → Newsletter**.
  *
- * Adds a slim spec-strip below the hero that calls out the template's
- * positioning ("Hand-tested. Daily-use. No fluff.") for the tech
- * identity. Slot-injection props are preserved but reordered to match
+ * Adds a slim spec-strip below the hero showing the merchant's
+ * `ScriptSettings.copy.tagline` (falling back to the brand description);
+ * omitted when neither is set. Slot-injection props are preserved but reordered to match
  * the new flow — `afterFeaturedCategories` now fires AFTER the (later)
  * categories block, which is the user-expected semantic.
  */
@@ -32,34 +33,34 @@ export function HomePageSpotlight({
   formatPrice,
   className,
 }: HomePageProps) {
+  const { settings } = useScriptSettings();
+  const tagline = settings.copy?.tagline?.trim() || settings.brandDescription?.trim();
   return (
     <main className={className}>
       <Hero hero={hero} />
 
-      {/* Spec strip — tech identity. Pure presentation; no Firestore reads. */}
-      <section
-        className="caspian-home-spotlight-spec-strip"
-        style={{
-          background: 'rgba(255,255,255,0.02)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          padding: '14px 32px',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 28,
-          flexWrap: 'wrap',
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-          fontSize: 11,
-          letterSpacing: '0.18em',
-          color: 'rgba(255,255,255,0.55)',
-          textTransform: 'uppercase',
-        }}
-      >
-        <span>// Hand-tested</span>
-        <span>// Daily-use</span>
-        <span>// No fluff</span>
-        <span>// 12mo warranty</span>
-      </section>
+      {tagline && (
+        <section
+          className="caspian-home-spotlight-spec-strip"
+          style={{
+            background: 'rgba(255,255,255,0.02)',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            padding: '14px 32px',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 28,
+            flexWrap: 'wrap',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontSize: 11,
+            letterSpacing: '0.18em',
+            color: 'rgba(255,255,255,0.55)',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span>// {tagline}</span>
+        </section>
+      )}
       {afterHero}
 
       {!hideTrendingProducts && (

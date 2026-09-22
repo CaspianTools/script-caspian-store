@@ -1,6 +1,7 @@
 'use client';
 
 import type { SiteSettings } from '../types';
+import { useT } from '../i18n/locale-context';
 
 export interface ComingSoonSplashProps {
   settings: Pick<SiteSettings, 'brandName' | 'brandDescription' | 'logoUrl' | 'comingSoon'>;
@@ -14,9 +15,8 @@ export interface ComingSoonSplashProps {
  * root with their own layout.
  */
 export function ComingSoonSplash({ settings }: ComingSoonSplashProps) {
-  const message =
-    settings.comingSoon?.message?.trim() ||
-    `We're launching soon. Check back shortly.`;
+  const t = useT();
+  const message = settings.comingSoon?.message?.trim() || t('comingSoon.defaultMessage');
 
   return (
     <div
@@ -27,19 +27,19 @@ export function ComingSoonSplash({ settings }: ComingSoonSplashProps) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
-        background: 'var(--caspian-bg, #fafafa)',
-        color: 'var(--caspian-fg, #111)',
+        background: 'var(--caspian-background, #fafafa)',
+        color: 'inherit',
         textAlign: 'center',
         gap: 24,
       }}
       role="main"
-      aria-label="Coming soon"
+      aria-label={t('comingSoon.ariaLabel')}
     >
       {settings.logoUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={settings.logoUrl}
-          alt={settings.brandName || 'Logo'}
+          alt={settings.brandName || t('comingSoon.logoAlt')}
           style={{ maxHeight: 64, maxWidth: 280, objectFit: 'contain' }}
         />
       )}
@@ -54,7 +54,7 @@ export function ComingSoonSplash({ settings }: ComingSoonSplashProps) {
           lineHeight: 1.5,
           margin: 0,
           maxWidth: 540,
-          color: 'rgba(0,0,0,0.72)',
+          opacity: 0.72,
           whiteSpace: 'pre-wrap',
         }}
       >
@@ -64,7 +64,7 @@ export function ComingSoonSplash({ settings }: ComingSoonSplashProps) {
         <p
           style={{
             fontSize: 14,
-            color: 'rgba(0,0,0,0.5)',
+            opacity: 0.5,
             margin: 0,
             maxWidth: 480,
           }}

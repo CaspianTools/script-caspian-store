@@ -13,10 +13,13 @@ import {
   listAllQuestions,
   setQuestionStatus,
 } from '../services/question-service';
+import { getProductsByIds } from '../services/product-service';
 import { useAuth } from '../context/auth-context';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Badge, Skeleton } from '../ui/misc';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Select } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
@@ -43,9 +46,15 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
   const { db } = useCaspianFirebase();
   const { userProfile } = useAuth();
   const { toast } = useToast();
+  const t = useT();
+  const Link = useCaspianLink();
 
   const [reviews, setReviews] = useState<FirestoreReview[]>([]);
   const [questions, setQuestions] = useState<FirestoreQuestion[]>([]);
+  const [productNames, setProductNames] = useState<Record<string, string>>({});
+  const [pendingDelete, setPendingDelete] = useState<
+    { kind: 'review'; item: FirestoreReview } | { kind: 'question'; item: FirestoreQuestion } | null
+  >(null);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [reviewFilter, setReviewFilter] = useState<StatusFilter>('pending');
@@ -64,6 +73,23 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
         if (!alive) return;
         setReviews(r);
         setQuestions(q);
+        // Resolve product names for the Product column; a miss (deleted
+        // product) falls back to the raw id in the table.
+        const ids = Array.from(new Set([...r, ...q].map((x) => x.productId).filter(Boolean)));
+        if (ids.length > 0) {
+          try {
+            const products = await getProductsByIds(db, ids);
+            if (!alive) return;
+            const names: Record<string, string> = {};
+            for (const p of products) names[p.id] = p.name;
+            setProductNames(names);
+          } catch (error) {
+            console.error('[caspian-store] Product lookup failed:', error);
+          }
+        }
+      } catch (error) {
+        console.error('[caspian-store] Failed to load reviews / questions:', error);
+        if (alive) toast({ title: t('admin.common.loadFailed'), variant: 'destructive' });
       } finally {
         if (alive) {
           setLoadingReviews(false);
@@ -74,7 +100,17 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db]);
+
+  const productCell = (productId: string) => (
+    <Link
+      href={`/admin/products/${productId}/edit`}
+      style={{ color: 'var(--caspian-primary, #111)', textDecoration: 'none' }}
+    >
+      {productNames[productId] ?? productId}
+    </Link>
+  );
 
   const filteredReviews = useMemo(
     () =>
@@ -102,15 +138,15 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
   };
 
   const handleDeleteReview = async (review: FirestoreReview) => {
-    if (!confirm('Delete this review? This cannot be undone.')) return;
     setBusy(review.id);
     try {
       await deleteReview(db, review.id);
       setReviews((prev) => prev.filter((r) => r.id !== review.id));
+      setPendingDelete(null);
       toast({ title: 'Review deleted' });
     } catch (error) {
       console.error('[caspian-store] Review delete failed:', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.common.deleteFailed'), variant: 'destructive' });
     } finally {
       setBusy(null);
     }
@@ -131,15 +167,15 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
   };
 
   const handleDeleteQuestion = async (question: FirestoreQuestion) => {
-    if (!confirm('Delete this question? This cannot be undone.')) return;
     setBusy(question.id);
     try {
       await deleteQuestion(db, question.id);
       setQuestions((prev) => prev.filter((q) => q.id !== question.id));
+      setPendingDelete(null);
       toast({ title: 'Question deleted' });
     } catch (error) {
       console.error('[caspian-store] Question delete failed:', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.common.deleteFailed'), variant: 'destructive' });
     } finally {
       setBusy(null);
     }
@@ -246,7 +282,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
                           {review.text}
                         </p>
                       </TD>
-                      <TD style={{ fontSize: 12, color: '#888' }}>{review.productId}</TD>
+                      <TD style={{ fontSize: 13 }}>{productCell(review.productId)}</TD>
                       <TD style={{ fontSize: 12, color: '#888' }}>{fmtDate(review.createdAt)}</TD>
                       <TD>
                         <Badge variant={STATUS_VARIANT[review.status]}>{review.status}</Badge>
@@ -263,7 +299,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
                               Reject
                             </Button>
                           )}
-                          <Button variant="destructive" size="sm" disabled={isBusy} onClick={() => handleDeleteReview(review)}>
+                          <Button variant="destructive" size="sm" disabled={isBusy} onClick={() => setPendingDelete({ kind: 'review', item: review })}>
                             Delete
                           </Button>
                         </div>
@@ -318,7 +354,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
                           <span style={{ fontStyle: 'italic', color: '#aaa' }}>—</span>
                         )}
                       </TD>
-                      <TD style={{ fontSize: 12, color: '#888' }}>{question.productId}</TD>
+                      <TD style={{ fontSize: 13 }}>{productCell(question.productId)}</TD>
                       <TD style={{ fontSize: 12, color: '#888' }}>{fmtDate(question.createdAt)}</TD>
                       <TD>
                         <Badge variant={STATUS_VARIANT[question.status]}>{question.status}</Badge>
@@ -338,7 +374,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
                               Reject
                             </Button>
                           )}
-                          <Button variant="destructive" size="sm" disabled={isBusy} onClick={() => handleDeleteQuestion(question)}>
+                          <Button variant="destructive" size="sm" disabled={isBusy} onClick={() => setPendingDelete({ kind: 'question', item: question })}>
                             Delete
                           </Button>
                         </div>
@@ -392,6 +428,27 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
           </div>
         )}
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={
+          pendingDelete?.kind === 'question'
+            ? t('admin.reviews.deleteQuestionTitle')
+            : t('admin.reviews.deleteReviewTitle')
+        }
+        description={t('admin.confirm.deleteBody')}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={pendingDelete !== null && busy === pendingDelete.item.id}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.kind === 'review') void handleDeleteReview(pendingDelete.item);
+          else void handleDeleteQuestion(pendingDelete.item);
+        }}
+      />
     </div>
   );
 }

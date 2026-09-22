@@ -234,10 +234,11 @@ export function HomeEditorProvider({
   // Clipboard for copy/paste — a detached subtree; paste regenerates ids.
   const clipboard = useRef<PageBlock | null>(null);
   const [canPaste, setCanPaste] = useState(false);
-  // Autosave: one in-flight guard shared by manual + auto writes, a drag guard
-  // (set by the canvas DnD provider) to suppress autosave mid-drag, and the
-  // debounce timer.
-  const savingRef = useRef(false);
+  // Autosave: the in-flight draft write shared by manual + auto saves (so a
+  // manual Save / Publish can await an autosave instead of racing or skipping
+  // it), a drag guard (set by the canvas DnD provider) to suppress autosave
+  // mid-drag, and the debounce timer.
+  const inflightRef = useRef<Promise<void> | null>(null);
   const draggingRef = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -270,9 +271,15 @@ export function HomeEditorProvider({
     bpRef.current = breakpoint;
   }, [breakpoint]);
 
-  const mutate = useCallback((fn: (blocks: PageBlock[]) => PageBlock[], coalesceKey?: string) => {
+  // Returns false when `fn` rejected the edit (returned its input untouched):
+  // nothing is pushed to history and the draft stays clean, so callers can skip
+  // follow-ups like selecting a block that was never inserted.
+  const mutate = useCallback((fn: (blocks: PageBlock[]) => PageBlock[], coalesceKey?: string): boolean => {
     const current = draftRef.current;
-    if (!current) return;
+    if (!current) return false;
+    const working = clone(current);
+    const next = fn(working);
+    if (next === working) return false;
     const now = Date.now();
     // Fold into the previous entry only for a same-key run within the window;
     // the FIRST edit of a run still snapshots the pre-edit tree, so one undo
@@ -287,10 +294,10 @@ export function HomeEditorProvider({
     }
     lastKeyRef.current = coalesceKey ?? null;
     lastTimeRef.current = now;
-    const next = fn(clone(current));
     draftRef.current = next;
     setDraft(next);
     setDirty(true);
+    return true;
   }, []);
 
   const enterEdit = useCallback(() => {
@@ -427,7 +434,7 @@ export function HomeEditorProvider({
     (type: string) => {
       const block = createBlock(type);
       if (!block) return;
-      mutate((blocks) => {
+      const inserted = mutate((blocks) => {
         const entry = getBlockType(type);
         if (entry?.singleton && anyBlock(blocks, (b) => b.type === type)) return blocks;
 
@@ -449,7 +456,7 @@ export function HomeEditorProvider({
         }
         return insertInto(blocks, ROOT_ID, blocks.length, block);
       });
-      setSelectedId(block.id);
+      if (inserted) setSelectedId(block.id);
     },
     [mutate],
   );
@@ -458,7 +465,7 @@ export function HomeEditorProvider({
     (type: string, overId: string) => {
       const block = createBlock(type);
       if (!block) return;
-      mutate((blocks) => {
+      const inserted = mutate((blocks) => {
         const entry = getBlockType(type);
         if (entry?.singleton && anyBlock(blocks, (b) => b.type === type)) return blocks;
         if (overId.startsWith(CONTAINER_PREFIX)) {
@@ -471,7 +478,7 @@ export function HomeEditorProvider({
         const index = siblings.findIndex((b) => b.id === overId);
         return insertInto(blocks, parentId, index < 0 ? siblings.length : index, block);
       });
-      setSelectedId(block.id);
+      if (inserted) setSelectedId(block.id);
     },
     [mutate],
   );
@@ -542,7 +549,10 @@ export function HomeEditorProvider({
 
   const removeBlock = useCallback(
     (id: string) => {
-      mutate((blocks) => removeBlockFromTree(blocks, id).tree);
+      mutate((blocks) => {
+        const { tree, removed } = removeBlockFromTree(blocks, id);
+        return removed ? tree : blocks;
+      });
       setSelectedId((cur) => (cur === id ? null : cur));
     },
     [mutate],
@@ -585,35 +595,38 @@ export function HomeEditorProvider({
   // edit landed mid-save ⇒ stay dirty so the next autosave picks it up). A
   // concurrent write by another admin raises the conflict bar instead.
   const persist = useCallback(
-    async (blocks: PageBlock[], mode: 'manual' | 'auto') => {
-      if (savingRef.current) return;
-      savingRef.current = true;
+    (blocks: PageBlock[], mode: 'manual' | 'auto'): Promise<void> => {
+      if (inflightRef.current) return inflightRef.current;
       if (mode === 'manual') setSaving(true);
       else setAutosaving(true);
-      try {
-        const { draftRev } = await saveDraftLayout(db, pageId, blocks, {
-          baseDraftRev: baseDraftRevRef.current,
-          baseVersion: publishedVersionRef.current,
-          uid: userProfile?.uid,
-          name: userProfile?.displayName || userProfile?.email,
-        });
-        baseDraftRevRef.current = draftRev;
-        setDraftBlocks(blocks);
-        if (draftRef.current === blocks) setDirty(false);
-        if (mode === 'manual') toast({ title: t('pageBuilder.draftSaved') });
-      } catch (error) {
-        if (error instanceof LayoutConflictError) {
-          setConflict({ by: error.by, kind: 'draft' });
-          toast({ title: t('pageBuilder.conflict.title'), variant: 'destructive' });
-        } else {
-          console.error('[caspian-store] Draft save failed:', error);
-          if (mode === 'manual') toast({ title: t('pageBuilder.saveFailed'), variant: 'destructive' });
+      const run = (async () => {
+        try {
+          const { draftRev } = await saveDraftLayout(db, pageId, blocks, {
+            baseDraftRev: baseDraftRevRef.current,
+            baseVersion: publishedVersionRef.current,
+            uid: userProfile?.uid,
+            name: userProfile?.displayName || userProfile?.email,
+          });
+          baseDraftRevRef.current = draftRev;
+          setDraftBlocks(blocks);
+          if (draftRef.current === blocks) setDirty(false);
+          if (mode === 'manual') toast({ title: t('pageBuilder.draftSaved') });
+        } catch (error) {
+          if (error instanceof LayoutConflictError) {
+            setConflict({ by: error.by, kind: 'draft' });
+            toast({ title: t('pageBuilder.conflict.title'), variant: 'destructive' });
+          } else {
+            console.error('[caspian-store] Draft save failed:', error);
+            if (mode === 'manual') toast({ title: t('pageBuilder.saveFailed'), variant: 'destructive' });
+          }
+        } finally {
+          inflightRef.current = null;
+          setSaving(false);
+          setAutosaving(false);
         }
-      } finally {
-        savingRef.current = false;
-        setSaving(false);
-        setAutosaving(false);
-      }
+      })();
+      inflightRef.current = run;
+      return run;
     },
     [db, pageId, userProfile, toast, t],
   );
@@ -623,6 +636,8 @@ export function HomeEditorProvider({
       clearTimeout(autosaveTimer.current);
       autosaveTimer.current = null;
     }
+    // Let an in-flight autosave land first, then write whatever it missed.
+    if (inflightRef.current) await inflightRef.current;
     const current = draftRef.current;
     if (!current) return;
     await persist(current, 'manual');
@@ -636,7 +651,7 @@ export function HomeEditorProvider({
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     autosaveTimer.current = setTimeout(() => {
       autosaveTimer.current = null;
-      if (savingRef.current || draggingRef.current) return;
+      if (inflightRef.current || draggingRef.current) return;
       const current = draftRef.current;
       if (current) void persist(current, 'auto');
     }, AUTOSAVE_MS);
@@ -649,12 +664,15 @@ export function HomeEditorProvider({
   }, [isEditing, dirty, draft, persist]);
 
   const publish = useCallback(async () => {
-    const current = draftRef.current;
-    if (!current) return;
     if (autosaveTimer.current) {
       clearTimeout(autosaveTimer.current);
       autosaveTimer.current = null;
     }
+    // An autosave still in flight would otherwise resurrect the draft doc (and
+    // bump its rev) after the publish consumed it.
+    if (inflightRef.current) await inflightRef.current;
+    const current = draftRef.current;
+    if (!current) return;
     setSaving(true);
     try {
       const { version } = await publishLayout(db, pageId, current, {

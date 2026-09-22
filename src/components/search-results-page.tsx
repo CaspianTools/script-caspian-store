@@ -5,9 +5,11 @@ import type { Product, ProductBrandDoc, ProductCategoryDoc } from '../types';
 import { getProducts } from '../services/product-service';
 import { listActiveBrands } from '../services/brand-service';
 import { listActiveCategories } from '../services/category-service';
-import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
+import { Button } from '../ui/button';
 import { ProductGrid } from './product-grid';
+import { EmptyState } from './empty-state';
 
 export interface SearchResultsPageProps {
   /** Query string. If omitted, read `?q=` from the navigation adapter's
@@ -35,6 +37,7 @@ export function SearchResultsPage({
 }: SearchResultsPageProps) {
   const { db } = useCaspianFirebase();
   const t = useT();
+  const Link = useCaspianLink();
   const navigation = useCaspianNavigation();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategoryDoc[]>([]);
@@ -134,13 +137,25 @@ export function SearchResultsPage({
           </p>
         )}
       </header>
-      <ProductGrid
-        products={matches}
-        loading={loading}
-        getProductHref={getProductHref}
-        formatPrice={formatPrice}
-        emptyMessage={queryState ? t('search.noResults') : t('search.emptyQuery')}
-      />
+      {!loading && matches.length === 0 ? (
+        <EmptyState
+          title={queryState ? t('search.noResults') : t('search.emptyQuery')}
+          action={
+            <Link href="/shop" style={{ textDecoration: 'none' }}>
+              <Button variant="outline" size="sm">
+                {t('storefront.browseAll')}
+              </Button>
+            </Link>
+          }
+        />
+      ) : (
+        <ProductGrid
+          products={matches}
+          loading={loading}
+          getProductHref={getProductHref}
+          formatPrice={formatPrice}
+        />
+      )}
     </div>
   );
 }

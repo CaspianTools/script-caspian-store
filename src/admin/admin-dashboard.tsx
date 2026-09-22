@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { getDocs, query, where } from 'firebase/firestore';
+import { getAggregateFromServer, getCountFromServer, query, sum, where } from 'firebase/firestore';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
 import { caspianCollections } from '../firebase/collections';
 import { useT } from '../i18n/locale-context';
+import { Button } from '../ui/button';
 import { Badge, Skeleton } from '../ui/misc';
 import type { ContactSubmission } from '../types';
 import {
@@ -24,6 +25,9 @@ interface Counts {
   revenue: number;
 }
 
+/** Order statuses that count towards the Revenue card. */
+const REVENUE_STATUSES = ['paid', 'processing', 'shipped', 'delivered'];
+
 export interface AdminDashboardProps {
   formatPrice?: (n: number) => string;
   className?: string;
@@ -37,59 +41,89 @@ export function AdminDashboard({
   const Link = useCaspianLink();
   const t = useT();
   const [counts, setCounts] = useState<Counts | null>(null);
+  const [countsError, setCountsError] = useState(false);
   const [recentContacts, setRecentContacts] = useState<ContactSubmission[] | null>(null);
   const [newContactCount, setNewContactCount] = useState<number>(0);
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     let alive = true;
+    setCountsError(false);
     (async () => {
       try {
         const refs = caspianCollections(db);
+        // Server-side aggregations: the cards only need totals, and reading
+        // every product + order document just to `.size` them scaled with the
+        // catalogue. `sum('total')` needs firebase >= 10.5.
         const [
           productsSnap,
           ordersSnap,
+          revenueSnap,
           pendingReviewsSnap,
           pendingQuestionsSnap,
           contacts,
           newContacts,
         ] = await Promise.all([
-          getDocs(refs.products),
-          getDocs(refs.orders),
-          getDocs(query(refs.reviews, where('status', '==', 'pending'))),
-          getDocs(query(refs.questions, where('status', '==', 'pending'))),
+          getCountFromServer(refs.products),
+          getCountFromServer(refs.orders),
+          getAggregateFromServer(
+            query(refs.orders, where('status', 'in', REVENUE_STATUSES)),
+            { revenue: sum('total') },
+          ),
+          getCountFromServer(query(refs.reviews, where('status', '==', 'pending'))),
+          getCountFromServer(query(refs.questions, where('status', '==', 'pending'))),
           listRecentContacts(db, 5).catch(() => [] as ContactSubmission[]),
           countNewContacts(db).catch(() => 0),
         ]);
         if (!alive) return;
-        const revenue = ordersSnap.docs.reduce((sum, d) => {
-          const data = d.data() as { total?: number; status?: string };
-          if (data.status === 'paid' || data.status === 'processing' || data.status === 'shipped' || data.status === 'delivered') {
-            return sum + (data.total ?? 0);
-          }
-          return sum;
-        }, 0);
         setCounts({
-          products: productsSnap.size,
-          orders: ordersSnap.size,
-          pendingReviews: pendingReviewsSnap.size,
-          pendingQuestions: pendingQuestionsSnap.size,
-          revenue,
+          products: productsSnap.data().count,
+          orders: ordersSnap.data().count,
+          pendingReviews: pendingReviewsSnap.data().count,
+          pendingQuestions: pendingQuestionsSnap.data().count,
+          revenue: revenueSnap.data().revenue ?? 0,
         });
         setRecentContacts(contacts);
         setNewContactCount(newContacts);
       } catch (error) {
         reportServiceError(db, 'admin-dashboard.load', error);
+        if (!alive) return;
+        setCountsError(true);
+        setRecentContacts((prev) => prev ?? []);
       }
     })();
     return () => {
       alive = false;
     };
-  }, [db]);
+  }, [db, reloadNonce]);
 
   return (
     <div className={className}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Dashboard</h1>
-      <p style={{ color: '#666', marginTop: 4 }}>Quick snapshot of your store.</p>
+      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.dashboard.title')}</h1>
+      <p style={{ color: '#666', marginTop: 4 }}>{t('admin.dashboard.subtitle')}</p>
+
+      {countsError && (
+        <div
+          role="alert"
+          style={{
+            marginTop: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 14px',
+            border: '1px solid #f3c2c2',
+            background: '#fff5f5',
+            borderRadius: 'var(--caspian-radius, 8px)',
+            color: '#a33',
+            fontSize: 14,
+          }}
+        >
+          <span style={{ flex: 1 }}>{t('admin.dashboard.loadFailed')}</span>
+          <Button variant="outline" size="sm" onClick={() => setReloadNonce((n) => n + 1)}>
+            {t('admin.dashboard.retry')}
+          </Button>
+        </div>
+      )}
 
       <div
         style={{
@@ -99,25 +133,35 @@ export function AdminDashboard({
           gap: 16,
         }}
       >
-        <Card label="Products" href="/admin/products" value={counts?.products} loading={!counts} />
-        <Card label="Orders" href="/admin/orders" value={counts?.orders} loading={!counts} />
         <Card
-          label="Revenue"
+          label={t('admin.dashboard.card.products')}
+          href="/admin/products"
+          value={counts?.products}
+          loading={!counts && !countsError}
+        />
+        <Card
+          label={t('admin.dashboard.card.orders')}
+          href="/admin/orders"
+          value={counts?.orders}
+          loading={!counts && !countsError}
+        />
+        <Card
+          label={t('admin.dashboard.card.revenue')}
           href="/admin/orders"
           value={counts ? formatPrice(counts.revenue) : undefined}
-          loading={!counts}
+          loading={!counts && !countsError}
         />
         <Card
-          label="Pending reviews"
+          label={t('admin.dashboard.card.pendingReviews')}
           href="/admin/reviews"
           value={counts?.pendingReviews}
-          loading={!counts}
+          loading={!counts && !countsError}
         />
         <Card
-          label="Pending questions"
+          label={t('admin.dashboard.card.pendingQuestions')}
           href="/admin/reviews"
           value={counts?.pendingQuestions}
-          loading={!counts}
+          loading={!counts && !countsError}
         />
       </div>
 
@@ -131,7 +175,7 @@ export function AdminDashboard({
               {t('admin.dashboard.recentContactsNewPill', { count: newContactCount })}
             </Badge>
           )}
-          <Link href="/admin/users" style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--caspian-primary, #111)' }}>
+          <Link href="/admin/contacts" style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--caspian-primary, #111)' }}>
             {t('admin.dashboard.viewAll')}
           </Link>
         </div>
@@ -148,7 +192,7 @@ export function AdminDashboard({
           <ul style={listStyle}>
             {recentContacts.map((c) => (
               <li key={c.id} style={rowStyle}>
-                <Link href="/admin/users" style={rowLinkStyle}>
+                <Link href="/admin/contacts" style={rowLinkStyle}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, color: '#111' }}>
                       {c.name}
@@ -161,7 +205,7 @@ export function AdminDashboard({
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     {c.status === 'new' && <Badge variant="secondary">{t('admin.contacts.status.new')}</Badge>}
                     <span style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>
-                      {c.createdAt?.toDate ? formatRelative(c.createdAt.toDate()) : ''}
+                      {c.createdAt?.toDate ? formatRelative(c.createdAt.toDate(), t) : ''}
                     </span>
                   </div>
                 </Link>
@@ -204,22 +248,22 @@ function Card({
           {label}
         </p>
         <div style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 700 }}>
-          {loading ? <Skeleton style={{ height: 24, width: 80 }} /> : value}
+          {loading ? <Skeleton style={{ height: 24, width: 80 }} /> : value ?? '—'}
         </div>
       </div>
     </Link>
   );
 }
 
-function formatRelative(d: Date): string {
+function formatRelative(d: Date, t: ReturnType<typeof useT>): string {
   const diff = Date.now() - d.getTime();
   const min = 60 * 1000;
   const hour = 60 * min;
   const day = 24 * hour;
-  if (diff < min) return 'just now';
-  if (diff < hour) return `${Math.floor(diff / min)}m ago`;
-  if (diff < day) return `${Math.floor(diff / hour)}h ago`;
-  if (diff < 30 * day) return `${Math.floor(diff / day)}d ago`;
+  if (diff < min) return t('admin.dashboard.relative.justNow');
+  if (diff < hour) return t('admin.dashboard.relative.minutes', { count: Math.floor(diff / min) });
+  if (diff < day) return t('admin.dashboard.relative.hours', { count: Math.floor(diff / hour) });
+  if (diff < 30 * day) return t('admin.dashboard.relative.days', { count: Math.floor(diff / day) });
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 

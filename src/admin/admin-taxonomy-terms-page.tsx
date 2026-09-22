@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import type { TaxonomyTermDoc } from '../types';
 import {
   createTerm,
@@ -15,6 +15,7 @@ import { slugify } from '../utils/slugify';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Dialog } from '../ui/dialog';
 import { Input, Label } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
@@ -39,8 +40,11 @@ export function AdminTaxonomyTermsPage({
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
   const t = useT();
+  const formId = useId();
   const [terms, setTerms] = useState<TaxonomyTermDoc[] | null>(null);
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<TaxonomyTermDoc | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TaxonomyTermWriteInput>(emptyDraft);
   const [saving, setSaving] = useState(false);
@@ -55,6 +59,7 @@ export function AdminTaxonomyTermsPage({
     } catch (error) {
       console.error('[caspian-store] Failed to list taxonomy terms:', error);
       setTerms([]);
+      toast({ title: t('admin.common.loadFailed'), variant: 'destructive' });
     }
   };
 
@@ -75,7 +80,9 @@ export function AdminTaxonomyTermsPage({
     setOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (saving) return;
     const name = draft.name.trim();
     if (!name) {
       toast({ title: t('admin.taxonomies.terms.nameRequired'), variant: 'destructive' });
@@ -105,15 +112,20 @@ export function AdminTaxonomyTermsPage({
     }
   };
 
-  const handleDelete = async (term: TaxonomyTermDoc) => {
-    if (!confirm(t('admin.taxonomies.terms.confirmDelete').replace('{name}', term.name))) return;
+  const handleDelete = async () => {
+    const term = pendingDelete;
+    if (!term) return;
+    setDeleting(true);
     try {
       await deleteTerm(db, term.id);
       setTerms((prev) => (prev ? prev.filter((x) => x.id !== term.id) : prev));
+      setPendingDelete(null);
       toast({ title: t('admin.taxonomies.terms.deleted') });
     } catch (error) {
       console.error('[caspian-store] Delete failed:', error);
       toast({ title: t('admin.taxonomies.terms.deleteFailed'), variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -160,7 +172,7 @@ export function AdminTaxonomyTermsPage({
                     <Button variant="outline" size="sm" onClick={() => openEdit(term)}>
                       {t('admin.taxonomies.terms.edit')}
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(term)}>
+                    <Button variant="destructive" size="sm" onClick={() => setPendingDelete(term)}>
                       {t('admin.taxonomies.terms.delete')}
                     </Button>
                   </div>
@@ -178,19 +190,20 @@ export function AdminTaxonomyTermsPage({
         maxWidth={460}
         footer={
           <>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>
               {t('admin.taxonomies.terms.cancel')}
             </Button>
-            <Button onClick={handleSave} loading={saving}>
+            <Button type="submit" form={formId} loading={saving}>
               {t('admin.taxonomies.terms.save')}
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form id={formId} onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <Label>{t('admin.taxonomies.terms.nameLabel')}</Label>
+            <Label htmlFor={`${formId}-name`}>{t('admin.taxonomies.terms.nameLabel')}</Label>
             <Input
+              id={`${formId}-name`}
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
               placeholder={t('admin.taxonomies.terms.namePlaceholder')}
@@ -205,8 +218,21 @@ export function AdminTaxonomyTermsPage({
             />
             {t('admin.taxonomies.terms.activeLabel')}
           </label>
-        </div>
+        </form>
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={t('admin.taxonomies.terms.confirmDelete', { name: pendingDelete?.name ?? '' })}
+        description={t('admin.confirm.deleteBody')}
+        confirmLabel={t('admin.taxonomies.terms.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

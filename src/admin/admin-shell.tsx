@@ -217,7 +217,7 @@ export interface AdminShellProps {
    * consumer wants a custom bell in `headerRight`.
    */
   showNotificationsBell?: boolean;
-  /** Where the bell's "View all" link points. Default `/admin`. */
+  /** Where the bell's "View all" link points. Default `/admin#notifications`. */
   notificationsHref?: string;
   /**
    * Show the onboarding progress ring (seeded first-run todos) in the header.
@@ -250,7 +250,7 @@ export function AdminShell({
   updateCheckOwner = DEFAULT_REPO_OWNER,
   updateCheckRepo = DEFAULT_REPO_NAME,
   showNotificationsBell = true,
-  notificationsHref = '/admin',
+  notificationsHref = '/admin#notifications',
   showOnboardingProgress = true,
   headerHelp,
   defaultSidebarOpen = true,
@@ -259,8 +259,42 @@ export function AdminShell({
 }: AdminShellProps) {
   const Link = useCaspianLink();
   const nav = useCaspianNavigation();
+  const t = useT();
   const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  // Below the 900px breakpoint (see globals.css) the sidebar is an off-canvas
+  // drawer driven by this flag instead of the persisted open/collapsed state.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  // Navigating from the drawer should close it; otherwise the new page
+  // renders behind a veil the user has to dismiss by hand.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [nav.pathname]);
+
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
 
   // v7.1.0 dynamic sidebar: enabled plugin installs appear as children
   // under any AdminNavGroup with id `plugins`. Re-fetches on window focus.
@@ -302,6 +336,25 @@ export function AdminShell({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keep the group that contains the current route open. The mount-time
+  // seeding above runs once, before plugin installs have loaded and before
+  // any client-side navigation, so on its own a dashboard card that lands on
+  // /admin/orders left Sales collapsed with the active leaf hidden. This is
+  // deliberately not persisted: it reflects where the admin is, not a choice.
+  useEffect(() => {
+    setExpandedGroups((prev) => {
+      let next: Record<string, boolean> | null = null;
+      for (const item of navItemsWithDynamicPlugins) {
+        if (!isGroup(item) || prev[item.id]) continue;
+        if (item.children.some((c) => isActive(c.href))) {
+          next = { ...(next ?? prev), [item.id]: true };
+        }
+      }
+      return next ?? prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav.pathname, navItemsWithDynamicPlugins]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => {
@@ -348,6 +401,9 @@ export function AdminShell({
   }, [navItemsWithDynamicPlugins]);
 
   const sidebarWidth = sidebarOpen ? EXPANDED_SIDEBAR_WIDTH : COLLAPSED_SIDEBAR_WIDTH;
+  // The drawer always shows the full labelled nav: a 56px icon rail is the
+  // wrong shape for a touch surface that is only ever open on demand.
+  const showLabels = sidebarOpen || isMobile;
 
   return (
     <div
@@ -358,7 +414,16 @@ export function AdminShell({
         background: '#fafafa',
       }}
     >
+      {mobileOpen && (
+        <div
+          className="caspian-admin-sidebar-backdrop"
+          aria-hidden="true"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
       <aside
+        className={cn('caspian-admin-sidebar', mobileOpen && 'is-mobile-open')}
+        aria-label={t('admin.shell.navLabel')}
         style={{
           width: sidebarWidth,
           flexShrink: 0,
@@ -375,7 +440,7 @@ export function AdminShell({
       >
         <div
           style={{
-            padding: sidebarOpen ? '14px 16px' : '14px 0',
+            padding: showLabels ? '14px 16px' : '14px 0',
             borderBottom: '1px solid #eee',
             display: 'flex',
             alignItems: 'center',
@@ -383,7 +448,7 @@ export function AdminShell({
             minHeight: 49,
           }}
         >
-          {sidebarOpen ? (
+          {showLabels ? (
             <Link href="/admin">
               <span
                 style={{
@@ -413,7 +478,7 @@ export function AdminShell({
           )}
         </div>
 
-        {sidebarOpen ? (
+        {showLabels ? (
           <nav
             style={{
               display: 'flex',
@@ -477,6 +542,7 @@ export function AdminShell({
         }}
       >
         <header
+          className="caspian-admin-header"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -493,9 +559,18 @@ export function AdminShell({
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
             <button
               type="button"
-              onClick={toggleSidebar}
-              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-              aria-pressed={sidebarOpen}
+              className="caspian-admin-icon-btn"
+              onClick={() => (isMobile ? setMobileOpen((v) => !v) : toggleSidebar())}
+              aria-label={
+                isMobile
+                  ? mobileOpen
+                    ? t('admin.shell.closeMenu')
+                    : t('admin.shell.openMenu')
+                  : sidebarOpen
+                    ? t('admin.shell.collapseSidebar')
+                    : t('admin.shell.expandSidebar')
+              }
+              aria-expanded={isMobile ? mobileOpen : sidebarOpen}
               style={{
                 width: 36,
                 height: 36,
@@ -531,7 +606,7 @@ export function AdminShell({
           </div>
         </header>
 
-        <main style={{ flex: 1, minWidth: 0, padding: 24 }}>{children}</main>
+        <main className="caspian-admin-main" style={{ flex: 1, minWidth: 0, padding: 24 }}>{children}</main>
       </div>
     </div>
   );
@@ -642,6 +717,7 @@ function GroupNode({
   Link: ReturnType<typeof useCaspianLink>;
 }) {
   const navLabel = useNavLabel();
+  const t = useT();
   const groupActive =
     (group.href && isActive(group.href)) ||
     group.children.some((c) => isActive(c.href));
@@ -680,7 +756,7 @@ function GroupNode({
 
   return (
     <div>
-      <div style={rowStyle}>
+      <div className="caspian-admin-nav-group-row" style={rowStyle}>
         {group.href ? (
           <Link href={group.href} style={labelInnerStyle}>
             {labelContent}
@@ -693,7 +769,7 @@ function GroupNode({
         <button
           type="button"
           onClick={onToggle}
-          aria-label={expanded ? 'Collapse group' : 'Expand group'}
+          aria-label={expanded ? t('common.collapse') : t('common.expand')}
           aria-expanded={expanded}
           style={{
             display: 'inline-flex',
@@ -749,6 +825,7 @@ function GroupNode({
 
 function AdminUpdateBadge({ owner, repo }: { owner: string; repo: string }) {
   const Link = useCaspianLink();
+  const t = useT();
   const [latest, setLatest] = useState<string | null>(null);
 
   useEffect(() => {
@@ -772,7 +849,7 @@ function AdminUpdateBadge({ owner, repo }: { owner: string; repo: string }) {
   return (
     <Link href="/admin/about">
       <span style={{ textDecoration: 'none' }}>
-        <Badge>Update available →</Badge>
+        <Badge>{t('admin.shell.updateAvailable')} →</Badge>
       </span>
     </Link>
   );

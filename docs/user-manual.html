@@ -664,7 +664,7 @@ const MANUAL = {
         "Everything you need to run your shop, written for the person running it rather than the person who built it. Every screen described here was checked against the software itself.",
         "The list on the left is grouped. Click a group to open it, and the group you are reading opens itself as you go. The search box at the top narrows the whole manual as you type and marks what matched. Steps are the part you follow; \"What you fill in\" is the reference; \"Worth knowing\" is where the traps and the limits are."
       ],
-      "version": "v15.0.1"
+      "version": "v15.1.0"
     },
     "parts": [
       {
@@ -843,22 +843,23 @@ const MANUAL = {
             ],
             "notes": [
               "The Revenue card adds up orders marked paid, processing, shipped or delivered. Orders in any other state, including refunded or cancelled ones, are not counted, and there is no date range or chart.",
-              "The counts are worked out by reading every product and every order each time the dashboard loads, so a shop with a very large number of orders will find this screen slow and it will add to your Firebase usage.",
-              "The \"View all\" link above Recent contacts, and the rows themselves, open the Users screen rather than the Contacts screen. The full contact messages are under Contacts in the sidebar.",
+              "The counts and the revenue figure are worked out by the database itself, so the dashboard reads no product or order documents to fill the cards and stays quick however many orders you have.",
+              "The \"View all\" link above Recent contacts, and the rows themselves, open the Contacts screen, where the full messages are.",
               "The setup checklist fills itself in the first time it finds the list empty, with twelve built-in tasks.",
               "\"Verify progress\" cannot confirm the four tasks about publishing rules, publishing storage rules, installing the payment functions, and setting up the payment webhook. You have to tick those off yourself.",
               "\"Verify progress\" only ever ticks boxes on. It never un-ticks something that stopped being true.",
               "Notifications are worked out fresh every time and have no read or dismiss action. An item disappears on its own once the underlying thing is dealt with, for example once the reviews are moderated.",
               "The \"Update available\" notification and the matching header badge are looked up over the internet from the software's public release list. With no internet connection, or if the lookup fails, nothing is shown and no error appears.",
-              "The five cards are all loaded together in one go. If your account is not allowed to read one of the four things behind them - your products, your orders, the reviews or the questions - the whole load stops there. All five cards stay on their grey loading bars and never fill in, and the Recent contacts list underneath stays on its loading bars too. One blocked item takes the whole top of the screen with it.",
-              "There is no error message on the dashboard when that happens. Nothing on the screen says what went wrong or invites you to try again, and reloading the page will do the same thing. The failure is written into the error list on the About screen instead, so that is the place to look if the cards sit on their loading bars.",
+              "The five cards are all loaded together in one go. If your account is not allowed to read one of the four things behind them - your products, your orders, the reviews or the questions - the whole load stops there and every card shows a dash instead of a number.",
+              "When that happens a red message appears above the cards saying the figures could not be loaded, with a Retry button. The failure is also written into the error list on the About screen.",
               "The two contact figures are the exception. If the contact messages alone cannot be read, they are skipped quietly: the recent list shows as empty and the unread pill stays away, while the five cards and the rest of the screen still load normally.",
               "Inside the Notifications panel it works the other way round, and more forgivingly. Each item there is counted on its own, so something your account cannot read only removes that one item from the list. The rest of the panel still works and no error is shown.",
               "The bell's \"View all notifications\" link goes to the top of the dashboard, so you may have to scroll down to the Notifications panel unless whoever set up your site pointed it straight at the panel.",
               "The progress ring counts only the built-in setup tasks, not ones you added yourself. It disappears completely once they are all done, and it never appears if the built-in tasks were deleted.",
               "Deleting a task or a search term asks for confirmation with a plain browser popup, and there is no undo.",
               "Search terms only appear once shoppers have used the search box. Until then the panel says so and stays empty. This panel starts folded away.",
-              "Which panels are open is remembered in the browser you are using, so a different computer or browser starts from the defaults again."
+              "Which panels are open is remembered in the browser you are using, so a different computer or browser starts from the defaults again.",
+              "On a phone or a narrow window the left-hand menu is hidden. The button at the top left slides it in over the page; tapping outside it, pressing Escape or choosing a page closes it again."
             ]
           },
           {
@@ -933,7 +934,7 @@ const MANUAL = {
               "Use the Table / Masonry switch at the top right to change between the plain table and the picture-card grid.",
               "Click the three-dot button at the end of a row (or on a card) and choose Edit to open the product.",
               "Choose View on storefront from the same menu, or click the small arrow icon next to a product name, to open the shop page for that product in a new tab.",
-              "Choose Delete from the same menu to remove a product. A browser confirmation box appears first.",
+              "Choose Delete from the same menu to remove a product. A confirmation dialog naming the product appears first.",
               "Click + New product at the top right to create one."
             ],
             "fields": [
@@ -1268,8 +1269,8 @@ const MANUAL = {
               "There is no way to move a batch of products from one shelf to another from the admin screens. The Products list has a Category dropdown, but it only filters what you are looking at; it does not change anything. To move ten products you open ten products. The one exception is the spreadsheet route: under Settings, then Import / Export, export your products, change the category column in the file, and import it back choosing Overwrite for the rows that match products you already have.",
               "The parent dropdown will not offer the category you are editing, nor anything already filed underneath it. That stops you accidentally making a loop, so you cannot put a shelf inside its own shelf.",
               "The Categories table is a flat list sorted by the Order number, not a tree. A child can appear above its parent in that table if its Order number is lower. The indented tree view only shows up in the Category dropdown inside the product editor, where each level is prefixed with a dash.",
-              "Deleting a category does not touch anything else. Products filed under it keep pointing at a shelf that no longer exists, and the product editor then shows an orange warning telling you to pick a new category and save. Child categories lose their parent and their Parent column just shows a dash.",
-              "Deleting asks for confirmation in a small browser pop-up, then happens immediately. There is no undo and no recycle bin.",
+              "Deleting a category does not touch the products filed under it. They keep pointing at a shelf that no longer exists, and the product editor then shows an orange warning telling you to pick a new category and save. Child categories are moved to the top level, and the confirmation tells you how many before you agree.",
+              "Deleting asks for confirmation in a dialog, then happens immediately. There is no undo and no recycle bin.",
               "A hidden (not Active) category still appears in the product editor's Category dropdown on purpose, so you can move products off it. It is marked with the word (hidden) after its name so you can tell it apart.",
               "On the shop page, the Category filter only offers categories that products are actually filed under, and it matches exactly. Filtering by a parent shelf does not pull in products filed under its children.",
               "If a product is filed under a hidden category, the shop page's Category filter still lists it, but shows a string of random-looking characters instead of a name, because it can only look up names for active categories.",
@@ -1343,7 +1344,7 @@ const MANUAL = {
               "There is no way to add a product to a collection from the product editor. Collection membership is only edited from this screen.",
               "The product picker loads every product in your shop at once. On a very large catalogue that list will be long, so use the search box rather than scrolling.",
               "Collections do not nest, and a collection cannot contain another collection.",
-              "Deleting asks for confirmation in a small browser pop-up, then happens immediately. The products themselves are untouched.",
+              "Deleting asks for confirmation in a dialog, then happens immediately. The products themselves are untouched.",
               "Collections can be exported and imported as a spreadsheet under Settings, then Import / Export. In that file the chosen products go in a single productIds column, separated by semicolons."
             ]
           },
@@ -1682,14 +1683,14 @@ const MANUAL = {
               "If you have set the option to hide prices until an address is entered, the delivery list stays blank until both a country and a postcode are typed in.",
               "If any delivery option is free and you have set the option for it, the paid options are hidden so the shopper automatically gets the free one.",
               "Tax at checkout is only an estimate and is labelled as such. The final amount is worked out by the payment provider.",
-              "The promo code box on the cart page does not actually do anything. The code is remembered and added to the checkout web address, but the checkout page ignores it. No discount is applied and no discount line appears.",
+              "The promo code typed on the cart page is carried to checkout and shown in the order summary there. The discount itself is applied by the card payment provider when it checks the code, so it appears on the payment page and on the finished order, not as a line on the checkout form. Bank transfer, cheque and cash on delivery orders never apply a promo code.",
               "There is no promo code box on the checkout page itself.",
               "The basket never checks stock. Quantities can be raised as high as the shopper likes on the cart page and in the slide-out panel.",
               "The basket is kept in the browser for signed-out shoppers and saved to the account for signed-in ones. Signing in merges the two so nothing is lost.",
               "With bank transfer, cheque or cash on delivery, the order is recorded straight away with the status On hold and the shopper goes directly to the confirmation page. The payment instructions you are required to type in when setting those methods up are never shown to the shopper anywhere on the site — you have to tell them another way.",
               "The confirmation page may briefly say the order is still processing while it waits for the order to be written. It keeps checking for about nine seconds, then shows the order number and asks the shopper to check their email.",
               "If no payment method has been set up at all, the checkout page shows a message saying so. A link to the payment settings only appears if the person looking is signed in as an owner.",
-              "Orders listed in a shopper's account link to /orders/ followed by the order number, which is not a page on this site. Clicking one shows 'Page not found'.",
+              "Orders listed in a shopper's account open at /orders/ followed by the order number: the same read-only summary as the confirmation page, with the totals, the delivery details and a link back to the account.",
               "The order tracking page gives the same 'we could not find that order' message whether the order does not exist or the email does not match, so nobody can fish for other people's order numbers.",
               "A link to /order-status can be pre-filled by adding ?id=...&email=... to the address, which is handy for putting in your own emails, but nothing on the site produces that link for you."
             ]
@@ -1777,15 +1778,15 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "The table columns are: Order, Customer, Date, Items, Total, Status. That is all of them.",
-              "There is no column showing whether a sale was made online or at the in-person register. You cannot tell the two apart on this screen. See the separate section on in-person sales.",
+              "The table columns are: Order, Customer, Date, Items, Total, Channel, Status. That is all of them.",
+              "The Channel column shows a POS badge on sales rung up at the in-person register and Online on everything else, so the two are told apart at a glance. See the separate section on in-person sales.",
               "The status filter only appears in Table view. The Board always shows every order regardless of what you had filtered, which is easy to misread as the filter having been ignored.",
               "Only the 500 most recent orders are loaded. If you have more than that, the oldest simply will not appear here, and there is no page-two control.",
-              "There is no search box. You cannot look an order up by customer name, email, or order number on this screen. Narrowing by status is the only filter.",
+              "The search box above the list finds an order by its number or by the customer's email, in both Table and Board view. It does not search by customer name.",
               "The Order column shows only the first 10 characters of the order number, not the whole thing. If a customer needs the full number, open the order and read it from the web address in your browser's address bar.",
               "The Items column is the total number of units, so an order of three of one item shows 3, not 1.",
               "Customer shows the email address only. A dash means no email was recorded.",
-              "cancelled is one of the board columns, so it is possible to cancel an order by dragging, with no confirmation step.",
+              "cancelled is one of the board columns, so it is possible to cancel an order by dragging, with no confirmation step. Each board card also carries a status dropdown, so an order can be moved without dragging, from a keyboard or a touch screen.",
               "There is no way to delete an order, here or anywhere else in the admin.",
               "Sales rung up at the counter appear in this list too. The register itself is covered by its own manual, which ships with the register."
             ]
@@ -1810,16 +1811,16 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "The screen shows: the short order number, customer email, date and time, current status, each item with its size, quantity and unit price, the line total, then Subtotal, Shipping, Discount and Total, then the delivery name, address, city, postcode and country.",
+              "The screen shows: a back link to the orders list, the short order number, customer email, date and time, current status, each item with its size, quantity and unit price, the line total, then Subtotal, Shipping, Tax, Discount and Total, a Payment section with the method, card details and promo code, then the delivery name, address, city, postcode, country, the delivery method and any note the shopper typed.",
               "Shipping and Discount rows are hidden when they are zero, so a free-delivery order simply has no Shipping line rather than one reading zero.",
-              "Tax is not shown on this screen even when the order has tax recorded against it. The customer's own tracking page does show it, and so does the orders export, so the totals here can look as though they do not add up.",
-              "The delivery method the customer chose is not shown here either, although it is recorded and does appear on the customer's tracking page.",
-              "The payment method and the promo code used are not shown, only the discount amount.",
+              "Tax is shown as its own row whenever the order has tax recorded against it, so the totals add up. Orders with no tax simply have no Tax line.",
+              "The delivery method the customer chose is shown under the address in the Shipping section, together with any note they typed at checkout.",
+              "The Payment section shows the payment method, the card brand and last four digits for card payments, and the promo code if one was used. The Discount row also names the code.",
               "None of the in-person register details appear here: no receipt number, no cashier, no payment breakdown.",
-              "There is nowhere to type a tracking or consignment number, and nowhere to add a note to the order.",
+              "There is nowhere to type a tracking or consignment number, and nowhere for you to add a note. The note shown under the address is the shopper's own, typed at checkout.",
               "There is no refund button, no print or invoice button, and no delete button.",
               "The Shipping section is hidden entirely if the order has no address attached, which is the case for a walk-in sale at the counter.",
-              "If the order was left on on-hold, the dropdown here does not offer on-hold and so will not display it as the current setting. The coloured label above the dropdown is the reliable one."
+              "The status dropdown offers all seven statuses, including on-hold, so an order awaiting a bank transfer shows on-hold as its current setting and can be moved back to it."
             ]
           },
           {
@@ -2376,6 +2377,22 @@ const MANUAL = {
               {
                 "name": "Show quick add-to-cart icon on product cards",
                 "what": "Tick box. It works on two of the three product card designs only. The plain design and the compact design have a quick add-to-basket icon that this box turns on and off. The editorial design has no such icon at all, so on a shop using that design the box does nothing you can see. Saves the moment you click it."
+              },
+              {
+                "name": "Storefront copy: Announcement bar",
+                "what": "Text box under the product-card tick boxes. One short line shown across the top of every page by the Electronics template. Left empty, the bar does not appear at all. The plain storefront ignores it."
+              },
+              {
+                "name": "Storefront copy: Tagline",
+                "what": "One line shown in the Electronics template's pre-footer strip and homepage spec strip. Left empty, your brand description is shown there instead."
+              },
+              {
+                "name": "Storefront copy: Pull-quote",
+                "what": "A short quote shown on the Home Goods template's home page and footer sign-off. Left empty, your brand description is shown instead."
+              },
+              {
+                "name": "Storefront copy: Quote attribution",
+                "what": "Printed under the pull-quote. Left empty, your brand name is used. The four boxes save together with the Save button under them, which stays greyed out until something changed."
               }
             ],
             "notes": [
@@ -3114,7 +3131,7 @@ const MANUAL = {
             "notes": [
               "Prices are typed as plain numbers with no currency symbol on the field. They are in your store's currency.",
               "Clicking Save on a delivery method always switches it back on, even if you had deliberately turned it off. If you only wanted to tweak the price of a paused method, it will be live again after you save.",
-              "Removing every country from Eligible countries and saving does not remove the restriction. The old country list stays in place. To genuinely open a method to all countries, delete it and add it again.",
+              "Removing every country from Eligible countries and saving opens the method to every country again. Configure also leaves a switched-off method switched off: saving its settings no longer turns it back on.",
               "The country picker only offers the countries listed in your site settings. If you have not set a country list there, it offers the full world list.",
               "Weight-Based only appears at checkout if at least one product in the basket has a weight filled in (Products, edit a product, the Weight (kg) box). If nothing is weighed, the method silently disappears from the checkout.",
               "If a method's settings are invalid, it is quietly dropped from checkout rather than showing an error to the customer. Always test your own checkout after editing.",
@@ -3231,7 +3248,7 @@ const MANUAL = {
               "Type a number in Order to control where the row sits in this list.",
               "Tick Active and, if you want, Default.",
               "Click Save.",
-              "To change a row later, click Edit on it. To remove one, click Delete and confirm the browser pop-up."
+              "To change a row later, click Edit on it. To remove one, click Delete and confirm in the dialog."
             ],
             "fields": [
               {
@@ -3273,9 +3290,9 @@ const MANUAL = {
               "This is a list, nothing more. No part of the shop reads it. Adding a language here does not translate your shop, does not add a language chooser, and does not change anything a shopper sees. The Active tick box says \"visible to shoppers\" but there is no shopper-facing list for it to feed.",
               "The wording built into the product covers English, Azerbaijani, Russian and Turkish only, and those three translations cover the till and register wording plus shared wording rather than the whole shop. Everything else falls back to English.",
               "The only language chooser anywhere in the product is on the Point of Sale settings screen, and it offers those four built-in languages, not the rows you add here.",
-              "You can tick Default on more than one row. Nothing stops you, and nothing uses the setting.",
+              "Only one row can be Default. Ticking Default on a language moves the badge there and unticks the previous one for you. A second row with the same code is refused when you save. Nothing else uses the Default setting.",
               "The Delete button is greyed out on any row marked Default. Untick Default first if you really want to remove it.",
-              "Delete is immediate after the browser confirmation pop-up. There is no undo.",
+              "Delete is immediate after the confirmation dialog. There is no undo.",
               "Codes are forced to lower case when saved, so typing EN stores en."
             ]
           },
@@ -3409,11 +3426,11 @@ const MANUAL = {
               "WHICH ACTIONS YOU ARE OFFERED - Products, Categories, Collections and Promo codes offer Skip, Overwrite and Create new. Brands and Taxonomy terms offer only Skip and Overwrite, because their internal id comes from the name. Subscribers offer only Skip, because an email address is all there is to overwrite. New rows default to being created; rows that already exist default to Skip, so a plain re-upload of an export changes nothing until you switch them to Overwrite.",
               "OVERWRITE CAN ERASE THINGS - Products: a blank brand, category, description or images cell wipes those values from the product, and a blank isActive turns it visible while blank isNew and blank limited turn those off. Collections: a blank productIds cell empties the collection. Categories and Collections: a blank order resets it to 0, a blank isActive turns it on, a blank isFeatured turns it off. Always overwrite from a fresh export rather than a hand-built partial sheet.",
               "OVERWRITE CANNOT CLEAR SOME THINGS - On Products, leaving sku, barcode, shortDescription, details, sizes, color, weightKg, stock, slug or any of the term columns blank keeps whatever is already stored. On Categories and Collections the same is true of description, parentId and imageUrl; on Promo codes, of minOrderAmount and maxDiscount. Whether you can empty one of those by hand instead depends on which list it is - see the next note.",
-              "HOW TO EMPTY THOSE FIELDS, AND WHERE YOU SIMPLY CANNOT - For Categories and Collections it works: open the record on its own admin page, clear the description box, the picture address or the parent box, and save. The empty box is saved and the old value is gone. For Products and Promo codes there is no way to do it at all. Both of those screens treat a box you have emptied as 'leave this one alone', so wiping sku, barcode, shortDescription, details, color, weightKg, stock or any of the term pickers on the product page - or the minimum basket amount and the maximum discount on a promo code - saves nothing and the old value stays exactly where it was. There is no import way and no one-record-at-a-time way. Your only real choices are to type a different value over the old one, or to delete the record and add it again. Two boxes on the product page do behave differently: emptying the Sizes box really does clear the sizes, and emptying the web address box does not leave it blank - a fresh address is made from the product name instead.",
+              "HOW TO EMPTY THOSE FIELDS, AND WHERE YOU SIMPLY CANNOT - For Products, Categories and Collections it works: open the record on its own admin page, clear the box, and save. The empty box is saved and the old value is gone. On a product that covers sku, barcode, shortDescription, details, color, weightKg, every square of the stock grid and the term pickers. For Promo codes there is still no way to do it at all. That screen treats a box you have emptied as 'leave this one alone', so wiping the minimum basket amount or the maximum discount saves nothing and the old value stays exactly where it was. Your only real choices there are to type a different value over the old one, or to delete the code and add it again. One product box behaves differently: emptying the web address box does not leave it blank - a fresh address is made from the product name instead.",
               "CREATE NEW ON A ROW THAT ALREADY EXISTS - For Products this is safe: a second product is made and its web address gets a number added so the two do not clash. For Categories and Collections nothing renames the web address, so you end up with two entries sharing one address. For Promo codes you end up with two codes with the same text and only one of them will ever be applied at checkout. Prefer Overwrite or Skip for those three.",
               "YES AND NO COLUMNS - true, 1, yes and y all mean yes, in any capitalisation. Anything else typed in the box means no, including words like on, active or x. Blank means the sensible default: isActive is yes, and isNew, limited and isFeatured are no.",
               "NUMBER COLUMNS - Type plain digits only. 199 and 199.99 work; $199 and 1,299 do not. A price that cannot be read makes the whole product row invalid. A weight that cannot be read is quietly ignored and the product still imports.",
-              "LIST COLUMNS SPLIT ON COMMAS TOO - Anywhere a cell holds a list (sizes, images, productIds, and the term columns), the value is split on semicolons and on commas. A term name or a web address containing a comma will be cut in two. Keep commas out of those cells.",
+              "LIST COLUMNS SPLIT ON SEMICOLONS - Anywhere a cell holds a list (sizes, images, productIds, and the term columns), the value is split on semicolons, which is also what an export writes. A cell with no semicolon at all is treated as an old comma-separated list, so a single web address containing a comma must be written with a semicolon after it, or as part of a two-item list, to survive.",
               "SPELLING CREATES CLUTTER - Brand, category and term names are matched ignoring capitals, so acme finds Acme. But Acme Inc and Acme are different, and each new spelling silently creates another brand, category or term. Tidy your spellings before importing.",
               "The import never uploads pictures. The images column stores the web addresses you type, so host the pictures somewhere public first."
             ]
@@ -3430,7 +3447,7 @@ const MANUAL = {
               "Press Download CSV and open the file in your spreadsheet program."
             ],
             "notes": [
-              "ORDERS - 17 columns: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders.",
+              "ORDERS - 26 columns: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders, paymentMethod, shippingMethod, shippingName, shippingAddress, shippingCity, shippingZip, shippingCountry, shippingPhone, orderNotes. The nine columns from paymentMethod onwards are the delivery details as typed at checkout; they are blank on counter sales, and shippingPhone is blank on orders placed before this release.",
               "Orders - items is a readable summary such as \"Black Jacket x1; Wool Scarf x2\", not one row per product. tenders lists how it was paid, such as \"cash 20.00; card 5.50\". channel says online or pos. receiptNumber, cashierId, deviceId and tenders are filled in only for sales rung up on the till, and channel is blank on orders taken before the till feature existed, which were all online sales.",
               "Orders - the download stops at the 5,000 most recent orders, newest first. There is no date range picker, so a shop past that number cannot reach older orders from this page.",
               "CUSTOMERS - 8 columns: uid, email, displayName, role, phone, createdAt, addressCount, wishlistCount. addressCount and wishlistCount are counts only; the addresses themselves and the wish-listed items are not included. The list covers every account, including your own staff and admin logins, and the role column tells you which is which.",
@@ -3618,7 +3635,7 @@ const MANUAL = {
   },
   "az": {
     "intro": {
-      "version": "v15.0.1"
+      "version": "v15.1.0"
     },
     "parts": [
       {
@@ -3790,22 +3807,23 @@ const MANUAL = {
             ],
             "notes": [
               "Revenue kartı yalnız paid, processing, shipped və ya delivered vəziyyətindəki sifarişləri toplayır. Digər vəziyyətlər, o cümlədən geri qaytarılmış və ləğv edilmiş sifarişlər sayılmır; tarix aralığı və qrafik də yoxdur.",
-              "Saylar idarə paneli hər dəfə yüklənəndə bütün məhsulların və bütün sifarişlərin oxunması ilə hesablanır, ona görə sifariş sayı çox olan mağazada bu ekran ləng işləyəcək və Firebase istifadənizi artıracaq.",
-              "Recent contacts üzərindəki «View all» (Hamısına bax) linki və sətirlərin özü Contacts deyil, Users (istifadəçilər) ekranını açır. Müraciət mesajlarının tam mətni yan paneldəki Contacts bölməsindədir.",
+              "Saylar və gəlir rəqəmi verilənlər bazasının özü tərəfindən hesablanır, ona görə idarə paneli kartları doldurmaq üçün heç bir məhsul və ya sifariş sənədini oxumur və sifariş sayından asılı olmayaraq sürətli qalır.",
+              "Recent contacts üzərindəki «View all» (Hamısına bax) linki və sətirlərin özü tam mesajların olduğu Contacts ekranını açır.",
               "Quraşdırma yoxlama siyahısı boş olduğunu ilk dəfə görəndə özünü on iki hazır tapşırıqla doldurur.",
               "«Verify progress» dörd tapşırığı təsdiqləyə bilmir: qaydaların yayımlanması, storage qaydalarının yayımlanması, ödəniş funksiyalarının quraşdırılması və ödəniş webhook-unun qurulması. Onları özünüz işarələməlisiniz.",
               "«Verify progress» yalnız işarə qoyur. Doğru olmaqdan çıxmış bir bəndin işarəsini heç vaxt götürmür.",
               "Bildirişlər hər dəfə yenidən hesablanır; onların üçün «oxundu» və ya «gizlət» əməliyyatı yoxdur. Bənd, arxasındakı məsələ həll olunan kimi, məsələn rəylər moderasiyadan keçən kimi, özü yox olur.",
               "«Update available» (Yeniləmə var) bildirişi və başlıqdakı müvafiq nişan internet üzərindən proqramın açıq buraxılış siyahısından oxunur. İnternet yoxdursa və ya sorğu alınmasa, heç nə göstərilmir və xəta da çıxmır.",
-              "Beş kartın hamısı birlikdə, bir dəfəyə yüklənir. Hesabınızın arxadakı dörd şeydən birini — məhsullarınızı, sifarişlərinizi, rəyləri və ya sualları — oxumağa icazəsi yoxdursa, yükləmə elə orada dayanır. Hər beş kart boz yüklənmə zolaqlarında qalır və heç vaxt dolmur, altdakı Recent contacts siyahısı da yüklənmə zolaqlarında qalır. Bir bloklanmış bənd ekranın bütün yuxarı hissəsini özü ilə aparır.",
-              "Bu baş verəndə idarə panelində heç bir xəta mesajı olmur. Ekranda nəyin səhv getdiyini bildirən və ya yenidən cəhd etməyi təklif edən heç nə yoxdur, səhifəni yeniləmək də eyni nəticəni verəcək. Nasazlıq bunun əvəzinə About ekranındakı xətalar siyahısına yazılır, ona görə kartlar yüklənmə zolaqlarında qalıbsa, oraya baxın.",
+              "Beş kartın hamısı birlikdə, bir dəfəyə yüklənir. Hesabınızın arxadakı dörd şeydən birini — məhsullarınızı, sifarişlərinizi, rəyləri və ya sualları — oxumağa icazəsi yoxdursa, yükləmə elə orada dayanır və hər kartda rəqəm əvəzinə tire görünür.",
+              "Bu baş verəndə kartların üstündə rəqəmlərin yüklənə bilmədiyini bildirən qırmızı mesaj və Retry (Yenidən cəhd et) düyməsi çıxır. Nasazlıq həm də About ekranındakı xətalar siyahısına yazılır.",
               "İki əlaqə göstəricisi istisnadır. Yalnız müraciət mesajları oxuna bilmirsə, onlar səssizcə buraxılır: son müraciətlər siyahısı boş görünür, oxunmamış nişanı çıxmır, beş kart və ekranın qalan hissəsi isə normal yüklənir.",
               "Bildirişlər panelinin içində isə əksinə və daha yumşaq işləyir. Oradakı hər bənd ayrıca hesablanır, ona görə hesabınızın oxuya bilmədiyi bir şey siyahıdan yalnız həmin bəndi çıxarır. Panelin qalanı işləməyə davam edir və heç bir xəta göstərilmir.",
               "Zəngin altındakı «View all notifications» linki idarə panelinin ən yuxarısına aparır, ona görə saytınızı quran şəxs onu birbaşa panelə yönəltməyibsə, Notifications panelinə çatmaq üçün aşağı sürüşdürmək lazım gələ bilər.",
               "İrəliləyiş halqası yalnız hazır quraşdırma tapşırıqlarını sayır, sizin əlavə etdiklərinizi yox. Hamısı bitəndə halqa tamamilə yox olur; hazır tapşırıqlar silinibsə, ümumiyyətlə görünmür.",
               "Tapşırığın və ya axtarış sözünün silinməsi adi brauzer pəncərəsi ilə təsdiq istəyir və geri qaytarmaq mümkün deyil.",
               "Axtarış sözləri yalnız alıcılar axtarış xanasından istifadə edəndən sonra görünür. O vaxta qədər panel bunu yazır və boş qalır. Bu panel ilkin olaraq yığılmış vəziyyətdə olur.",
-              "Hansı panellərin açıq olması istifadə etdiyiniz brauzerdə yadda saxlanılır, ona görə başqa kompüter və ya brauzer yenidən ilkin vəziyyətdən başlayır."
+              "Hansı panellərin açıq olması istifadə etdiyiniz brauzerdə yadda saxlanılır, ona görə başqa kompüter və ya brauzer yenidən ilkin vəziyyətdən başlayır.",
+              "Telefonda və ya dar pəncərədə sol menyu gizlədilir. Yuxarı soldakı düymə onu səhifənin üstünə sürüşdürüb açır; kənarına toxunmaq, Escape basmaq və ya səhifə seçmək onu yenidən bağlayır."
             ]
           },
           {
@@ -3875,7 +3893,7 @@ const MANUAL = {
               "Sadə cədvəllə şəkilli kart toru arasında keçmək üçün yuxarı sağdakı Cədvəl / Şəkilli tor (Table / Masonry) keçidindən istifadə edin.",
               "Sətrin sonundakı (və ya kartın üzərindəki) üç nöqtə düyməsinə basın və məhsulu açmaq üçün Redaktə et (Edit) seçin.",
               "Həmin menyudan Mağazada bax (View on storefront) seçin və ya məhsul adının yanındakı kiçik ox işarəsinə basın — məhsulun mağaza səhifəsi yeni tabda açılır.",
-              "Məhsulu silmək üçün eyni menyudan Sil (Delete) seçin. Əvvəlcə brauzerin təsdiq pəncərəsi çıxır.",
+              "Məhsulu silmək üçün eyni menyudan Sil (Delete) seçin. Əvvəlcə məhsulun adını göstərən təsdiq pəncərəsi çıxır.",
               "Yeni məhsul yaratmaq üçün yuxarı sağdakı + Yeni məhsul (+ New product) düyməsinə basın."
             ],
             "fields": [
@@ -4201,8 +4219,8 @@ const MANUAL = {
               "İdarə paneli ekranlarından bir dəstə məhsulu bir rəfdən başqasına köçürməyin yolu yoxdur. Məhsullar siyahısındakı Kateqoriya açılan siyahısı yalnız baxdığınızı süzür, heç nəyi dəyişmir. On məhsulu köçürmək üçün on məhsulu açmalısınız. Yeganə istisna cədvəl yoludur: Tənzimləmələr, sonra İdxal / İxrac (Import / Export) bölməsində məhsullarınızı ixrac edin, fayldakı kateqoriya sütununu dəyişin və artıq mövcud məhsullara uyğun gələn sətirlər üçün Overwrite seçərək geri idxal edin.",
               "Ana kateqoriya açılan siyahısı nə redaktə etdiyiniz kateqoriyanı, nə də onun altına yazılmış kateqoriyaları təklif edir. Bu, təsadüfən dövrə yaratmağın qarşısını alır — yəni rəfi öz içinə qoya bilməzsiniz.",
               "Kateqoriyalar cədvəli ağac deyil, Sıra rəqəminə görə çeşidlənmiş düz siyahıdır. Övladın Sıra rəqəmi kiçikdirsə, cədvəldə valideynindən yuxarıda görünə bilər. Girintili ağac görünüşü yalnız məhsul redaktorundakı Kateqoriya açılan siyahısında olur, orada hər səviyyənin qarşısına tire qoyulur.",
-              "Kateqoriyanın silinməsi başqa heç nəyə toxunmur. Ona yazılmış məhsullar artıq mövcud olmayan rəfə işarə etməyə davam edir və məhsul redaktoru bundan sonra yeni kateqoriya seçib yadda saxlamağı xahiş edən narıncı xəbərdarlıq göstərir. Övlad kateqoriyalar valideynini itirir və onların Parent sütununda sadəcə tire görünür.",
-              "Silmə brauzerin kiçik pəncərəsində təsdiq istəyir, sonra dərhal baş verir. Geri qaytarma və zibil qutusu yoxdur.",
+              "Kateqoriyanın silinməsi ona yazılmış məhsullara toxunmur. Onlar artıq mövcud olmayan rəfə işarə etməyə davam edir və məhsul redaktoru bundan sonra yeni kateqoriya seçib yadda saxlamağı xahiş edən narıncı xəbərdarlıq göstərir. Övlad kateqoriyalar yuxarı səviyyəyə köçürülür və təsdiq pəncərəsi razılaşmazdan əvvəl onların neçə olduğunu deyir.",
+              "Silmə təsdiq pəncərəsində təsdiq istəyir, sonra dərhal baş verir. Geri qaytarma və zibil qutusu yoxdur.",
               "Gizli, yəni Aktiv olmayan kateqoriya məhsul redaktorunun Kateqoriya açılan siyahısında qəsdən qalır ki, məhsulları oradan köçürə biləsiniz. Onu ayırd edə biləsiniz deyə adının ardınca (hidden) sözü yazılır.",
               "Mağaza səhifəsində Category süzgəci yalnız məhsulların həqiqətən yazıldığı kateqoriyaları təklif edir və dəqiq uyğunluq axtarır. Ana rəfə görə süzmək onun övladlarına yazılmış məhsulları gətirmir.",
               "Məhsul gizli kateqoriyaya yazılıbsa, mağaza səhifəsinin Category süzgəci onu yenə də sadalayır, amma ad əvəzinə təsadüfi görünən simvollar sırası göstərir, çünki adları yalnız aktiv kateqoriyalar üçün tapa bilir.",
@@ -4274,7 +4292,7 @@ const MANUAL = {
               "Məhsul redaktorundan məhsulu kolleksiyaya əlavə etməyin yolu yoxdur. Kolleksiya üzvlüyü yalnız bu ekrandan redaktə olunur.",
               "Məhsul seçicisi mağazanızdakı bütün məhsulları bir dəfəyə yükləyir. Çox böyük kataloqda bu siyahı uzun olacaq, ona görə sürüşdürmək əvəzinə axtarış xanasından istifadə edin.",
               "Kolleksiyalar iç-içə düzülmür və kolleksiya başqa kolleksiyanı saxlaya bilməz.",
-              "Silmə brauzerin kiçik pəncərəsində təsdiq istəyir, sonra dərhal baş verir. Məhsulların özünə toxunulmur.",
+              "Silmə təsdiq pəncərəsində təsdiq istəyir, sonra dərhal baş verir. Məhsulların özünə toxunulmur.",
               "Kolleksiyaları Tənzimləmələr, sonra İdxal / İxrac (Import / Export) bölməsində cədvəl kimi ixrac və idxal etmək olar. Həmin faylda seçilmiş məhsullar nöqtəli vergüllə ayrılaraq tək bir productIds sütununa yazılır."
             ]
           },
@@ -4602,14 +4620,14 @@ const MANUAL = {
               "Qiymətlərin ünvan yazılana qədər gizlədilməsi seçimini qurmusunuzsa, həm ölkə, həm də poçt indeksi yazılana qədər çatdırılma siyahısı boş qalır.",
               "Çatdırılma seçimlərindən biri pulsuzdursa və müvafiq seçimi qurmusunuzsa, ödənişli variantlar gizlədilir və alıcı avtomatik pulsuz olanı alır.",
               "Ödəniş səhifəsindəki vergi yalnız təxminidir və belə də qeyd olunur. Yekun məbləği ödəniş provayderi hesablayır.",
-              "Səbət səhifəsindəki promo kod qutusu əslində heç nə etmir. Kod yadda saxlanılır və ödəniş səhifəsinin veb ünvanına əlavə olunur, amma ödəniş səhifəsi ona məhəl qoymur. Nə endirim tətbiq olunur, nə də endirim sətri görünür.",
+              "Səbət səhifəsində yazılan promo kod ödəniş səhifəsinə ötürülür və oradakı sifariş xülasəsində göstərilir. Endirimin özünü kodu yoxlayan kart ödəniş provayderi tətbiq edir, ona görə də endirim ödəniş səhifəsində və tamamlanmış sifarişdə görünür, ödəniş formasında ayrıca sətir kimi yox. Bank köçürməsi, çek və qapıda nağd ödəniş sifarişlərində promo kod heç vaxt tətbiq olunmur.",
               "Ödəniş səhifəsinin özündə promo kod qutusu ümumiyyətlə yoxdur.",
               "Səbət heç vaxt stoku yoxlamır. Həm səbət səhifəsində, həm də sürüşən paneldə alıcı sayı istədiyi qədər artıra bilər.",
               "Səbət daxil olmamış alıcılar üçün brauzerdə saxlanılır, daxil olmuşlar üçün isə hesaba yazılır. Alıcı daxil olanda ikisi birləşir və heç nə itmir.",
               "Bank köçürməsi, çek və ya qapıda nağd ödənişdə sifariş dərhal On hold (gözləmədə) statusu ilə qeyd olunur və alıcı birbaşa təsdiq səhifəsinə keçir. Bu üsulları quraşdırarkən yazmalı olduğunuz ödəniş təlimatları saytda alıcıya heç bir yerdə göstərilmir — bunu ona başqa yolla çatdırmalısınız.",
               "Təsdiq səhifəsi sifarişin yazılmasını gözləyərkən qısa müddət sifarişin hələ emal olunduğunu yaza bilər. Təxminən doqquz saniyə yoxlamağa davam edir, sonra sifariş nömrəsini göstərir və alıcıdan e-poçtunu yoxlamağı xahiş edir.",
               "Heç bir ödəniş üsulu qurulmayıbsa, ödəniş səhifəsində bunu bildirən mesaj çıxır. Ödəniş tənzimləmələrinə keçid isə yalnız baxan adam sahib kimi daxil olubsa görünür.",
-              "Alıcının hesabında sıralanan sifarişlər /orders/ və sifariş nömrəsindən ibarət ünvana yönəlir, amma saytda belə səhifə yoxdur. Klikləyəndə 'Page not found' (Səhifə tapılmadı) çıxır.",
+              "Alıcının hesabında sıralanan sifarişlər /orders/ və sifariş nömrəsindən ibarət ünvanda açılır: təsdiq səhifəsindəki eyni yalnız-oxunan xülasə — yekunlar, çatdırılma məlumatları və hesaba qayıdış keçidi.",
               "Sifarişin izlənməsi səhifəsi həm sifariş mövcud olmayanda, həm də e-poçt uyğun gəlməyəndə eyni 'sifarişi tapa bilmədik' mesajını verir ki, heç kim başqalarının sifariş nömrələrini axtarıb tapa bilməsin.",
               "/order-status keçidini ünvana ?id=...&email=... əlavə etməklə qabaqcadan doldurulmuş şəkildə vermək olar — bu, öz e-poçtlarınıza qoymaq üçün əlverişlidir, amma saytda heç nə bu keçidi sizin üçün hazırlamır."
             ]
@@ -4693,15 +4711,15 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Cədvəlin sütunları bunlardır: Order (Sifariş), Customer (Müştəri), Date (Tarix), Items (Məhsullar), Total (Yekun), Status. Hamısı budur.",
-              "Satışın onlayn, yoxsa piştaxtadakı kassada edildiyini göstərən sütun yoxdur. Bu ekranda ikisini bir-birindən ayırmaq mümkün deyil. Piştaxta satışları üçün ayrıca bölməyə baxın.",
+              "Cədvəlin sütunları bunlardır: Order (Sifariş), Customer (Müştəri), Date (Tarix), Items (Məhsullar), Total (Yekun), Channel (Kanal), Status. Hamısı budur.",
+              "Channel sütunu piştaxtadakı kassada rəsmiləşdirilən satışlarda POS, qalan hamısında Online nişanı göstərir, ona görə ikisini bir baxışda ayırmaq olur. Şəxsən satışlar haqqında ayrıca bölməyə baxın.",
               "Status filtri yalnız cədvəl rejimində görünür. Lövhə isə nə filtrləməyinizdən asılı olmayaraq həmişə bütün sifarişləri göstərir — bunu asanlıqla filtrin nəzərə alınmaması kimi başa düşmək olar.",
               "Yalnız ən son 500 sifariş yüklənir. Daha çoxu varsa, ən köhnələri sadəcə burada görünmür və ikinci səhifəyə keçid düyməsi də yoxdur.",
-              "Axtarış qutusu yoxdur. Bu ekranda sifarişi müştəri adı, e-poçtu və ya sifariş nömrəsi ilə tapmaq mümkün deyil. Yeganə filtr statusa görə daraltmaqdır.",
+              "Siyahının üstündəki axtarış qutusu sifarişi nömrəsinə və ya müştərinin e-poçtuna görə tapır — həm cədvəl, həm də lövhə rejimində. Müştəri adına görə axtarmır.",
               "Order sütunu sifariş nömrəsinin yalnız ilk 10 simvolunu göstərir, tamını yox. Müştəriyə tam nömrə lazımdırsa, sifarişi açın və onu brauzerin ünvan sətrindəki veb ünvandan oxuyun.",
               "Items sütunu ümumi ədəd sayıdır — bir məhsuldan üç ədəd olan sifariş 1 yox, 3 göstərir.",
               "Customer sütunu yalnız e-poçt ünvanını göstərir. Tire işarəsi e-poçtun qeyd olunmadığını bildirir.",
-              "cancelled də lövhə sütunlarından biridir, ona görə sifarişi sürüşdürməklə, heç bir təsdiq addımı olmadan ləğv etmək mümkündür.",
+              "cancelled də lövhə sütunlarından biridir, ona görə sifarişi sürüşdürməklə, heç bir təsdiq addımı olmadan ləğv etmək mümkündür. Lövhədəki hər kartda status açılan siyahısı da var — sifarişi sürüşdürmədən, klaviatura və ya toxunma ekranı ilə də köçürmək olur.",
               "Sifarişi silmək imkanı yoxdur — nə burada, nə də idarə panelinin başqa yerində.",
               "Piştaxtada rəsmiləşdirilən satışlar da bu siyahıda görünür. Kassanın özü isə kassa ilə birlikdə gələn öz təlimatında izah olunur."
             ]
@@ -4724,16 +4742,16 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Ekranda bunlar göstərilir: qısa sifariş nömrəsi, müştərinin e-poçtu, tarix və saat, cari status, hər məhsul öz ölçüsü, sayı və vahid qiyməti ilə, sətir üzrə yekun, sonra Subtotal (Ara cəm), Shipping (Çatdırılma), Discount (Endirim) və Total (Yekun), daha sonra çatdırılma üzrə ad, ünvan, şəhər, poçt indeksi və ölkə.",
+              "Ekranda bunlar göstərilir: sifariş siyahısına qayıdış keçidi, qısa sifariş nömrəsi, müştərinin e-poçtu, tarix və saat, cari status, hər məhsul öz ölçüsü, sayı və vahid qiyməti ilə, sətir yekunu, sonra Subtotal, Shipping, Tax, Discount və Total, ödəniş üsulu, kart məlumatları və promo kodu göstərən Payment bölməsi, daha sonra çatdırılma adı, ünvan, şəhər, poçt indeksi, ölkə, çatdırılma üsulu və alıcının yazdığı qeyd.",
               "Çatdırılma və Endirim sətirləri sıfır olanda gizlədilir — yəni pulsuz çatdırılan sifarişdə sıfır yazan sətir yox, ümumiyyətlə Shipping sətri olmur.",
-              "Bu ekranda vergi göstərilmir, hətta sifarişə vergi qeyd olunubsa belə. Müştərinin öz izləmə səhifəsi onu göstərir, sifarişlərin eksportu da göstərir — ona görə buradakı yekunlar sanki toplanmırmış kimi görünə bilər.",
-              "Müştərinin seçdiyi çatdırılma üsulu da burada göstərilmir, halbuki o qeyd olunur və müştərinin izləmə səhifəsində görünür.",
-              "Ödəniş üsulu və istifadə olunan promo kod göstərilmir — yalnız endirim məbləği görünür.",
+              "Sifarişə vergi qeyd olunubsa, Tax ayrıca sətir kimi göstərilir və yekunlar üst-üstə düşür. Vergisiz sifarişlərdə Tax sətri sadəcə olmur.",
+              "Müştərinin seçdiyi çatdırılma üsulu Shipping bölməsində ünvanın altında göstərilir — ödəniş zamanı yazdığı qeydlə birlikdə.",
+              "Payment bölməsi ödəniş üsulunu, kartla ödənişdə kartın növünü və son dörd rəqəmini, istifadə olunubsa promo kodu göstərir. Discount sətrində də kod yazılır.",
               "Piştaxtadakı kassaya aid heç bir təfərrüat burada görünmür: nə çek nömrəsi, nə kassir, nə də ödənişin bölgüsü.",
-              "Nə izləmə və ya yük nömrəsi yazmaq üçün yer var, nə də sifarişə qeyd əlavə etmək üçün.",
+              "Nə izləmə və ya yük nömrəsi yazmaq üçün yer var, nə də özünüzün qeyd əlavə etməyiniz üçün. Ünvanın altında göstərilən qeyd alıcının özünün ödəniş zamanı yazdığıdır.",
               "Nə geri ödəniş düyməsi, nə çap və ya faktura düyməsi, nə də silmə düyməsi var.",
               "Sifarişə ünvan bağlanmayıbsa, Çatdırılma bölməsi tam gizlədilir — piştaxtadan edilən satışlarda vəziyyət məhz belədir.",
-              "Sifariş on-hold statusunda qalıbsa, buradakı açılan siyahı on-hold variantını təklif etmir və ona görə onu cari seçim kimi də göstərmir. Etibarlı olan, siyahının üstündəki rəngli etiketdir."
+              "Status açılan siyahısı on-hold da daxil olmaqla yeddi statusun hamısını təklif edir — bank köçürməsi gözləyən sifariş cari seçim kimi on-hold göstərir və yenidən ona qaytarıla bilər."
             ]
           },
           {
@@ -5264,6 +5282,22 @@ const MANUAL = {
               {
                 "name": "Məhsul kartlarında sürətli səbətə əlavə ikonunu göstər — Show quick add-to-cart icon on product cards",
                 "what": "Qeyd xanası. Üç məhsul kartı dizaynından yalnız ikisində işləyir. Sadə və yığcam dizaynlarda bu xananın yandırıb-söndürdüyü sürətli səbətə əlavə ikonu var. Redaksiya dizaynında belə ikon ümumiyyətlə yoxdur, ona görə həmin dizaynı işlədən mağazada bu xana gözlə görünən heç nə etmir. Klikləndiyi an yadda saxlanılır."
+              },
+              {
+                "name": "Vitrin mətni: Elan zolağı (Announcement bar)",
+                "what": "Məhsul kartı qeyd xanalarının altındakı mətn qutusu. Electronics şablonunun hər səhifənin yuxarısında göstərdiyi bir qısa sətir. Boş qalanda zolaq ümumiyyətlə görünmür. Adi vitrin buna məhəl qoymur."
+              },
+              {
+                "name": "Vitrin mətni: Şüar (Tagline)",
+                "what": "Electronics şablonunun altbilgi önü zolağında və ana səhifə spesifikasiya zolağında göstərilən bir sətir. Boş qalanda orada brend təsviriniz göstərilir."
+              },
+              {
+                "name": "Vitrin mətni: Sitat (Pull-quote)",
+                "what": "Home Goods şablonunun ana səhifəsində və altbilgi imzasında göstərilən qısa sitat. Boş qalanda brend təsviriniz göstərilir."
+              },
+              {
+                "name": "Vitrin mətni: Sitatın müəllifi (Quote attribution)",
+                "what": "Sitatın altında çap olunur. Boş qalanda brend adınız istifadə olunur. Dörd qutu altlarındakı Save düyməsi ilə birlikdə yadda saxlanılır; nəsə dəyişənə qədər düymə boz qalır."
               }
             ],
             "notes": [
@@ -5979,7 +6013,7 @@ const MANUAL = {
             "notes": [
               "Qiymətlər valyuta işarəsi olmadan, sadə rəqəmlə yazılır. Onlar mağazanızın valyutasındadır.",
               "Çatdırılma üsulunda Yadda saxla düyməsinə basmaq onu həmişə yenidən aktiv edir, hətta siz onu qəsdən söndürmüş olsanız belə. Sadəcə dayandırılmış üsulun qiymətini dəyişmək istəsəniz, yadda saxladıqdan sonra o, yenidən canlı olacaq.",
-              "Uyğun ölkələr siyahısından bütün ölkələri silib yadda saxlamaq məhdudiyyəti aradan qaldırmır — köhnə ölkə siyahısı yerində qalır. Üsulu həqiqətən bütün ölkələrə açmaq üçün onu silin və yenidən əlavə edin.",
+              "Uyğun ölkələr siyahısından bütün ölkələri silib yadda saxlamaq üsulu yenidən bütün ölkələrə açır. Configure söndürülmüş üsulu da söndürülmüş saxlayır: tənzimləmələrini yadda saxlamaq onu artıq yenidən yandırmır.",
               "Ölkə seçicisi yalnız sayt tənzimləmələrinizdə sadalanan ölkələri təklif edir. Orada ölkə siyahısı təyin etməmisinizsə, tam dünya siyahısı təklif olunur.",
               "Weight-Based yalnız səbətdəki ən azı bir məhsulun çəkisi doldurulubsa ödəniş mərhələsində görünür (Məhsullar, məhsulu redaktə edin, Weight (kg) xanası). Heç nə çəkilməyibsə, üsul ödəniş mərhələsindən səssizcə yox olur.",
               "Üsulun tənzimləmələri səhvdirsə, müştəriyə xəta göstərilmir — üsul sadəcə ödəniş mərhələsindən çıxarılır. Redaktədən sonra həmişə öz ödəniş prosesinizi sınaqdan keçirin.",
@@ -6090,7 +6124,7 @@ const MANUAL = {
               "Sətrin bu siyahıda hansı yerdə duracağını təyin etmək üçün Sıra (Order) xanasına rəqəm yazın.",
               "Aktiv (Active) qeyd xanasını, istəyirsinizsə Standart (Default) qeyd xanasını da işarələyin.",
               "Yadda saxla (Save) düyməsini basın.",
-              "Sonradan sətri dəyişmək üçün onun üzərindəki Redaktə et (Edit) düyməsini basın. Silmək üçün Sil (Delete) düyməsini basın və brauzerin açdığı pəncərədə təsdiqləyin."
+              "Sonradan sətri dəyişmək üçün onun üzərindəki Redaktə et (Edit) düyməsini basın. Silmək üçün Sil (Delete) düyməsini basın və təsdiq pəncərəsində təsdiqləyin."
             ],
             "fields": [
               {
@@ -6132,9 +6166,9 @@ const MANUAL = {
               "Bu, sadəcə siyahıdır, başqa heç nə. Mağazanın heç bir hissəsi onu oxumur. Buraya dil əlavə etmək mağazanızı tərcümə etmir, dil seçicisi yaratmır və alıcının gördüyü heç nəyi dəyişmir. Aktiv qeyd xanasında \"alıcılara görünür\" yazılsa da, onu qidalandıracaq, alıcıya görünən heç bir siyahı yoxdur.",
               "Məhsulun içinə yığılmış mətnlər yalnız ingilis, Azərbaycan, rus və türk dillərini əhatə edir, həmin üç tərcümə isə bütün mağazanı yox, kassa mətnlərini və ümumi mətnləri əhatə edir. Qalan hər şey ingilis dilinə qayıdır.",
               "Məhsulda yeganə dil seçicisi Kassa (Point of Sale) tənzimləmələri ekranındadır və o, buraya əlavə etdiyiniz sətirləri deyil, həmin dörd hazır dili təklif edir.",
-              "Standart (Default) qeyd xanasını birdən çox sətirdə işarələyə bilərsiniz. Heç nə mane olmur və heç nə bu tənzimləmədən istifadə etmir.",
+              "Yalnız bir sətir Default ola bilər. Bir dildə Default-u işarələmək nişanı ora köçürür və əvvəlkini sizin əvəzinizə çıxarır. Eyni kodla ikinci sətir yadda saxlayanda rədd edilir. Default tənzimləməsindən başqa heç nə istifadə etmir.",
               "Standart kimi işarələnmiş sətirdə Sil (Delete) düyməsi sönük olur. Onu həqiqətən silmək istəyirsinizsə, əvvəlcə Standart işarəsini götürün.",
-              "Brauzerin təsdiq pəncərəsindən sonra silinmə dərhal baş verir. Geri qaytarmaq mümkün deyil.",
+              "Təsdiq pəncərəsindən sonra silinmə dərhal baş verir. Geri qaytarmaq mümkün deyil.",
               "Kodlar yadda saxlanarkən kiçik hərflərə çevrilir, ona görə EN yazsanız, en kimi saxlanılır."
             ]
           },
@@ -6262,11 +6296,11 @@ const MANUAL = {
               "SİZƏ HANSI HƏRƏKƏTLƏR TƏKLİF OLUNUR - Məhsullar, Kateqoriyalar, Kolleksiyalar və Promo kodlar Keç (Skip), Üzərinə yaz (Overwrite) və Yeni yarat (Create new) təklif edir. Brendlər və Taksonomiya terminləri yalnız Keç və Üzərinə yaz təklif edir, çünki onların daxili identifikatoru addan düzəlir. Abunəçilər yalnız Keç təklif edir, çünki üzərinə yazmağa e-poçt ünvanından başqa bir şey yoxdur. Yeni sətirlər standart olaraq yaradılır; artıq mövcud olan sətirlər isə standart olaraq Keç seçimindədir, ona görə ixracın olduğu kimi yenidən yüklənməsi, siz onları Üzərinə yaz seçiminə keçirməyincə heç nəyi dəyişmir.",
               "ÜZƏRİNƏ YAZMAQ NƏYİSƏ SİLƏ BİLƏR - Məhsullar: boş brand, category, description və ya images xanası həmin dəyərləri məhsuldan silir; boş isActive məhsulu görünən edir, boş isNew və boş limited isə onları söndürür. Kolleksiyalar: boş productIds xanası kolleksiyanı boşaldır. Kateqoriyalar və Kolleksiyalar: boş order onu 0-a qaytarır, boş isActive onu aktiv edir, boş isFeatured isə söndürür. Həmişə əl ilə yığılmış natamam cədvəldən yox, təzə ixracdan üzərinə yazın.",
               "ÜZƏRİNƏ YAZMAQ BƏZİ ŞEYLƏRİ TƏMİZLƏYƏ BİLMİR - Məhsullarda sku, barcode, shortDescription, details, sizes, color, weightKg, stock, slug və ya termin sütunlarından hər hansı biri boş qalanda artıq saxlanılmış dəyər olduğu kimi qalır. Kateqoriyalar və Kolleksiyalarda eyni şey description, parentId və imageUrl üçün, Promo kodlarda isə minOrderAmount və maxDiscount üçün doğrudur. Bunlardan birini əvəzində əl ilə boşaltmağın mümkün olub-olmaması siyahıdan asılıdır — növbəti qeydə baxın.",
-              "HƏMİN SAHƏLƏRİ NECƏ BOŞALTMALI VƏ HARADA BU ÜMUMİYYƏTLƏ MÜMKÜN DEYİL - Kateqoriyalar və Kolleksiyalarda alınır: qeydi öz admin səhifəsində açın, təsvir xanasını, şəkil ünvanını və ya valideyn xanasını təmizləyin və yadda saxlayın. Boş xana yadda saxlanılır və köhnə dəyər yox olur. Məhsullar və Promo kodlarda isə bunu etməyin heç bir yolu yoxdur. Bu iki ekran boşaltdığınız xananı 'buna toxunma' kimi başa düşür, ona görə məhsul səhifəsində sku, barcode, shortDescription, details, color, weightKg, stock və ya termin seçicilərindən hər hansı birini — promo kodda isə minimum səbət məbləğini və maksimum endirimi — silmək heç nə yazmır və köhnə dəyər olduğu yerdə qalır. Nə idxal yolu var, nə də qeydləri bir-bir dəyişmək yolu. Yeganə real seçiminiz köhnənin üzərinə başqa dəyər yazmaq, ya da qeydi silib yenidən əlavə etməkdir. Məhsul səhifəsindəki iki xana özünü fərqli aparır: Ölçülər (Sizes) xanasını boşaltmaq ölçüləri həqiqətən silir, veb ünvan xanasını boşaltmaq isə onu boş qoymur — məhsulun adından yeni ünvan düzəldilir.",
+              "HƏMİN SAHƏLƏRİ NECƏ BOŞALTMALI VƏ HARADA BU ÜMUMİYYƏTLƏ MÜMKÜN DEYİL - Məhsullar, Kateqoriyalar və Kolleksiyalarda alınır: qeydi öz admin səhifəsində açın, xananı təmizləyin və yadda saxlayın. Boş xana yadda saxlanılır və köhnə dəyər yox olur. Məhsulda bu sku, barcode, shortDescription, details, color, weightKg, stok cədvəlinin hər xanası və termin seçiciləri üçün keçərlidir. Promo kodlarda isə hələ də bunu etməyin heç bir yolu yoxdur. Həmin ekran boşaltdığınız xananı 'buna toxunma' kimi başa düşür, ona görə minimum səbət məbləğini və ya maksimum endirimi silmək heç nə yazmır və köhnə dəyər olduğu yerdə qalır. Orada yeganə real seçiminiz köhnənin üzərinə başqa dəyər yazmaq, ya da kodu silib yenidən əlavə etməkdir. Məhsul səhifəsində bir xana özünü fərqli aparır: veb ünvan xanasını boşaltmaq onu boş qoymur — məhsulun adından yeni ünvan düzəldilir.",
               "ARTIQ MÖVCUD OLAN SƏTİRDƏ YENİ YARAT - Məhsullar üçün bu təhlükəsizdir: ikinci məhsul yaradılır və onun veb ünvanına nömrə əlavə olunur ki, ikisi toqquşmasın. Kateqoriyalar və Kolleksiyalarda veb ünvanını heç nə dəyişmir, ona görə eyni ünvanı bölüşən iki qeydiniz olur. Promo kodlarda eyni mətnli iki kodunuz olur və ödəniş zamanı onlardan yalnız biri tətbiq olunur. Bu üçü üçün Üzərinə yaz və ya Keç seçimini üstün tutun.",
               "BƏLİ VƏ XEYR SÜTUNLARI - true, 1, yes və y — böyük-kiçik hərfdən asılı olmayaraq hamısı bəli deməkdir. Xanaya yazılan qalan hər şey, o cümlədən on, active və ya x kimi sözlər, xeyr deməkdir. Boş xana ağlabatan standart dəyər deməkdir: isActive üçün bəli, isNew, limited və isFeatured üçün xeyr.",
               "RƏQƏM SÜTUNLARI - Yalnız sadə rəqəm yazın. 199 və 199.99 işləyir; $199 və 1,299 işləmir. Oxuna bilməyən qiymət bütün məhsul sətrini yararsız edir. Oxuna bilməyən çəki isə səssizcə nəzərə alınmır və məhsul yenə də idxal olunur.",
-              "SİYAHI SÜTUNLARI VERGÜLLƏ DƏ BÖLÜNÜR - Xananın siyahı saxladığı hər yerdə (sizes, images, productIds və termin sütunları) dəyər həm nöqtəli vergüllə, həm də vergüllə bölünür. Tərkibində vergül olan termin adı və ya veb ünvan iki yerə parçalanacaq. Həmin xanalarda vergüldən uzaq durun.",
+              "SİYAHI SÜTUNLARI NÖQTƏLİ VERGÜLLƏ BÖLÜNÜR - Xananın siyahı saxladığı hər yerdə (sizes, images, productIds və termin sütunları) dəyər nöqtəli vergüllə bölünür — ixrac da məhz belə yazır. Heç bir nöqtəli vergül olmayan xana köhnə, vergüllə ayrılmış siyahı kimi başa düşülür; ona görə tərkibində vergül olan tək bir veb ünvan salamat qalsın deyə ondan sonra nöqtəli vergül qoyulmalı və ya iki elementli siyahının hissəsi olmalıdır.",
               "YAZILIŞ FƏRQLƏRİ QARIŞIQLIQ YARADIR - Brend, kateqoriya və termin adları böyük-kiçik hərf fərqi nəzərə alınmadan tutuşdurulur, ona görə acme yazsanız, Acme tapılır. Amma Acme Inc ilə Acme ayrı-ayrı şeylərdir və hər yeni yazılış səssizcə daha bir brend, kateqoriya və ya termin yaradır. İdxaldan əvvəl yazılışları səliqəyə salın.",
               "İdxal heç vaxt şəkil yükləmir. images sütunu yazdığınız veb ünvanları saxlayır, ona görə əvvəlcə şəkilləri açıq bir yerdə yerləşdirin."
             ]
@@ -6281,7 +6315,7 @@ const MANUAL = {
               "CSV endir (Download CSV) düyməsini basın və faylı cədvəl proqramınızda açın."
             ],
             "notes": [
-              "SİFARİŞLƏR (ORDERS) - 17 sütun: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders.",
+              "SİFARİŞLƏR (ORDERS) - 26 sütun: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders, paymentMethod, shippingMethod, shippingName, shippingAddress, shippingCity, shippingZip, shippingCountry, shippingPhone, orderNotes. paymentMethod-dan başlayan doqquz sütun ödəniş zamanı yazılan çatdırılma məlumatlarıdır; piştaxta satışlarında boş olur, shippingPhone isə bu buraxılışdan əvvəl verilmiş sifarişlərdə boşdur.",
               "Sifarişlər - items hər məhsul üçün ayrıca sətir yox, \"Black Jacket x1; Wool Scarf x2\" kimi oxunaqlı yekundur. tenders ödənişin necə edildiyini sadalayır, məsələn \"cash 20.00; card 5.50\". channel online və ya pos yazır. receiptNumber, cashierId, deviceId və tenders yalnız kassadan keçən satışlarda doldurulur; kassa funksiyası yaranmazdan əvvəl qəbul edilmiş sifarişlərdə isə channel boş olur — onların hamısı onlayn satış olub.",
               "Sifarişlər - endirmə ən yeni 5,000 sifarişlə məhdudlaşır, ən yenidən başlayaraq. Tarix aralığı seçicisi yoxdur, ona görə bu həddi keçmiş mağaza bu səhifədən daha köhnə sifarişlərə çata bilmir.",
               "MÜŞTƏRİLƏR (CUSTOMERS) - 8 sütun: uid, email, displayName, role, phone, createdAt, addressCount, wishlistCount. addressCount və wishlistCount yalnız saydır; ünvanların özü və istək siyahısındakı məhsullar fayla daxil deyil. Siyahı bütün hesabları, o cümlədən sizin öz işçi və admin girişlərinizi əhatə edir, role sütunu isə hansının hansı olduğunu göstərir.",
@@ -6458,7 +6492,7 @@ const MANUAL = {
   },
   "ru": {
     "intro": {
-      "version": "v15.0.1"
+      "version": "v15.1.0"
     },
     "parts": [
       {
@@ -6630,22 +6664,23 @@ const MANUAL = {
             ],
             "notes": [
               "Карточка «Выручка» суммирует заказы со статусами «оплачен», «в обработке», «отправлен» и «доставлен». Заказы в любых других состояниях, включая возвращённые и отменённые, не учитываются; ни выбора периода, ни графика здесь нет.",
-              "Счётчики вычисляются чтением всех товаров и всех заказов при каждой загрузке панели управления, поэтому в магазине с очень большим числом заказов этот экран будет медленным и увеличит расход ресурсов Firebase.",
-              "Ссылка «Смотреть все» (View all) над списком «Последние обращения», как и сами строки списка, открывает экран «Пользователи» (Users), а не «Обращения» (Contacts). Полные тексты сообщений находятся в разделе «Обращения» в боковом меню.",
+              "Счётчики и сумма выручки вычисляются самой базой данных, поэтому панель управления не читает документы товаров и заказов, чтобы заполнить карточки, и остаётся быстрой при любом числе заказов.",
+              "Ссылка «Смотреть все» (View all) над списком «Последние обращения», как и сами строки списка, открывает экран «Обращения» (Contacts), где находятся полные тексты сообщений.",
               "Контрольный список настройки заполняется сам, когда впервые обнаруживает, что он пуст: в него попадают двенадцать встроенных задач.",
               "«Проверить прогресс» не может подтвердить четыре задачи: публикацию правил, публикацию правил хранилища, установку платёжных функций и настройку платёжного вебхука. Их придётся отметить самостоятельно.",
               "«Проверить прогресс» только ставит галочки. Оно никогда не снимает отметку с того, что перестало быть верным.",
               "Уведомления пересчитываются заново каждый раз; отметить их прочитанными или скрыть нельзя. Пункт исчезает сам, как только с его причиной разобрались — например, когда отзывы промодерированы.",
               "Уведомление «Доступно обновление» (Update available) и соответствующий значок в шапке берутся из интернета — из публичного списка выпусков программы. Без подключения к интернету или при неудачном запросе не показывается ничего, и ошибка тоже не появляется.",
-              "Пять карточек загружаются все разом. Если вашей учётной записи не разрешено читать что-то одно из четырёх — товары, заказы, отзывы или вопросы, — загрузка обрывается на этом. Все пять карточек так и остаются с серыми полосками загрузки и никогда не заполняются, а список «Последние обращения» под ними тоже остаётся в состоянии загрузки. Один закрытый элемент утягивает за собой весь верх экрана.",
-              "Сообщения об ошибке на панели управления при этом не будет. Ничто на экране не объяснит, что пошло не так, и не предложит повторить попытку, а перезагрузка страницы даст тот же результат. Сбой записывается в список ошибок на экране «О системе» (About) — туда и стоит смотреть, если карточки застряли на полосках загрузки.",
+              "Пять карточек загружаются все разом. Если вашей учётной записи не разрешено читать что-то одно из четырёх — товары, заказы, отзывы или вопросы, — загрузка обрывается на этом, и на каждой карточке вместо числа стоит прочерк.",
+              "В этом случае над карточками появляется красное сообщение о том, что цифры не удалось загрузить, с кнопкой «Повторить» (Retry). Сбой также записывается в список ошибок на экране «О системе» (About).",
               "Исключение — два показателя по обращениям. Если недоступны только сообщения обратной связи, их тихо пропускают: список последних обращений выглядит пустым, плашка непрочитанных не появляется, а пять карточек и весь остальной экран загружаются как обычно.",
               "Внутри панели «Уведомления» всё устроено наоборот и мягче. Каждый пункт там считается отдельно, поэтому то, что вашей учётной записи читать нельзя, убирает из списка только этот пункт. Остальная панель работает, и никакой ошибки не показывается.",
               "Ссылка «Смотреть все уведомления» у колокольчика ведёт на верх панели управления, так что до панели «Уведомления» придётся прокрутить страницу вниз — если только тот, кто настраивал ваш сайт, не направил ссылку прямо на панель.",
               "Кольцо прогресса учитывает только встроенные задачи настройки, а не добавленные вами. Оно совсем исчезает, когда все они выполнены, и не появляется вовсе, если встроенные задачи удалили.",
               "Удаление задачи или поискового запроса подтверждается обычным всплывающим окном браузера, отмены нет.",
               "Поисковые запросы появляются только после того, как покупатели воспользуются строкой поиска. До этого панель так и сообщает и остаётся пустой. Изначально эта панель свёрнута.",
-              "То, какие панели раскрыты, запоминается в том браузере, которым вы пользуетесь, поэтому на другом компьютере или в другом браузере всё снова начинается с настроек по умолчанию."
+              "То, какие панели раскрыты, запоминается в том браузере, которым вы пользуетесь, поэтому на другом компьютере или в другом браузере всё снова начинается с настроек по умолчанию.",
+              "На телефоне или в узком окне левое меню скрыто. Кнопка вверху слева выдвигает его поверх страницы; касание вне меню, клавиша Escape или выбор страницы снова его закрывают."
             ]
           },
           {
@@ -6715,7 +6750,7 @@ const MANUAL = {
               "Переключателем «Table / Masonry» справа вверху выберите обычную таблицу или сетку карточек с картинками.",
               "Нажмите кнопку с тремя точками в конце строки (или на карточке) и выберите «Изменить (Edit)», чтобы открыть товар.",
               "Выберите в том же меню «Посмотреть в магазине (View on storefront)» или нажмите маленькую стрелку рядом с названием товара — страница этого товара в магазине откроется в новой вкладке.",
-              "Чтобы удалить товар, выберите в том же меню «Удалить (Delete)». Сначала появится окно подтверждения браузера.",
+              "Чтобы удалить товар, выберите в том же меню «Удалить (Delete)». Сначала появится окно подтверждения с названием товара.",
               "Нажмите «+ Новый товар (+ New product)» справа вверху, чтобы создать товар."
             ],
             "fields": [
@@ -7041,8 +7076,8 @@ const MANUAL = {
               "Перенести пачку товаров с одной полки на другую средствами админки нельзя. В списке товаров есть выпадающий список категорий, но он только фильтрует то, что вы видите, и ничего не меняет. Чтобы перенести десять товаров, придётся открыть десять товаров. Единственное исключение — путь через таблицу: в «Settings» → «Import / Export» выгрузите товары, поменяйте колонку категории в файле и загрузите его обратно, выбрав «Overwrite» (перезапись) для строк, совпадающих с уже имеющимися товарами.",
               "В списке родителей не будет ни самой редактируемой категории, ни того, что уже лежит внутри неё. Это не даёт случайно замкнуть круг, так что полку внутрь неё самой вы не положите.",
               "Таблица категорий — плоский список, отсортированный по числу «Order», а не дерево. Дочерняя категория может оказаться в ней выше родительской, если её «Order» меньше. Дерево с отступами показывается только в списке «Category» внутри редактора товара, где каждый уровень отмечен дефисом.",
-              "Удаление категории больше ничего не затрагивает. Товары, лежавшие на этой полке, продолжают ссылаться на несуществующую категорию, и редактор товара показывает оранжевое предупреждение с просьбой выбрать новую категорию и сохранить. Дочерние категории остаются без родителя, и в колонке «Parent» у них просто прочерк.",
-              "Удаление спрашивает подтверждение в небольшом окне браузера и происходит сразу. Отмены и корзины нет.",
+              "Удаление категории не затрагивает товары, лежавшие на этой полке. Они продолжают ссылаться на несуществующую категорию, и редактор товара показывает оранжевое предупреждение с просьбой выбрать новую категорию и сохранить. Дочерние категории переносятся на верхний уровень, и окно подтверждения сообщает, сколько их, прежде чем вы согласитесь.",
+              "Удаление спрашивает подтверждение в диалоговом окне и происходит сразу. Отмены и корзины нет.",
               "Скрытая (не «Active») категория намеренно остаётся в списке «Category» редактора товара, чтобы вы могли перенести с неё товары. Её видно по слову (hidden) после названия.",
               "На странице магазина фильтр «Category» предлагает только те категории, под которыми действительно лежат товары, и совпадение должно быть точным. Фильтр по родительской полке не подтянет товары с её дочерних полок.",
               "Если товар лежит в скрытой категории, фильтр «Category» на странице магазина всё равно её перечислит, но вместо названия покажет набор случайных на вид символов, потому что имена он умеет искать только среди активных категорий.",
@@ -7114,7 +7149,7 @@ const MANUAL = {
               "Добавить товар в коллекцию из редактора товара нельзя. Состав коллекции редактируется только с этого экрана.",
               "Выбор товаров загружает сразу все товары магазина. На очень большом каталоге список получится длинным, поэтому пользуйтесь поиском, а не прокруткой.",
               "Коллекции не вкладываются, и коллекция не может содержать другую коллекцию.",
-              "Удаление спрашивает подтверждение в небольшом окне браузера и происходит сразу. Сами товары при этом не затрагиваются.",
+              "Удаление спрашивает подтверждение в диалоговом окне и происходит сразу. Сами товары при этом не затрагиваются.",
               "Коллекции можно выгружать и загружать таблицей в «Settings» → «Import / Export». В этом файле выбранные товары идут одной колонкой productIds через точку с запятой."
             ]
           },
@@ -7442,14 +7477,14 @@ const MANUAL = {
               "Если вы включили настройку «не показывать цены до ввода адреса», список доставки остаётся пустым, пока не введены и страна, и индекс.",
               "Если какой-то способ доставки бесплатный и вы включили соответствующую настройку, платные варианты скрываются, и покупатель автоматически получает бесплатный.",
               "Налог при оформлении — только оценка, о чём есть соответствующая подпись. Итоговую сумму рассчитывает платёжный провайдер.",
-              "Поле промокода на странице корзины на деле ничего не даёт. Код запоминается и добавляется в адрес страницы оформления, но сама страница оформления его игнорирует. Скидка не применяется, строка со скидкой не появляется.",
+              "Промокод, введённый на странице корзины, передаётся на страницу оформления и показывается там в итоге заказа. Саму скидку применяет платёжный провайдер при проверке кода, поэтому она появляется на странице оплаты и в готовом заказе, а не отдельной строкой в форме оформления. Для заказов с банковским переводом, чеком и оплатой при получении промокод не применяется никогда.",
               "На самой странице оформления заказа поля для промокода нет.",
               "Корзина никогда не проверяет остатки. Количество можно поднимать как угодно и на странице корзины, и в выдвижной панели.",
               "У покупателей без входа корзина хранится в браузере, у вошедших — в аккаунте. При входе обе корзины объединяются, поэтому ничего не теряется.",
               "При оплате банковским переводом, чеком или наличными при получении заказ записывается сразу со статусом on-hold (отложен), и покупатель попадает прямо на страницу подтверждения. Платёжные инструкции, которые вы обязаны ввести при настройке этих способов, покупателю на сайте нигде не показываются — сообщать их придётся другим путём.",
               "Страница подтверждения может ненадолго сообщить, что заказ ещё обрабатывается, пока ждёт его записи. Она проверяет около девяти секунд, затем показывает номер заказа и просит покупателя проверить почту.",
               "Если не настроен ни один способ оплаты, на странице оформления появляется сообщение об этом. Ссылка на настройки оплаты видна, только если смотрит человек, вошедший как владелец.",
-              "Заказы в личном кабинете покупателя ведут на /orders/ с номером заказа, но такой страницы на этом сайте нет. При нажатии открывается «Page not found» («Страница не найдена»).",
+              "Заказы в личном кабинете покупателя открываются по адресу /orders/ с номером заказа: это та же сводка, что и на странице подтверждения, — итоги, данные доставки и ссылка обратно в кабинет.",
               "Страница отслеживания выдаёт одно и то же сообщение «заказ не найден» и когда заказа не существует, и когда email не совпадает, — так никто не сможет подбирать чужие номера заказов.",
               "Страницу /order-status можно открыть с уже заполненными полями, добавив к адресу ?id=...&email=... — такую ссылку удобно вставлять в свои письма, но сам сайт её нигде не формирует."
             ]
@@ -7533,15 +7568,15 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Колонки таблицы: Order (заказ), Customer (покупатель), Date (дата), Items (позиции), Total (итого), Status (статус). Других нет.",
-              "Колонки, показывающей, продано онлайн или на кассе в магазине, нет. На этом экране одно от другого не отличить. Смотрите отдельный раздел про продажи за прилавком.",
+              "Колонки таблицы: Order (заказ), Customer (покупатель), Date (дата), Items (позиции), Total (итого), Channel (канал), Status (статус). Других нет.",
+              "Колонка Channel показывает метку POS у продаж, оформленных на кассе в магазине, и Online у всех остальных, так что одно от другого видно сразу. Смотрите отдельный раздел о продажах в магазине.",
               "Фильтр по статусу есть только в режиме таблицы. Доска всегда показывает все заказы независимо от того, что вы отфильтровали, — это легко принять за то, что фильтр не сработал.",
               "Загружаются только 500 последних заказов. Если их больше, самые старые сюда просто не попадут, а перехода на вторую страницу нет.",
-              "Поля поиска нет. Найти заказ по имени покупателя, email или номеру заказа на этом экране нельзя. Единственный фильтр — по статусу.",
+              "Поле поиска над списком находит заказ по номеру или по email покупателя — и в режиме таблицы, и на доске. По имени покупателя оно не ищет.",
               "В колонке Order показываются только первые 10 символов номера заказа, а не весь номер. Если покупателю нужен полный номер, откройте заказ и прочитайте номер из адресной строки браузера.",
               "В колонке Items указано общее количество единиц: заказ из трёх штук одного товара покажет 3, а не 1.",
               "В колонке Customer выводится только email. Прочерк означает, что email не записан.",
-              "cancelled — одна из колонок доски, поэтому заказ можно отменить перетаскиванием, без всякого подтверждения.",
+              "cancelled — одна из колонок доски, поэтому заказ можно отменить перетаскиванием, без всякого подтверждения. На каждой карточке доски есть и выпадающий список статуса, так что заказ можно перенести без перетаскивания — с клавиатуры или на сенсорном экране.",
               "Удалить заказ нельзя ни здесь, ни где-либо ещё в админке.",
               "Продажи, оформленные за прилавком, тоже попадают в этот список. Сама касса описана в собственном руководстве, которое поставляется вместе с кассой."
             ]
@@ -7564,16 +7599,16 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "На экране показаны: короткий номер заказа, email покупателя, дата и время, текущий статус, каждая позиция с размером, количеством и ценой за единицу, сумма по строке, затем Subtotal (промежуточный итог), Shipping (доставка), Discount (скидка) и Total (итого), а после — имя получателя, адрес, город, индекс и страна.",
+              "На экране показаны: ссылка назад к списку заказов, короткий номер заказа, email покупателя, дата и время, текущий статус, каждая позиция с размером, количеством и ценой за единицу, сумма по строке, затем Subtotal, Shipping, Tax, Discount и Total, раздел Payment со способом оплаты, данными карты и промокодом, а после — имя получателя, адрес, город, индекс, страна, способ доставки и комментарий, если покупатель его оставил.",
               "Строки Shipping и Discount скрываются, когда они равны нулю: у заказа с бесплатной доставкой строки доставки просто нет — вместо строки с нулём.",
-              "Налог на этом экране не показывается, даже если он записан в заказе. На странице отслеживания у покупателя он есть, и в выгрузке заказов тоже, поэтому суммы здесь могут выглядеть так, будто они не сходятся.",
-              "Выбранный покупателем способ доставки здесь тоже не показан, хотя он записан и виден на странице отслеживания у покупателя.",
-              "Способ оплаты и использованный промокод не показываются — только сумма скидки.",
+              "Налог показывается отдельной строкой, если он записан в заказе, так что итоги сходятся. У заказов без налога строки Tax просто нет.",
+              "Выбранный покупателем способ доставки показан под адресом в разделе Shipping — вместе с комментарием, если он оставил его при оформлении.",
+              "В разделе Payment видны способ оплаты, для карточных платежей — платёжная система и последние четыре цифры карты, а также промокод, если он использовался. Строка Discount тоже называет код.",
               "Данных кассовой продажи здесь нет вообще: ни номера чека, ни кассира, ни разбивки по оплате.",
-              "Ввести трек-номер или номер накладной негде, добавить комментарий к заказу тоже негде.",
+              "Ввести трек-номер или номер накладной негде, и добавить свой комментарий тоже негде. Комментарий под адресом — это заметка самого покупателя, оставленная при оформлении.",
               "Кнопки возврата средств нет, кнопок печати и счёта нет, кнопки удаления нет.",
               "Раздел Доставка полностью скрывается, если к заказу не привязан адрес, — так бывает при продаже за прилавком.",
-              "Если заказ оставлен в статусе on-hold, выпадающий список здесь этот статус не предлагает и потому не покажет его как текущий. Ориентируйтесь на цветную метку над списком."
+              "Выпадающий список статусов предлагает все семь статусов, включая on-hold: заказ, ожидающий банковского перевода, показывает on-hold как текущий и может быть возвращён в него."
             ]
           },
           {
@@ -8104,6 +8139,22 @@ const MANUAL = {
               {
                 "name": "Показывать значок быстрого добавления в корзину на карточках товара (Show quick add-to-cart icon on product cards)",
                 "what": "Галочка. Работает только на двух из трёх вариантов карточки товара. У простого и компактного вариантов есть значок быстрого добавления в корзину, который эта галочка включает и выключает. У редакционного варианта такого значка нет вовсе, поэтому в магазине с этим оформлением галочка не даёт видимого результата. Сохраняется в момент нажатия."
+              },
+              {
+                "name": "Текст витрины: Строка объявления (Announcement bar)",
+                "what": "Текстовое поле под галочками карточек товара. Одна короткая строка, которую шаблон Electronics показывает вверху каждой страницы. Если оставить пустым, полоса не появляется вовсе. Обычная витрина это поле не использует."
+              },
+              {
+                "name": "Текст витрины: Слоган (Tagline)",
+                "what": "Одна строка в полосе перед подвалом и в полосе характеристик на главной у шаблона Electronics. Если оставить пустым, там показывается описание бренда."
+              },
+              {
+                "name": "Текст витрины: Цитата (Pull-quote)",
+                "what": "Короткая цитата на главной странице и в подписи подвала у шаблона Home Goods. Если оставить пустым, показывается описание бренда."
+              },
+              {
+                "name": "Текст витрины: Автор цитаты (Quote attribution)",
+                "what": "Печатается под цитатой. Если оставить пустым, используется название бренда. Четыре поля сохраняются вместе кнопкой Save под ними; она остаётся серой, пока ничего не изменено."
               }
             ],
             "notes": [
@@ -8819,7 +8870,7 @@ const MANUAL = {
             "notes": [
               "Цены вводятся обычными числами, без символа валюты в поле. Они указываются в валюте вашего магазина.",
               "Нажатие Сохранить у способа доставки всегда снова его включает, даже если вы специально его отключали. Если вы хотели только поправить цену приостановленного способа, после сохранения он снова станет доступен покупателям.",
-              "Если удалить все страны из списка подходящих стран и сохранить, ограничение не снимется: старый список стран останется на месте. Чтобы действительно открыть способ доставки для всех стран, удалите его и добавьте заново.",
+              "Если удалить все страны из списка подходящих стран и сохранить, способ доставки снова открывается для всех стран. Configure также оставляет выключенный способ выключенным: сохранение его настроек больше не включает его обратно.",
               "Окно выбора стран предлагает только те страны, что перечислены в настройках сайта. Если список стран там не задан, предлагается полный список стран мира.",
               "Weight-Based появляется при оформлении заказа, только если хотя бы у одного товара в корзине заполнен вес (раздел Товары (Products), редактирование товара, поле Вес, кг (Weight (kg))). Если ничего не взвешено, способ молча пропадает из оформления заказа.",
               "Если настройки способа доставки неверны, он просто убирается из оформления заказа, а покупателю ошибка не показывается. После правок всегда проверяйте оформление заказа сами.",
@@ -8930,7 +8981,7 @@ const MANUAL = {
               "Впишите число в поле Порядок (Order), чтобы задать место строки в этом списке.",
               "Поставьте галочку Активен (Active) и, если нужно, По умолчанию (Default).",
               "Нажмите Сохранить (Save).",
-              "Чтобы позже изменить строку, нажмите на ней Изменить (Edit). Чтобы удалить — нажмите Удалить (Delete) и подтвердите во всплывающем окне браузера."
+              "Чтобы позже изменить строку, нажмите на ней Изменить (Edit). Чтобы удалить — нажмите Удалить (Delete) и подтвердите в диалоговом окне."
             ],
             "fields": [
               {
@@ -8972,9 +9023,9 @@ const MANUAL = {
               "Это просто список, не более того. Ни одна часть магазина его не читает. Добавление языка здесь не переводит магазин, не добавляет переключатель языка и ничего не меняет для покупателя. Галочка Активен подписана «виден покупателям», но списка для покупателей, который она могла бы наполнять, не существует.",
               "Встроенные в продукт тексты охватывают только английский, азербайджанский, русский и турецкий, причём эти три перевода покрывают тексты кассы и общие тексты, а не весь магазин. Всё остальное показывается по-английски.",
               "Единственный переключатель языка во всём продукте находится на экране настроек кассы (Point of Sale), и предлагает он эти четыре встроенных языка, а не строки, которые вы добавили здесь.",
-              "Галочку По умолчанию (Default) можно поставить сразу нескольким строкам. Ничто этому не мешает, и ничто эту настройку не использует.",
+              "По умолчанию (Default) может быть только одна строка. Галочка Default на языке переносит метку туда и снимает её с предыдущего за вас. Вторая строка с тем же кодом при сохранении отклоняется. Больше ничто настройку Default не использует.",
               "Кнопка Удалить (Delete) недоступна на любой строке с меткой По умолчанию. Сначала снимите эту галочку, если строку действительно нужно удалить.",
-              "Удаление происходит сразу после подтверждения во всплывающем окне браузера. Отменить его нельзя.",
+              "Удаление происходит сразу после подтверждения в диалоговом окне. Отменить его нельзя.",
               "Коды при сохранении приводятся к нижнему регистру, поэтому введённое EN сохранится как en."
             ]
           },
@@ -9102,11 +9153,11 @@ const MANUAL = {
               "КАКИЕ ДЕЙСТВИЯ ВАМ ПРЕДЛОЖАТ — для товаров, категорий, коллекций и промокодов доступны Пропустить (Skip), Перезаписать (Overwrite) и Создать новую (Create new). Для брендов и терминов таксономии — только Пропустить и Перезаписать, потому что их внутренний идентификатор образуется из названия. Для подписчиков — только Пропустить, ведь кроме адреса перезаписывать нечего. Новые строки по умолчанию создаются, а уже существующие по умолчанию пропускаются, поэтому обычная повторная загрузка выгруженного файла ничего не меняет, пока вы не переключите их на Перезаписать.",
               "ПЕРЕЗАПИСЬ МОЖЕТ СТИРАТЬ ДАННЫЕ — Товары: пустая ячейка brand, category, description или images стирает эти значения у товара, пустой isActive делает товар видимым, а пустые isNew и limited выключают эти признаки. Коллекции: пустая ячейка productIds опустошает коллекцию. Категории и коллекции: пустой order сбрасывается в 0, пустой isActive включается, пустой isFeatured выключается. Всегда перезаписывайте из свежей выгрузки, а не из собранной вручную неполной таблицы.",
               "ПЕРЕЗАПИСЬ НЕ МОЖЕТ ОЧИСТИТЬ НЕКОТОРЫЕ ПОЛЯ — у товаров пустые sku, barcode, shortDescription, details, sizes, color, weightKg, stock, slug и любой из столбцов терминов оставляют то, что уже сохранено. У категорий и коллекций то же самое верно для description, parentId и imageUrl; у промокодов — для minOrderAmount и maxDiscount. Можно ли очистить такое поле вручную, зависит от списка — см. следующий пункт.",
-              "КАК ОЧИСТИТЬ ЭТИ ПОЛЯ И ГДЕ ЭТО ПРОСТО НЕВОЗМОЖНО — для категорий и коллекций это работает: откройте запись на её странице в админ-панели, очистите поле описания, адрес картинки или поле родителя и сохраните. Пустое поле сохранится, и старое значение исчезнет. Для товаров и промокодов такой возможности нет вообще. Оба этих экрана считают очищенное поле указанием «это поле не трогать», поэтому очистка sku, barcode, shortDescription, details, color, weightKg, stock или любого из выборов терминов на странице товара — как и минимальной суммы корзины и максимальной скидки у промокода — ничего не сохраняет, и старое значение остаётся на месте. Ни через импорт, ни по одной записи это не обойти. Реальных вариантов два: вписать поверх старого другое значение либо удалить запись и завести её заново. Два поля на странице товара ведут себя иначе: очистка поля Размеры (Sizes) действительно очищает размеры, а очистка поля веб-адреса не оставляет его пустым — вместо этого новый адрес формируется из названия товара.",
+              "КАК ОЧИСТИТЬ ЭТИ ПОЛЯ И ГДЕ ЭТО ПРОСТО НЕВОЗМОЖНО — для товаров, категорий и коллекций это работает: откройте запись на её странице в админ-панели, очистите поле и сохраните. Пустое поле сохранится, и старое значение исчезнет. У товара это касается sku, barcode, shortDescription, details, color, weightKg, каждой клетки таблицы остатков и выборов терминов. Для промокодов такой возможности по-прежнему нет вообще. Этот экран считает очищенное поле указанием «это поле не трогать», поэтому очистка минимальной суммы корзины или максимальной скидки ничего не сохраняет, и старое значение остаётся на месте. Реальных вариантов там два: вписать поверх старого другое значение либо удалить код и завести его заново. Одно поле на странице товара ведёт себя иначе: очистка поля веб-адреса не оставляет его пустым — вместо этого новый адрес формируется из названия товара.",
               "СОЗДАНИЕ НОВОЙ ЗАПИСИ НА УЖЕ СУЩЕСТВУЮЩЕЙ СТРОКЕ — для товаров это безопасно: создаётся второй товар, а к его веб-адресу добавляется цифра, чтобы адреса не конфликтовали. Для категорий и коллекций адрес никак не переименовывается, поэтому у вас окажутся две записи с одним адресом. Для промокодов получатся два кода с одинаковым текстом, и при оформлении заказа сработает только один из них. Для этих трёх списков лучше выбирать Перезаписать (Overwrite) или Пропустить (Skip).",
               "СТОЛБЦЫ «ДА/НЕТ» — true, 1, yes и y означают «да» в любом регистре. Всё остальное, что вы впишете, означает «нет», включая слова on, active или x. Пустая ячейка означает разумное значение по умолчанию: isActive — да, а isNew, limited и isFeatured — нет.",
               "ЧИСЛОВЫЕ СТОЛБЦЫ — вписывайте только цифры. 199 и 199.99 подходят; $199 и 1,299 — нет. Цена, которую не удалось прочитать, делает всю строку товара некорректной. Вес, который не удалось прочитать, просто игнорируется, и товар всё равно импортируется.",
-              "СПИСКИ ДЕЛЯТСЯ И ПО ЗАПЯТЫМ — везде, где в ячейке список (sizes, images, productIds и столбцы терминов), значение разбивается и по точкам с запятой, и по запятым. Название термина или веб-адрес с запятой внутри будет разрезан надвое. Не используйте запятые в таких ячейках.",
+              "СПИСКИ ДЕЛЯТСЯ ПО ТОЧКАМ С ЗАПЯТОЙ — везде, где в ячейке список (sizes, images, productIds и столбцы терминов), значение разбивается по точкам с запятой; именно так пишет и выгрузка. Ячейка без единой точки с запятой считается старым списком через запятую, поэтому одиночный веб-адрес с запятой внутри нужно записать с точкой с запятой после него или как часть списка из двух элементов, иначе он будет разрезан.",
               "РАЗНОБОЙ В НАПИСАНИИ ПЛОДИТ МУСОР — названия брендов, категорий и терминов сопоставляются без учёта регистра, поэтому acme найдёт Acme. Но Acme Inc и Acme — это разные записи, и каждое новое написание молча создаёт ещё один бренд, категорию или термин. Приведите написание в порядок до импорта.",
               "Импорт никогда не загружает картинки. В столбце images хранятся веб-адреса, которые вы вписали, поэтому сначала разместите картинки в открытом доступе."
             ]
@@ -9121,7 +9172,7 @@ const MANUAL = {
               "Нажмите Скачать CSV (Download CSV) и откройте файл в табличной программе."
             ],
             "notes": [
-              "ЗАКАЗЫ (ORDERS) — 17 столбцов: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders.",
+              "ЗАКАЗЫ (ORDERS) — 26 столбцов: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders, paymentMethod, shippingMethod, shippingName, shippingAddress, shippingCity, shippingZip, shippingCountry, shippingPhone, orderNotes. Девять столбцов начиная с paymentMethod — это данные доставки, введённые при оформлении; у кассовых продаж они пусты, а shippingPhone пуст у заказов, оформленных до этого выпуска.",
               "Заказы — items — это читаемая сводка вида «Black Jacket x1; Wool Scarf x2», а не по строке на товар. tenders перечисляет, чем оплатили, например «cash 20.00; card 5.50». В channel указано online или pos. receiptNumber, cashierId, deviceId и tenders заполняются только для продаж, пробитых на кассе, а channel пуст у заказов, оформленных до появления кассы, — все они были онлайн-продажами.",
               "Заказы — выгружается не более 5000 последних заказов, начиная с самых свежих. Выбора диапазона дат нет, поэтому магазин, у которого заказов больше, до старых с этой страницы не доберётся.",
               "ПОКУПАТЕЛИ (CUSTOMERS) — 8 столбцов: uid, email, displayName, role, phone, createdAt, addressCount, wishlistCount. addressCount и wishlistCount — только количества; сами адреса и отложенные товары в файл не попадают. В список входят все учётные записи, включая ваши собственные логины сотрудников и администраторов, а столбец role показывает, кто есть кто.",
@@ -9298,7 +9349,7 @@ const MANUAL = {
   },
   "tr": {
     "intro": {
-      "version": "v15.0.1"
+      "version": "v15.1.0"
     },
     "parts": [
       {
@@ -9470,22 +9521,23 @@ const MANUAL = {
             ],
             "notes": [
               "Ciro kartı; ödendi, hazırlanıyor, kargolandı veya teslim edildi olarak işaretlenmiş siparişleri toplar. İade edilmiş ya da iptal edilmiş olanlar dahil diğer durumlardaki siparişler sayılmaz; tarih aralığı veya grafik yoktur.",
-              "Sayılar, panel her yüklendiğinde bütün ürünler ve bütün siparişler yeniden okunarak hesaplanır; bu yüzden çok fazla siparişi olan bir mağazada bu ekran yavaş çalışır ve Firebase kullanımınızı artırır.",
-              "Son iletişimler listesinin üstündeki \"Tümünü gör (View all)\" bağlantısı ve satırların kendisi, İletişim (Contacts) ekranı yerine Kullanıcılar (Users) ekranını açar. Mesajların tamamı kenar çubuğundaki İletişim bölümündedir.",
+              "Sayılar ve gelir rakamı veritabanının kendisi tarafından hesaplanır; bu yüzden panel kartları doldurmak için hiçbir ürün ya da sipariş belgesi okumaz ve kaç siparişiniz olursa olsun hızlı kalır.",
+              "Son iletişimler listesinin üstündeki \"Tümünü gör (View all)\" bağlantısı ve satırların kendisi, mesajların tamamının bulunduğu İletişim (Contacts) ekranını açar.",
               "Kurulum kontrol listesi, listeyi ilk kez boş bulduğunda kendini on iki hazır görevle doldurur.",
               "\"İlerlemeyi doğrula\", kuralların yayımlanması, depolama kurallarının yayımlanması, ödeme fonksiyonlarının kurulması ve ödeme webhook'unun ayarlanmasıyla ilgili dört görevi doğrulayamaz. Bunları kendiniz işaretlemeniz gerekir.",
               "\"İlerlemeyi doğrula\" yalnızca kutuları işaretler. Artık geçerli olmayan bir maddenin işaretini asla kaldırmaz.",
               "Bildirimler her seferinde yeniden hesaplanır; okundu ya da yoksay işlemi yoktur. Bir madde, arkasındaki iş halledildiğinde kendiliğinden kaybolur; örneğin değerlendirmeler onaylandığında.",
               "\"Güncelleme mevcut (Update available)\" bildirimi ile üst çubuktaki ona karşılık gelen rozet, yazılımın herkese açık sürüm listesinden internet üzerinden sorgulanır. İnternet bağlantısı yoksa veya sorgu başarısız olursa hiçbir şey gösterilmez ve herhangi bir hata çıkmaz.",
-              "Beş kartın hepsi tek seferde birlikte yüklenir. Hesabınızın, kartların arkasındaki dört şeyden birini - ürünlerinizi, siparişlerinizi, değerlendirmeleri veya soruları - okuma izni yoksa yükleme orada durur. Beş kart da gri yükleme çubuklarında kalır ve hiçbir zaman dolmaz; altındaki Son iletişimler listesi de yükleme çubuklarında kalır. Engellenen tek bir öğe ekranın bütün üst kısmını beraberinde götürür.",
-              "Bu olduğunda panelde hiçbir hata mesajı çıkmaz. Ekranda neyin ters gittiğini söyleyen ya da yeniden denemenizi öneren bir şey yoktur; sayfayı yenilemek de aynı sonucu verir. Hata bunun yerine Hakkında (About) ekranındaki hata listesine yazılır; kartlar yükleme çubuklarında takılı kalırsa bakmanız gereken yer orasıdır.",
+              "Beş kartın hepsi tek seferde birlikte yüklenir. Hesabınızın, kartların arkasındaki dört şeyden birini - ürünlerinizi, siparişlerinizi, değerlendirmeleri veya soruları - okuma izni yoksa yükleme orada durur ve her kartta sayı yerine bir tire görünür.",
+              "Bu olduğunda kartların üstünde rakamların yüklenemediğini söyleyen kırmızı bir mesaj ve Yeniden dene (Retry) düğmesi çıkar. Hata ayrıca Hakkında (About) ekranındaki hata listesine de yazılır.",
               "İki iletişim sayısı bunun istisnasıdır. Yalnızca iletişim mesajları okunamıyorsa bunlar sessizce atlanır: son mesajlar listesi boş görünür, okunmamış etiketi çıkmaz; beş kart ve ekranın geri kalanı normal şekilde yüklenir.",
               "Bildirimler bölmesinin içinde ise durum tam tersi ve daha hoşgörülüdür. Oradaki her madde tek tek hesaplandığı için, hesabınızın okuyamadığı bir şey yalnızca o maddeyi listeden çıkarır. Bölmenin geri kalanı çalışmaya devam eder ve hata gösterilmez.",
               "Zilin \"Tüm bildirimleri görüntüle\" bağlantısı panelin en üstüne gider; bu yüzden sitenizi kuran kişi bağlantıyı doğrudan bölmeye yönlendirmediyse Bildirimler bölmesine ulaşmak için aşağı kaydırmanız gerekebilir.",
               "İlerleme halkası yalnızca hazır kurulum görevlerini sayar, sizin eklediklerinizi saymaz. Hepsi tamamlandığında halka tamamen kaybolur; hazır görevler silinmişse hiç görünmez.",
               "Bir görevi veya arama terimini silmek, sade bir tarayıcı penceresiyle onay ister ve geri alma yoktur.",
               "Arama terimleri ancak müşteriler arama kutusunu kullandıktan sonra görünür. O zamana kadar bölme bunu belirtir ve boş kalır. Bu bölme başlangıçta katlanmış olarak gelir.",
-              "Hangi bölmelerin açık olduğu kullandığınız tarayıcıda hatırlanır; farklı bir bilgisayar veya tarayıcı yeniden varsayılanlardan başlar."
+              "Hangi bölmelerin açık olduğu kullandığınız tarayıcıda hatırlanır; farklı bir bilgisayar veya tarayıcı yeniden varsayılanlardan başlar.",
+              "Telefonda ya da dar bir pencerede sol menü gizlidir. Sol üstteki düğme menüyü sayfanın üstüne kaydırarak açar; dışına dokunmak, Escape'e basmak veya bir sayfa seçmek menüyü yeniden kapatır."
             ]
           },
           {
@@ -9555,7 +9607,7 @@ const MANUAL = {
               "Düz tablo ile resim kartı görünümü arasında geçiş yapmak için sağ üstteki Tablo / Masonry (Table / Masonry) düğmesini kullanın.",
               "Bir satırın (veya kartın) sonundaki üç nokta düğmesine tıklayıp Düzenle (Edit) seçeneğini seçerek ürünü açın.",
               "Ürünün mağaza sayfasını yeni bir sekmede açmak için aynı menüden Mağazada görüntüle (View on storefront) seçeneğini seçin ya da ürün adının yanındaki küçük ok simgesine tıklayın.",
-              "Bir ürünü kaldırmak için aynı menüden Sil (Delete) seçeneğini seçin. Önce tarayıcının onay kutusu çıkar.",
+              "Bir ürünü kaldırmak için aynı menüden Sil (Delete) seçeneğini seçin. Önce ürünün adını gösteren bir onay penceresi çıkar.",
               "Yeni bir ürün oluşturmak için sağ üstteki + Yeni ürün (+ New product) düğmesine tıklayın."
             ],
             "fields": [
@@ -9881,8 +9933,8 @@ const MANUAL = {
               "Yönetim ekranlarından bir grup ürünü topluca başka bir rafa taşımanın yolu yoktur. Ürünler listesinde bir Kategori açılır listesi vardır, ama o yalnızca baktığınız listeyi filtreler; hiçbir şeyi değiştirmez. On ürünü taşımak için on ürünü açarsınız. Tek istisna tablo yoludur: Ayarlar altındaki İçe / Dışa aktarma (Import / Export) bölümünden ürünlerinizi dışa aktarın, dosyadaki kategori sütununu değiştirin ve halihazırda var olan ürünlerle eşleşen satırlar için Üzerine yaz (Overwrite) seçeneğini seçerek geri içe aktarın.",
               "Üst kategori açılır listesi ne düzenlemekte olduğunuz kategoriyi ne de onun altına yerleştirilmiş olanları size sunar. Bu, yanlışlıkla bir döngü oluşturmanızı engeller; yani bir rafı kendi rafının içine koyamazsınız.",
               "Kategoriler tablosu ağaç değil, Sıra numarasına göre sıralanmış düz bir listedir. Sıra numarası daha küçükse bir alt kategori tabloda üst kategorisinin üzerinde görünebilir. Girintili ağaç görünümü yalnızca ürün düzenleyicideki Kategori açılır listesinde çıkar; orada her seviyenin önünde bir tire bulunur.",
-              "Bir kategoriyi silmek başka hiçbir şeye dokunmaz. Altındaki ürünler artık var olmayan bir rafı göstermeye devam eder ve ürün düzenleyici bu durumda yeni bir kategori seçip kaydetmenizi isteyen turuncu bir uyarı gösterir. Alt kategoriler üst kategorilerini kaybeder ve Üst kategori sütununda yalnızca bir tire görünür.",
-              "Silme işlemi küçük bir tarayıcı penceresinde onay ister, sonra hemen gerçekleşir. Geri alma yoktur, çöp kutusu da yoktur.",
+              "Bir kategoriyi silmek altındaki ürünlere dokunmaz. Ürünler artık var olmayan bir rafı göstermeye devam eder ve ürün düzenleyici bu durumda yeni bir kategori seçip kaydetmenizi isteyen turuncu bir uyarı gösterir. Alt kategoriler en üst düzeye taşınır ve onay penceresi siz kabul etmeden önce kaç tane olduğunu söyler.",
+              "Silme işlemi bir onay penceresinde onay ister, sonra hemen gerçekleşir. Geri alma yoktur, çöp kutusu da yoktur.",
               "Gizli (Aktif olmayan) bir kategori, ürün düzenleyicinin Kategori açılır listesinde bilerek görünmeye devam eder; böylece ürünleri o kategoriden taşıyabilirsiniz. Ayırt edebilesiniz diye adının arkasında (hidden) yazar.",
               "Mağaza sayfasındaki Kategori filtresi yalnızca gerçekten ürün bulunan kategorileri sunar ve tam eşleşme arar. Üst rafa göre filtrelemek, altındaki rafların ürünlerini getirmez.",
               "Bir ürün gizli bir kategoride duruyorsa, mağaza sayfasının Kategori filtresi onu yine listeler ama ad yerine rastgele görünen bir karakter dizisi gösterir; çünkü yalnızca aktif kategorilerin adlarını bulabilir.",
@@ -9954,7 +10006,7 @@ const MANUAL = {
               "Ürün düzenleyiciden bir ürünü koleksiyona eklemenin yolu yoktur. Koleksiyon üyeliği yalnızca bu ekrandan düzenlenir.",
               "Ürün seçici mağazanızdaki tüm ürünleri tek seferde yükler. Çok büyük bir katalogda bu liste uzun olur; bu yüzden kaydırmak yerine arama kutusunu kullanın.",
               "Koleksiyonlar iç içe geçmez ve bir koleksiyon başka bir koleksiyonu içeremez.",
-              "Silme işlemi küçük bir tarayıcı penceresinde onay ister, sonra hemen gerçekleşir. Ürünlerin kendisine dokunulmaz.",
+              "Silme işlemi bir onay penceresinde onay ister, sonra hemen gerçekleşir. Ürünlerin kendisine dokunulmaz.",
               "Koleksiyonlar Ayarlar altındaki İçe / Dışa aktarma (Import / Export) bölümünden tablo olarak dışa ve içe aktarılabilir. O dosyada seçili ürünler noktalı virgülle ayrılmış tek bir productIds sütununda yer alır."
             ]
           },
@@ -10282,14 +10334,14 @@ const MANUAL = {
               "Adres girilene kadar fiyatları gizleme seçeneğini ayarladıysanız, hem ülke hem de posta kodu yazılana kadar teslimat listesi boş kalır.",
               "Teslimat seçeneklerinden herhangi biri ücretsizse ve ilgili seçeneği açtıysanız ücretli seçenekler gizlenir; böylece müşteri otomatik olarak ücretsiz olanı alır.",
               "Ödeme adımındaki vergi yalnızca tahminidir ve bu şekilde etiketlenir. Kesin tutarı ödeme sağlayıcısı hesaplar.",
-              "Sepet sayfasındaki indirim kodu kutusu aslında hiçbir işe yaramaz. Kod hatırlanır ve ödeme sayfasının web adresine eklenir, ancak ödeme sayfası bunu yok sayar. Hiçbir indirim uygulanmaz ve indirim satırı görünmez.",
+              "Sepet sayfasına yazılan indirim kodu ödeme sayfasına taşınır ve oradaki sipariş özetinde gösterilir. İndirimin kendisini kodu doğrulayan kart ödeme sağlayıcısı uygular; bu yüzden indirim ödeme sayfasında ve tamamlanan siparişte görünür, ödeme formunda ayrı bir satır olarak değil. Banka havalesi, çek ve kapıda ödeme siparişlerinde indirim kodu hiçbir zaman uygulanmaz.",
               "Ödeme sayfasının kendisinde indirim kodu kutusu yoktur.",
               "Sepet hiçbir zaman stok kontrolü yapmaz. Adetler hem sepet sayfasında hem de kayan panelde müşterinin istediği kadar yükseltilebilir.",
               "Sepet, giriş yapmamış müşteriler için tarayıcıda tutulur, giriş yapmış müşteriler için hesaba kaydedilir. Giriş yapıldığında ikisi birleştirilir ve hiçbir şey kaybolmaz.",
               "Havale, çek veya kapıda ödemede sipariş, On hold (Beklemede) durumuyla anında kaydedilir ve müşteri doğrudan onay sayfasına gider. Bu yöntemleri tanımlarken girmeniz zorunlu olan ödeme talimatları sitenin hiçbir yerinde müşteriye gösterilmez; bunları başka bir yolla bildirmeniz gerekir.",
               "Onay sayfası, sipariş kaydedilirken kısa bir süre siparişin hâlâ işlendiğini yazabilir. Yaklaşık dokuz saniye boyunca kontrol etmeye devam eder, ardından sipariş numarasını gösterir ve müşteriden e-postasını kontrol etmesini ister.",
               "Hiçbir ödeme yöntemi tanımlanmamışsa ödeme sayfası bunu bildiren bir mesaj gösterir. Ödeme ayarlarına giden bağlantı yalnızca sayfaya bakan kişi mağaza sahibi olarak giriş yapmışsa görünür.",
-              "Müşterinin hesabında listelenen siparişler /orders/ adresinin ardından sipariş numarası gelecek şekilde bağlanır; bu, sitede var olan bir sayfa değildir. Tıklayan müşteri 'Page not found' görür.",
+              "Müşterinin hesabında listelenen siparişler /orders/ adresinin ardından sipariş numarası gelecek şekilde açılır: onay sayfasındaki salt okunur özetin aynısı; toplamlar, teslimat bilgileri ve hesaba dönüş bağlantısı.",
               "Sipariş takibi sayfası, sipariş ister hiç bulunmasın ister e-posta eşleşmesin her iki durumda da aynı 'siparişi bulamadık' mesajını verir; böylece kimse deneme yoluyla başkalarının sipariş numaralarını bulamaz.",
               "/order-status adresine ?id=...&email=... eklenerek sayfa önceden doldurulmuş şekilde açılabilir; bu, kendi e-postalarınıza koymak için kullanışlıdır, ancak sitede bu bağlantıyı sizin için üreten hiçbir şey yoktur."
             ]
@@ -10373,15 +10425,15 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Tablo sütunları şunlardır: Order (Sipariş), Customer (Müşteri), Date (Tarih), Items (Ürün), Total (Toplam), Status (Durum). Hepsi bu kadar.",
-              "Bir satışın internetten mi yoksa mağazadaki kasadan mı yapıldığını gösteren bir sütun yoktur. Bu ekranda ikisini birbirinden ayıramazsınız. Mağaza içi satışlarla ilgili ayrı bölüme bakın.",
+              "Tablo sütunları şunlardır: Order (Sipariş), Customer (Müşteri), Date (Tarih), Items (Ürün), Total (Toplam), Channel (Kanal), Status (Durum). Hepsi bu kadar.",
+              "Channel sütunu mağazadaki kasadan yapılan satışlarda POS, diğerlerinde Online rozeti gösterir; böylece ikisi bir bakışta ayırt edilir. Mağaza içi satışlarla ilgili ayrı bölüme bakın.",
               "Durum filtresi yalnızca Table görünümünde görünür. Board görünümü, ne filtrelemiş olursanız olun her zaman tüm siparişleri gösterir; bu da kolaylıkla filtrenin yok sayıldığı şeklinde yanlış anlaşılabilir.",
               "Yalnızca en son 500 sipariş yüklenir. Daha fazlası varsa en eskiler burada hiç görünmez ve ikinci sayfaya geçmek için bir denetim yoktur.",
-              "Arama kutusu yoktur. Bu ekranda bir siparişi müşteri adına, e-postasına veya sipariş numarasına göre arayamazsınız. Duruma göre daraltmak tek filtredir.",
+              "Listenin üstündeki arama kutusu bir siparişi numarasına veya müşterinin e-postasına göre bulur; hem Table hem Board görünümünde çalışır. Müşteri adına göre aramaz.",
               "Order sütunu, sipariş numarasının tamamını değil yalnızca ilk 10 karakterini gösterir. Bir müşteriye numaranın tamamı gerekiyorsa siparişi açın ve tarayıcınızın adres çubuğundaki web adresinden okuyun.",
               "Items sütunu toplam adet sayısıdır; yani aynı üründen üç adet içeren bir siparişte 1 değil 3 yazar.",
               "Customer yalnızca e-posta adresini gösterir. Tire işareti, e-posta kaydedilmediği anlamına gelir.",
-              "cancelled da pano sütunlarından biridir; dolayısıyla bir siparişi sürükleyerek, hiçbir onay adımı olmadan iptal etmek mümkündür.",
+              "cancelled da pano sütunlarından biridir; dolayısıyla bir siparişi sürükleyerek, hiçbir onay adımı olmadan iptal etmek mümkündür. Panodaki her kartta bir durum açılır listesi de vardır; böylece sipariş sürüklemeden, klavye veya dokunmatik ekranla da taşınabilir.",
               "Bir siparişi silmenin ne burada ne de yönetim panelinin başka bir yerinde yolu vardır.",
               "Tezgâhta kaydedilen satışlar da bu listede görünür. Kasanın kendisi, kasayla birlikte gelen kendi kılavuzunda anlatılır."
             ]
@@ -10404,16 +10456,16 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Ekranda şunlar gösterilir: kısa sipariş numarası, müşteri e-postası, tarih ve saat, mevcut durum, her ürünün bedeni, adedi ve birim fiyatı, satır toplamı, ardından Subtotal (Ara toplam), Shipping (Kargo), Discount (İndirim) ve Total (Toplam), sonra da teslimat adı, adresi, şehri, posta kodu ve ülkesi.",
+              "Ekranda şunlar gösterilir: sipariş listesine dönüş bağlantısı, kısa sipariş numarası, müşteri e-postası, tarih ve saat, mevcut durum, her ürünün bedeni, adedi ve birim fiyatı, satır toplamı, ardından Subtotal, Shipping, Tax, Discount ve Total, ödeme yöntemi, kart bilgileri ve indirim kodunu gösteren Payment bölümü, sonra teslimat adı, adres, şehir, posta kodu, ülke, teslimat yöntemi ve müşterinin yazdığı not.",
               "Shipping ve Discount satırları sıfır olduğunda gizlenir; bu yüzden ücretsiz teslimatlı bir siparişte sıfır yazan bir Shipping satırı değil, hiç Shipping satırı bulunmaz.",
-              "Siparişte vergi kayıtlı olsa bile bu ekranda vergi gösterilmez. Müşterinin kendi takip sayfası bunu gösterir, sipariş dışa aktarımı da gösterir; bu nedenle buradaki toplamlar tutmuyormuş gibi görünebilir.",
-              "Müşterinin seçtiği teslimat yöntemi de burada gösterilmez; kaydedilir ve müşterinin takip sayfasında görünür.",
-              "Ödeme yöntemi ve kullanılan indirim kodu gösterilmez, yalnızca indirim tutarı gösterilir.",
+              "Siparişte vergi kayıtlıysa Tax ayrı bir satır olarak gösterilir; böylece toplamlar tutar. Vergisi olmayan siparişlerde Tax satırı hiç olmaz.",
+              "Müşterinin seçtiği teslimat yöntemi, ödeme sırasında yazdığı notla birlikte Shipping bölümünde adresin altında gösterilir.",
+              "Payment bölümü ödeme yöntemini, kartla ödemelerde kart markasını ve son dört haneyi, kullanıldıysa indirim kodunu gösterir. Discount satırında da kod yazar.",
               "Mağaza içi kasa bilgilerinin hiçbiri burada görünmez: fiş numarası yok, kasiyer yok, ödeme dökümü yok.",
-              "Takip veya sevkiyat numarası yazacak bir alan da, siparişe not ekleyecek bir yer de yoktur.",
+              "Takip veya sevkiyat numarası yazacak bir alan da, kendi notunuzu ekleyecek bir yer de yoktur. Adresin altında gösterilen not, müşterinin ödeme sırasında yazdığı kendi notudur.",
               "İade düğmesi, yazdırma veya fatura düğmesi ve silme düğmesi yoktur.",
               "Siparişe adres eklenmemişse Shipping bölümü tamamen gizlenir; kasadan yapılan tezgâh üstü satışlarda durum budur.",
-              "Sipariş on-hold durumunda bırakıldıysa buradaki açılır liste on-hold seçeneğini sunmaz ve bu nedenle onu mevcut ayar olarak da göstermez. Açılır listenin üstündeki renkli etiket güvenilir olandır."
+              "Durum açılır listesi on-hold dahil yedi durumun tamamını sunar; banka havalesi bekleyen bir sipariş mevcut ayar olarak on-hold gösterir ve yeniden ona alınabilir."
             ]
           },
           {
@@ -10944,6 +10996,22 @@ const MANUAL = {
               {
                 "name": "Ürün kartlarında hızlı sepete ekle simgesini göster (Show quick add-to-cart icon on product cards)",
                 "what": "Onay kutusu. Üç ürün kartı tasarımından yalnızca ikisinde çalışır. Düz tasarımda ve kompakt tasarımda, bu kutunun açıp kapattığı bir hızlı sepete ekle simgesi vardır. Editoryal tasarımda böyle bir simge hiç yoktur; bu yüzden o tasarımı kullanan bir dükkânda kutu gözle görülür bir şey yapmaz. Tıkladığınız anda kaydedilir."
+              },
+              {
+                "name": "Vitrin metni: Duyuru çubuğu (Announcement bar)",
+                "what": "Ürün kartı onay kutularının altındaki metin kutusu. Electronics şablonunun her sayfanın üstünde gösterdiği tek bir kısa satır. Boş bırakılırsa çubuk hiç görünmez. Sade vitrin bunu dikkate almaz."
+              },
+              {
+                "name": "Vitrin metni: Slogan (Tagline)",
+                "what": "Electronics şablonunun alt bilgi öncesi şeridinde ve ana sayfa özellik şeridinde gösterilen tek satır. Boş bırakılırsa orada marka açıklamanız gösterilir."
+              },
+              {
+                "name": "Vitrin metni: Alıntı (Pull-quote)",
+                "what": "Home Goods şablonunun ana sayfasında ve alt bilgi imzasında gösterilen kısa alıntı. Boş bırakılırsa marka açıklamanız gösterilir."
+              },
+              {
+                "name": "Vitrin metni: Alıntı sahibi (Quote attribution)",
+                "what": "Alıntının altına yazdırılır. Boş bırakılırsa marka adınız kullanılır. Dört kutu, altlarındaki Save düğmesiyle birlikte kaydedilir; bir şey değişene kadar düğme gri kalır."
               }
             ],
             "notes": [
@@ -11659,7 +11727,7 @@ const MANUAL = {
             "notes": [
               "Fiyatlar alanlara para birimi simgesi olmadan düz sayı olarak yazılır. Mağazanızın para birimi cinsindendir.",
               "Bir teslimat yönteminde Kaydet düğmesine tıklamak, yöntemi bilerek kapatmış olsanız bile onu her zaman yeniden açar. Duraklattığınız bir yöntemin yalnızca fiyatını düzeltmek istediyseniz, kaydettikten sonra yöntem yeniden yayında olur.",
-              "Uygun ülkeler listesindeki tüm ülkeleri kaldırıp kaydetmek kısıtlamayı kaldırmaz. Eski ülke listesi yerinde kalır. Bir yöntemi gerçekten tüm ülkelere açmak için yöntemi silip yeniden ekleyin.",
+              "Uygun ülkeler listesindeki tüm ülkeleri kaldırıp kaydetmek yöntemi yeniden tüm ülkelere açar. Configure kapalı bir yöntemi de kapalı bırakır: ayarlarını kaydetmek onu artık yeniden açmaz.",
               "Ülke seçici yalnızca site ayarlarınızda listelenen ülkeleri sunar. Orada bir ülke listesi belirlemediyseniz tüm dünya listesini sunar.",
               "Weight-Based yöntemi, ödeme adımında yalnızca sepetteki en az bir üründe ağırlık girilmişse görünür (Ürünler > bir ürünü düzenleyin > Weight (kg) alanı). Hiçbir ürünün ağırlığı yoksa yöntem ödeme adımından sessizce kaybolur.",
               "Bir yöntemin ayarları geçersizse müşteriye hata gösterilmez; yöntem sessizce ödeme adımından çıkarılır. Düzenleme yaptıktan sonra kendi ödeme akışınızı mutlaka test edin.",
@@ -11770,7 +11838,7 @@ const MANUAL = {
               "Satırın bu listedeki yerini belirlemek için Sıra (Order) alanına bir sayı yazın.",
               "Aktif (Active) kutusunu ve isterseniz Varsayılan (Default) kutusunu işaretleyin.",
               "Kaydet (Save) düğmesine tıklayın.",
-              "Bir satırı sonradan değiştirmek için üzerindeki Düzenle (Edit) düğmesine tıklayın. Silmek için Sil (Delete) düğmesine tıklayıp tarayıcının açtığı onay penceresini onaylayın."
+              "Bir satırı sonradan değiştirmek için üzerindeki Düzenle (Edit) düğmesine tıklayın. Silmek için Sil (Delete) düğmesine tıklayıp onay penceresinde onaylayın."
             ],
             "fields": [
               {
@@ -11812,9 +11880,9 @@ const MANUAL = {
               "Bu yalnızca bir listedir, fazlası değil. Mağazanın hiçbir bölümü bu listeyi okumaz. Buraya dil eklemek mağazanızı çevirmez, dil seçici eklemez ve müşterinin gördüğü hiçbir şeyi değiştirmez. Aktif (Active) kutusunda \"müşterilere görünür\" yazsa da bu bilgiyi kullanacak, müşterinin gördüğü bir liste yoktur.",
               "Ürünün içinde hazır gelen metinler yalnızca İngilizce, Azerbaycanca, Rusça ve Türkçeyi kapsar; bu üç çeviri de mağazanın tamamını değil, kasa metinlerini ve ortak metinleri kapsar. Geri kalan her şey İngilizceye döner.",
               "Üründeki tek dil seçici Satış Noktası (Point of Sale) ayarlar ekranındadır ve buraya eklediğiniz satırları değil, ürünle gelen o dört dili sunar.",
-              "Birden fazla satırda Varsayılan (Default) kutusunu işaretleyebilirsiniz. Bunu engelleyen bir şey yoktur ve bu ayarı kullanan da bir şey yoktur.",
+              "Yalnızca bir satır Default olabilir. Bir dilde Default kutusunu işaretlemek rozeti oraya taşır ve öncekinin işaretini sizin yerinize kaldırır. Aynı koda sahip ikinci bir satır kaydederken reddedilir. Default ayarını başka hiçbir şey kullanmaz.",
               "Varsayılan (Default) olarak işaretli satırlarda Sil (Delete) düğmesi soluk görünür ve çalışmaz. Gerçekten silmek istiyorsanız önce Varsayılan işaretini kaldırın.",
-              "Silme, tarayıcının onay penceresinden sonra anında gerçekleşir. Geri alma yoktur.",
+              "Silme, onay penceresinden sonra anında gerçekleşir. Geri alma yoktur.",
               "Kodlar kaydedilirken küçük harfe çevrilir; yani EN yazarsanız en olarak saklanır."
             ]
           },
@@ -11942,11 +12010,11 @@ const MANUAL = {
               "HANGİ İŞLEMLERİN SUNULDUĞU - Ürünler, Kategoriler, Koleksiyonlar ve İndirim kodları Atla (Skip), Üzerine yaz (Overwrite) ve Yeni oluştur (Create new) sunar. Markalar ve Sınıflandırma terimleri yalnızca Atla ve Üzerine yaz sunar, çünkü dâhilî kimlikleri addan üretilir. Aboneler yalnızca Atla sunar, çünkü üzerine yazılacak tek şey e-posta adresidir. Yeni satırlar varsayılan olarak oluşturulur; zaten var olan satırlar varsayılan olarak Atla seçilidir, bu yüzden bir dışa aktarımı olduğu gibi yeniden yüklemek, siz Üzerine yaz seçeneğine geçirmedikçe hiçbir şeyi değiştirmez.",
               "ÜZERİNE YAZMAK BAZI ŞEYLERİ SİLEBİLİR - Ürünler: boş bırakılan brand, category, description veya images hücresi bu değerleri üründen siler; boş isActive ürünü görünür yapar, boş isNew ve boş limited ise bunları kapatır. Koleksiyonlar: boş bir productIds hücresi koleksiyonu boşaltır. Kategoriler ve Koleksiyonlar: boş order değeri 0'a döner, boş isActive açar, boş isFeatured kapatır. Elle hazırlanmış eksik bir tablo yerine her zaman taze bir dışa aktarım üzerinden üzerine yazın.",
               "ÜZERİNE YAZMAK BAZI ŞEYLERİ TEMİZLEYEMEZ - Ürünlerde sku, barcode, shortDescription, details, sizes, color, weightKg, stock, slug ya da terim sütunlarından herhangi birini boş bırakmak, halihazırda kayıtlı olan değeri korur. Kategoriler ve Koleksiyonlarda aynısı description, parentId ve imageUrl için geçerlidir; İndirim kodlarında ise minOrderAmount ve maxDiscount için. Bunlardan birini bunun yerine elle boşaltıp boşaltamayacağınız hangi liste olduğuna bağlıdır - bir sonraki nota bakın.",
-              "BU ALANLAR NASIL BOŞALTILIR VE NEREDE HİÇ BOŞALTILAMAZ - Kategoriler ve Koleksiyonlarda işe yarar: kaydı kendi yönetim sayfasında açın, açıklama kutusunu, resim adresini veya üst kayıt kutusunu temizleyip kaydedin. Boş kutu kaydedilir ve eski değer gider. Ürünler ve İndirim kodlarında bunu yapmanın hiçbir yolu yoktur. Bu iki ekran da boşalttığınız bir kutuyu 'buna dokunma' olarak yorumlar; yani ürün sayfasında sku, barcode, shortDescription, details, color, weightKg, stock ya da terim seçicilerinden herhangi birini silmek - ya da bir indirim kodunda en düşük sepet tutarını ve en yüksek indirimi silmek - hiçbir şey kaydetmez ve eski değer tam olarak yerinde kalır. Ne içe aktarma yoluyla ne de tek tek kayıt üzerinden bir yolu vardır. Gerçek seçenekleriniz, eski değerin üzerine farklı bir değer yazmak ya da kaydı silip yeniden eklemektir. Ürün sayfasındaki iki kutu farklı davranır: Bedenler (Sizes) kutusunu boşaltmak bedenleri gerçekten temizler; web adresi kutusunu boşaltmak ise onu boş bırakmaz - ürün adından yeni bir adres üretilir.",
+              "BU ALANLAR NASIL BOŞALTILIR VE NEREDE HİÇ BOŞALTILAMAZ - Ürünler, Kategoriler ve Koleksiyonlarda işe yarar: kaydı kendi yönetim sayfasında açın, kutuyu temizleyip kaydedin. Boş kutu kaydedilir ve eski değer gider. Bir üründe bu sku, barcode, shortDescription, details, color, weightKg, stok tablosunun her hücresi ve terim seçicileri için geçerlidir. İndirim kodlarında ise bunu yapmanın hâlâ hiçbir yolu yoktur. O ekran boşalttığınız bir kutuyu 'buna dokunma' olarak yorumlar; yani en düşük sepet tutarını ya da en yüksek indirimi silmek hiçbir şey kaydetmez ve eski değer tam olarak yerinde kalır. Oradaki gerçek seçenekleriniz, eski değerin üzerine farklı bir değer yazmak ya da kodu silip yeniden eklemektir. Ürün sayfasındaki bir kutu farklı davranır: web adresi kutusunu boşaltmak onu boş bırakmaz - ürün adından yeni bir adres üretilir.",
               "ZATEN VAR OLAN BİR SATIRDA YENİ OLUŞTUR - Ürünlerde bu güvenlidir: ikinci bir ürün oluşturulur ve web adresine bir numara eklenerek çakışma önlenir. Kategoriler ve Koleksiyonlarda web adresini yeniden adlandıran bir şey yoktur; sonuçta aynı adresi paylaşan iki kayıt kalır. İndirim kodlarında aynı metne sahip iki kod olur ve ödeme sırasında bunlardan yalnızca biri uygulanır. Bu üçünde Üzerine yaz (Overwrite) veya Atla (Skip) seçeneğini tercih edin.",
               "EVET VE HAYIR SÜTUNLARI - true, 1, yes ve y değerlerinin hepsi, büyük-küçük harf fark etmeksizin evet anlamına gelir. Kutuya yazılan başka her şey hayır demektir; on, active veya x gibi kelimeler dâhil. Boş bırakmak makul varsayılanı verir: isActive evet, isNew, limited ve isFeatured ise hayırdır.",
               "SAYI SÜTUNLARI - Yalnızca düz rakam yazın. 199 ve 199.99 çalışır; $199 ve 1,299 çalışmaz. Okunamayan bir fiyat ürün satırının tamamını geçersiz kılar. Okunamayan bir ağırlık sessizce yok sayılır ve ürün yine de içe aktarılır.",
-              "LİSTE SÜTUNLARI VİRGÜLDEN DE BÖLÜNÜR - Bir hücrenin liste tuttuğu her yerde (sizes, images, productIds ve terim sütunları) değer hem noktalı virgülden hem de virgülden bölünür. İçinde virgül geçen bir terim adı ya da web adresi ikiye ayrılır. Bu hücrelerde virgül kullanmayın.",
+              "LİSTE SÜTUNLARI NOKTALI VİRGÜLDEN BÖLÜNÜR - Bir hücrenin liste tuttuğu her yerde (sizes, images, productIds ve terim sütunları) değer noktalı virgülden bölünür; dışa aktarma da tam olarak böyle yazar. İçinde hiç noktalı virgül olmayan bir hücre eski, virgülle ayrılmış liste sayılır; bu yüzden içinde virgül geçen tek bir web adresinin bütün kalması için ardına noktalı virgül konmalı ya da iki öğeli bir listenin parçası olmalıdır.",
               "YAZIM FARKLARI KARMAŞA YARATIR - Marka, kategori ve terim adları büyük-küçük harf ayrımı gözetmeden eşleştirilir; yani acme, Acme'yi bulur. Ancak Acme Inc ile Acme farklıdır ve her yeni yazım sessizce başka bir marka, kategori ya da terim oluşturur. İçe aktarmadan önce yazımlarınızı düzenleyin.",
               "İçe aktarma hiçbir zaman resim yüklemez. images sütunu yazdığınız web adreslerini saklar; bu yüzden resimleri önce herkese açık bir yerde barındırın."
             ]
@@ -11961,7 +12029,7 @@ const MANUAL = {
               "CSV indir (Download CSV) düğmesine basın ve dosyayı tablo programınızda açın."
             ],
             "notes": [
-              "SİPARİŞLER (ORDERS) - 17 sütun: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders.",
+              "SİPARİŞLER (ORDERS) - 26 sütun: id, createdAt, status, userEmail, subtotal, shippingCost, tax, discount, total, promoCode, itemCount, items, channel, receiptNumber, cashierId, deviceId, tenders, paymentMethod, shippingMethod, shippingName, shippingAddress, shippingCity, shippingZip, shippingCountry, shippingPhone, orderNotes. paymentMethod'dan başlayan dokuz sütun, ödeme sırasında yazılan teslimat bilgileridir; kasa satışlarında boştur, shippingPhone ise bu sürümden önce verilen siparişlerde boştur.",
               "Siparişler - items, her ürün için ayrı satır değil, \"Black Jacket x1; Wool Scarf x2\" gibi okunabilir bir özettir. tenders ödemenin nasıl yapıldığını listeler, örneğin \"cash 20.00; card 5.50\". channel online ya da pos yazar. receiptNumber, cashierId, deviceId ve tenders yalnızca kasada geçilen satışlarda doldurulur; kasa özelliği daha yokken alınan siparişlerde channel boştur ve bunların hepsi çevrimiçi satıştır.",
               "Siparişler - indirme en son 5,000 siparişte durur, en yeniden başlayarak. Tarih aralığı seçici olmadığından bu sayıyı aşmış bir mağaza, bu sayfadan daha eski siparişlere ulaşamaz.",
               "MÜŞTERİLER (CUSTOMERS) - 8 sütun: uid, email, displayName, role, phone, createdAt, addressCount, wishlistCount. addressCount ve wishlistCount yalnızca sayıdır; adreslerin kendisi ve istek listesindeki ürünler dosyaya girmez. Liste, kendi personel ve yönetici girişleriniz dâhil bütün hesapları kapsar ve role sütunu hangisinin hangisi olduğunu söyler.",

@@ -59,8 +59,8 @@ export function SummaryStep({ draft, onEdit }: SummaryStepProps) {
       />
       <Divider />
       <Row
-        label="Template"
-        value={pickedTemplate ? pickedTemplate.name : 'Start blank'}
+        label={t('setup.summary.template')}
+        value={pickedTemplate ? pickedTemplate.name : t('setup.template.blankTitle')}
         onEdit={() => onEdit(3)}
       />
       <Divider />
@@ -95,6 +95,7 @@ export function SummaryStep({ draft, onEdit }: SummaryStepProps) {
 }
 
 function Row({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
+  const t = useT();
   return (
     <div style={row}>
       <div style={rowText}>
@@ -102,7 +103,7 @@ function Row({ label, value, onEdit }: { label: string; value: string; onEdit: (
         <span style={rowValue}>{value}</span>
       </div>
       <button type="button" onClick={onEdit} style={editLink}>
-        Edit
+        {t('common.edit')}
       </button>
     </div>
   );

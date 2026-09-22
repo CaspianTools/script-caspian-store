@@ -28,6 +28,18 @@ const orderColumns: ColumnMeta[] = [
   { header: 'cashierId', sample: '', help: 'Account that rang the sale. POS sales only.' },
   { header: 'deviceId', sample: '', help: 'Register that captured the sale. POS sales only.' },
   { header: 'tenders', sample: '', help: 'How it was paid, e.g. "cash 20.00; card 5.50".' },
+  // Fulfilment columns (v15.1.0). The export carried totals but nothing a
+  // packer could ship from; these are the delivery details as typed at
+  // checkout. Blank on counter sales, which carry no address.
+  { header: 'paymentMethod', sample: '', help: 'Payment plugin id, e.g. stripe, bacs, cod.' },
+  { header: 'shippingMethod', sample: '', help: 'The delivery option the shopper chose.' },
+  { header: 'shippingName', sample: '' },
+  { header: 'shippingAddress', sample: '' },
+  { header: 'shippingCity', sample: '' },
+  { header: 'shippingZip', sample: '' },
+  { header: 'shippingCountry', sample: '' },
+  { header: 'shippingPhone', sample: '', help: 'Stored from v15.1.0; blank on older orders.' },
+  { header: 'orderNotes', sample: '' },
 ];
 
 export const ORDERS_DATASET: DatasetDescriptor = {
@@ -58,6 +70,15 @@ export const ORDERS_DATASET: DatasetDescriptor = {
       o.cashierId ?? '',
       o.deviceId ?? '',
       (o.tenders ?? []).map((t) => `${t.kind} ${t.amount}`).join('; '),
+      o.payment?.method ?? '',
+      o.shippingInfo?.shippingMethod ?? '',
+      o.shippingInfo?.name ?? '',
+      o.shippingInfo?.address ?? '',
+      o.shippingInfo?.city ?? '',
+      o.shippingInfo?.zip ?? '',
+      o.shippingInfo?.country ?? '',
+      o.shippingInfo?.phone ?? '',
+      o.shippingInfo?.orderNotes ?? '',
     ]);
   },
 };

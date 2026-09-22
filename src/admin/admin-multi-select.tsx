@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useT } from '../i18n/locale-context';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon, PlusIcon, SearchIcon, XIcon } from '../ui/icons';
 
@@ -48,12 +49,15 @@ export function MultiSelect({
   items,
   picked,
   onChange,
-  label = 'Select',
-  placeholder = 'Search…',
+  label,
+  placeholder,
   indent = true,
   allowCreate = false,
   onCreate,
 }: MultiSelectProps) {
+  const t = useT();
+  const resolvedLabel = label ?? t('admin.multiSelect.label');
+  const resolvedPlaceholder = placeholder ?? t('admin.multiSelect.searchPlaceholder');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [pos, setPos] = useState<MenuPos | null>(null);
@@ -146,7 +150,7 @@ export function MultiSelect({
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={placeholder}
+                placeholder={resolvedPlaceholder}
               />
             </div>
             <ul className="caspian-catpick__list">
@@ -180,7 +184,9 @@ export function MultiSelect({
               })}
               {filtered.length === 0 && (
                 <li className="caspian-catpick__empty">
-                  No matches{search ? ` for “${search}”` : ''}.
+                  {search
+                    ? t('admin.multiSelect.noMatchesFor', { query: search })
+                    : t('admin.multiSelect.noMatches')}
                 </li>
               )}
             </ul>
@@ -193,7 +199,7 @@ export function MultiSelect({
                   setSearch('');
                 }}
               >
-                <PlusIcon size={12} /> Create “{search.trim()}”
+                <PlusIcon size={12} /> {t('admin.multiSelect.create', { name: search.trim() })}
               </button>
             )}
           </div>,
@@ -209,7 +215,7 @@ export function MultiSelect({
           className={`caspian-msel__pill ${open ? 'is-open' : ''} ${pickedItems.length ? 'has-pick' : ''}`}
           onClick={() => setOpen((v) => !v)}
         >
-          <span>{label}</span>
+          <span>{resolvedLabel}</span>
           {pickedItems.length > 0 && <em>{pickedItems.length}</em>}
           <ChevronDownIcon size={12} />
         </button>
@@ -218,7 +224,7 @@ export function MultiSelect({
             {pickedItems.map((it) => (
               <span key={it.id} className="caspian-msel__chip">
                 {it.name}
-                <button type="button" onClick={() => toggle(it.id)} aria-label={`Remove ${it.name}`}>
+                <button type="button" onClick={() => toggle(it.id)} aria-label={t('admin.multiSelect.remove', { name: it.name })}>
                   <XIcon size={10} />
                 </button>
               </span>

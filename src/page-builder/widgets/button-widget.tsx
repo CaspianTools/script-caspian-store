@@ -3,6 +3,7 @@
 import { useCaspianLink } from '../../provider/caspian-store-provider';
 import { EditableText } from '../editor/editable';
 import { cn } from '../../utils/cn';
+import { safeLinkHref } from '../safe-url';
 import type { BlockComponentProps, BlockType } from '../types';
 
 /**
@@ -16,7 +17,7 @@ function ButtonWidget({ props, editing }: BlockComponentProps) {
   const variant = String(props.btnVariant ?? 'primary');
   const align = String(props.align ?? 'left');
   const label = String(props.label ?? '');
-  const href = String(props.href ?? '');
+  const href = safeLinkHref(String(props.href ?? ''));
   const className = cn('btn', `btn--${variant}`);
 
   return (

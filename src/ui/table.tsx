@@ -34,6 +34,7 @@ export function TH({ className, style, ...rest }: ThHTMLAttributes<HTMLTableCell
       style={{
         textAlign: 'left',
         padding: '10px 12px',
+        whiteSpace: 'nowrap',
         fontSize: 12,
         fontWeight: 600,
         textTransform: 'uppercase',

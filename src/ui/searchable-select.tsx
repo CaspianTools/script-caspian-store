@@ -63,6 +63,7 @@ export function SearchableSelect({
   const [highlight, setHighlight] = useState(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   const selected = useMemo(
     () => options.find((o) => o.value === value) ?? null,
@@ -105,6 +106,12 @@ export function SearchableSelect({
     if (highlight > filtered.length - 1) setHighlight(Math.max(0, filtered.length - 1));
   }, [filtered.length, highlight]);
 
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current?.querySelectorAll<HTMLElement>('[role="option"]')[highlight];
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [open, highlight]);
+
   const pick = useCallback(
     (v: string) => {
       onChange(v);
@@ -125,6 +132,10 @@ export function SearchableSelect({
       const target = filtered[highlight];
       if (target) pick(target.value);
     } else if (e.key === 'Escape') {
+      // Consumed here: a parent <Dialog>'s document listener would otherwise
+      // close the whole dialog on the same keypress.
+      e.preventDefault();
+      e.stopPropagation();
       setOpen(false);
     }
   };
@@ -205,7 +216,7 @@ export function SearchableSelect({
               }}
             />
           </div>
-          <div style={{ maxHeight: maxListHeight, overflowY: 'auto' }}>
+          <div ref={listRef} style={{ maxHeight: maxListHeight, overflowY: 'auto' }}>
             {filtered.length === 0 ? (
               <div style={{ padding: '12px 14px', color: '#888', fontSize: 13 }}>{emptyText}</div>
             ) : (

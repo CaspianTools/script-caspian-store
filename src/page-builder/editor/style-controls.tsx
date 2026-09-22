@@ -135,7 +135,7 @@ export function StyleControls({ block, storagePath }: { block: PageBlock; storag
         <Label>{t('pageBuilder.style.maxWidth')}</Label>
         <Input
           value={style.width ?? ''}
-          placeholder="e.g. 720px"
+          placeholder={t('pageBuilder.style.maxWidthPlaceholder')}
           onChange={(e) => update({ ...style, width: e.target.value || undefined })}
         />
       </div>

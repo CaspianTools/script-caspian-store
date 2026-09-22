@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CartBehavior, InventorySettings, Product } from '../../types';
 import { getProductBySlugOrId } from '../../services/product-service';
 import { getSiteSettings } from '../../services/site-settings-service';
+import { getApprovedReviewsForProduct } from '../../services/review-service';
+import { computeSummary } from '../reviews/product-reviews';
 import { isProductOutOfStock, isSizeOutOfStock } from '../../utils/inventory';
 import { useCaspianFirebase, useCaspianNavigation } from '../../provider/caspian-store-provider';
 import { useCart } from '../../context/cart-context';
@@ -44,6 +46,7 @@ export function useProductDetailState({
   cartBehavior: cartBehaviorOverride,
   cartHref = '/cart',
   inventory: inventoryOverride,
+  hideReviews,
   onNotFound,
 }: ProductDetailPageProps) {
   const lookupKey = productSlugOrId ?? productId;
@@ -83,10 +86,24 @@ export function useProductDetailState({
     };
   }, [db, cartBehaviorOverride, inventoryOverride]);
 
+  // Per-product UI state must not survive a product change: `<CaspianRoot>`
+  // keys the page on the slug, but a consumer mounting this variant directly
+  // and swapping `productSlugOrId` gets the same reset here.
+  useEffect(() => {
+    setSelectedSize(undefined);
+    setQuantity(1);
+    setActiveTab('details');
+    setAvg(0);
+    setTotalReviews(0);
+  }, [lookupKey, externalProduct]);
+
   useEffect(() => {
     if (externalProduct) {
       setProduct(externalProduct);
       setLoading(false);
+      if (externalProduct.sizes && externalProduct.sizes.length > 0) {
+        setSelectedSize(externalProduct.sizes[0]);
+      }
       return;
     }
     if (!lookupKey) return;
@@ -111,6 +128,28 @@ export function useProductDetailState({
       alive = false;
     };
   }, [db, lookupKey, externalProduct, onNotFound]);
+
+  // The review summary line sits above the fold on every variant, but the
+  // default variant only mounts <ProductReviews> once the Reviews tab is
+  // opened — so on first paint the summary was always empty. Load it here.
+  const loadedProductId = product?.id;
+  useEffect(() => {
+    if (!loadedProductId || hideReviews) return undefined;
+    let alive = true;
+    getApprovedReviewsForProduct(db, loadedProductId, 'recent')
+      .then((reviews) => {
+        if (!alive) return;
+        const summary = computeSummary(reviews);
+        setAvg(summary.average);
+        setTotalReviews(summary.total);
+      })
+      .catch(() => {
+        /* the Reviews tab reports its own failure; the summary line just stays hidden */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [db, loadedProductId, hideReviews]);
 
   const brandName = useBrandName(product?.brand);
 
@@ -157,7 +196,7 @@ export function useProductDetailState({
   const handleAddToCart = () => {
     if (!product) return;
     if (derived.allOut) {
-      toast({ title: 'Out of stock', variant: 'destructive' });
+      toast({ title: t('storefront.stock.outOfStock'), variant: 'destructive' });
       return;
     }
     if (derived.hasSizes && !selectedSize) {
@@ -169,11 +208,11 @@ export function useProductDetailState({
       selectedSize &&
       isSizeOutOfStock(product.stock, selectedSize, inventory)
     ) {
-      toast({ title: 'This size is out of stock', variant: 'destructive' });
+      toast({ title: t('product.sizeOutOfStock'), variant: 'destructive' });
       return;
     }
     addToCart(product, quantity, selectedSize);
-    toast({ title: t('product.addedToCart'), description: product.name });
+    toast({ title: t('product.addedToCart'), description: product.name, variant: 'success' });
     setQuantity(1);
     if (cartBehavior?.redirectToCartAfterAdd) {
       nav.push(cartHref);

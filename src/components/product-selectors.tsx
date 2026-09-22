@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '../utils/cn';
+import { useT } from '../i18n/locale-context';
 
 export interface SizeSelectorProps {
   sizes: string[];
@@ -21,6 +22,7 @@ export function SizeSelector({
   className,
   outOfStock,
 }: SizeSelectorProps) {
+  const t = useT();
   const disabledSet = new Set(outOfStock ?? []);
   return (
     <div className={cn('caspian-size-selector', className)} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -33,7 +35,8 @@ export function SizeSelector({
             type="button"
             disabled={disabled}
             onClick={() => onChange(s)}
-            title={disabled ? 'Out of stock' : undefined}
+            title={disabled ? t('storefront.stock.outOfStock') : undefined}
+            aria-pressed={active}
             style={{
               minWidth: 48,
               padding: '8px 12px',

@@ -5,9 +5,10 @@ const runway: CatalogTheme = {
   name: 'Runway',
   description: 'High-contrast monochrome with bold serif wordmark.',
   categories: ['shop', 'portfolio', 'marketing'],
-  version: '1.0.0',
+  version: '1.1.0',
   tokens: { primary: '#000000', primaryForeground: '#ffffff', accent: '#dc2626', radius: '0rem' },
   fontFamily: "'Playfair Display', 'Times New Roman', serif",
+  googleFamilies: ['Playfair Display:wght@400;500;600;700'],
   thumbnail: {
     background: '#ffffff',
     foreground: '#000000',

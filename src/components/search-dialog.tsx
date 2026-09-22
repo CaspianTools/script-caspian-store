@@ -29,7 +29,7 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
   const { db } = useCaspianFirebase();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
-  const { matches, loading } = useProductSearch(query, { enabled: open });
+  const { matches, loading, error, retry } = useProductSearch(query, { enabled: open });
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +95,14 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
       </form>
 
       <div style={{ marginTop: 16, minHeight: 80 }}>
-        {trimmed === '' ? (
+        {error ? (
+          <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <p style={{ color: '#888', margin: 0, fontSize: 14, flex: 1 }}>{t('search.loadFailed')}</p>
+            <Button type="button" variant="outline" size="sm" onClick={retry}>
+              {t('search.retry')}
+            </Button>
+          </div>
+        ) : trimmed === '' ? (
           <p style={{ color: '#888', margin: 0, fontSize: 14 }}>{t('search.emptyQuery')}</p>
         ) : loading && matches.length === 0 ? (
           <p style={{ color: '#888', margin: 0, fontSize: 14 }}>{t('search.loading')}</p>

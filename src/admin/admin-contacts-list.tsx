@@ -12,6 +12,7 @@ import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { Badge, Skeleton } from '../ui/misc';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Select } from '../ui/select';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { Dialog } from '../ui/dialog';
@@ -49,6 +50,7 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
   const [filter, setFilter] = useState<StatusFilter>('new');
   const [busy, setBusy] = useState<string | null>(null);
   const [detail, setDetail] = useState<ContactSubmission | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ContactSubmission | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -59,11 +61,14 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
       })
       .catch((error) => {
         reportServiceError(db, 'admin-contacts-list.load', error);
-        if (alive) setContacts([]);
+        if (!alive) return;
+        setContacts([]);
+        toast({ title: t('admin.common.loadFailed'), variant: 'destructive' });
       });
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db, refreshKey]);
 
   const filtered = useMemo(
@@ -88,26 +93,28 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
       toast({ title: t(`admin.contacts.status.${status}`) });
     } catch (error) {
       reportServiceError(db, 'admin-contacts-list.setStatus', error);
-      toast({ title: 'Action failed', variant: 'destructive' });
+      toast({ title: t('admin.common.actionFailed'), variant: 'destructive' });
     } finally {
       setBusy(null);
     }
   };
 
-  const handleDelete = async (contact: ContactSubmission) => {
-    if (!confirm(t('admin.contacts.deleteConfirm'))) return;
+  const handleDelete = async () => {
+    const contact = pendingDelete;
+    if (!contact) return;
     setBusy(contact.id);
     try {
       await deleteContact(db, contact.id);
       setContacts((prev) => (prev ? prev.filter((c) => c.id !== contact.id) : prev));
       onMutated?.();
-      toast({ title: 'Deleted' });
+      setPendingDelete(null);
+      if (detail?.id === contact.id) setDetail(null);
+      toast({ title: t('admin.common.deleted') });
     } catch (error) {
       reportServiceError(db, 'admin-contacts-list.delete', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.common.deleteFailed'), variant: 'destructive' });
     } finally {
       setBusy(null);
-      if (detail?.id === contact.id) setDetail(null);
     }
   };
 
@@ -130,7 +137,7 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
   return (
     <div className={className}>
       <div style={filterRowStyle}>
-        <Label style={{ margin: 0, fontWeight: 500, color: '#666' }}>Filter:</Label>
+        <Label style={{ margin: 0, fontWeight: 500, color: '#666' }}>{t('admin.common.filter')}</Label>
         <Select
           value={filter}
           onChange={(e) => setFilter(e.target.value as StatusFilter)}
@@ -170,15 +177,24 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
               const isBusy = busy === c.id;
               return (
                 <TR key={c.id}>
-                  <TD style={{ fontWeight: 500, cursor: 'pointer' }} onClick={() => openDetail(c)}>
-                    {c.name}
+                  <TD style={{ fontWeight: 500 }}>
+                    <button type="button" onClick={() => openDetail(c)} style={rowButtonStyle}>
+                      {c.name}
+                    </button>
                   </TD>
                   <TD style={{ fontSize: 13, color: '#333' }}>{c.email}</TD>
                   <TD style={{ fontSize: 13, color: '#555' }}>
                     {c.subject || <span style={{ color: '#bbb' }}>—</span>}
                   </TD>
-                  <TD style={{ maxWidth: 280, cursor: 'pointer' }} onClick={() => openDetail(c)}>
-                    <p style={snippetStyle}>{c.message}</p>
+                  <TD style={{ maxWidth: 280 }}>
+                    <button
+                      type="button"
+                      onClick={() => openDetail(c)}
+                      style={rowButtonStyle}
+                      aria-label={t('admin.contacts.openDetail', { name: c.name })}
+                    >
+                      <span style={snippetStyle}>{c.message}</span>
+                    </button>
                   </TD>
                   <TD style={{ fontSize: 12, color: '#888' }}>{fmtDate(c.createdAt)}</TD>
                   <TD>
@@ -207,7 +223,7 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
                           {t('admin.contacts.unarchive')}
                         </Button>
                       )}
-                      <Button variant="destructive" size="sm" disabled={isBusy} onClick={() => handleDelete(c)}>
+                      <Button variant="destructive" size="sm" disabled={isBusy} onClick={() => setPendingDelete(c)}>
                         {t('admin.contacts.delete')}
                       </Button>
                     </div>
@@ -233,7 +249,7 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
               <Button variant="outline" onClick={() => copyEmail(detail.email)}>
                 {t('admin.contacts.copyEmail')}
               </Button>
-              <Button onClick={() => setDetail(null)}>{'Close'}</Button>
+              <Button onClick={() => setDetail(null)}>{t('common.close')}</Button>
             </>
           ) : null
         }
@@ -258,6 +274,19 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
           </div>
         )}
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={t('admin.confirm.deleteNamedTitle', { name: pendingDelete?.name ?? '' })}
+        description={t('admin.contacts.deleteConfirm')}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={pendingDelete !== null && busy === pendingDelete.id}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
@@ -273,6 +302,20 @@ const emptyStyle: CSSProperties = {
   color: '#888',
   padding: 32,
   textAlign: 'center',
+};
+
+// Text-styled button so the clickable name / message cells are reachable by
+// keyboard — a bare `<td onClick>` is invisible to Tab and screen readers.
+const rowButtonStyle: CSSProperties = {
+  background: 'transparent',
+  border: 0,
+  padding: 0,
+  font: 'inherit',
+  fontWeight: 'inherit',
+  color: 'inherit',
+  cursor: 'pointer',
+  textAlign: 'left',
+  maxWidth: '100%',
 };
 
 const snippetStyle: CSSProperties = {

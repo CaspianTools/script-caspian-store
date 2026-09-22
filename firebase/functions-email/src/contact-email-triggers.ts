@@ -104,11 +104,15 @@ export const runEmailOnContactCreate = onDocumentCreated(
       }
     }
 
-    // 2. Auto-reply to submitter.
+    // 2. Auto-reply to submitter. `{contact_message}` is deliberately NOT
+    // substituted here: the form is public and the recipient is whatever
+    // address the submitter typed, so echoing the message body would turn
+    // the store's sender into an open relay for spam addressed to third
+    // parties. The merchant notification above still carries the message.
     if (contact.email) {
       const replyTpl = await loadTemplate(db, 'contact_autoreply');
       if (replyTpl && replyTpl.enabled) {
-        const rendered = renderEmail(replyTpl, settings, ctx);
+        const rendered = renderEmail(replyTpl, settings, { ...ctx, contactMessage: '' });
         const result = await send({
           to: contact.email,
           from: { email: settings.fromAddress, name: settings.fromName },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { ProductBrandDoc } from '../types';
 import {
   countLegacyBrandStrings,
@@ -13,7 +13,9 @@ import {
 } from '../services/brand-service';
 import { refreshBrandsCache } from '../hooks/use-brands';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Dialog } from '../ui/dialog';
 import { Input, Label } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
@@ -28,6 +30,7 @@ const emptyDraft: BrandWriteInput = {
 export function AdminProductBrandsPage({ className }: { className?: string }) {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
+  const t = useT();
   const [brands, setBrands] = useState<ProductBrandDoc[] | null>(null);
   const [legacyCount, setLegacyCount] = useState<number>(0);
   const [open, setOpen] = useState(false);
@@ -35,6 +38,10 @@ export function AdminProductBrandsPage({ className }: { className?: string }) {
   const [draft, setDraft] = useState<BrandWriteInput>(emptyDraft);
   const [saving, setSaving] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ProductBrandDoc | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const formId = useId();
+  const nameId = `${formId}-name`;
 
   const load = async () => {
     try {
@@ -46,6 +53,8 @@ export function AdminProductBrandsPage({ className }: { className?: string }) {
       setLegacyCount(legacy);
     } catch (error) {
       console.error('[caspian-store] Failed to list brands:', error);
+      setBrands((prev) => prev ?? []);
+      toast({ title: t('admin.loadFailed'), variant: 'destructive' });
     }
   };
 
@@ -91,16 +100,21 @@ export function AdminProductBrandsPage({ className }: { className?: string }) {
     }
   };
 
-  const handleDelete = async (b: ProductBrandDoc) => {
-    if (!confirm(`Delete brand "${b.name}"? Products that reference it will keep their stored value.`)) return;
+  const handleDelete = async () => {
+    const b = deleteTarget;
+    if (!b) return;
+    setDeleting(true);
     try {
       await deleteBrand(db, b.id);
       refreshBrandsCache();
       setBrands((prev) => (prev ? prev.filter((x) => x.id !== b.id) : prev));
       toast({ title: 'Brand deleted' });
+      setDeleteTarget(null);
     } catch (error) {
       console.error('[caspian-store] Delete failed:', error);
       toast({ title: 'Delete failed', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -197,7 +211,7 @@ export function AdminProductBrandsPage({ className }: { className?: string }) {
                     <Button variant="outline" size="sm" onClick={() => openEdit(b)}>
                       Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(b)}>
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteTarget(b)}>
                       Delete
                     </Button>
                   </div>
@@ -218,16 +232,24 @@ export function AdminProductBrandsPage({ className }: { className?: string }) {
             <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} loading={saving}>
+            <Button type="submit" form={formId} loading={saving}>
               Save
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form
+          id={formId}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSave();
+          }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
           <div>
-            <Label>Name</Label>
+            <Label htmlFor={nameId}>Name</Label>
             <Input
+              id={nameId}
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
               placeholder="e.g. Acme"
@@ -247,8 +269,21 @@ export function AdminProductBrandsPage({ className }: { className?: string }) {
             />
             Active (shown in editor + filter dropdowns)
           </label>
-        </div>
+        </form>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null);
+        }}
+        title={t('admin.confirm.deleteTitle')}
+        description={t('admin.brands.confirmDelete', { name: deleteTarget?.name ?? '' })}
+        confirmLabel={t('admin.confirm.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

@@ -86,6 +86,13 @@ export function AdminSettingsShell({ className }: AdminSettingsShellProps) {
           <nav style={{ display: 'flex', flexDirection: 'column' }}>
             {SETTINGS_SUB_NAV.map((item) => {
               const active = nav.pathname === item.href;
+              // `t` returns the key itself when no translation exists, so
+              // fall back to the hard-coded label rather than showing it.
+              const labelFor = (i: { label: string; labelKey?: string }) => {
+                if (!i.labelKey) return i.label;
+                const translated = t(i.labelKey);
+                return translated === i.labelKey ? i.label : translated;
+              };
               return (
                 <Link
                   key={item.href}
@@ -111,7 +118,7 @@ export function AdminSettingsShell({ className }: AdminSettingsShellProps) {
                     <span style={{ display: 'flex', flexShrink: 0, color: active ? '#111' : '#888' }}>
                       {item.icon}
                     </span>
-                    {item.label}
+                    {labelFor(item)}
                   </span>
                 </Link>
               );

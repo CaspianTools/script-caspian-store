@@ -51,6 +51,7 @@ function DraggableWrapper({
   onSelect: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const dndStyle: CSSProperties = {
     ...style,
@@ -70,7 +71,8 @@ function DraggableWrapper({
       <button
         type="button"
         className="pb-edit-section__handle"
-        aria-label="Drag to reorder"
+        aria-label={t('pageBuilder.drag')}
+        title={t('pageBuilder.drag')}
         onClick={(e) => e.stopPropagation()}
         {...attributes}
         {...listeners}

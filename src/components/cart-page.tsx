@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import type { CartItem } from '../types';
 import { useCart } from '../context/cart-context';
+import { useScriptSettings } from '../context/script-settings-context';
 import { useCaspianImage, useCaspianLink } from '../provider/caspian-store-provider';
-import { useT } from '../i18n/locale-context';
+import { useFormatCurrency, useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 
 export interface CartPageProps {
@@ -12,9 +13,9 @@ export interface CartPageProps {
   getProductHref?: (productId: string) => string;
   /** Where the "Proceed to checkout" button navigates. Default: `/checkout`. */
   checkoutHref?: string;
-  /** Where "Continue Shopping" navigates. Default: `/products`. */
+  /** Where "Continue Shopping" navigates. Default: `/shop`. */
   continueHref?: string;
-  /** Price formatter. Default: `$x.xx`. */
+  /** Price formatter. Default: the store's `defaultCurrency` in the active locale. */
   formatPrice?: (n: number) => string;
   className?: string;
 }
@@ -32,18 +33,22 @@ export interface CartPageProps {
 export function CartPage({
   getProductHref = (id) => `/product/${id}`,
   checkoutHref = '/checkout',
-  continueHref = '/products',
-  formatPrice = (n) => `$${n.toFixed(2)}`,
+  continueHref = '/shop',
+  formatPrice: formatPriceProp,
   className,
 }: CartPageProps) {
   const { items, subtotal, updateQuantity, removeFromCart } = useCart();
   const Link = useCaspianLink();
   const t = useT();
+  const { settings } = useScriptSettings();
+  const currencyFormat = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((n: number) => currencyFormat.format(n));
 
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
 
-  const applyPromo = () => {
+  const applyPromo = (e?: React.FormEvent) => {
+    e?.preventDefault();
     const code = promoInput.trim().toUpperCase();
     if (!code) return;
     // Storefront-side promo validation happens at checkout against the
@@ -102,6 +107,7 @@ export function CartPage({
       </header>
 
       <div
+        className="caspian-cart-layout"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr) 360px',
@@ -116,8 +122,8 @@ export function CartPage({
               item={item}
               getProductHref={getProductHref}
               formatPrice={formatPrice}
-              onUpdate={(n) => updateQuantity(item.product.id, n, item.selectedSize)}
-              onRemove={() => removeFromCart(item.product.id, item.selectedSize)}
+              onUpdate={(n) => updateQuantity(item.product.id, n, item.selectedSize, item.selectedColor ?? '')}
+              onRemove={() => removeFromCart(item.product.id, item.selectedSize, item.selectedColor ?? '')}
               t={t}
             />
           ))}
@@ -131,7 +137,7 @@ export function CartPage({
           </div>
         </section>
 
-        <aside style={{ position: 'sticky', top: 24 }}>
+        <aside className="caspian-cart-summary" style={{ position: 'sticky', top: 24 }}>
           <div
             style={{
               background: '#fff',
@@ -177,8 +183,9 @@ export function CartPage({
               </div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <form onSubmit={applyPromo} style={{ marginBottom: 20 }}>
               <label
+                htmlFor="caspian-cart-promo"
                 style={{
                   display: 'block',
                   fontSize: 11,
@@ -223,7 +230,9 @@ export function CartPage({
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
+                    id="caspian-cart-promo"
                     type="text"
+                    autoComplete="off"
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value)}
                     placeholder={t('cart.page.promoPlaceholder')}
@@ -238,8 +247,7 @@ export function CartPage({
                     }}
                   />
                   <button
-                    type="button"
-                    onClick={applyPromo}
+                    type="submit"
                     disabled={!promoInput.trim()}
                     style={{
                       padding: '10px 16px',
@@ -259,7 +267,7 @@ export function CartPage({
                   </button>
                 </div>
               )}
-            </div>
+            </form>
 
             <Link href={appliedPromo ? `${checkoutHref}?promo=${encodeURIComponent(appliedPromo)}` : checkoutHref}>
               <Button size="lg" style={{ width: '100%' }}>
@@ -307,6 +315,15 @@ function CartItemCard({
   const Link = useCaspianLink();
   const img = item.product.images?.[0];
   const variantLine = [item.selectedColor, item.selectedSize].filter(Boolean).join(' / ');
+  // Typed quantity is held locally until blur so the field can be emptied
+  // while retyping instead of snapping back to 1 on every keystroke.
+  const [qtyDraft, setQtyDraft] = useState<string | null>(null);
+  const commitQty = () => {
+    if (qtyDraft === null) return;
+    const n = parseInt(qtyDraft, 10);
+    if (Number.isFinite(n) && n >= 1 && n !== item.quantity) onUpdate(n);
+    setQtyDraft(null);
+  };
 
   return (
     <article
@@ -366,7 +383,19 @@ function CartItemCard({
           >
             −
           </button>
-          <span style={{ minWidth: 20, textAlign: 'center', fontSize: 13 }}>{item.quantity}</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={qtyDraft ?? item.quantity}
+            onChange={(e) => setQtyDraft(e.target.value)}
+            onBlur={commitQty}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            aria-label={t('cart.page.quantity')}
+            style={qtyInputStyle}
+          />
           <button
             type="button"
             onClick={() => onUpdate(item.quantity + 1)}
@@ -409,6 +438,18 @@ function CartItemCard({
     </article>
   );
 }
+
+const qtyInputStyle: React.CSSProperties = {
+  width: 40,
+  textAlign: 'center',
+  fontSize: 13,
+  border: 0,
+  background: 'transparent',
+  outline: 'none',
+  padding: 0,
+  MozAppearance: 'textfield',
+  color: 'inherit',
+};
 
 const qtyBtnStyle: React.CSSProperties = {
   width: 24,

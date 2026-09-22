@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useCaspianFirebase, useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useScriptSettings } from '../context/script-settings-context';
+import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Badge } from '../ui/misc';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { Input, Label } from '../ui/input';
 
 interface GuestOrderResponse {
   id: string;
@@ -58,12 +60,17 @@ export interface GuestOrderLookupPageProps {
  * Added in v9.1 alongside guest checkout.
  */
 export function GuestOrderLookupPage({
-  formatPrice = (n) => `$${n.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   className,
 }: GuestOrderLookupPageProps) {
   const { functions } = useCaspianFirebase();
   const Link = useCaspianLink();
   const nav = useCaspianNavigation();
+  const t = useT();
+  const locale = useLocale();
+  const { settings } = useScriptSettings();
+  const currencyFormat = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((n: number) => currencyFormat.format(n));
 
   const [orderId, setOrderId] = useState('');
   const [email, setEmail] = useState('');
@@ -98,9 +105,9 @@ export function GuestOrderLookupPage({
       const msg =
         error instanceof Error
           ? error.message.includes('not-found')
-            ? "We couldn't find an order with that number and email. Double-check both and try again."
+            ? t('guestOrder.notFound')
             : error.message
-          : 'Lookup failed.';
+          : t('guestOrder.lookupFailed');
       setErr(msg);
     } finally {
       setLoading(false);
@@ -119,10 +126,8 @@ export function GuestOrderLookupPage({
   return (
     <div className={className} style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px 64px' }}>
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Track your order</h1>
-        <p style={{ color: '#666', marginTop: 6 }}>
-          Enter the order number and the email address you used at checkout.
-        </p>
+        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t('guestOrder.title')}</h1>
+        <p style={{ color: '#666', marginTop: 6 }}>{t('guestOrder.subtitle')}</p>
       </header>
 
       <form
@@ -138,22 +143,30 @@ export function GuestOrderLookupPage({
           marginBottom: 24,
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Input
-            placeholder="Order number"
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-          />
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        <div className="caspian-guest-order-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <Label htmlFor="caspian-guest-order-id">{t('guestOrder.orderNumber')}</Label>
+            <Input
+              id="caspian-guest-order-id"
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="caspian-guest-order-email">{t('guestOrder.email')}</Label>
+            <Input
+              id="caspian-guest-order-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
         </div>
         <div>
           <Button type="submit" loading={loading} disabled={!orderId.trim() || !email.trim()}>
-            Track order
+            {t('guestOrder.submit')}
           </Button>
         </div>
         {err && <p style={{ color: '#b91c1c', fontSize: 13, margin: 0 }}>{err}</p>}
@@ -170,14 +183,14 @@ export function GuestOrderLookupPage({
         >
           <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
-              Order #{order.id.slice(0, 10)}
+              {t('guestOrder.orderHeading', { id: order.id.slice(0, 10) })}
             </h2>
             <Badge variant="secondary">{order.status}</Badge>
           </header>
 
           {order.createdAt && (
             <p style={{ color: '#888', fontSize: 13, margin: '0 0 16px' }}>
-              Placed {new Date(order.createdAt).toLocaleDateString()}
+              {t('guestOrder.placedOn', { date: new Date(order.createdAt).toLocaleDateString(locale) })}
             </p>
           )}
 
@@ -192,7 +205,7 @@ export function GuestOrderLookupPage({
                     </p>
                   )}
                   <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>
-                    Qty {it.quantity}
+                    {t('checkout.qtyShort')} {it.quantity}
                   </p>
                 </div>
                 <span style={{ fontWeight: 600 }}>{formatPrice(it.price * it.quantity)}</span>
@@ -201,23 +214,23 @@ export function GuestOrderLookupPage({
           </div>
 
           <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: 12, fontSize: 14 }}>
-            <SummaryRow label="Subtotal" value={formatPrice(order.subtotal)} />
-            <SummaryRow label="Shipping" value={formatPrice(order.shippingCost)} />
+            <SummaryRow label={t('cart.subtotal')} value={formatPrice(order.subtotal)} />
+            <SummaryRow label={t('orderConfirmation.shipping')} value={formatPrice(order.shippingCost)} />
             {order.discount > 0 && (
-              <SummaryRow label="Discount" value={`-${formatPrice(order.discount)}`} />
+              <SummaryRow label={t('orderConfirmation.discount')} value={`−${formatPrice(order.discount)}`} />
             )}
             {order.tax !== null && order.tax > 0 && (
-              <SummaryRow label="Tax" value={formatPrice(order.tax)} />
+              <SummaryRow label={t('orderConfirmation.tax')} value={formatPrice(order.tax)} />
             )}
             <SummaryRow
-              label={<strong>Total</strong>}
+              label={<strong>{t('orderConfirmation.total')}</strong>}
               value={<strong>{formatPrice(order.total)}</strong>}
             />
           </div>
 
           {order.shippingInfo && (
             <div style={{ marginTop: 20, padding: 14, background: 'rgba(0,0,0,0.03)', borderRadius: 8, fontSize: 13 }}>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>Shipping to</div>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>{t('guestOrder.shippingTo')}</div>
               <div>{order.shippingInfo.name}</div>
               <div>{order.shippingInfo.address}</div>
               <div>
@@ -225,7 +238,7 @@ export function GuestOrderLookupPage({
               </div>
               {order.shippingInfo.shippingMethod && (
                 <div style={{ marginTop: 6, color: '#666' }}>
-                  Method: {order.shippingInfo.shippingMethod}
+                  {t('orderConfirmation.shippingMethod')}: {order.shippingInfo.shippingMethod}
                 </div>
               )}
             </div>
@@ -234,7 +247,8 @@ export function GuestOrderLookupPage({
       )}
 
       <p style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: '#666' }}>
-        Have an account? <Link href="/login">Sign in</Link> to see all your orders.
+        {t('guestOrder.haveAccount')} <Link href="/login">{t('guestOrder.signIn')}</Link>{' '}
+        {t('guestOrder.seeAllOrders')}
       </p>
     </div>
   );

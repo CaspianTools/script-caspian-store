@@ -3,6 +3,8 @@
 import type { InventorySettings, Product, TaxConfig } from '../types';
 import { ProductCard } from './product-card';
 import { Skeleton } from '../ui/misc';
+import { EmptyState } from './empty-state';
+import { SearchIcon } from '../ui/icons';
 import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
 
@@ -60,7 +62,7 @@ export function ProductGrid({
   }
 
   if (products.length === 0) {
-    return <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>{empty}</p>;
+    return <EmptyState icon={<SearchIcon size={28} />} title={empty} />;
   }
 
   return (

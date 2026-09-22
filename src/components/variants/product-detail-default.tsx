@@ -11,6 +11,8 @@ import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useTaxonomyTermsByType } from '../../hooks/use-taxonomy-terms';
 import { TAXONOMY_BY_ID } from '../../taxonomies/catalog';
+import { useScriptSettings } from '../../context/script-settings-context';
+import { useFormatCurrency } from '../../i18n/locale-context';
 
 /**
  * Default PDP variant — the v8.x layout extracted into its own file.
@@ -23,7 +25,10 @@ import { TAXONOMY_BY_ID } from '../../taxonomies/catalog';
  * `useTemplateComponent('ProductDetailPage', ProductDetailDefault)`.
  */
 export function ProductDetailDefault(props: ProductDetailPageProps) {
-  const { formatPrice = (p) => `$${p.toFixed(2)}`, hideReviews, className } = props;
+  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const state = useProductDetailState(props);
   const {
     product,
@@ -64,7 +69,7 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
   if (loading) {
     return (
       <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}>
-        <div style={gridStyle}>
+        <div className="caspian-pdp-grid" style={gridStyle}>
           <Skeleton style={{ aspectRatio: '4 / 5' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Skeleton style={{ height: 14, width: '30%' }} />
@@ -87,7 +92,7 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
       data-pdp-variant="default"
       style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}
     >
-      <div style={gridStyle}>
+      <div className="caspian-pdp-grid" style={gridStyle}>
         <ProductGallery images={product.images} />
         <div className="caspian-pdp-default-info" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -123,7 +128,7 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
                 fontWeight: 600,
               }}
             >
-              Out of stock
+              {t('storefront.stock.outOfStock')}
             </div>
           )}
 
@@ -268,6 +273,7 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
       role="tab"
       aria-selected={active}
       onClick={onClick}
+      className="caspian-pdp-tab"
       style={{
         background: 'transparent',
         border: 0,

@@ -117,7 +117,22 @@ if (/<LayoutShell\b/.test(layoutBlockMatch[1])) {
       '  (src/components/caspian-root.tsx line 126). Wrapping again at the root\n' +
       '  layout produces duplicate headers and duplicate footers on every page.\n\n' +
       '  Fix: remove the <LayoutShell> wrapper from the template in scaffold/create.mjs\n' +
-      "  so the root layout renders `<Providers>{children}<DynamicFavicon /></Providers>`.\n",
+      '  so the root layout renders\n' +
+      '  `<Providers>{children}<DynamicFavicon /><ServiceWorkerRegister /></Providers>`.\n',
+  );
+  process.exit(1);
+}
+
+// The scaffolder emits public/sw.js + public/offline.html, but a worker that
+// nothing registers is dead weight: the generated layout must mount
+// <ServiceWorkerRegister /> (examples/nextjs/app/layout.tsx does). v15.0
+// shipped the files without the mount and no consumer site ever installed.
+if (!/<ServiceWorkerRegister\s*\/>/.test(layoutBlockMatch[1])) {
+  console.error(
+    '\n[check-scaffold-routes] DRIFT — scaffolded src/app/layout.tsx does not mount <ServiceWorkerRegister />.\n\n' +
+      '  The scaffolder writes public/sw.js and public/offline.html, and only that\n' +
+      '  component registers the worker. Add `<ServiceWorkerRegister />` beside\n' +
+      '  `<DynamicFavicon />` in the layout template in scaffold/create.mjs.\n',
   );
   process.exit(1);
 }
@@ -125,5 +140,5 @@ if (/<LayoutShell\b/.test(layoutBlockMatch[1])) {
 console.log(
   `[check-scaffold-routes] OK — ${navHrefs.length} nav entries, ` +
     `${dispatched.size} cases dispatched in AdminRoot; ` +
-    'scaffolded layout.tsx does not double-wrap in LayoutShell.',
+    'scaffolded layout.tsx does not double-wrap in LayoutShell and mounts ServiceWorkerRegister.',
 );

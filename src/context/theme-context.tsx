@@ -39,11 +39,17 @@ export function ThemeInjector() {
     root.style.setProperty('--caspian-primary-foreground', theme.primaryForeground);
     root.style.setProperty('--caspian-accent', theme.accent);
     root.style.setProperty('--caspian-radius', theme.radius);
+    // Remove rather than leave the previous theme's value in place: a theme
+    // without a background/font must fall back to the globals.css default.
     if (theme.fontFamily) {
       root.style.setProperty('--caspian-font-family', theme.fontFamily);
+    } else {
+      root.style.removeProperty('--caspian-font-family');
     }
     if (theme.background) {
       root.style.setProperty('--caspian-background', theme.background);
+    } else {
+      root.style.removeProperty('--caspian-background');
     }
   }, [settings.theme]);
 

@@ -29,7 +29,7 @@ export function HeroCentered({ hero: override, minHeightClass, className }: Hero
     subtitle:
       override?.subtitle ?? settings.hero?.subtitle ?? 'Curated essentials delivered to your door.',
     cta: override?.cta ?? settings.hero?.cta ?? 'Shop now',
-    ctaHref: override?.ctaHref ?? settings.hero?.ctaHref ?? '/products',
+    ctaHref: override?.ctaHref ?? settings.hero?.ctaHref ?? '/shop',
     imageUrl: override?.imageUrl ?? settings.hero?.imageUrl,
   };
 

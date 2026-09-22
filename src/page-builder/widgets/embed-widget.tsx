@@ -1,6 +1,7 @@
 'use client';
 
 import { useT } from '../../i18n';
+import { safeHttpUrl } from '../safe-url';
 import type { BlockComponentProps, BlockType } from '../types';
 
 /**
@@ -12,7 +13,7 @@ import type { BlockComponentProps, BlockType } from '../types';
  */
 function EmbedWidget({ props, editing }: BlockComponentProps) {
   const t = useT();
-  const src = String(props.src ?? '');
+  const src = safeHttpUrl(String(props.src ?? ''));
   const title = String(props.title ?? 'Embedded content');
   const ratio = String(props.ratio ?? '16 / 9');
 
@@ -27,6 +28,7 @@ function EmbedWidget({ props, editing }: BlockComponentProps) {
         src={src}
         title={title}
         loading="lazy"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         style={editing ? { pointerEvents: 'none' } : undefined}

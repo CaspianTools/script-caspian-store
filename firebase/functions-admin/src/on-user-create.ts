@@ -81,7 +81,14 @@ export const onUserCreate = onDocumentCreated('users/{uid}', async (event) => {
     return;
   }
 
-  // Path 2: legacy first-user-wins. No designation — any first user wins.
+  // Path 2: legacy first-user-wins. No designation — any first user wins,
+  // except an anonymous guest: guest checkout creates a `users/{uid}` doc for
+  // every anonymous session, and the first shopper to open the checkout on a
+  // fresh install must not become the store's admin.
+  if (userRecord.providerData.length === 0) {
+    logger.info(`[onUserCreate] Skipping promote: anonymous user cannot be first admin (uid=${uid}).`);
+    return;
+  }
   await snap.ref.update({ role: 'admin' });
   await getAuth().setCustomUserClaims(uid, {
     ...(userRecord.customClaims ?? {}),

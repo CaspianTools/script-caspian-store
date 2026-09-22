@@ -27,7 +27,7 @@ export function HeroFullBleed({ hero: override, className }: HeroProps) {
     title: override?.title ?? settings.hero?.title ?? '',
     subtitle: override?.subtitle ?? settings.hero?.subtitle ?? '',
     cta: override?.cta ?? settings.hero?.cta ?? '',
-    ctaHref: override?.ctaHref ?? settings.hero?.ctaHref ?? '/products',
+    ctaHref: override?.ctaHref ?? settings.hero?.ctaHref ?? '/shop',
     imageUrl: override?.imageUrl ?? settings.hero?.imageUrl,
   };
 

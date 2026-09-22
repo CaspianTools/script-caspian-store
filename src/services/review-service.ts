@@ -87,9 +87,9 @@ export async function createReview(
   }
   if (input.rating < 1 || input.rating > 5) throw new Error('Rating must be 1–5.');
   if (!input.text.trim()) throw new Error('Review text is required.');
-  const isVerifiedPurchase = await hasUserPurchasedProduct(db, author.uid, input.productId);
-  if (policy?.restrictToVerifiedBuyers && !isVerifiedPurchase) {
-    throw new Error('Only verified buyers can leave a review for this product.');
+  if (policy?.restrictToVerifiedBuyers) {
+    const purchased = await hasUserPurchasedProduct(db, author.uid, input.productId);
+    if (!purchased) throw new Error('Only verified buyers can leave a review for this product.');
   }
   const payload = {
     productId: input.productId,
@@ -99,7 +99,10 @@ export async function createReview(
     rating: input.rating,
     text: input.text.trim(),
     createdAt: Timestamp.now(),
-    isVerifiedPurchase,
+    // The badge is stamped server-side by the `stampVerifiedPurchase`
+    // trigger after checking the reviewer's orders; the rules reject `true`
+    // from a client so it cannot be forged.
+    isVerifiedPurchase: false,
     status: 'pending' as ModerationStatus,
   };
   const ref = await addDoc(caspianCollections(db).reviews, payload);
@@ -110,12 +113,13 @@ export async function listAllReviews(
   db: Firestore,
   statusFilter?: ModerationStatus,
 ): Promise<FirestoreReview[]> {
-  const constraints = statusFilter
-    ? [where('status', '==', statusFilter), orderBy('createdAt', 'desc')]
-    : [orderBy('createdAt', 'desc')];
+  // Filtered in memory: `status ==` + `orderBy(createdAt)` needs a composite
+  // index that the shipped indexes.json does not include.
+  const constraints = [orderBy('createdAt', 'desc')];
   const q = query(caspianCollections(db).reviews, ...constraints);
   const snap = await getDocs(q);
-  return snap.docs.map(docToReview);
+  const all = snap.docs.map(docToReview);
+  return statusFilter ? all.filter((x) => x.status === statusFilter) : all;
 }
 
 export async function setReviewStatus(

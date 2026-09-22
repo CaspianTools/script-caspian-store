@@ -11,7 +11,7 @@ import { cn } from '../../utils/cn';
 export interface FeaturedCategoriesSectionProps {
   label?: string;
   title?: string;
-  /** Link target for each category card. Default: `/categories/{slug}`. */
+  /** Link target for each category card. Default: `/shop?category={slug}` — `<ProductListPage>` pre-selects that category filter. */
   getCategoryHref?: (category: ProductCategoryDoc) => string;
   className?: string;
 }
@@ -19,7 +19,7 @@ export interface FeaturedCategoriesSectionProps {
 export function FeaturedCategoriesSection({
   label,
   title,
-  getCategoryHref = (c) => `/categories/${c.slug}`,
+  getCategoryHref = (c) => `/shop?category=${encodeURIComponent(c.slug || c.id)}`,
   className,
 }: FeaturedCategoriesSectionProps) {
   const { db } = useCaspianFirebase();

@@ -7,6 +7,7 @@ import { useCaspianFirebase } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n/locale-context';
 import { Skeleton } from '../../ui/misc';
 import { cn } from '../../utils/cn';
+import { EmptyState } from '../empty-state';
 
 export interface FaqsPageProps {
   title?: string;
@@ -19,13 +20,7 @@ export interface FaqsPageProps {
   className?: string;
 }
 
-const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
-  orders: 'Orders & Shipping',
-  returns: 'Returns & Exchanges',
-  products: 'Products & Sizing',
-  account: 'Account & Payment',
-  general: 'General',
-};
+const DEFAULT_CATEGORY_KEYS = ['orders', 'returns', 'products', 'account', 'general'] as const;
 
 const DEFAULT_CATEGORY_ORDER = ['orders', 'returns', 'products', 'account'];
 
@@ -57,7 +52,11 @@ export function FaqsPage({
     };
   }, [db]);
 
-  const labels = { ...DEFAULT_CATEGORY_LABELS, ...(categoryLabels ?? {}) };
+  const labels = useMemo(() => {
+    const defaults: Record<string, string> = {};
+    for (const key of DEFAULT_CATEGORY_KEYS) defaults[key] = t(`faqs.category.${key}`);
+    return { ...defaults, ...(categoryLabels ?? {}) };
+  }, [t, categoryLabels]);
   const order = categoryOrder ?? DEFAULT_CATEGORY_ORDER;
 
   const grouped = useMemo(() => {
@@ -109,9 +108,7 @@ export function FaqsPage({
             <Skeleton style={{ height: 48 }} />
           </div>
         ) : grouped.length === 0 ? (
-          <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>
-            {emptyMessage ?? t('faqs.empty')}
-          </p>
+          <EmptyState title={emptyMessage ?? t('faqs.empty')} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
             {grouped.map((group) => (

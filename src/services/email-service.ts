@@ -116,7 +116,7 @@ const DEFAULT_TEMPLATES: Record<
     subject: "We got your message — thanks!",
     heading: 'Thanks for reaching out, {contact_name}',
     additionalContent:
-      "We received your message and will get back to you as soon as we can. Here's a copy for your records:\n\nSubject: {contact_subject}\n\n{contact_message}",
+      'We received your message about "{contact_subject}" and will get back to you as soon as we can.',
   },
 };
 

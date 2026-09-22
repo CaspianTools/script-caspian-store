@@ -17,10 +17,42 @@
   --caspian-font-family: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* Base typography. Nothing else in the package or the scaffolded site applies
+   a font, so without this a fresh store rendered in the browser's default
+   serif with an 8px white frame around a sticky header, and the font chosen
+   under Appearance loaded but was never used. Consumers who set their own
+   `body` rules after this import still win on cascade order. */
+body {
+  margin: 0;
+  font-family: var(--caspian-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* The storefront surface: the default chrome wraps header, page and footer
+   in this so the theme's background and text colour cover the full page. */
+.caspian-storefront,
 .caspian-root {
   font-family: var(--caspian-font-family);
   background: var(--caspian-background);
-  color: var(--caspian-primary);
+  color: var(--caspian-foreground, #111);
+  min-height: 100dvh;
+  line-height: 1.5;
+}
+
+/* The admin is a tool, not the brand: a neutral system stack keeps it
+   legible whatever display face the store picked. */
+.caspian-admin-shell {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f1f1f;
+}
+.caspian-admin-shell h1,
+.caspian-admin-shell h2,
+.caspian-admin-shell h3 {
+  letter-spacing: -0.01em;
 }
 
 a {
@@ -261,4 +293,2133 @@ a:focus-visible {
    Inline styles can't express media queries, so the grid collapse lives here. */
 @media (max-width: 720px) {
   .caspian-contact-layout { grid-template-columns: 1fr !important; }
+}
+
+/* ==========================================================================
+   Interaction polish layer (v15.1.0).
+
+   Components style themselves inline, and inline styles cannot express
+   :hover / :focus-visible / :active or keyframes. Everything a pointer or a
+   keyboard does to a control therefore lives here, keyed on the stable
+   `caspian-*` class each primitive already carries. Rules deliberately use
+   properties the inline styles never set — box-shadow, filter, transform,
+   outline — so they compose with the inline base instead of fighting it.
+   ========================================================================== */
+
+:root {
+  --caspian-ring: color-mix(in srgb, var(--caspian-primary, #1a73e8) 28%, transparent);
+  --caspian-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --caspian-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --caspian-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.08);
+  --caspian-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes caspian-pulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@keyframes caspian-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes caspian-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes caspian-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+@keyframes caspian-toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes caspian-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Focus: one ring for every interactive control ----------------------- */
+.caspian-root :where(button, [role="button"], input, select, textarea, a, [tabindex]):focus-visible,
+.caspian-admin-shell :where(button, [role="button"], input, select, textarea, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--caspian-primary, #1a73e8);
+  outline-offset: 2px;
+}
+.caspian-input:focus-visible,
+.caspian-textarea:focus-visible,
+.caspian-select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--caspian-primary, #1a73e8), 0 0 0 4px var(--caspian-ring);
+}
+.caspian-input,
+.caspian-textarea,
+.caspian-select {
+  transition: box-shadow 0.15s var(--caspian-ease);
+}
+.caspian-input:hover:not(:focus):not(:disabled),
+.caspian-textarea:hover:not(:focus):not(:disabled),
+.caspian-select:hover:not(:focus):not(:disabled) {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.caspian-input:disabled,
+.caspian-textarea:disabled,
+.caspian-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.caspian-input::placeholder,
+.caspian-textarea::placeholder {
+  color: #9aa0a6;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+.caspian-btn {
+  transition: filter 0.15s var(--caspian-ease), box-shadow 0.15s var(--caspian-ease),
+    transform 0.1s var(--caspian-ease), opacity 0.15s var(--caspian-ease);
+}
+.caspian-btn:not(:disabled):hover {
+  box-shadow: var(--caspian-shadow-sm);
+}
+.caspian-btn[data-variant="primary"]:not(:disabled):hover,
+.caspian-btn[data-variant="destructive"]:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+.caspian-btn[data-variant="outline"]:not(:disabled):hover,
+.caspian-btn[data-variant="ghost"]:not(:disabled):hover {
+  box-shadow: inset 0 0 0 100vmax rgba(0, 0, 0, 0.045);
+}
+.caspian-btn:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(0.96);
+}
+.caspian-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--caspian-background, #fff), 0 0 0 4px var(--caspian-primary, #1a73e8);
+}
+.caspian-btn-spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: caspian-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* --- Switch, tabs, badges, tables ---------------------------------------- */
+.caspian-switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--caspian-background, #fff), 0 0 0 4px var(--caspian-primary, #1a73e8);
+}
+.caspian-switch:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+.caspian-tabs-trigger {
+  transition: color 0.15s var(--caspian-ease), border-color 0.15s var(--caspian-ease);
+}
+.caspian-tabs-trigger:hover {
+  color: var(--a-accent, var(--accent, #1a73e8)) !important;
+}
+.caspian-tabs-trigger:focus-visible {
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.caspian-table .caspian-tr {
+  transition: background 0.12s var(--caspian-ease);
+}
+.caspian-table tbody .caspian-tr:hover {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+/* --- Skeleton ------------------------------------------------------------ */
+.caspian-skeleton {
+  animation: caspian-pulse 1.4s ease-in-out infinite;
+}
+
+/* --- Dialogs, sheets, menus, toasts ------------------------------------- */
+.caspian-dialog-overlay {
+  animation: caspian-fade-in 0.18s var(--caspian-ease);
+}
+.caspian-dialog {
+  animation: caspian-pop-in 0.22s var(--caspian-ease);
+}
+.caspian-dialog-close {
+  transition: background 0.15s var(--caspian-ease), color 0.15s var(--caspian-ease);
+}
+.caspian-dialog-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #111;
+}
+.caspian-cart-sheet {
+  animation: caspian-slide-in-right 0.26s var(--caspian-ease);
+}
+.caspian-cart-sheet-overlay,
+.caspian-bottom-sheet-overlay {
+  animation: caspian-fade-in 0.2s var(--caspian-ease);
+}
+.caspian-dropdown-panel {
+  animation: caspian-pop-in 0.16s var(--caspian-ease);
+}
+.caspian-toast {
+  animation: caspian-toast-in 0.22s var(--caspian-ease);
+}
+.caspian-toast-dismiss {
+  transition: opacity 0.15s var(--caspian-ease), background 0.15s var(--caspian-ease);
+}
+.caspian-toast-dismiss:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* --- Storefront chrome --------------------------------------------------- */
+.caspian-site-nav a {
+  position: relative;
+  transition: color 0.15s var(--caspian-ease);
+}
+.caspian-site-nav a:hover {
+  opacity: 1;
+  color: var(--caspian-primary, #111) !important;
+}
+.caspian-site-nav a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s var(--caspian-ease);
+}
+.caspian-site-nav a:hover::after,
+.caspian-site-nav a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* Default product-card hover for stores with no template active. Templates
+   register their own rules under [data-caspian-template=…], which win on
+   specificity, so this only ever fills the gap. */
+.caspian-product-card-standard {
+  display: block;
+  transition: transform 0.25s var(--caspian-ease);
+}
+.caspian-product-card-standard:hover {
+  opacity: 1;
+  transform: translateY(-3px);
+}
+.caspian-product-card-standard-image img {
+  transition: transform 0.5s var(--caspian-ease);
+}
+.caspian-product-card-standard:hover .caspian-product-card-standard-image img {
+  transform: scale(1.04);
+}
+.caspian-product-card-standard:focus-visible {
+  outline-offset: 4px;
+  border-radius: var(--caspian-radius, 8px);
+}
+
+/* --- Admin shell --------------------------------------------------------- */
+.caspian-admin-nav-item > span {
+  transition: background 0.12s var(--caspian-ease), color 0.12s var(--caspian-ease);
+}
+.caspian-admin-nav-item:hover {
+  opacity: 1;
+}
+.caspian-admin-nav-item:not(.is-active):hover > span {
+  background: rgba(0, 0, 0, 0.05);
+  color: #111;
+}
+.caspian-admin-nav-group-row {
+  transition: background 0.12s var(--caspian-ease);
+}
+.caspian-admin-nav-group-row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.caspian-admin-icon-btn {
+  transition: background 0.15s var(--caspian-ease), border-color 0.15s var(--caspian-ease);
+}
+.caspian-admin-icon-btn:hover {
+  background: #f3f4f6 !important;
+}
+.caspian-admin-sidebar-backdrop {
+  display: none;
+}
+
+/* Below 900px the sidebar becomes an off-canvas drawer: the inline sticky
+   240px column would otherwise squeeze every admin page into a sliver on a
+   phone. `!important` is required to beat the inline geometry. */
+@media (max-width: 900px) {
+  .caspian-admin-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 272px !important;
+    max-width: 85vw;
+    height: 100dvh !important;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.24s var(--caspian-ease) !important;
+    box-shadow: none;
+  }
+  .caspian-admin-sidebar.is-mobile-open {
+    transform: none;
+    box-shadow: var(--caspian-shadow-lg);
+  }
+  .caspian-admin-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(0, 0, 0, 0.45);
+    animation: caspian-fade-in 0.2s var(--caspian-ease);
+  }
+  .caspian-admin-header {
+    padding: 10px 16px !important;
+  }
+  .caspian-admin-main {
+    padding: 16px !important;
+  }
+}
+
+/* --- Motion preference --------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .caspian-dialog,
+  .caspian-dialog-overlay,
+  .caspian-cart-sheet,
+  .caspian-cart-sheet-overlay,
+  .caspian-bottom-sheet-overlay,
+  .caspian-toast,
+  .caspian-dropdown-panel,
+  .caspian-admin-sidebar-backdrop,
+  .caspian-skeleton {
+    animation: none !important;
+  }
+  .caspian-btn,
+  .caspian-product-card-standard,
+  .caspian-product-card-standard-image img,
+  .caspian-admin-sidebar {
+    transition: none !important;
+  }
+  .caspian-product-card-standard:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Responsive layout hooks (v15.1.0). Inline grid templates cannot carry a
+   media query, so each two-column surface carries a class and collapses
+   here. Storefront breakpoint 820px, admin 900px (matches the drawer).
+   ========================================================================== */
+@media (max-width: 820px) {
+  .caspian-cart-layout,
+  .caspian-checkout-layout,
+  .caspian-pdp-grid,
+  .caspian-setup-shell {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  .caspian-cart-layout > aside,
+  .caspian-checkout-layout > aside,
+  .caspian-pdp-grid > aside,
+  .caspian-pdp-sticky {
+    position: static !important;
+    top: auto !important;
+  }
+  .caspian-review-summary {
+    grid-template-columns: 1fr !important;
+  }
+  .caspian-gallery {
+    grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+  }
+  .caspian-gallery-rail {
+    flex-direction: row !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    order: 2;
+    max-height: none !important;
+    width: auto !important;
+    padding-bottom: 4px;
+  }
+  .caspian-gallery-rail > * {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .caspian-admin-subshell {
+    grid-template-columns: 1fr !important;
+  }
+  .caspian-admin-subshell > aside,
+  .caspian-admin-subshell > nav {
+    position: static !important;
+    width: auto !important;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+  .caspian-admin-subshell > aside > *,
+  .caspian-admin-subshell > nav > * {
+    flex: 0 0 auto;
+  }
+}
+
+/* --- Storefront interaction hooks ---------------------------------------- */
+.caspian-pdp-tab,
+.caspian-gallery-thumb,
+.caspian-collection-card {
+  transition: opacity 0.15s var(--caspian-ease), transform 0.2s var(--caspian-ease),
+    box-shadow 0.2s var(--caspian-ease), border-color 0.15s var(--caspian-ease);
+}
+.caspian-pdp-tab:hover {
+  opacity: 1;
+  color: var(--caspian-primary, #111) !important;
+}
+.caspian-gallery-thumb:hover {
+  opacity: 1 !important;
+  transform: translateY(-1px);
+}
+.caspian-collection-card:hover {
+  opacity: 1;
+  transform: translateY(-3px);
+  box-shadow: var(--caspian-shadow-md);
+}
+.caspian-collection-card img {
+  transition: transform 0.5s var(--caspian-ease);
+}
+.caspian-collection-card:hover img {
+  transform: scale(1.04);
+}
+
+/* --- Admin data tables --------------------------------------------------- */
+.caspian-thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--cpos-surface-2, #fafafa);
+}
+.caspian-admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.caspian-admin-filters > * {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caspian-pdp-tab,
+  .caspian-gallery-thumb,
+  .caspian-collection-card,
+  .caspian-collection-card img {
+    transition: none !important;
+  }
+  .caspian-collection-card:hover,
+  .caspian-collection-card:hover img {
+    transform: none;
+  }
+}
+
+/* Cart + checkout two-column layouts (worker-added hooks). */
+@media (max-width: 820px) {
+  .caspian-cart-summary,
+  .caspian-checkout-summary {
+    position: static !important;
+  }
+  .caspian-checkout-fields,
+  .caspian-guest-order-fields {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+.caspian-cart-layout input[type='number']::-webkit-outer-spin-button,
+.caspian-cart-layout input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* --- Storefront responsive grids (worker-added hooks) -------------------- */
+@media (max-width: 820px) {
+  .caspian-pdp-grid-tech .caspian-pdp-tech-info {
+    position: static !important;
+  }
+  .caspian-gallery-rail {
+    overflow: auto hidden !important;
+    padding: 2px 0 4px !important;
+  }
+  .caspian-gallery-thumb {
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
+.caspian-gallery-thumb:hover {
+  box-shadow: var(--caspian-shadow-sm);
+}
+.caspian-gallery-thumb:focus-visible,
+.caspian-pdp-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--caspian-ring);
+  border-radius: 4px;
+}
+.caspian-collection-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.caspian-collection-card:hover article > div:first-child {
+  box-shadow: var(--caspian-shadow-md);
+}
+.caspian-collection-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--caspian-ring);
+  border-radius: var(--caspian-radius, 8px);
+}
+.caspian-empty-state {
+  animation: caspian-fade-in 0.25s var(--caspian-ease);
+}
+
+/* Admin settings grids — columns live here so they can collapse. */
+.caspian-admin-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.caspian-admin-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 720px) {
+  .caspian-admin-grid-3,
+  .caspian-admin-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .caspian-admin-grid-3,
+  .caspian-admin-grid-4 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ==========================================================================
+   Page builder — editor chrome, canvas, layout blocks, widgets and the home
+   sections it renders. Merged from src/styles/page-builder.css (v15.1.0):
+   before this release the builder emitted ~60 pb-* class names and no
+   stylesheet in the package defined any of them, so the editor panel, the
+   toolbar, columns and the focal-point picker rendered unstyled.
+   ========================================================================== */
+/**
+ * Caspian Store — page builder stylesheet.
+ *
+ * Every selector here targets a class emitted by `src/page-builder/**` or by
+ * the three panel controls in `src/ui/` (`ColorField`, `FocalPointField`,
+ * `StockImagePicker`). Two audiences share the file:
+ *
+ *   1. Editor chrome (`.pb-panel`, `.pb-toolbar`, `.pb-tree*`, `.pb-insert*`,
+ *      canvas selection) — concrete neutrals, matching the admin shell, so the
+ *      chrome reads the same whatever storefront theme is active.
+ *   2. Rendered blocks (`.pb-row`, `.pb-w-*`, `.btn`, `.home__*`, `.coltile`) —
+ *      the storefront baseline, driven by `--caspian-*` tokens and kept at
+ *      single-class specificity so a template's `[data-caspian-template]` rules
+ *      win without `!important`.
+ *
+ * `!important` appears only where a UI primitive sets the same property inline
+ * (the Tabs / Input geometry), which a stylesheet cannot otherwise beat.
+ */
+
+/* ==========================================================================
+   0. Tokens + editing layout
+   ========================================================================== */
+
+body.pb-editing {
+  --pb-panel-w: 360px;
+  --pb-toolbar-h: 52px;
+  --pb-chrome-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --pb-accent: var(--caspian-accent, #1a73e8);
+  --pb-accent-soft: #e8f0fe;
+  --pb-line: #e8eaed;
+  --pb-line-strong: #dadce0;
+  --pb-muted: #5f6368;
+  --pb-fg: #1f1f1f;
+  --pb-surface: #ffffff;
+  --pb-surface-2: #fafbfc;
+  --pb-z: 700;
+  /* Make room for the fixed toolbar + panel so no block hides behind them. */
+  padding-top: var(--pb-toolbar-h);
+  padding-right: var(--pb-panel-w);
+}
+
+.pb-page {
+  min-height: 60vh;
+}
+
+/* Device preview: the toolbar's tablet / mobile buttons narrow the canvas to
+   that device's width (the block's per-breakpoint inline style previews the
+   rest). `main:has(> .pb-edit-section)` covers the INSTALL.md mount, which
+   renders the tree straight into an unclassed <main>. */
+body.pb-bp-tablet :is(.pb-page, main:has(> .pb-edit-section)),
+body.pb-bp-mobile :is(.pb-page, main:has(> .pb-edit-section)) {
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  border-left: 1px solid var(--pb-line-strong);
+  border-right: 1px solid var(--pb-line-strong);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03), var(--caspian-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+  transition: max-width 0.25s var(--caspian-ease, ease);
+}
+body.pb-bp-tablet :is(.pb-page, main:has(> .pb-edit-section)) {
+  max-width: 820px;
+}
+body.pb-bp-mobile :is(.pb-page, main:has(> .pb-edit-section)) {
+  max-width: 390px;
+}
+
+@keyframes pb-pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   1. "Edit page" pill (admins, view mode)
+   ========================================================================== */
+
+.pb-edit-pill {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--caspian-accent, #1a73e8);
+  color: #fff;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.1);
+  animation: pb-pop-in 0.25s var(--caspian-ease, ease);
+  transition: transform 0.15s var(--caspian-ease, ease), filter 0.15s var(--caspian-ease, ease);
+}
+.pb-edit-pill:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.pb-edit-pill:active {
+  transform: translateY(0) scale(0.98);
+}
+.pb-edit-pill:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
+
+/* ==========================================================================
+   2. Toolbar (sticky top bar) + conflict banner
+   ========================================================================== */
+
+.pb-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: var(--pb-panel-w);
+  z-index: var(--pb-z);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+  min-height: var(--pb-toolbar-h);
+  padding: 8px 16px;
+  background: var(--pb-surface);
+  border-bottom: 1px solid var(--pb-line);
+  color: var(--pb-fg);
+  font-family: var(--pb-chrome-font);
+  font-size: 13px;
+}
+
+.pb-toolbar__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--pb-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-toolbar__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34a853;
+  box-shadow: 0 0 0 3px rgba(52, 168, 83, 0.18);
+  transition: background 0.2s var(--caspian-ease, ease), box-shadow 0.2s var(--caspian-ease, ease);
+}
+.pb-toolbar__dot--dirty {
+  background: #f9ab00;
+  box-shadow: 0 0 0 3px rgba(249, 171, 0, 0.22);
+}
+
+.pb-toolbar__devices {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--pb-line);
+  border-radius: 8px;
+  background: var(--pb-surface-2);
+}
+.pb-device-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pb-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s var(--caspian-ease, ease), color 0.12s var(--caspian-ease, ease);
+}
+.pb-device-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--pb-fg);
+}
+.pb-device-btn--active,
+.pb-device-btn--active:hover {
+  background: var(--pb-surface);
+  color: var(--pb-accent);
+  box-shadow: var(--caspian-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
+}
+
+.pb-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.pb-toolbar__actions > * {
+  flex: none;
+}
+
+.pb-conflict {
+  position: fixed;
+  top: var(--pb-toolbar-h);
+  left: 0;
+  right: var(--pb-panel-w);
+  z-index: var(--pb-z);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: #fef7e0;
+  border-bottom: 1px solid #f9ab00;
+  color: #7a4f01;
+  font-family: var(--pb-chrome-font);
+  font-size: 13px;
+  font-weight: 500;
+}
+.pb-conflict__actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   3. Side panel (fixed right column, sticky tabs, scrolling body)
+   ========================================================================== */
+
+.pb-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--pb-z);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: var(--pb-panel-w);
+  max-width: 100vw;
+  background: var(--pb-surface);
+  border-left: 1px solid var(--pb-line);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.04);
+  color: var(--pb-fg);
+  font-family: var(--pb-chrome-font);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.pb-panel *,
+.pb-panel *::before,
+.pb-panel *::after {
+  box-sizing: border-box;
+}
+/* The Tabs root is a plain div; it must fill the column so the body can scroll. */
+.pb-panel > .caspian-tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Outer tab bar (Layers / Add / Settings): full-width, equal segments, sticky. */
+.pb-panel__tabs {
+  display: flex !important;
+  gap: 0 !important;
+  flex: none;
+  padding: 0 8px;
+  background: var(--pb-surface);
+}
+.pb-panel__tabs .caspian-tabs-trigger {
+  flex: 1 1 0;
+  padding: 14px 4px 12px !important;
+  font-size: 13px !important;
+  text-align: center;
+}
+
+.pb-tab-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 16px 40px !important;
+}
+
+.pb-panel__section {
+  display: block;
+}
+.pb-panel__title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pb-muted);
+}
+.pb-panel__note {
+  margin: 0 0 14px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--pb-surface-2);
+  border: 1px solid var(--pb-line);
+  color: var(--pb-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.pb-panel__empty {
+  margin: 8px 0 0;
+  padding: 36px 16px;
+  border: 1px dashed var(--pb-line-strong);
+  border-radius: 10px;
+  color: var(--pb-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.pb-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pb-line);
+}
+
+/* Inner Content / Style tabs sit inside the scrolling body. */
+.pb-panel__section .caspian-tabs-list {
+  margin-bottom: 4px;
+}
+
+/* --- Fields ------------------------------------------------------------- */
+.pb-field {
+  margin-bottom: 14px;
+}
+.pb-field .caspian-label {
+  color: var(--pb-fg);
+}
+.pb-grid2,
+.pb-grid3 {
+  display: grid;
+  gap: 6px;
+}
+.pb-grid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.pb-grid3 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.4fr);
+}
+.pb-grid2 > *,
+.pb-grid3 > * {
+  min-width: 0;
+}
+.pb-grid3 .pb-field {
+  margin-bottom: 0;
+}
+
+.pb-spacing__head,
+.pb-radius__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.pb-spacing__head .caspian-label,
+.pb-radius__head .caspian-label {
+  margin-bottom: 0 !important;
+}
+.pb-spacing__head .caspian-select {
+  width: auto !important;
+  padding: 4px 24px 4px 8px !important;
+  font-size: 12px !important;
+}
+.pb-spacing {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.pb-spacing__edge {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pb-spacing__edge > span {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--pb-muted);
+}
+.pb-spacing__edge .caspian-input {
+  padding: 6px 4px !important;
+  font-size: 13px !important;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.pb-spacing__edge .caspian-input::-webkit-outer-spin-button,
+.pb-spacing__edge .caspian-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ==========================================================================
+   4. Block tree (Layers tab)
+   ========================================================================== */
+
+.pb-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 10px;
+  border-radius: 8px;
+  transition: background 0.12s var(--caspian-ease, ease), box-shadow 0.12s var(--caspian-ease, ease);
+}
+.pb-tree--over {
+  background: var(--pb-accent-soft);
+  box-shadow: 0 0 0 1px var(--pb-accent);
+}
+.pb-tree-item {
+  margin: 2px 0;
+  position: relative;
+}
+.pb-tree-item--dragging {
+  z-index: 1;
+  opacity: 0.55;
+}
+.pb-tree-children {
+  margin: 2px 0 4px 14px;
+  padding-left: 10px;
+  border-left: 1px dashed var(--pb-line-strong);
+}
+.pb-tree-empty {
+  margin: 2px 0;
+  padding: 8px 10px;
+  border: 1px dashed var(--pb-line-strong);
+  border-radius: 6px;
+  color: var(--pb-muted);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+.pb-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s var(--caspian-ease, ease), border-color 0.12s var(--caspian-ease, ease);
+}
+.pb-panel__row:hover {
+  background: #f3f4f6;
+}
+.pb-panel__row--active,
+.pb-panel__row--active:hover {
+  background: var(--pb-accent-soft);
+  border-color: rgba(26, 115, 232, 0.3);
+  color: var(--pb-accent);
+}
+.pb-panel__row--hidden .pb-panel__row-name {
+  color: var(--pb-muted);
+  font-style: italic;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.3);
+}
+.pb-panel__row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+.pb-panel__row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.pb-panel__row-actions > button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pb-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s var(--caspian-ease, ease), color 0.12s var(--caspian-ease, ease);
+}
+.pb-panel__row-actions > button:hover {
+  background: rgba(217, 48, 37, 0.1);
+  color: #d93025;
+}
+
+.pb-drag-handle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9aa0a6;
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  transition: background 0.12s var(--caspian-ease, ease), color 0.12s var(--caspian-ease, ease);
+}
+.pb-drag-handle:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--pb-muted);
+}
+.pb-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* ==========================================================================
+   5. Insert palette (Add tab) + drag ghost
+   ========================================================================== */
+
+.pb-insert-search {
+  margin-bottom: 14px;
+}
+.pb-insert-group {
+  margin-bottom: 18px;
+}
+.pb-insert-group__label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pb-muted);
+}
+.pb-insert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pb-insert-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 8px 10px;
+  border: 1px solid var(--pb-line);
+  border-radius: 10px;
+  background: var(--pb-surface);
+  color: #3c4043;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: border-color 0.15s var(--caspian-ease, ease), background 0.15s var(--caspian-ease, ease),
+    box-shadow 0.15s var(--caspian-ease, ease), transform 0.15s var(--caspian-ease, ease);
+}
+.pb-insert-item:hover:not(:disabled) {
+  border-color: var(--pb-accent);
+  background: var(--pb-surface-2);
+  box-shadow: var(--caspian-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
+  transform: translateY(-1px);
+}
+.pb-insert-item:hover:not(:disabled) .pb-insert-item__icon {
+  background: var(--pb-accent-soft);
+  color: var(--pb-accent);
+}
+.pb-insert-item:active:not(:disabled) {
+  cursor: grabbing;
+  transform: none;
+}
+.pb-insert-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pb-insert-item--dragging {
+  opacity: 0.4;
+}
+.pb-insert-item__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: #f3f4f6;
+  color: var(--pb-muted);
+  font-size: 19px;
+  line-height: 1;
+  transition: background 0.15s var(--caspian-ease, ease), color 0.15s var(--caspian-ease, ease);
+}
+
+.pb-drag-ghost {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #1f1f1f;
+  color: #fff;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+  cursor: grabbing;
+  animation: pb-pop-in 0.12s var(--caspian-ease, ease);
+}
+
+/* ==========================================================================
+   6. Canvas: selection, hover, drag handles, inline editing
+   ========================================================================== */
+
+.pb-block,
+.pb-styled,
+.pb-edit-section {
+  position: relative;
+}
+
+.pb-edit-section {
+  min-height: 28px;
+  outline: 1px dashed transparent;
+  outline-offset: -1px;
+  cursor: pointer;
+  transition: outline-color 0.12s var(--caspian-ease, ease), opacity 0.15s var(--caspian-ease, ease);
+}
+.pb-edit-section:hover {
+  outline-color: rgba(26, 115, 232, 0.55);
+}
+.pb-edit-section--selected,
+.pb-edit-section--selected:hover {
+  outline: 2px solid var(--caspian-accent, #1a73e8);
+  outline-offset: -2px;
+}
+.pb-edit-section--hidden {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+.pb-edit-section--bp-hidden {
+  opacity: 0.35;
+  outline: 1px dotted #d93025;
+  outline-offset: -1px;
+}
+.pb-edit-section--dragging {
+  outline: 2px dashed var(--caspian-accent, #1a73e8);
+  outline-offset: -2px;
+}
+
+.pb-edit-section__handle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 5;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+  color: #5f6368;
+  font-size: 15px;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  cursor: grab;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 0.12s var(--caspian-ease, ease), background 0.12s var(--caspian-ease, ease);
+}
+.pb-edit-section:hover > .pb-edit-section__handle,
+.pb-edit-section--selected > .pb-edit-section__handle,
+.pb-edit-section__handle:focus-visible {
+  opacity: 1;
+}
+.pb-edit-section__handle:hover {
+  background: #e8f0fe;
+  color: var(--caspian-accent, #1a73e8);
+  border-color: var(--caspian-accent, #1a73e8);
+}
+.pb-edit-section__handle:active {
+  cursor: grabbing;
+}
+
+/* Inline text: a faint ring on hover, a solid one while the caret is in it. */
+.pb-editable {
+  outline: none;
+  border-radius: 2px;
+  cursor: text;
+  min-width: 1ch;
+  transition: box-shadow 0.12s var(--caspian-ease, ease);
+}
+.pb-editable:hover {
+  box-shadow: 0 0 0 1px rgba(26, 115, 232, 0.4);
+}
+.pb-editable:focus {
+  box-shadow: 0 0 0 2px var(--caspian-accent, #1a73e8);
+}
+.pb-editable:empty::before {
+  content: attr(data-pb-placeholder);
+  color: #9aa0a6;
+  pointer-events: none;
+}
+
+.pb-editable-image {
+  cursor: pointer;
+  transition: filter 0.15s var(--caspian-ease, ease), outline-color 0.12s var(--caspian-ease, ease);
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+}
+.pb-editable-image:hover {
+  outline-color: var(--caspian-accent, #1a73e8);
+  filter: brightness(0.92);
+}
+
+/* Empty-state placeholders (containers, columns, image / text / embed widgets). */
+.pb-layout-empty,
+.pb-w-text--empty,
+.pb-w-embed--empty {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-height: 72px;
+  margin: 0;
+  padding: 24px 16px;
+  border: 1px dashed rgba(26, 115, 232, 0.45);
+  border-radius: 8px;
+  background: rgba(26, 115, 232, 0.04);
+  color: #5f6368;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+.pb-layout-empty--column {
+  min-height: 110px;
+  height: 100%;
+}
+
+/* ==========================================================================
+   7. Layout blocks + widget container (view and edit mode)
+   ========================================================================== */
+
+.pb-container {
+  width: 100%;
+}
+
+/* Columns: one equal track per child, whatever wraps the child (a bare
+   `.pb-column`, a `.pb-styled` wrapper, or the editor's `.pb-edit-section`). */
+.pb-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--pb-columns-gap, 24px);
+  align-items: start;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--pb-content-w, 1200px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 24px;
+}
+.pb-column .pb-row {
+  padding: 0;
+}
+.pb-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  height: 100%;
+}
+
+/* Widgets render in a centered content column; inside a column they fill it. */
+.pb-block--widget {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--pb-content-w, 1200px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 12px 24px;
+}
+.pb-column .pb-block--widget {
+  max-width: none;
+  padding: 0;
+}
+
+.pb-bg-credit {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.pb-bg-credit a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   8. Widgets
+   ========================================================================== */
+
+.pb-w-heading {
+  margin: 0 0 0.35em;
+  font-family: var(--caspian-font-family, inherit);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+h2.pb-w-heading {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+h3.pb-w-heading {
+  font-size: clamp(1.3rem, 2.2vw, 1.75rem);
+}
+h4.pb-w-heading {
+  font-size: 1.15rem;
+}
+
+.pb-w-text {
+  line-height: 1.65;
+}
+.pb-w-text p,
+.pb-w-text ul,
+.pb-w-text ol {
+  margin: 0 0 1em;
+}
+.pb-w-text > :last-child {
+  margin-bottom: 0;
+}
+
+.pb-w-image-wrap {
+  display: block;
+  line-height: 0;
+}
+.pb-w-image {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+.pb-w-image-credit {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #5f6368;
+}
+.pb-w-image-credit a {
+  text-decoration: underline;
+}
+
+.pb-w-button-wrap {
+  display: block;
+  line-height: 1;
+}
+
+.pb-w-divider {
+  height: 0;
+  margin: 8px 0;
+  border: 0;
+  border-top: 1px solid currentColor;
+  opacity: 0.18;
+}
+
+.pb-w-spacer {
+  display: block;
+  width: 100%;
+}
+
+.pb-w-embed {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--caspian-radius, 8px);
+  background: #000;
+}
+.pb-w-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ==========================================================================
+   9. Storefront buttons (hero CTAs + Button widget)
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--caspian-radius, 999px);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s var(--caspian-ease, ease), color 0.15s var(--caspian-ease, ease),
+    border-color 0.15s var(--caspian-ease, ease), box-shadow 0.15s var(--caspian-ease, ease),
+    filter 0.15s var(--caspian-ease, ease), transform 0.1s var(--caspian-ease, ease);
+}
+.btn:hover {
+  opacity: 1;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--caspian-accent, #1a73e8);
+  outline-offset: 2px;
+}
+.btn--primary {
+  background: var(--caspian-primary, #1a73e8);
+  border-color: var(--caspian-primary, #1a73e8);
+  color: var(--caspian-primary-foreground, #fff);
+}
+.btn--primary:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--caspian-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+}
+.btn--ghost {
+  background: transparent;
+  border-color: color-mix(in srgb, currentColor 35%, transparent);
+  color: inherit;
+}
+.btn--ghost:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: currentColor;
+}
+
+/* ==========================================================================
+   10. Premade homepage sections
+   ========================================================================== */
+
+.eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+.home__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: var(--pb-content-w, 1200px);
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+.home__hero-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  min-width: 0;
+}
+.home__hero--media-left .home__hero-text {
+  order: 2;
+}
+.home__hero--media-left .home__hero-media {
+  order: 1;
+}
+.home__hero-h {
+  margin: 0;
+  font-family: var(--caspian-font-family, inherit);
+  font-size: clamp(2.4rem, 5vw, 4.25rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+.home__hero-h em {
+  font-style: italic;
+  color: var(--caspian-accent, inherit);
+}
+.home__hero-text > p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+.home__hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.home__hero-media {
+  position: relative;
+  min-width: 0;
+}
+.home__hero-media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: var(--caspian-radius, 16px);
+}
+.home__hero-tag {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #1f1f1f;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* --- Trust strip --------------------------------------------------------- */
+.home__strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 24px;
+  box-sizing: border-box;
+  max-width: var(--pb-content-w, 1200px);
+  margin: 0 auto;
+  padding: 18px 24px;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+.home__strip > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.home__strip svg {
+  flex: none;
+  opacity: 0.8;
+}
+
+/* --- Shared section header ---------------------------------------------- */
+.home__sect-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  box-sizing: border-box;
+  max-width: var(--pb-content-w, 1200px);
+  margin: 0 auto;
+  padding: 0 24px 24px;
+}
+.home__sect-head h2 {
+  margin: 0;
+  font-family: var(--caspian-font-family, inherit);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.home__sect-head p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+/* --- Collections grid ---------------------------------------------------- */
+.home__collections,
+.home__featured {
+  padding: 56px 0;
+}
+.home__col-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  box-sizing: border-box;
+  max-width: var(--pb-content-w, 1200px);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.coltile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--caspian-radius, 12px);
+  background: #e8eaed;
+  color: #fff;
+}
+.coltile:hover {
+  opacity: 1;
+}
+.coltile--lg {
+  grid-column: span 2;
+  grid-row: span 2;
+  aspect-ratio: auto;
+  min-height: 320px;
+}
+.coltile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s var(--caspian-ease, ease);
+}
+.coltile:hover img {
+  transform: scale(1.04);
+}
+.coltile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0) 60%);
+}
+.coltile__meta {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 18px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.coltile__meta h3 {
+  margin: 0;
+  font-family: var(--caspian-font-family, inherit);
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.coltile--lg .coltile__meta h3 {
+  font-size: 1.75rem;
+}
+.coltile__meta p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.coltile__num {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.coltile__count {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* --- Featured products --------------------------------------------------- */
+.home__feat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  box-sizing: border-box;
+  max-width: var(--pb-content-w, 1200px);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --- Editorial split + story panel --------------------------------------- */
+.home__editorial,
+.home__story {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: var(--pb-content-w, 1200px);
+  margin: 0 auto;
+  padding: 56px 24px;
+}
+.home__story {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+.home__editorial > img,
+.home__story > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--caspian-radius, 16px);
+}
+.home__story > img {
+  aspect-ratio: 5 / 4;
+}
+.home__edit-text,
+.home__story > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+.home__edit-text h2,
+.home__story h2 {
+  margin: 0;
+  font-family: var(--caspian-font-family, inherit);
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+.home__edit-text p,
+.home__story p {
+  margin: 0;
+  max-width: 52ch;
+  line-height: 1.65;
+  opacity: 0.8;
+}
+.home__edit-text .link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ==========================================================================
+   11. Panel controls: colour field, focal point, stock-image picker
+   ========================================================================== */
+
+.pb-color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pb-color-field .caspian-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pb-color-swatch {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+.pb-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 3px;
+}
+.pb-color-swatch::-webkit-color-swatch {
+  border: 0;
+  border-radius: 4px;
+}
+.pb-color-swatch::-moz-color-swatch {
+  border: 0;
+  border-radius: 4px;
+}
+.pb-color-clear {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #5f6368;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s var(--caspian-ease, ease), color 0.12s var(--caspian-ease, ease);
+}
+.pb-color-clear:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1f1f1f;
+}
+
+.pb-focal {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background-color: #e8eaed;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+/* Rule-of-thirds grid so the dot reads against a photo. */
+.pb-focal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 33.3334% 33.3334%;
+  background-position: -1px -1px;
+}
+.pb-focal:focus-visible {
+  outline: 2px solid var(--caspian-accent, #1a73e8);
+  outline-offset: 2px;
+}
+.pb-focal__dot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--caspian-accent, #1a73e8);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.pb-stock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pb-stock__bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 8px;
+  align-items: center;
+}
+.pb-stock__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+.pb-stock__item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+  background: #f3f4f6;
+  cursor: pointer;
+  transition: border-color 0.15s var(--caspian-ease, ease), box-shadow 0.15s var(--caspian-ease, ease);
+}
+.pb-stock__item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--caspian-ease, ease);
+}
+.pb-stock__item:hover:not(:disabled) {
+  border-color: var(--caspian-accent, #1a73e8);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25);
+}
+.pb-stock__item:hover:not(:disabled) img {
+  transform: scale(1.04);
+}
+.pb-stock__item:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.pb-stock__badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pb-stock__state {
+  margin: 0;
+  padding: 24px 12px;
+  color: #5f6368;
+  font-size: 13px;
+  text-align: center;
+}
+.pb-stock__notice {
+  margin: 0;
+  color: #9aa0a6;
+  font-size: 11.5px;
+  text-align: right;
+}
+
+/* ==========================================================================
+   12. Revision history dialog
+   ========================================================================== */
+
+.pb-history {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  max-height: 50vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.pb-history__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+  transition: background 0.12s var(--caspian-ease, ease);
+}
+.pb-history__row:hover {
+  background: #fafbfc;
+}
+.pb-history__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13.5px;
+}
+.pb-history__sub {
+  color: #5f6368;
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   13. Responsive
+   ========================================================================== */
+
+/* Storefront sections: two-column layouts stack, grids tighten. */
+@media (max-width: 1024px) {
+  .home__feat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .home__hero,
+  .home__editorial,
+  .home__story {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+  .home__hero--media-left .home__hero-text,
+  .home__hero--media-left .home__hero-media {
+    order: 0;
+  }
+  .home__hero-media img {
+    aspect-ratio: 4 / 3;
+  }
+}
+@media (max-width: 767px) {
+  .pb-row {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+  }
+  .home__col-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .coltile--lg {
+    grid-column: span 2;
+    grid-row: auto;
+    aspect-ratio: 16 / 10;
+    min-height: 0;
+  }
+  .coltile--lg .coltile__meta h3 {
+    font-size: 1.4rem;
+  }
+  .pb-stock__bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Editor chrome: under 900px the side panel becomes a bottom drawer and the
+   toolbar spans the full width. */
+@media (max-width: 900px) {
+  body.pb-editing {
+    --pb-panel-w: 0px;
+    --pb-drawer-h: 46vh;
+    padding-right: 0;
+    padding-bottom: var(--pb-drawer-h);
+  }
+  .pb-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: var(--pb-drawer-h);
+    border-left: 0;
+    border-top: 1px solid var(--pb-line);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.12);
+  }
+  .pb-panel__tabs {
+    border-radius: 16px 16px 0 0;
+  }
+  .pb-toolbar,
+  .pb-conflict {
+    right: 0;
+  }
+  .pb-toolbar {
+    gap: 10px;
+    padding: 6px 12px;
+  }
+  .pb-toolbar__status {
+    display: none;
+  }
+  .pb-edit-pill {
+    right: 16px;
+    bottom: 16px;
+  }
+  body.pb-bp-tablet :is(.pb-page, main:has(> .pb-edit-section)),
+  body.pb-bp-mobile :is(.pb-page, main:has(> .pb-edit-section)) {
+    max-width: none;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+@media print {
+  .pb-panel,
+  .pb-toolbar,
+  .pb-conflict,
+  .pb-edit-pill,
+  .pb-edit-section__handle {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   14. Motion preference
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .pb-edit-pill,
+  .pb-drag-ghost {
+    animation: none !important;
+  }
+  .pb-edit-pill,
+  .pb-toolbar__dot,
+  .pb-device-btn,
+  .pb-tree,
+  .pb-panel__row,
+  .pb-panel__row-actions > button,
+  .pb-drag-handle,
+  .pb-insert-item,
+  .pb-insert-item__icon,
+  .pb-edit-section,
+  .pb-edit-section__handle,
+  .pb-editable,
+  .pb-editable-image,
+  .pb-color-clear,
+  .pb-stock__item,
+  .pb-stock__item img,
+  .pb-history__row,
+  .btn,
+  .coltile img,
+  body.pb-bp-tablet :is(.pb-page, main:has(> .pb-edit-section)),
+  body.pb-bp-mobile :is(.pb-page, main:has(> .pb-edit-section)) {
+    transition: none !important;
+  }
+  .pb-insert-item:hover:not(:disabled),
+  .pb-edit-pill:hover,
+  .coltile:hover img,
+  .pb-stock__item:hover:not(:disabled) img {
+    transform: none;
+  }
 }

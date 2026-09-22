@@ -135,7 +135,7 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       { key: 'prereqs', label: t('setup.steps.prereqs') },
       { key: 'super-admin', label: t('setup.steps.superAdmin') },
       { key: 'site-info', label: t('setup.steps.siteInfo') },
-      { key: 'template', label: 'Template' },
+      { key: 'template', label: t('setup.steps.template') },
       { key: 'branding', label: t('setup.steps.branding') },
       { key: 'features', label: t('setup.steps.features') },
       { key: 'taxonomies', label: t('setup.steps.taxonomies') },
@@ -297,8 +297,8 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       } catch (err) {
         setSubmitError(
           err instanceof Error
-            ? `Template apply failed: ${err.message}`
-            : 'Template apply failed.',
+            ? t('setup.template.applyFailed', { message: err.message })
+            : t('setup.template.applyFailedGeneric'),
         );
         setSaving(false);
         return;
@@ -306,7 +306,7 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       setSaving(false);
     }
     navigation.push(finishHref);
-  }, [draft.template.templateId, db, navigation, finishHref]);
+  }, [draft.template.templateId, db, navigation, finishHref, t]);
 
   const isLast = currentIndex === STEP_SUMMARY;
   const isFirst = currentIndex === STEP_PREREQS;
@@ -315,11 +315,7 @@ export function SetupWizard({ finishHref = '/admin' }: SetupWizardProps) {
       { heading: t('setup.prereqs.heading'), subhead: t('setup.prereqs.subhead') },
       { heading: t('setup.superAdmin.heading'), subhead: t('setup.superAdmin.subhead') },
       { heading: t('setup.siteInfo.heading'), subhead: t('setup.siteInfo.subhead') },
-      {
-        heading: 'Pick a starter template',
-        subhead:
-          'Seed your storefront with sample content + theme, or start blank.',
-      },
+      { heading: t('setup.template.heading'), subhead: t('setup.template.subhead') },
       { heading: t('setup.branding.heading'), subhead: t('setup.branding.subhead') },
       { heading: t('setup.features.heading'), subhead: t('setup.features.subhead') },
       { heading: t('setup.taxonomies.heading'), subhead: t('setup.taxonomies.subhead') },

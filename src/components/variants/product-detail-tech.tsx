@@ -9,6 +9,8 @@ import { QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
+import { useScriptSettings } from '../../context/script-settings-context';
+import { useFormatCurrency } from '../../i18n/locale-context';
 
 /**
  * Tech / spec-sheet PDP variant — used by the `electronics-tech` template.
@@ -22,7 +24,10 @@ import { useProductDetailState } from './use-product-detail-state';
  * appears under price, full description below the fold.
  */
 export function ProductDetailTech(props: ProductDetailPageProps) {
-  const { formatPrice = (p) => `$${p.toFixed(2)}`, hideReviews, className } = props;
+  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const state = useProductDetailState(props);
   const {
     product,
@@ -45,7 +50,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
   if (loading) {
     return (
       <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}>
-        <div style={gridStyle}>
+        <div className="caspian-pdp-grid caspian-pdp-grid-tech" style={gridStyle}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Skeleton style={{ height: 14, width: '30%' }} />
             <Skeleton style={{ height: 24, width: '80%' }} />
@@ -70,7 +75,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
       data-pdp-variant="tech"
       style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}
     >
-      <div style={gridStyle}>
+      <div className="caspian-pdp-grid caspian-pdp-grid-tech" style={gridStyle}>
         <div className="caspian-pdp-tech-info" style={{ display: 'flex', flexDirection: 'column', position: 'sticky', top: 24, alignSelf: 'start' }}>
           <p
             style={{
@@ -122,9 +127,11 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
             }}
           >
             <p style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{formatPrice(product.price)}</p>
-            <p style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.45)', margin: 0, textTransform: 'uppercase' }}>
-              · In stock · 12mo warranty
-            </p>
+            {derived.inventoryActive && (
+              <p style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11, letterSpacing: '0.16em', color: derived.allOut ? '#fca5a5' : 'rgba(255,255,255,0.45)', margin: 0, textTransform: 'uppercase' }}>
+                · {derived.allOut ? t('storefront.stock.outOfStock') : t('storefront.stock.inStock')}
+              </p>
+            )}
           </div>
 
           {derived.inventoryActive && derived.allOut && (
@@ -140,7 +147,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
                 fontWeight: 600,
               }}
             >
-              Out of stock
+              {t('storefront.stock.outOfStock')}
             </div>
           )}
 
@@ -187,7 +194,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
               margin: '0 0 14px',
             }}
           >
-            // Specifications
+            // {t('product.tech.specifications')}
           </p>
           {derived.hasDetails && (
             <HtmlContent html={product.details} style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }} />
@@ -219,7 +226,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
               margin: '0 0 14px',
             }}
           >
-            // Reviews
+            // {t('reviews.title')}
           </p>
           <ProductReviews
             productId={product.id}

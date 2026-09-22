@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { Product } from '../types';
+import type { InventorySettings, Product } from '../types';
 import { useCart } from '../context/cart-context';
+import { useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useToast } from '../ui/toast';
 import { useT } from '../i18n/locale-context';
+import { isProductOutOfStock, isSizeOutOfStock } from '../utils/inventory';
 import { cn } from '../utils/cn';
 
 export interface QuickAddToCartButtonProps {
@@ -12,6 +14,16 @@ export interface QuickAddToCartButtonProps {
   className?: string;
   size?: number;
   ariaLabel?: string;
+  /**
+   * Merchant inventory settings. When `trackStock` is on, an out-of-stock
+   * product (or its only size) is refused instead of silently added.
+   */
+  inventory?: InventorySettings;
+  /**
+   * Where to send the shopper when the product needs a choice quick-add
+   * cannot make for them (more than one size). Default `/product/{slug ?? id}`.
+   */
+  productHref?: string;
 }
 
 export function QuickAddToCartButton({
@@ -19,19 +31,41 @@ export function QuickAddToCartButton({
   className,
   size = 20,
   ariaLabel,
+  inventory,
+  productHref,
 }: QuickAddToCartButtonProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const nav = useCaspianNavigation();
   const t = useT();
   const [busy, setBusy] = useState(false);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (busy) return;
+
+    const sizes = product.sizes ?? [];
+    const tracked = inventory?.trackStock === true;
+    if (tracked && isProductOutOfStock(product, inventory)) {
+      toast({ title: t('storefront.stock.outOfStock'), variant: 'destructive' });
+      return;
+    }
+    // Quick-add cannot pick a size on the shopper's behalf; the PDP can.
+    if (sizes.length > 1) {
+      nav.push(productHref ?? `/product/${product.slug ?? product.id}`);
+      return;
+    }
+    const selectedSize = sizes[0];
+    if (tracked && selectedSize && isSizeOutOfStock(product.stock, selectedSize, inventory)) {
+      toast({ title: t('storefront.stock.outOfStock'), variant: 'destructive' });
+      return;
+    }
+
     setBusy(true);
     try {
-      addToCart(product, 1, product.sizes?.[0]);
-      toast({ title: t('cart.added') });
+      await Promise.resolve(addToCart(product, 1, selectedSize));
+      toast({ title: t('cart.added'), description: product.name, variant: 'success' });
     } catch (error) {
       console.error('[caspian-store] Quick add failed:', error);
       toast({ title: t('cart.addFailed'), variant: 'destructive' });

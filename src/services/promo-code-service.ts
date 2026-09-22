@@ -39,6 +39,30 @@ export async function listPromoCodes(db: Firestore): Promise<PromoCode[]> {
 
 export type PromoCodeWriteInput = Omit<PromoCode, 'id' | 'createdAt'>;
 
+export type PromoCodeInputProblem =
+  | 'percentageRange'
+  | 'fixedPositive'
+  | 'minOrderNegative'
+  | 'maxDiscountNegative';
+
+/**
+ * Range check for the admin form. Returns the first problem found, or `null`
+ * when the input is storable. A percentage outside (0, 100] or a fixed amount
+ * of 0 would be accepted by Firestore but silently produce a useless — or,
+ * for >100%, a negative-total — discount at checkout.
+ */
+export function validatePromoCodeInput(input: PromoCodeWriteInput): PromoCodeInputProblem | null {
+  const value = Number(input.value);
+  if (input.type === 'percentage') {
+    if (!Number.isFinite(value) || value <= 0 || value > 100) return 'percentageRange';
+  } else if (!Number.isFinite(value) || value <= 0) {
+    return 'fixedPositive';
+  }
+  if (input.minOrderAmount !== undefined && !(input.minOrderAmount >= 0)) return 'minOrderNegative';
+  if (input.maxDiscount !== undefined && !(input.maxDiscount >= 0)) return 'maxDiscountNegative';
+  return null;
+}
+
 export async function createPromoCode(
   db: Firestore,
   input: PromoCodeWriteInput,

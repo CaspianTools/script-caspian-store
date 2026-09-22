@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import type { JournalArticle } from '../types';
 import {
   createJournalArticle,
@@ -11,7 +11,9 @@ import {
 } from '../services/journal-service';
 import { deleteStorageObject, uploadAdminImage } from '../services/storage-service';
 import { useCaspianFirebase, useCaspianImage } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input, Label, Textarea } from '../ui/input';
 import { Dialog } from '../ui/dialog';
 import { Skeleton } from '../ui/misc';
@@ -20,19 +22,25 @@ import { useToast } from '../ui/toast';
 
 interface Draft extends JournalArticleWriteInput {}
 
+// `date` is filled in by `openCreate` so a long-lived tab still defaults to
+// today rather than to the day the module was first evaluated.
 const emptyDraft: Draft = {
   title: '',
   excerpt: '',
   category: '',
-  date: new Date().toISOString().slice(0, 10),
+  date: '',
   imageUrl: '',
   content: '',
 };
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function AdminJournalPage({ className }: { className?: string }) {
   const { db, storage } = useCaspianFirebase();
   const Image = useCaspianImage();
   const { toast } = useToast();
+  const t = useT();
+  const formId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [articles, setArticles] = useState<JournalArticle[] | null>(null);
@@ -41,13 +49,16 @@ export function AdminJournalPage({ className }: { className?: string }) {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<JournalArticle | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     try {
       setArticles(await listJournalArticles(db));
     } catch (error) {
       console.error('[caspian-store] Failed to list journal articles:', error);
-      toast({ title: 'Failed to load articles', variant: 'destructive' });
+      setArticles((prev) => prev ?? []);
+      toast({ title: t('admin.common.loadFailed'), variant: 'destructive' });
     }
   };
 
@@ -58,7 +69,7 @@ export function AdminJournalPage({ className }: { className?: string }) {
 
   const openCreate = () => {
     setEditingId(null);
-    setDraft(emptyDraft);
+    setDraft({ ...emptyDraft, date: todayIso() });
     setDialogOpen(true);
   };
 
@@ -95,9 +106,11 @@ export function AdminJournalPage({ className }: { className?: string }) {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (saving || uploading) return;
     if (!draft.title.trim()) {
-      toast({ title: 'Title is required', variant: 'destructive' });
+      toast({ title: t('admin.journal.titleRequired'), variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -127,14 +140,16 @@ export function AdminJournalPage({ className }: { className?: string }) {
       await load();
     } catch (error) {
       console.error('[caspian-store] Save failed:', error);
-      toast({ title: 'Save failed', variant: 'destructive' });
+      toast({ title: t('admin.common.saveFailed'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (article: JournalArticle) => {
-    if (!confirm(`Delete "${article.title}"? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    const article = pendingDelete;
+    if (!article) return;
+    setDeleting(true);
     try {
       await deleteJournalArticle(db, article.id);
       // Best-effort: delete the storage image too (path is embedded in the URL query).
@@ -143,10 +158,13 @@ export function AdminJournalPage({ className }: { className?: string }) {
         if (match) await deleteStorageObject(storage, `journal/${decodeURIComponent(match[1])}`);
       }
       setArticles((prev) => (prev ? prev.filter((a) => a.id !== article.id) : prev));
+      setPendingDelete(null);
       toast({ title: 'Article deleted' });
     } catch (error) {
       console.error('[caspian-store] Delete failed:', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.common.deleteFailed'), variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -207,7 +225,7 @@ export function AdminJournalPage({ className }: { className?: string }) {
                     <Button variant="outline" size="sm" onClick={() => openEdit(article)}>
                       Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(article)}>
+                    <Button variant="destructive" size="sm" onClick={() => setPendingDelete(article)}>
                       Delete
                     </Button>
                   </div>
@@ -225,34 +243,37 @@ export function AdminJournalPage({ className }: { className?: string }) {
         maxWidth={640}
         footer={
           <>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-              Cancel
+            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleSave} loading={saving}>
+            <Button type="submit" form={formId} loading={saving}>
               {editingId ? 'Save changes' : 'Create article'}
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form id={formId} onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <Label>Title</Label>
+            <Label htmlFor={`${formId}-title`}>Title</Label>
             <Input
+              id={`${formId}-title`}
               value={draft.title}
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <Label>Category</Label>
+              <Label htmlFor={`${formId}-category`}>Category</Label>
               <Input
+                id={`${formId}-category`}
                 value={draft.category}
                 onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
               />
             </div>
             <div>
-              <Label>Date</Label>
+              <Label htmlFor={`${formId}-date`}>Date</Label>
               <Input
+                id={`${formId}-date`}
                 type="date"
                 value={draft.date}
                 onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
@@ -260,17 +281,19 @@ export function AdminJournalPage({ className }: { className?: string }) {
             </div>
           </div>
           <div>
-            <Label>Excerpt</Label>
+            <Label htmlFor={`${formId}-excerpt`}>Excerpt</Label>
             <Textarea
+              id={`${formId}-excerpt`}
               rows={2}
               value={draft.excerpt}
               onChange={(e) => setDraft((d) => ({ ...d, excerpt: e.target.value }))}
             />
           </div>
           <div>
-            <Label>Cover image</Label>
+            <Label htmlFor={`${formId}-image`}>Cover image</Label>
             <div style={{ display: 'flex', gap: 8 }}>
               <Input
+                id={`${formId}-image`}
                 value={draft.imageUrl}
                 onChange={(e) => setDraft((d) => ({ ...d, imageUrl: e.target.value }))}
                 placeholder="https://…"
@@ -284,6 +307,7 @@ export function AdminJournalPage({ className }: { className?: string }) {
                 style={{ display: 'none' }}
               />
               <Button
+                type="button"
                 variant="outline"
                 disabled={uploading}
                 onClick={() => fileRef.current?.click()}
@@ -293,16 +317,30 @@ export function AdminJournalPage({ className }: { className?: string }) {
             </div>
           </div>
           <div>
-            <Label>Content</Label>
+            <Label htmlFor={`${formId}-content`}>Content</Label>
             <Textarea
+              id={`${formId}-content`}
               rows={10}
               value={draft.content}
               onChange={(e) => setDraft((d) => ({ ...d, content: e.target.value }))}
               placeholder="Paragraphs separated by blank lines…"
             />
           </div>
-        </div>
+        </form>
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={t('admin.confirm.deleteNamedTitle', { name: pendingDelete?.title ?? '' })}
+        description={t('admin.confirm.deleteBody')}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

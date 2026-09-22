@@ -9,6 +9,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  type FieldValue,
   type Firestore,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
@@ -47,6 +48,15 @@ export async function listShippingPluginInstalls(
 
 export type ShippingPluginInstallWriteInput = Omit<ShippingPluginInstall, 'id' | 'createdAt'>;
 
+/**
+ * Update payload. `eligibleCountries` additionally accepts `deleteField()` so a
+ * cleared optional value is actually removed — `undefined` is stripped
+ * before the write and would leave the stored value untouched.
+ */
+export type ShippingPluginInstallUpdateInput = Partial<Omit<ShippingPluginInstallWriteInput, 'eligibleCountries'>> & {
+  eligibleCountries?: ShippingPluginInstallWriteInput['eligibleCountries'] | FieldValue;
+};
+
 export async function createShippingPluginInstall(
   db: Firestore,
   input: ShippingPluginInstallWriteInput,
@@ -64,7 +74,7 @@ export async function createShippingPluginInstall(
 export async function updateShippingPluginInstall(
   db: Firestore,
   id: string,
-  input: Partial<ShippingPluginInstallWriteInput>,
+  input: ShippingPluginInstallUpdateInput,
 ): Promise<void> {
   await updateDoc(doc(db, 'shippingPluginInstalls', id), stripUndefined({ ...input }));
 }

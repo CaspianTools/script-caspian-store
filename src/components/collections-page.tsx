@@ -11,6 +11,7 @@ import {
 import { useT } from '../i18n/locale-context';
 import { Skeleton } from '../ui/misc';
 import { cn } from '../utils/cn';
+import { EmptyState } from './empty-state';
 
 export interface CollectionsPageProps {
   title?: string;
@@ -67,11 +68,11 @@ export function CollectionsPage({
           ))}
         </div>
       ) : collections.length === 0 ? (
-        <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>{resolvedEmpty}</p>
+        <EmptyState title={resolvedEmpty} />
       ) : (
         <div style={gridStyle}>
           {collections.map((c) => (
-            <Link key={c.id} href={getCollectionHref(c)}>
+            <Link key={c.id} href={getCollectionHref(c)} className="caspian-collection-card">
               <article style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div
                   style={{

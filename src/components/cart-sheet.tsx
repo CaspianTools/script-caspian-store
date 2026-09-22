@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CartItem } from '../types';
 import { useCart } from '../context/cart-context';
-import { useCaspianImage, useCaspianLink } from '../provider/caspian-store-provider';
+import { useCaspianImage, useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { XIcon } from '../ui/icons';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { cn } from '../utils/cn';
@@ -27,26 +28,37 @@ export function CartSheet({
 }: CartSheetProps) {
   const { items, subtotal, updateQuantity, removeFromCart } = useCart();
   const Link = useCaspianLink();
+  const nav = useCaspianNavigation();
   const t = useT();
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+  // Ref so the effect below keys on `open` only; the header passes an inline
+  // setter that changes identity every render.
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
 
   useEffect(() => {
     if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
+      if (e.key === 'Escape') onOpenChangeRef.current(false);
     };
     document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const id = window.setTimeout(() => closeRef.current?.focus(), 0);
     return () => {
+      window.clearTimeout(id);
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
+      opener?.focus?.();
     };
-  }, [open, onOpenChange]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div
+      className="caspian-cart-sheet-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -58,10 +70,11 @@ export function CartSheet({
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
       }}
-      role="dialog"
-      aria-modal="true"
     >
       <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('cart.title', { count: items.length })}
         className={cn('caspian-cart-sheet', className)}
         style={{
           width: 'min(420px, 100%)',
@@ -70,17 +83,31 @@ export function CartSheet({
           display: 'flex',
           flexDirection: 'column',
           padding: 24,
+          boxShadow: '-12px 0 40px rgba(0,0,0,0.18)',
         }}
       >
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{t('cart.title', { count: items.length })}</h2>
           <button
+            ref={closeRef}
             type="button"
+            className="caspian-dialog-close"
             aria-label={t('cart.close')}
             onClick={() => onOpenChange(false)}
-            style={{ background: 'transparent', border: 0, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}
+            style={{
+              width: 32,
+              height: 32,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 0,
+              borderRadius: 999,
+              color: '#666',
+              cursor: 'pointer',
+            }}
           >
-            ×
+            <XIcon size={18} />
           </button>
         </header>
 
@@ -94,8 +121,8 @@ export function CartSheet({
                 item={item}
                 getProductHref={getProductHref}
                 formatPrice={formatPrice}
-                onUpdate={(n) => updateQuantity(item.product.id, n, item.selectedSize)}
-                onRemove={() => removeFromCart(item.product.id, item.selectedSize)}
+                onUpdate={(n) => updateQuantity(item.product.id, n, item.selectedSize, item.selectedColor ?? '')}
+                onRemove={() => removeFromCart(item.product.id, item.selectedSize, item.selectedColor ?? '')}
               />
             ))
           )}
@@ -112,8 +139,7 @@ export function CartSheet({
               style={{ width: '100%' }}
               onClick={() => {
                 onOpenChange(false);
-                // Use adapter for SPA navigation.
-                if (typeof window !== 'undefined') window.location.assign(checkoutHref);
+                nav.push(checkoutHref);
               }}
             >
               {t('cart.checkout')}
@@ -180,6 +206,8 @@ function CartRow({
           <input
             type="number"
             min={1}
+            inputMode="numeric"
+            aria-label={t('cart.quantity')}
             value={item.quantity}
             onChange={(e) => onUpdate(Math.max(1, Number(e.target.value) || 1))}
             style={{

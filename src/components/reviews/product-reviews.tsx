@@ -15,7 +15,7 @@ import { QuestionList } from './question-list';
 import { WriteReviewDialog } from './write-review-dialog';
 import { AskQuestionDialog } from './ask-question-dialog';
 
-function computeSummary(reviews: FirestoreReview[]): ReviewSummaryData {
+export function computeSummary(reviews: FirestoreReview[]): ReviewSummaryData {
   const distribution: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let sum = 0;
   for (const r of reviews) {

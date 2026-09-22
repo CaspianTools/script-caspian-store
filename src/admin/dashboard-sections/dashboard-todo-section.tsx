@@ -11,7 +11,9 @@ import {
 } from '../../services/admin-todo-service';
 import { verifyAdminTodos } from '../../services/admin-todo-detectors';
 import { useCaspianFirebase } from '../../provider/caspian-store-provider';
+import { useT } from '../../i18n/locale-context';
 import { Button } from '../../ui/button';
+import { ConfirmDialog } from '../../ui/confirm-dialog';
 import { CheckIcon, RefreshIcon } from '../../ui/icons';
 import { Input } from '../../ui/input';
 import { Badge, Skeleton } from '../../ui/misc';
@@ -21,6 +23,7 @@ import { DashboardSection } from './dashboard-section';
 export function DashboardTodoSection() {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
+  const t = useT();
   const [todos, setTodos] = useState<AdminTodo[] | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
@@ -28,15 +31,21 @@ export function DashboardTodoSection() {
   const [verifying, setVerifying] = useState(false);
   const [hideDone, setHideDone] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const autoSeededRef = useRef(false);
+  const [pendingDelete, setPendingDelete] = useState<AdminTodo | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const firstSnapshotRef = useRef(true);
 
   useEffect(() => {
+    firstSnapshotRef.current = true;
     const unsubscribe = listenAdminTodos(
       db,
       async (next) => {
         setTodos(next);
-        if (next.length === 0 && !autoSeededRef.current) {
-          autoSeededRef.current = true;
+        // Only the very first snapshot may auto-seed: an empty list later on
+        // means the admin deleted every task on purpose, not a fresh store.
+        const isFirst = firstSnapshotRef.current;
+        firstSnapshotRef.current = false;
+        if (isFirst && next.length === 0) {
           try {
             await seedDefaultAdminTodos(db);
           } catch (error) {
@@ -46,9 +55,12 @@ export function DashboardTodoSection() {
       },
       (err) => {
         console.error('[caspian-store] Todos listener error:', err);
+        setTodos((prev) => prev ?? []);
+        toast({ title: t('admin.dashboard.todos.loadFailed'), variant: 'destructive' });
       },
     );
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db]);
 
   const progress = useMemo(() => {
@@ -65,12 +77,12 @@ export function DashboardTodoSection() {
 
   const pendingCount = useMemo(() => (todos ?? []).filter((t) => !t.done).length, [todos]);
 
-  const handleToggle = async (t: AdminTodo) => {
+  const handleToggle = async (todo: AdminTodo) => {
     try {
-      await updateAdminTodo(db, t.id, { done: !t.done });
+      await updateAdminTodo(db, todo.id, { done: !todo.done });
     } catch (error) {
       console.error('[caspian-store] Toggle failed:', error);
-      toast({ title: 'Update failed', variant: 'destructive' });
+      toast({ title: t('admin.dashboard.todos.updateFailed'), variant: 'destructive' });
     }
   };
 
@@ -83,19 +95,23 @@ export function DashboardTodoSection() {
       setNewTitle('');
     } catch (error) {
       console.error('[caspian-store] Add failed:', error);
-      toast({ title: 'Add failed', variant: 'destructive' });
+      toast({ title: t('admin.dashboard.todos.addFailed'), variant: 'destructive' });
     } finally {
       setAdding(false);
     }
   };
 
-  const handleDelete = async (t: AdminTodo) => {
-    if (!confirm(`Delete "${t.title}"?`)) return;
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      await deleteAdminTodo(db, t.id);
+      await deleteAdminTodo(db, pendingDelete.id);
+      setPendingDelete(null);
     } catch (error) {
       console.error('[caspian-store] Delete failed:', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.dashboard.todos.deleteFailed'), variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -106,12 +122,12 @@ export function DashboardTodoSection() {
       toast({
         title:
           written === 0
-            ? 'Checklist already seeded'
-            : `Added ${written} setup task${written === 1 ? '' : 's'}`,
+            ? t('admin.dashboard.todos.alreadySeeded')
+            : t('admin.dashboard.todos.seeded', { count: written }),
       });
     } catch (error) {
       console.error('[caspian-store] Seed failed:', error);
-      toast({ title: 'Seed failed', variant: 'destructive' });
+      toast({ title: t('admin.dashboard.todos.seedFailed'), variant: 'destructive' });
     } finally {
       setSeeding(false);
     }
@@ -123,14 +139,14 @@ export function DashboardTodoSection() {
     try {
       const ids = await verifyAdminTodos(db, todos);
       if (ids.length === 0) {
-        toast({ title: 'Nothing new to mark done' });
+        toast({ title: t('admin.dashboard.todos.verifyNothing') });
       } else {
         await Promise.all(ids.map((id) => updateAdminTodo(db, id, { done: true })));
-        toast({ title: `Marked ${ids.length} item${ids.length === 1 ? '' : 's'} done` });
+        toast({ title: t('admin.dashboard.todos.verifyMarked', { count: ids.length }) });
       }
     } catch (error) {
       console.error('[caspian-store] Verify failed:', error);
-      toast({ title: 'Verify failed', variant: 'destructive' });
+      toast({ title: t('admin.dashboard.todos.verifyFailed'), variant: 'destructive' });
     } finally {
       setVerifying(false);
     }
@@ -141,8 +157,8 @@ export function DashboardTodoSection() {
 
   return (
     <DashboardSection
-      title="Todo list"
-      subtitle="First-run setup checklist. Auto-seeded on first visit."
+      title={t('admin.dashboard.todos.title')}
+      subtitle={t('admin.dashboard.todos.subtitle')}
       count={pendingCount}
       defaultOpen={pendingCount > 0}
       anchorId="todos"
@@ -162,7 +178,11 @@ export function DashboardTodoSection() {
         >
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
-              {progress.done} / {progress.total} complete ({progress.pct}%)
+              {t('admin.dashboard.todos.progress', {
+                done: progress.done,
+                total: progress.total,
+                pct: progress.pct,
+              })}
             </div>
             <div
               style={{
@@ -183,11 +203,11 @@ export function DashboardTodoSection() {
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleVerify} loading={verifying}>
-            <RefreshIcon size={14} /> Verify progress
+            <RefreshIcon size={14} /> {t('admin.dashboard.todos.verify')}
           </Button>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
             <input type="checkbox" checked={hideDone} onChange={(e) => setHideDone(e.target.checked)} />
-            Hide completed
+            {t('admin.dashboard.todos.hideCompleted')}
           </label>
         </div>
       )}
@@ -202,7 +222,7 @@ export function DashboardTodoSection() {
         }}
       >
         <Input
-          placeholder="Add a task…"
+          placeholder={t('admin.dashboard.todos.addPlaceholder')}
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => {
@@ -214,10 +234,10 @@ export function DashboardTodoSection() {
           style={{ flex: 1, minWidth: 240 }}
         />
         <Button onClick={handleAdd} loading={adding} disabled={!newTitle.trim()}>
-          + Add task
+          {t('admin.dashboard.todos.add')}
         </Button>
         <Button variant="outline" onClick={handleSeedDefaults} loading={seeding}>
-          Re-seed defaults
+          {t('admin.dashboard.todos.reseed')}
         </Button>
       </div>
 
@@ -234,30 +254,33 @@ export function DashboardTodoSection() {
           }}
         >
           {todos && todos.length > 0 && hideDone
-            ? 'All tasks completed — nice.'
-            : 'No tasks yet. The default checklist is seeding…'}
+            ? t('admin.dashboard.todos.allDone')
+            : t('admin.dashboard.todos.empty')}
         </div>
       ) : (
         <>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {visibleTodos.map((t) => (
+            {visibleTodos.map((todo) => (
               <li
-                key={t.id}
+                key={todo.id}
                 style={{
                   display: 'flex',
                   gap: 12,
                   padding: 14,
                   border: '1px solid #eee',
                   borderRadius: 8,
-                  background: t.done ? '#fafafa' : '#fff',
+                  background: todo.done ? '#fafafa' : '#fff',
                 }}
               >
                 <input
                   type="checkbox"
-                  checked={t.done}
-                  onChange={() => handleToggle(t)}
+                  checked={todo.done}
+                  onChange={() => handleToggle(todo)}
                   style={{ marginTop: 4, cursor: 'pointer' }}
-                  aria-label={`Mark "${t.title}" as ${t.done ? 'not done' : 'done'}`}
+                  aria-label={t(
+                    todo.done ? 'admin.dashboard.todos.markNotDone' : 'admin.dashboard.todos.markDone',
+                    { title: todo.title },
+                  )}
                 />
                 <div style={{ flex: 1 }}>
                   <div
@@ -267,15 +290,17 @@ export function DashboardTodoSection() {
                       gap: 8,
                       fontWeight: 600,
                       fontSize: 15,
-                      textDecoration: t.done ? 'line-through' : 'none',
-                      color: t.done ? '#888' : '#111',
+                      textDecoration: todo.done ? 'line-through' : 'none',
+                      color: todo.done ? '#888' : '#111',
                     }}
                   >
-                    {t.done && <CheckIcon size={16} />}
-                    {t.title}
-                    {t.isDefault && <Badge variant="secondary">Setup</Badge>}
+                    {todo.done && <CheckIcon size={16} />}
+                    {todo.title}
+                    {todo.isDefault && (
+                      <Badge variant="secondary">{t('admin.dashboard.todos.setupBadge')}</Badge>
+                    )}
                   </div>
-                  {t.description && (
+                  {todo.description && (
                     <p
                       style={{
                         margin: '6px 0 0',
@@ -285,12 +310,12 @@ export function DashboardTodoSection() {
                         whiteSpace: 'pre-wrap',
                       }}
                     >
-                      {t.description}
+                      {todo.description}
                     </p>
                   )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => handleDelete(t)}>
-                  Delete
+                <Button variant="outline" size="sm" onClick={() => setPendingDelete(todo)}>
+                  {t('common.delete')}
                 </Button>
               </li>
             ))}
@@ -298,12 +323,25 @@ export function DashboardTodoSection() {
           {hasMore && (
             <div style={{ marginTop: 12, textAlign: 'center' }}>
               <Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
-                Show all {totalFiltered} tasks
+                {t('admin.dashboard.todos.showAll', { count: totalFiltered })}
               </Button>
             </div>
           )}
         </>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={t('admin.confirm.deleteNamedTitle', { name: pendingDelete?.title ?? '' })}
+        description={t('admin.confirm.deleteBody')}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </DashboardSection>
   );
 }

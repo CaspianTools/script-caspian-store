@@ -144,7 +144,7 @@ export function useAdminNotifications(
                 kind: 'new-contacts',
                 title: `${count} new contact${count === 1 ? '' : 's'}`,
                 description: 'Review incoming contact-form submissions',
-                href: '/admin/users',
+                href: '/admin/contacts',
               });
             }
           })

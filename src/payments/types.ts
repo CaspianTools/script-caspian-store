@@ -50,6 +50,8 @@ export interface CheckoutShippingInfoInput {
   country: string;
   shippingMethod: string;
   orderNotes?: string;
+  /** Contact phone collected on the checkout form. */
+  phone?: string;
 }
 
 export interface StartCheckoutOptions {
@@ -61,6 +63,12 @@ export interface StartCheckoutOptions {
   promoCode?: string | null;
   /** Optional shipping cost — added as a line item when > 0. */
   shippingCost?: number;
+  /**
+   * Tax estimate computed by the checkout page. Manual-payment plugins write
+   * it onto `Order.tax` and fold it into `total`; the Stripe plugin ignores it
+   * because the server recomputes tax from `SiteSettings`.
+   */
+  tax?: number;
   /** Optional shipping details — stored on the order when the webhook fires. */
   shippingInfo?: CheckoutShippingInfoInput;
   /** Optional locale pass-through (e.g. for email templating). */

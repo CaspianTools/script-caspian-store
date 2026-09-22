@@ -75,7 +75,8 @@ export function LayoutShell({
   const { userProfile } = useAuth();
   const pathname = pathnameOverride ?? nav.pathname;
   const stripped = stripLocalePrefix(pathname);
-  const bypass = bypassPrefixes.some((p) => stripped.startsWith(p));
+  // Segment-aware: `/admin` must not also claim `/administration`.
+  const bypass = bypassPrefixes.some((p) => stripped === p || stripped.startsWith(p + '/'));
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 

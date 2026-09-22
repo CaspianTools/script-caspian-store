@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../context/auth-context';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Skeleton } from '../ui/misc';
 
 export interface AdminGuardProps {
@@ -21,6 +22,7 @@ export interface AdminGuardProps {
 export function AdminGuard({ children, signInHref = '/login', fallback }: AdminGuardProps) {
   const { user, userProfile, loading } = useAuth();
   const Link = useCaspianLink();
+  const t = useT();
 
   if (loading) {
     return (
@@ -35,10 +37,10 @@ export function AdminGuard({ children, signInHref = '/login', fallback }: AdminG
     if (fallback) return <>{fallback}</>;
     return (
       <div style={{ padding: 40, textAlign: 'center' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Sign in required</h1>
-        <p style={{ color: '#666', marginTop: 8 }}>Admin pages require an authenticated account.</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('admin.guard.signInTitle')}</h1>
+        <p style={{ color: '#666', marginTop: 8 }}>{t('admin.guard.signInBody')}</p>
         <div style={{ marginTop: 16 }}>
-          <Link href={signInHref}>Sign in</Link>
+          <Link href={signInHref}>{t('admin.guard.signIn')}</Link>
         </div>
       </div>
     );
@@ -60,6 +62,7 @@ type ClaimState =
 function AccessDenied({ uid }: { uid: string }) {
   const { auth, functions } = useCaspianFirebase();
   const { refreshProfile } = useAuth();
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const [claim, setClaim] = useState<ClaimState>({ status: 'idle' });
 
@@ -90,17 +93,15 @@ function AccessDenied({ uid }: { uid: string }) {
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String((error as { message?: unknown }).message)
-          : 'Failed to claim admin role.';
+          : t('admin.guard.claimFailed');
       setClaim({ status: 'error', message });
     }
   };
 
   return (
     <div style={{ padding: 40, textAlign: 'center', maxWidth: 520, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Access denied</h1>
-      <p style={{ color: '#666', marginTop: 8 }}>
-        Your account doesn't have the admin role. Three paths to fix:
-      </p>
+      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('admin.guard.deniedTitle')}</h1>
+      <p style={{ color: '#666', marginTop: 8 }}>{t('admin.guard.deniedBody')}</p>
       <ul
         style={{
           color: '#666',
@@ -156,7 +157,7 @@ function AccessDenied({ uid }: { uid: string }) {
             fontSize: 12,
           }}
         >
-          {copied ? 'Copied' : 'Copy UID'}
+          {copied ? t('admin.guard.copied') : t('admin.guard.copyUid')}
         </button>
       </div>
       <div>
@@ -175,7 +176,7 @@ function AccessDenied({ uid }: { uid: string }) {
             fontWeight: 500,
           }}
         >
-          {claim.status === 'claiming' ? 'Claiming…' : 'Claim admin role'}
+          {claim.status === 'claiming' ? t('admin.guard.claiming') : t('admin.guard.claimAdmin')}
         </button>
       </div>
       {claim.status === 'error' && (

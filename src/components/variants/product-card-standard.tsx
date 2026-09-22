@@ -3,7 +3,7 @@
 import type { ProductCardProps } from '../product-card';
 import { useCaspianLink, useCaspianImage } from '../../provider/caspian-store-provider';
 import { useBrandName } from '../../hooks/use-brands';
-import { useT } from '../../i18n/locale-context';
+import { useFormatCurrency, useT } from '../../i18n/locale-context';
 import { useScriptSettings } from '../../context/script-settings-context';
 import { Badge } from '../../ui/misc';
 import { cn } from '../../utils/cn';
@@ -25,7 +25,7 @@ export function ProductCardStandard({
   product,
   getProductHref = (id) => `/product/${id}`,
   className,
-  formatPrice = (p) => `$${p.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   inventory,
   taxConfig,
 }: ProductCardProps) {
@@ -34,6 +34,8 @@ export function ProductCardStandard({
   const t = useT();
   const brandName = useBrandName(product.brand);
   const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const img = product.images?.[0];
   const stockBadge = inventory ? resolveStockBadge(product, inventory) : null;
   const priceSuffix = renderPriceSuffix(taxConfig);
@@ -77,9 +79,9 @@ export function ProductCardStandard({
           <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4 }}>
             {product.isNew && <Badge variant="secondary">{t('storefront.badges.new')}</Badge>}
             {product.limited && <Badge variant="destructive">{t('storefront.badges.limited')}</Badge>}
-            {stockBadge === 'out-of-stock' && <Badge variant="destructive">Out of stock</Badge>}
-            {stockBadge === 'low-stock' && <Badge variant="default">Low stock</Badge>}
-            {stockBadge === 'in-stock' && <Badge variant="secondary">In stock</Badge>}
+            {stockBadge === 'out-of-stock' && <Badge variant="destructive">{t('storefront.stock.outOfStock')}</Badge>}
+            {stockBadge === 'low-stock' && <Badge variant="default">{t('storefront.stock.lowStock')}</Badge>}
+            {stockBadge === 'in-stock' && <Badge variant="secondary">{t('storefront.stock.inStock')}</Badge>}
           </div>
           {showWishlistIcon && (
             <div style={{ position: 'absolute', top: 4, right: 4 }}>
@@ -102,7 +104,13 @@ export function ProductCardStandard({
               )}
             </p>
           </div>
-          {showQuickAddIcon && <QuickAddToCartButton product={product} />}
+          {showQuickAddIcon && (
+            <QuickAddToCartButton
+              product={product}
+              inventory={inventory}
+              productHref={getProductHref(product.slug ?? product.id)}
+            />
+          )}
         </div>
       </div>
     </Link>

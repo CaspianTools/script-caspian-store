@@ -73,10 +73,10 @@ export function AddressBook({ className }: { className?: string }) {
     try {
       if (editing) {
         await updateAddress(db, user.uid, { ...editing, ...form });
-        toast({ title: t('addresses.updated') });
+        toast({ title: t('addresses.updated'), variant: 'success' });
       } else {
         await addAddress(db, user.uid, form);
-        toast({ title: t('addresses.added') });
+        toast({ title: t('addresses.added'), variant: 'success' });
       }
       await refreshProfile();
       setDialogOpen(false);
@@ -93,7 +93,7 @@ export function AddressBook({ className }: { className?: string }) {
     try {
       await deleteAddress(db, user.uid, addr.id);
       await refreshProfile();
-      toast({ title: t('addresses.deleted') });
+      toast({ title: t('addresses.deleted'), variant: 'success' });
     } catch (error) {
       console.error('[caspian-store] Delete address failed:', error);
       toast({ title: t('addresses.saveFailed'), variant: 'destructive' });
@@ -104,7 +104,7 @@ export function AddressBook({ className }: { className?: string }) {
     try {
       await setDefaultAddress(db, user.uid, addr.id);
       await refreshProfile();
-      toast({ title: t('addresses.updated') });
+      toast({ title: t('addresses.updated'), variant: 'success' });
     } catch (error) {
       console.error('[caspian-store] Set default failed:', error);
       toast({ title: t('addresses.saveFailed'), variant: 'destructive' });
@@ -181,13 +181,17 @@ export function AddressBook({ className }: { className?: string }) {
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleSave as unknown as () => void} loading={saving}>
+            <Button type="submit" form="caspian-address-form" loading={saving}>
               {t('common.save')}
             </Button>
           </>
         }
       >
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form
+          id="caspian-address-form"
+          onSubmit={handleSave}
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
           <div>
             <Label>{t('addresses.fullName')}</Label>
             <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />

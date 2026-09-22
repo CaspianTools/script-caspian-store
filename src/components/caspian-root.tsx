@@ -35,6 +35,7 @@ import type { SiteHeaderProps } from './site-header';
 import type { SiteFooterProps } from './site-footer';
 
 import { useScriptSettings } from '../context/script-settings-context';
+import { useT } from '../i18n/locale-context';
 
 import { AdminGuard } from '../admin/admin-guard';
 import { AdminShell } from '../admin/admin-shell';
@@ -92,6 +93,7 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
 
   const nav = useCaspianNavigation();
   const { settings } = useScriptSettings();
+  const t = useT();
   const path = stripLocalePrefix(nav.pathname) || '/';
   const posOnly = Boolean(settings.features?.posOnly);
   const standalone = useCaspianStandalone();
@@ -174,10 +176,11 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
       <CheckoutPage
         successUrl={checkoutSuccessUrl ?? inferCheckoutSuccessUrl()}
         cancelUrl={checkoutCancelUrl ?? inferCheckoutCancelUrl()}
+        currency={settings.defaultCurrency}
       />
     );
   }
-  if (path === '/shop') return <ProductListPage title="Shop" />;
+  if (path === '/shop') return <ProductListPage title={t('storefront.shopTitle')} />;
   if (path === '/collections') return <CollectionsPage />;
   {
     const m = path.match(/^\/collections\/([^/]+)$/);
@@ -185,14 +188,22 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   }
   {
     const m = path.match(/^\/product\/([^/]+)$/);
-    if (m) return <ProductDetailPage productSlugOrId={m[1]} />;
+    // Keyed so size / quantity / tab state never survives a product-to-product
+    // navigation (related items, search dialog, back button).
+    if (m) return <ProductDetailPage key={m[1]} productSlugOrId={m[1]} />;
   }
   if (path === '/search') return <SearchResultsPage />;
   if (path === '/wishlist') return <WishlistPage />;
 
   if (path === '/orders/success') {
     const sessionId = nav.searchParams?.get('session_id');
-    return sessionId ? <OrderConfirmationPage orderId={sessionId} /> : null;
+    return sessionId ? <OrderConfirmationPage orderId={sessionId} /> : <NotFound path={path} />;
+  }
+  {
+    // Order history links here. The confirmation page is already a read-only
+    // order view keyed by document id, so it doubles as the detail page.
+    const m = path.match(/^\/orders\/([^/]+)$/);
+    if (m) return <OrderConfirmationPage key={m[1]} orderId={m[1]} continueHref="/account?section=orders" />;
   }
 
   if (path === '/order-status') return <GuestOrderLookupPage />;
@@ -220,7 +231,7 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
         pageKey={contentKey}
         fallback={{
           title: toTitle(contentKey),
-          content: 'This page has no content yet. Edit it in /admin/pages.',
+          content: t('storefront.contentPage.empty'),
         }}
       />
     );
@@ -262,17 +273,17 @@ function inferCheckoutCancelUrl(): string {
  * serve is worse than no link.
  */
 function StorefrontDisabled() {
+  const t = useT();
   return (
     <div style={{ maxWidth: 520, margin: '80px auto', padding: 24, textAlign: 'center' }}>
-      <h1 style={{ fontSize: 28, margin: 0 }}>This store runs at the counter</h1>
-      <p style={{ color: '#666', marginTop: 8 }}>
-        Online shopping is turned off for this store.
-      </p>
+      <h1 style={{ fontSize: 28, margin: 0 }}>{t('storefront.disabled.title')}</h1>
+      <p style={{ color: '#666', marginTop: 8 }}>{t('storefront.disabled.body')}</p>
     </div>
   );
 }
 
 function NotFound({ path }: { path: string }) {
+  const t = useT();
   return (
     <div
       style={{
@@ -282,10 +293,8 @@ function NotFound({ path }: { path: string }) {
         textAlign: 'center',
       }}
     >
-      <h1 style={{ fontSize: 32, margin: 0 }}>Page not found</h1>
-      <p style={{ color: '#666', marginTop: 8 }}>
-        <code>{path}</code> doesn&apos;t match any route.
-      </p>
+      <h1 style={{ fontSize: 32, margin: 0 }}>{t('storefront.notFound.title')}</h1>
+      <p style={{ color: '#666', marginTop: 8 }}>{t('storefront.notFound.body', { path })}</p>
     </div>
   );
 }

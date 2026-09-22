@@ -41,6 +41,8 @@ export function normalizeSearchTerm(raw: string): string | null {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_TERM_LENGTH);
+  // `.`, `..` and `__x__` are reserved document ids; `doc()` throws on them.
+  if (cleaned === '.' || cleaned === '..' || /^__.*__$/.test(cleaned)) return null;
   return cleaned.length > 0 ? cleaned : null;
 }
 
@@ -89,8 +91,11 @@ export async function deleteSearchTerm(db: Firestore, id: string): Promise<void>
 export async function clearAllSearchTerms(db: Firestore): Promise<number> {
   const snap = await getDocs(caspianCollections(db).searchTerms);
   if (snap.empty) return 0;
-  const batch = writeBatch(db);
-  snap.docs.forEach((d) => batch.delete(d.ref));
-  await batch.commit();
+  // A write batch holds at most 500 operations.
+  for (let i = 0; i < snap.docs.length; i += 500) {
+    const batch = writeBatch(db);
+    snap.docs.slice(i, i + 500).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
   return snap.size;
 }

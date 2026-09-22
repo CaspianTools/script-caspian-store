@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useCaspianLink } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { BellIcon } from '../ui/icons';
 import {
   useAdminNotifications,
@@ -21,9 +22,13 @@ export function AdminNotificationsBell({
   ...options
 }: AdminNotificationsBellProps) {
   const Link = useCaspianLink();
+  const t = useT();
   const { notifications, unreadCount } = useAdminNotifications(options);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const panelId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -31,10 +36,17 @@ export function AdminNotificationsBell({
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('keydown', onKey);
+    // Move focus into the panel so keyboard users land on the notifications
+    // rather than tabbing through the rest of the header first.
+    const first = panelRef.current?.querySelector<HTMLElement>('a, button');
+    (first ?? panelRef.current)?.focus();
     return () => {
       document.removeEventListener('mousedown', onDocClick);
       document.removeEventListener('keydown', onKey);
@@ -46,8 +58,16 @@ export function AdminNotificationsBell({
   return (
     <div ref={rootRef} className={className} style={{ position: 'relative' }}>
       <button
+        ref={buttonRef}
         type="button"
-        aria-label={unreadCount > 0 ? `Notifications (${unreadCount})` : 'Notifications'}
+        aria-label={
+          unreadCount > 0
+            ? t('admin.notificationsBell.labelWithCount', { count: unreadCount })
+            : t('admin.notificationsBell.label')
+        }
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-haspopup="dialog"
         onClick={() => setOpen((v) => !v)}
         style={{
           position: 'relative',
@@ -91,7 +111,11 @@ export function AdminNotificationsBell({
 
       {open && (
         <div
-          role="menu"
+          id={panelId}
+          ref={panelRef}
+          role="dialog"
+          aria-label={t('admin.notificationsBell.label')}
+          tabIndex={-1}
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',
@@ -117,15 +141,17 @@ export function AdminNotificationsBell({
               fontWeight: 600,
             }}
           >
-            <span>Notifications</span>
+            <span>{t('admin.notificationsBell.label')}</span>
             <span style={{ color: '#888', fontWeight: 400 }}>
-              {unreadCount === 0 ? 'All clear' : `${unreadCount} unread`}
+              {unreadCount === 0
+                ? t('admin.notificationsBell.allClear')
+                : t('admin.notificationsBell.unread', { count: unreadCount })}
             </span>
           </div>
 
           {preview.length === 0 ? (
             <div style={{ padding: 24, textAlign: 'center', color: '#888', fontSize: 13 }}>
-              No notifications.
+              {t('admin.notificationsBell.empty')}
             </div>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
@@ -152,7 +178,7 @@ export function AdminNotificationsBell({
                 cursor: 'pointer',
               }}
             >
-              View all notifications →
+              {t('admin.notificationsBell.viewAll')}
             </div>
           </Link>
         </div>

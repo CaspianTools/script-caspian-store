@@ -9,6 +9,8 @@ import { QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
+import { useScriptSettings } from '../../context/script-settings-context';
+import { useFormatCurrency } from '../../i18n/locale-context';
 
 /**
  * Editorial PDP variant — used by the `home-goods` template. Magazine-
@@ -21,7 +23,10 @@ import { useProductDetailState } from './use-product-detail-state';
  * still converts but the storytelling is the lead.
  */
 export function ProductDetailEditorial(props: ProductDetailPageProps) {
-  const { formatPrice = (p) => `$${p.toFixed(2)}`, hideReviews, className } = props;
+  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const state = useProductDetailState(props);
   const {
     product,
@@ -155,7 +160,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
               fontWeight: 500,
             }}
           >
-            Out of stock — get in touch to be notified
+            {t('storefront.stock.outOfStockNotify')}
           </div>
         )}
 
@@ -203,7 +208,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
               margin: '0 0 18px',
             }}
           >
-            Story &amp; Details
+            {t('product.editorial.storyDetails')}
           </p>
           {derived.hasLongDescription && (
             <p
@@ -253,7 +258,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
               margin: '0 0 24px',
             }}
           >
-            From buyers
+            {t('product.editorial.fromBuyers')}
           </p>
           <ProductReviews
             productId={product.id}

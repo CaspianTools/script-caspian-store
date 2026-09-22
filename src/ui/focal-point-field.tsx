@@ -30,6 +30,30 @@ export function FocalPointField({ label, value, onChange, imageUrl }: FocalPoint
   const ref = useRef<HTMLDivElement>(null);
   const { x, y } = parse(value || '50% 50%');
 
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 10 : 1;
+    let nx = x;
+    let ny = y;
+    switch (e.key) {
+      case 'ArrowLeft':
+        nx -= step;
+        break;
+      case 'ArrowRight':
+        nx += step;
+        break;
+      case 'ArrowUp':
+        ny -= step;
+        break;
+      case 'ArrowDown':
+        ny += step;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    onChange(`${Math.round(clamp(nx))}% ${Math.round(clamp(ny))}%`);
+  };
+
   const setFromEvent = (clientX: number, clientY: number) => {
     const el = ref.current;
     if (!el) return;
@@ -48,8 +72,13 @@ export function FocalPointField({ label, value, onChange, imageUrl }: FocalPoint
         className="pb-focal"
         style={imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined}
         role="slider"
+        tabIndex={0}
         aria-label={label ?? 'Focal point'}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={x}
         aria-valuetext={`${x}% ${y}%`}
+        onKeyDown={onKeyDown}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           setFromEvent(e.clientX, e.clientY);

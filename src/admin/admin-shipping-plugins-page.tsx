@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { deleteField } from 'firebase/firestore';
 import type { ShippingPluginInstall, SiteSettings } from '../types';
 import {
   createShippingPluginInstall,
   deleteShippingPluginInstall,
   listShippingPluginInstalls,
   updateShippingPluginInstall,
+  type ShippingPluginInstallUpdateInput,
   type ShippingPluginInstallWriteInput,
 } from '../services/shipping-plugin-service';
 import { getSiteSettings } from '../services/site-settings-service';
@@ -16,6 +18,7 @@ import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-st
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input, Label } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
@@ -107,6 +110,13 @@ export function AdminShippingPluginsPage({
   const [site, setSite] = useState<SiteSettings | null>(null);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [autoConfigureHandled, setAutoConfigureHandled] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<ShippingPluginInstall | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const formId = useId();
+  const nameId = `${formId}-name`;
+  const minDaysId = `${formId}-min`;
+  const maxDaysId = `${formId}-max`;
+  const orderId = `${formId}-order`;
 
   const load = async () => {
     try {
@@ -208,10 +218,11 @@ export function AdminShippingPluginsPage({
       });
       return;
     }
+    const editingInstall = editingId ? installs?.find((i) => i.id === editingId) : null;
     const payload: ShippingPluginInstallWriteInput = {
       pluginId: draft.pluginId,
       name: draft.name.trim(),
-      enabled: true,
+      enabled: editingInstall?.enabled ?? true,
       order: draft.order,
       estimatedDays: { min: draft.estimatedDaysMin, max: draft.estimatedDaysMax },
       config: coerced,
@@ -221,7 +232,11 @@ export function AdminShippingPluginsPage({
     setSaving(true);
     try {
       if (editingId) {
-        await updateShippingPluginInstall(db, editingId, payload);
+        const update: ShippingPluginInstallUpdateInput = {
+          ...payload,
+          eligibleCountries: payload.eligibleCountries ?? deleteField(),
+        };
+        await updateShippingPluginInstall(db, editingId, update);
         toast({ title: t('admin.shippingPlugins.toasts.updated') });
         setConfigOpen(false);
         await load();
@@ -242,15 +257,20 @@ export function AdminShippingPluginsPage({
     }
   };
 
-  const handleDelete = async (install: ShippingPluginInstall) => {
-    if (!confirm(`${t('admin.shippingPlugins.confirmRemove')}\n\n"${install.name}"`)) return;
+  const handleDelete = async () => {
+    const install = removeTarget;
+    if (!install) return;
+    setRemoving(true);
     try {
       await deleteShippingPluginInstall(db, install.id);
       setInstalls((prev) => (prev ? prev.filter((x) => x.id !== install.id) : prev));
       toast({ title: t('admin.shippingPlugins.toasts.removed') });
+      setRemoveTarget(null);
     } catch (error) {
       console.error('[caspian-store] Shipping plugin remove failed:', error);
       toast({ title: t('admin.shippingPlugins.errors.removeFailed'), variant: 'destructive' });
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -356,7 +376,7 @@ export function AdminShippingPluginsPage({
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(install)}
+                        onClick={() => setRemoveTarget(install)}
                       >
                         {t('admin.shippingPlugins.action.remove')}
                       </Button>
@@ -432,16 +452,24 @@ export function AdminShippingPluginsPage({
               >
                 {t('common.cancel')}
               </Button>
-              <Button onClick={handleSave} loading={saving}>
+              <Button type="submit" form={formId} loading={saving}>
                 {t('common.save')}
               </Button>
             </>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <form
+            id={formId}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSave();
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+          >
             <div>
-              <Label>{t('admin.shippingPlugins.field.name')}</Label>
+              <Label htmlFor={nameId}>{t('admin.shippingPlugins.field.name')}</Label>
               <Input
+                id={nameId}
                 value={draft.name}
                 onChange={(e) => setDraft((d) => (d ? { ...d, name: e.target.value } : d))}
                 placeholder={activePlugin?.name}
@@ -452,8 +480,9 @@ export function AdminShippingPluginsPage({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div>
-                <Label>{t('admin.shippingPlugins.field.minDays')}</Label>
+                <Label htmlFor={minDaysId}>{t('admin.shippingPlugins.field.minDays')}</Label>
                 <Input
+                  id={minDaysId}
                   type="number"
                   value={draft.estimatedDaysMin}
                   onChange={(e) =>
@@ -464,8 +493,9 @@ export function AdminShippingPluginsPage({
                 />
               </div>
               <div>
-                <Label>{t('admin.shippingPlugins.field.maxDays')}</Label>
+                <Label htmlFor={maxDaysId}>{t('admin.shippingPlugins.field.maxDays')}</Label>
                 <Input
+                  id={maxDaysId}
                   type="number"
                   value={draft.estimatedDaysMax}
                   onChange={(e) =>
@@ -476,8 +506,9 @@ export function AdminShippingPluginsPage({
                 />
               </div>
               <div>
-                <Label>{t('admin.shippingPlugins.field.order')}</Label>
+                <Label htmlFor={orderId}>{t('admin.shippingPlugins.field.order')}</Label>
                 <Input
+                  id={orderId}
                   type="number"
                   value={draft.order}
                   onChange={(e) =>
@@ -567,9 +598,22 @@ export function AdminShippingPluginsPage({
                 </div>
               )}
             </div>
-          </div>
+          </form>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setRemoveTarget(null);
+        }}
+        title={t('admin.confirm.removeTitle')}
+        description={`${t('admin.shippingPlugins.confirmRemove')} "${removeTarget?.name ?? ''}"`}
+        confirmLabel={t('admin.confirm.remove')}
+        destructive
+        loading={removing}
+        onConfirm={handleDelete}
+      />
 
       {draft && (
         <CountryPickerDialog
@@ -595,6 +639,7 @@ function ConfigFields({
   setDraft: React.Dispatch<React.SetStateAction<DraftState | null>>;
 }) {
   const t = useT();
+  const baseId = useId();
   const setConfigValue = (key: string, value: string) =>
     setDraft((d) => (d ? { ...d, config: { ...d.config, [key]: value } } : d));
 
@@ -602,8 +647,9 @@ function ConfigFields({
     case 'flat-rate':
       return (
         <div>
-          <Label>{t('admin.shippingPlugins.field.flatRate.price')}</Label>
+          <Label htmlFor={`${baseId}-price`}>{t('admin.shippingPlugins.field.flatRate.price')}</Label>
           <Input
+            id={`${baseId}-price`}
             type="number"
             step="0.01"
             min="0"
@@ -622,8 +668,9 @@ function ConfigFields({
       return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
-            <Label>{t('admin.shippingPlugins.field.freeOverThreshold.threshold')}</Label>
+            <Label htmlFor={`${baseId}-threshold`}>{t('admin.shippingPlugins.field.freeOverThreshold.threshold')}</Label>
             <Input
+              id={`${baseId}-threshold`}
               type="number"
               step="0.01"
               min="0"
@@ -632,8 +679,9 @@ function ConfigFields({
             />
           </div>
           <div>
-            <Label>{t('admin.shippingPlugins.field.freeOverThreshold.fallbackPrice')}</Label>
+            <Label htmlFor={`${baseId}-fallbackPrice`}>{t('admin.shippingPlugins.field.freeOverThreshold.fallbackPrice')}</Label>
             <Input
+              id={`${baseId}-fallbackPrice`}
               type="number"
               step="0.01"
               min="0"
@@ -648,8 +696,9 @@ function ConfigFields({
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
-              <Label>{t('admin.shippingPlugins.field.weightBased.basePrice')}</Label>
+              <Label htmlFor={`${baseId}-basePrice`}>{t('admin.shippingPlugins.field.weightBased.basePrice')}</Label>
               <Input
+                id={`${baseId}-basePrice`}
                 type="number"
                 step="0.01"
                 min="0"
@@ -658,8 +707,9 @@ function ConfigFields({
               />
             </div>
             <div>
-              <Label>{t('admin.shippingPlugins.field.weightBased.pricePerKg')}</Label>
+              <Label htmlFor={`${baseId}-pricePerKg`}>{t('admin.shippingPlugins.field.weightBased.pricePerKg')}</Label>
               <Input
+                id={`${baseId}-pricePerKg`}
                 type="number"
                 step="0.01"
                 min="0"

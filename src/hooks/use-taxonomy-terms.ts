@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { Firestore } from 'firebase/firestore';
 import type { TaxonomyTermDoc } from '../types';
 import { listActiveTerms } from '../services/taxonomy-term-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 
 /**
- * Module-level cache of active taxonomy terms, keyed by taxonomy `type`. A
+ * Module-level cache of active taxonomy terms, keyed by Firestore instance
+ * then taxonomy `type` (two stores on one page must not share terms). A
  * product grid that shows attribute chips/facets would otherwise fire one read
  * per card per taxonomy; the cache collapses that into a single read per type
  * for the whole tree. Mirrors {@link useBrands}.
@@ -15,21 +17,26 @@ import { useCaspianFirebase } from '../provider/caspian-store-provider';
  * term inline so storefront tabs pick up the new term on next mount. Cross-tab
  * invalidation is not handled — refreshing the storefront tab picks it up.
  */
-const cache = new Map<string, Promise<TaxonomyTermDoc[]>>();
+const cache = new Map<Firestore, Map<string, Promise<TaxonomyTermDoc[]>>>();
 
 export function refreshTaxonomyTermsCache(type?: string): void {
-  if (type) cache.delete(type);
-  else cache.clear();
+  if (!type) {
+    cache.clear();
+    return;
+  }
+  for (const perDb of cache.values()) perDb.delete(type);
 }
 
-function loadType(
-  db: Parameters<typeof listActiveTerms>[0],
-  type: string,
-): Promise<TaxonomyTermDoc[]> {
-  let promise = cache.get(type);
+function loadType(db: Firestore, type: string): Promise<TaxonomyTermDoc[]> {
+  let perDb = cache.get(db);
+  if (!perDb) {
+    perDb = new Map();
+    cache.set(db, perDb);
+  }
+  let promise = perDb.get(type);
   if (!promise) {
     promise = listActiveTerms(db, type);
-    cache.set(type, promise);
+    perDb.set(type, promise);
   }
   return promise;
 }
@@ -63,7 +70,7 @@ export function useTaxonomyTermsByType(types: string[]): {
           .then((terms) => [type, terms] as const)
           .catch((error) => {
             console.error(`[caspian-store] Failed to load taxonomy terms (${type}):`, error);
-            cache.delete(type);
+            cache.get(db)?.delete(type);
             return [type, [] as TaxonomyTermDoc[]] as const;
           }),
       ),

@@ -208,7 +208,7 @@ export function ImageUploadField({
               <button
                 type="button"
                 onClick={handleRemove}
-                aria-label="Remove image"
+                aria-label={t('imageUpload.removeImage')}
                 style={{
                   position: 'absolute',
                   top: 6,
@@ -228,7 +228,7 @@ export function ImageUploadField({
               </button>
             </>
           ) : (
-            <span style={{ color: '#888', fontSize: 13 }}>No image</span>
+            <span style={{ color: '#888', fontSize: 13 }}>{t('imageUpload.noImage')}</span>
           )}
         </div>
 
@@ -251,7 +251,7 @@ export function ImageUploadField({
             loading={uploading}
             onClick={() => inputRef.current?.click()}
           >
-            {value ? 'Replace' : 'Upload'}
+            {value ? t('imageUpload.replace') : t('imageUpload.upload')}
           </Button>
           {allowStockSearch && (
             <Button type="button" variant="outline" size="sm" onClick={() => setStockOpen(true)}>
@@ -260,14 +260,14 @@ export function ImageUploadField({
           )}
           {value && (
             <Button type="button" variant="ghost" size="sm" onClick={handleRemove}>
-              Remove
+              {t('imageUpload.remove')}
             </Button>
           )}
         </div>
 
         {allowUrlFallback && (
           <div style={{ marginTop: 4 }}>
-            <Label style={{ fontSize: 12, color: '#666' }}>or paste URL</Label>
+            <Label style={{ fontSize: 12, color: '#666' }}>{t('imageUpload.pasteUrl')}</Label>
             <Input
               type="url"
               value={value}
