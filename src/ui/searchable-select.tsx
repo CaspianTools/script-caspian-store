@@ -10,6 +10,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../utils/cn';
 import { ChevronDownIcon, SearchIcon } from './icons';
 
@@ -59,11 +60,24 @@ export function SearchableSelect({
   const generatedId = useId();
   const buttonId = id ?? generatedId;
   const [open, setOpen] = useState(false);
+  // Phones get a bottom sheet portaled to <body>; decided once per open so a
+  // resize mid-open does not flip the layout.
+  const [sheet, setSheet] = useState(false);
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleOpen = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setSheet(typeof window !== 'undefined' && window.matchMedia('(max-width: 820px)').matches);
+    setOpen(true);
+  };
 
   const selected = useMemo(
     () => options.find((o) => o.value === value) ?? null,
@@ -84,8 +98,10 @@ export function SearchableSelect({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -150,7 +166,7 @@ export function SearchableSelect({
         id={buttonId}
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         aria-haspopup="listbox"
         aria-expanded={open}
         style={{
@@ -175,21 +191,55 @@ export function SearchableSelect({
         <ChevronDownIcon size={16} />
       </button>
 
-      {open && (
+      {open && (sheet && typeof document !== 'undefined' ? createPortal(renderPopover(), document.body) : renderPopover())}
+    </div>
+  );
+
+  function renderPopover() {
+    return (
+      <>
+        {sheet && (
+          <div
+            aria-hidden
+            style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.32)' }}
+          />
+        )}
         <div
+          ref={panelRef}
           role="listbox"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            right: 0,
-            zIndex: 40,
-            background: '#fff',
-            border: '1px solid rgba(0,0,0,0.12)',
-            borderRadius: 'var(--caspian-radius, 8px)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            overflow: 'hidden',
-          }}
+          className={cn('caspian-select-popover', sheet && 'caspian-select-popover--sheet')}
+          style={
+            sheet
+              ? {
+                  position: 'fixed',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 1000,
+                  maxHeight: '60dvh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#fff',
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  borderBottom: 0,
+                  borderRadius: '16px 16px 0 0',
+                  boxShadow: '0 -8px 32px rgba(0,0,0,0.16)',
+                  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                  overflow: 'hidden',
+                }
+              : {
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  left: 0,
+                  right: 0,
+                  zIndex: 40,
+                  background: '#fff',
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  borderRadius: 'var(--caspian-radius, 8px)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  overflow: 'hidden',
+                }
+          }
         >
           <div
             style={{
@@ -207,6 +257,7 @@ export function SearchableSelect({
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={searchPlaceholder}
+              inputMode="search"
               style={{
                 flex: 1,
                 border: 0,
@@ -216,7 +267,10 @@ export function SearchableSelect({
               }}
             />
           </div>
-          <div ref={listRef} style={{ maxHeight: maxListHeight, overflowY: 'auto' }}>
+          <div
+            ref={listRef}
+            style={sheet ? { flex: '1 1 auto', minHeight: 0, overflowY: 'auto' } : { maxHeight: maxListHeight, overflowY: 'auto' }}
+          >
             {filtered.length === 0 ? (
               <div style={{ padding: '12px 14px', color: '#888', fontSize: 13 }}>{emptyText}</div>
             ) : (
@@ -231,12 +285,14 @@ export function SearchableSelect({
                     aria-selected={isSelected}
                     onMouseEnter={() => setHighlight(idx)}
                     onClick={() => pick(opt.value)}
+                    className="caspian-select-popover__option"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       width: '100%',
-                      padding: '8px 12px',
+                      minHeight: sheet ? 44 : undefined,
+                      padding: sheet ? '10px 14px' : '8px 12px',
                       border: 0,
                       background: isHighlighted
                         ? 'rgba(0,0,0,0.06)'
@@ -261,7 +317,7 @@ export function SearchableSelect({
             )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      </>
+    );
+  }
 }

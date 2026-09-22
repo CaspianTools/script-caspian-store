@@ -170,9 +170,11 @@ export function RichTextEditor({
     <div className={cn('caspian-rich-editor', className)}>
       <div
         role="toolbar"
+        className="caspian-rte-toolbar"
         aria-label={ariaLabel ? `${ariaLabel} toolbar` : 'Rich text toolbar'}
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           gap: 4,
           padding: 6,
           border: '1px solid rgba(0,0,0,0.15)',
@@ -268,6 +270,7 @@ function ToolbarButton({
         e.preventDefault();
       }}
       onClick={onClick}
+      className="caspian-rte-tool"
       title={label}
       aria-label={label}
       disabled={disabled}

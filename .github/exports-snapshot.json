@@ -162,6 +162,7 @@
     "LoginPage",
     "MAX_PROFILE_PHOTO_BYTES",
     "MobileNavSheet",
+    "MobileTabBar",
     "MoreHorizontalIcon",
     "MultiSelect",
     "NewsletterSignup",

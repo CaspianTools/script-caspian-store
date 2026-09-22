@@ -78,6 +78,8 @@ export function TabsList({ children, className }: { children: ReactNode; classNa
       style={{
         display: 'inline-flex',
         gap: 24,
+        maxWidth: '100%',
+        whiteSpace: 'nowrap',
         borderBottom: '1px solid var(--a-line, var(--line, #e8eaed))',
       }}
     >
@@ -121,6 +123,7 @@ export function TabsTrigger({
         borderBottom: `2px solid ${active ? accent : 'transparent'}`,
         borderRadius: 0,
         cursor: 'pointer',
+        flexShrink: 0,
         fontWeight: active ? 600 : 500,
         fontSize: 14,
       }}

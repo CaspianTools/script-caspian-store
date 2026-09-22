@@ -177,6 +177,7 @@ export function ImageUploadField({
     <div className={cn('caspian-image-upload', className)}>
       {label && <Label htmlFor={inputId}>{label}</Label>}
       <div
+        className="caspian-image-upload__body"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -228,7 +229,26 @@ export function ImageUploadField({
               </button>
             </>
           ) : (
-            <span style={{ color: '#888', fontSize: 13 }}>{t('imageUpload.noImage')}</span>
+            // The empty zone is itself the picker so a thumb can tap the box,
+            // not only the small button under it.
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              aria-label={t('imageUpload.upload')}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 0,
+                background: 'transparent',
+                font: 'inherit',
+                fontSize: 13,
+                color: '#888',
+                cursor: 'pointer',
+              }}
+            >
+              {t('imageUpload.noImage')}
+            </button>
           )}
         </div>
 
@@ -236,14 +256,17 @@ export function ImageUploadField({
           id={inputId}
           ref={inputRef}
           type="file"
-          accept={allowedTypes.join(',')}
+          // A bare `image/*` (no `capture`) is what makes iOS offer both the
+          // photo library and the camera; the MIME allowlist is still
+          // enforced in uploadAdminImage.
+          accept={allowedTypes.every((type) => type.startsWith('image/')) ? 'image/*' : allowedTypes.join(',')}
           style={{ display: 'none' }}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) void handleFile(file);
           }}
         />
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="caspian-stack-mobile" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <Button
             type="button"
             variant="outline"
