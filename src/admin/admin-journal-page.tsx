@@ -261,7 +261,7 @@ export function AdminJournalPage({ className }: { className?: string }) {
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label htmlFor={`${formId}-category`}>Category</Label>
               <Input

@@ -286,7 +286,9 @@ const HELP_STYLES = `
 .cs-help__toc button:hover { background: #f2f4f7; color: #111827; }
 .cs-help__toc button.is-on { color: #2563eb; background: rgba(37,99,235,0.08); border-left-color: #2563eb; }
 .cs-help__toc .cs-help__empty { color: #98a2b3; font-size: 13px; padding: 6px 9px; }
-.cs-help__body { font-size: 14px; line-height: 1.6; color: #1f2937; }
+.cs-help__body { font-size: 14px; line-height: 1.6; color: #1f2937; min-width: 0; overflow-wrap: anywhere; }
+.cs-help__section pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.cs-help__section table { display: block; max-width: 100%; overflow-x: auto; }
 .cs-help__section { scroll-margin-top: 12px; }
 .cs-help__section.is-hidden { display: none; }
 .cs-help__section h2 { font-size: 16px; font-weight: 700; margin: 22px 0 6px; }

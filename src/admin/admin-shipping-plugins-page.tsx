@@ -479,7 +479,7 @@ export function AdminShippingPluginsPage({
                 {t('admin.shippingPlugins.field.nameHint')}
               </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div className="caspian-admin-grid-3" style={{ display: 'grid', gap: 8 }}>
               <div>
                 <Label htmlFor={minDaysId}>{t('admin.shippingPlugins.field.minDays')}</Label>
                 <Input
@@ -667,7 +667,7 @@ function ConfigFields({
       );
     case 'free-over-threshold':
       return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
             <Label htmlFor={`${baseId}-threshold`}>{t('admin.shippingPlugins.field.freeOverThreshold.threshold')}</Label>
             <Input
@@ -695,7 +695,7 @@ function ConfigFields({
     case 'weight-based':
       return (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <Label htmlFor={`${baseId}-basePrice`}>{t('admin.shippingPlugins.field.weightBased.basePrice')}</Label>
               <Input

@@ -19,6 +19,7 @@ import { Skeleton } from '../ui/misc';
 import { Switch } from '../ui/switch';
 import { FieldDescription } from '../ui/field-description';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 
 const EMPTY_SETTINGS: SiteSettings = {
   logoUrl: '',
@@ -180,7 +181,7 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
   };
 
   return (
-    <div className={className}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
       <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
           {t('admin.settings.taxonomies.title')}
@@ -246,12 +247,17 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
           );
         })}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={save} loading={saving}>
             {t('admin.taxonomies.settings.save')}
           </Button>
         </div>
       </section>
+      <div className="caspian-sticky-cta">
+        <Button onClick={save} loading={saving}>
+          {t('admin.taxonomies.settings.save')}
+        </Button>
+      </div>
     </div>
   );
 }

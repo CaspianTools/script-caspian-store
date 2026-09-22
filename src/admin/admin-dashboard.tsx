@@ -128,6 +128,7 @@ export function AdminDashboard({
       )}
 
       <div
+        className="caspian-admin-cards"
         style={{
           marginTop: 24,
           display: 'grid',
@@ -272,6 +273,7 @@ function formatRelative(d: Date, t: ReturnType<typeof useT>): string {
 const recentHeaderStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
+  flexWrap: 'wrap',
   gap: 12,
   marginBottom: 12,
 };

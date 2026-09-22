@@ -333,11 +333,18 @@ function StorefrontCopySection() {
             </div>
           );
         })}
-        <div>
+        <div className="caspian-hide-mobile">
           <Button type="submit" loading={saving} disabled={!dirty || saving}>
             {t('common.save')}
           </Button>
         </div>
+        {dirty && (
+          <div className="caspian-sticky-cta">
+            <Button type="submit" loading={saving} disabled={saving}>
+              {t('common.save')}
+            </Button>
+          </div>
+        )}
       </form>
     </section>
   );

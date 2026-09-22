@@ -300,7 +300,7 @@ function ErrorsSection({ owner, repo }: { owner: string; repo: string }) {
 
   return (
     <section style={{ margin: '16px 0 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('admin.about.errors.title')}</h2>
         <Button variant="outline" size="sm" onClick={() => void load()}>
           <RefreshIcon size={14} /> {t('admin.about.errors.refresh')}

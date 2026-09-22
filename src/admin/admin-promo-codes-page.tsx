@@ -224,7 +224,7 @@ export function AdminPromoCodesPage({ className }: { className?: string }) {
               placeholder="SPRING20"
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <Label htmlFor={`${formId}-type`}>{t('admin.promoCodes.field.type')}</Label>
               <Select
@@ -267,7 +267,7 @@ export function AdminPromoCodesPage({ className }: { className?: string }) {
               )}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <Label htmlFor={`${formId}-min`}>
                 {t('admin.promoCodes.field.minOrder', { currency })}

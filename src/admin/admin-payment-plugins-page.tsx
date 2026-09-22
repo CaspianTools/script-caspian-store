@@ -616,7 +616,7 @@ function ConfigFields({
               placeholder="Please transfer the total amount to the account below. We'll ship once payment clears."
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label htmlFor={`${baseId}-accountName`}>Account name *</Label>
               <Input
@@ -636,7 +636,7 @@ function ConfigFields({
               />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-3" style={{ display: 'grid', gap: 12 }}>
             <div>
               <Label htmlFor={`${baseId}-sortCode`}>Sort code</Label>
               <Input

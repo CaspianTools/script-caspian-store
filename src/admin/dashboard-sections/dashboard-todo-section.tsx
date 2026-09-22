@@ -213,6 +213,7 @@ export function DashboardTodoSection() {
       )}
 
       <div
+        className="caspian-stack-mobile"
         style={{
           display: 'flex',
           gap: 8,
@@ -267,21 +268,24 @@ export function DashboardTodoSection() {
                   display: 'flex',
                   gap: 12,
                   padding: 14,
+                  minHeight: 48,
                   border: '1px solid #eee',
                   borderRadius: 8,
                   background: todo.done ? '#fafafa' : '#fff',
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={todo.done}
-                  onChange={() => handleToggle(todo)}
-                  style={{ marginTop: 4, cursor: 'pointer' }}
-                  aria-label={t(
-                    todo.done ? 'admin.dashboard.todos.markNotDone' : 'admin.dashboard.todos.markDone',
-                    { title: todo.title },
-                  )}
-                />
+                <label className="caspian-todo-check" style={{ display: 'inline-flex', alignItems: 'flex-start', flexShrink: 0, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={todo.done}
+                    onChange={() => handleToggle(todo)}
+                    style={{ marginTop: 4, cursor: 'pointer' }}
+                    aria-label={t(
+                      todo.done ? 'admin.dashboard.todos.markNotDone' : 'admin.dashboard.todos.markDone',
+                      { title: todo.title },
+                    )}
+                  />
+                </label>
                 <div style={{ flex: 1 }}>
                   <div
                     style={{

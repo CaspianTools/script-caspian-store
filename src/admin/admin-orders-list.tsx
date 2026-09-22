@@ -239,7 +239,10 @@ function OrdersBoard({
   };
 
   return (
-    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, alignItems: 'flex-start' }}>
+    <div
+      className="caspian-kanban"
+      style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, alignItems: 'flex-start' }}
+    >
       {ORDER_STATUSES.map((status) => {
         const columnOrders = byStatus.get(status) ?? [];
         const isOver = dragOver === status;
@@ -260,6 +263,7 @@ function OrdersBoard({
             onDrop={(e) => handleDrop(e, status)}
             style={{
               width: 264,
+              minWidth: 240,
               flexShrink: 0,
               background: isOver ? 'rgba(0,0,0,0.04)' : '#fafafa',
               border: `1px solid ${isOver ? accent : '#eee'}`,

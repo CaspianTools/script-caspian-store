@@ -104,7 +104,7 @@ export function AdminOrderDetail({
       </header>
 
       <section style={sectionStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <Badge variant="secondary">{order.status}</Badge>
           <span style={{ fontSize: 13, color: '#666' }}>Change:</span>
           <Select

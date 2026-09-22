@@ -78,7 +78,8 @@ export function HeroFullBleed({ hero: override, className }: HeroProps) {
           width: '100%',
           maxWidth: 1200,
           margin: '0 auto',
-          padding: '0 32px 64px',
+          padding: '0 clamp(16px, 4vw, 32px) clamp(32px, 6vw, 64px)',
+          boxSizing: 'border-box',
         }}
       >
         <div
@@ -98,7 +99,7 @@ export function HeroFullBleed({ hero: override, className }: HeroProps) {
           className="caspian-hero-fullbleed-title"
           style={{
             fontFamily: 'var(--caspian-font-headline, inherit)',
-            fontSize: 'clamp(2.25rem, 6vw, 5rem)',
+            fontSize: 'clamp(2rem, 6vw, 5rem)',
             fontWeight: 700,
             lineHeight: 1.05,
             letterSpacing: '-0.02em',
@@ -123,7 +124,9 @@ export function HeroFullBleed({ hero: override, className }: HeroProps) {
         {hero.cta && hero.ctaHref && (
           <div style={{ marginTop: 28 }}>
             <Link href={hero.ctaHref}>
-              <Button size="lg">{hero.cta} →</Button>
+              <Button size="lg" className="caspian-full-mobile">
+                {hero.cta} →
+              </Button>
             </Link>
           </div>
         )}

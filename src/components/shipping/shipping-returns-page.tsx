@@ -65,7 +65,10 @@ export function ShippingReturnsPage({
   };
 
   return (
-    <main className={cn('caspian-shipping-returns', className)} style={{ padding: '48px 24px' }}>
+    <main
+      className={cn('caspian-shipping-returns', 'caspian-page-gutter', className)}
+      style={{ padding: '48px clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1

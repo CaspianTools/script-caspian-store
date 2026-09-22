@@ -21,6 +21,7 @@ import {
   TAXONOMY_BY_ID,
 } from '../taxonomies/catalog';
 import type { TaxonomyDef } from '../taxonomies/types';
+import { cn } from '../utils/cn';
 import { slugify } from '../utils/slugify';
 import { useT } from '../i18n/locale-context';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
@@ -570,13 +571,13 @@ export function AdminProductEditor({
   }
 
   return (
-    <div className={className} style={{ maxWidth: 720 }}>
+    <div className={cn('caspian-has-sticky-cta', className)} style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
         {productId ? 'Edit product' : 'New product'}
       </h1>
 
       <section style={sectionStyle}>
-        <div style={gridStyle}>
+        <div className="caspian-admin-grid-2" style={gridStyle}>
           <Field label="Name">
             <Input
               value={form.name}
@@ -660,7 +661,7 @@ export function AdminProductEditor({
             minHeight={140}
           />
         </Field>
-        <div style={gridStyle}>
+        <div className="caspian-admin-grid-2" style={gridStyle}>
           <Field label="Price">
             <Input
               type="number"
@@ -681,7 +682,7 @@ export function AdminProductEditor({
             />
           </Field>
         </div>
-        <div style={gridStyle}>
+        <div className="caspian-admin-grid-2" style={gridStyle}>
           <Field label="Category">
             <Select
               value={form.category}
@@ -911,12 +912,20 @@ export function AdminProductEditor({
         )}
       </section>
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="caspian-hide-mobile" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <Button variant="outline" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
           Cancel
         </Button>
         <Button onClick={handleSave} loading={saving}>
           {saving ? 'Saving…' : productId ? 'Save changes' : 'Create product'}
+        </Button>
+      </div>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} loading={saving}>
+          {saving ? 'Saving…' : productId ? 'Save changes' : 'Create product'}
+        </Button>
+        <Button variant="ghost" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
+          Cancel
         </Button>
       </div>
     </div>
@@ -982,6 +991,7 @@ function ProductStockGrid({
         (always available).
       </p>
       <div
+        className="caspian-stock-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',

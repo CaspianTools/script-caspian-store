@@ -3078,3 +3078,33 @@ h4.pb-w-heading {
     min-height: 44px;
   }
 }
+
+/* --- Checkout summary row, journal cards, split hero (worker-added hooks) -- */
+.caspian-checkout-summary-mobile {
+  display: none;
+}
+.caspian-checkout-summary-mobile__chevron {
+  transition: transform 0.2s var(--caspian-ease);
+}
+.caspian-checkout-summary-mobile[open] .caspian-checkout-summary-mobile__chevron {
+  transform: rotate(180deg);
+}
+@media (max-width: 820px) {
+  .caspian-checkout-summary-mobile {
+    display: block;
+  }
+  .caspian-journal-card__image {
+    aspect-ratio: 16 / 9 !important;
+  }
+}
+@media (max-width: 840px) {
+  .caspian-hero-split {
+    grid-template-rows: 50vh auto !important;
+  }
+  .caspian-hero-split-copy {
+    order: 2 !important;
+  }
+  .caspian-hero-split-image {
+    order: 1 !important;
+  }
+}

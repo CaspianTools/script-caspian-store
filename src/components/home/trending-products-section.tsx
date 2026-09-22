@@ -51,7 +51,7 @@ export function TrendingProductsSection({
   return (
     <section
       className={cn('caspian-trending-products', className)}
-      style={{ padding: '64px 24px', background: 'rgba(0,0,0,0.02)' }}
+      style={{ padding: 'clamp(40px, 8vw, 64px) clamp(16px, 4vw, 24px)', background: 'rgba(0,0,0,0.02)' }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -78,6 +78,7 @@ export function TrendingProductsSection({
           </h2>
         </header>
         <ProductGrid
+          className="caspian-snap-row"
           products={products}
           loading={loading}
           getProductHref={getProductHref}

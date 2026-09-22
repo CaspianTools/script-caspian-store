@@ -60,7 +60,10 @@ export function SizeGuidePage({ guide, title, subtitle, className }: SizeGuidePa
   const active: SizeGuideConfig = guide ?? settings.sizeGuide ?? DEFAULT_SIZE_GUIDE;
 
   return (
-    <main className={cn('caspian-size-guide', className)} style={{ padding: '48px 24px' }}>
+    <main
+      className={cn('caspian-size-guide', 'caspian-page-gutter', className)}
+      style={{ padding: '48px clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1
@@ -92,7 +95,10 @@ export function SizeGuidePage({ guide, title, subtitle, className }: SizeGuidePa
               >
                 {tbl.title}
               </h2>
-              <Table>
+              {/* A size chart is read across a row, so it stays a real table
+                  and scrolls sideways inside Table's overflow wrapper instead
+                  of turning into per-size cards on phones. */}
+              <Table responsive={false}>
                 <THead>
                   <TR>
                     {tbl.columns.map((col) => (
@@ -106,7 +112,7 @@ export function SizeGuidePage({ guide, title, subtitle, className }: SizeGuidePa
                       {tbl.columns.map((col, colIdx) => (
                         <TD
                           key={col}
-                          style={colIdx === 0 ? { fontWeight: 600 } : { color: '#555' }}
+                          style={{ whiteSpace: 'nowrap', ...(colIdx === 0 ? { fontWeight: 600 } : { color: '#555' }) }}
                         >
                           {colIdx === 0 ? row.label : row[col] ?? '—'}
                         </TD>

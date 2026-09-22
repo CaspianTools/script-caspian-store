@@ -270,7 +270,7 @@ export function AdminProductCollectionsPage({ className }: { className?: string 
               onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <Label htmlFor={imageUrlId}>Image URL</Label>
               <Input

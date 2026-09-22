@@ -46,7 +46,7 @@ export function HomePageSpotlight({
             background: 'rgba(255,255,255,0.02)',
             borderTop: '1px solid rgba(255,255,255,0.06)',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
-            padding: '14px 32px',
+            padding: '14px 16px',
             display: 'flex',
             justifyContent: 'center',
             gap: 28,

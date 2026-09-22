@@ -62,7 +62,10 @@ export function HeroCentered({ hero: override, minHeightClass, className }: Hero
         />
       )}
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-      <div className="caspian-hero-centered-inner" style={{ position: 'relative', maxWidth: 720, padding: '0 24px' }}>
+      <div
+        className="caspian-hero-centered-inner"
+        style={{ position: 'relative', width: '100%', maxWidth: 720, padding: '0 clamp(16px, 4vw, 24px)', boxSizing: 'border-box' }}
+      >
         <h1
           style={{
             fontFamily: 'var(--caspian-font-headline, inherit)',
@@ -87,7 +90,9 @@ export function HeroCentered({ hero: override, minHeightClass, className }: Hero
         {hero.cta && hero.ctaHref && (
           <div style={{ marginTop: 32 }}>
             <Link href={hero.ctaHref}>
-              <Button size="lg">{hero.cta}</Button>
+              <Button size="lg" className="caspian-full-mobile">
+                {hero.cta}
+              </Button>
             </Link>
           </div>
         )}

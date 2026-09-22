@@ -36,6 +36,7 @@ import { Input, Label, Textarea } from '../ui/input';
 import { Skeleton } from '../ui/misc';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { FieldHelp } from '../ui/field-help';
 import { FieldDescription } from '../ui/field-description';
 import { SearchableSelect, type SearchableSelectOption } from '../ui/searchable-select';
@@ -267,7 +268,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   }
 
   return (
-    <div className={className}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
       <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Site settings</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
@@ -295,7 +296,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                 onChange={(e) => patch({ brandDescription: e.target.value })}
               />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <ImageUploadField
                 label="Logo"
                 value={draft.logoUrl}
@@ -543,7 +544,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
         <div>
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Contact</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div>
                 <Label>Email</Label>
                 <Input
@@ -604,6 +605,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                 return (
                   <div
                     key={idx}
+                    className="caspian-admin-inline-row"
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '32px 200px 1fr auto',
@@ -809,7 +811,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
             Controls which countries shoppers can pick at checkout and how tax is estimated.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 640 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <Label>Tax mode</Label>
                 <Select
@@ -876,6 +878,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                   {(draft.supportedCountries ?? []).map((c, idx) => (
                     <div
                       key={c.code}
+                      className="caspian-admin-inline-row"
                       style={{
                         display: 'grid',
                         gridTemplateColumns:
@@ -963,12 +966,17 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={handleSave} loading={saving} disabled={!dirty}>
             Save settings
           </Button>
         </div>
       </section>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} loading={saving} disabled={!dirty}>
+          Save settings
+        </Button>
+      </div>
 
       <CountryPickerDialog
         open={countryPickerOpen}
@@ -1073,6 +1081,7 @@ function BusinessHoursSection({
               return (
                 <div
                   key={day}
+                  className="caspian-admin-inline-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '150px 1fr 1fr',
@@ -1180,7 +1189,7 @@ function StoreAddressSection({
               onChange={(e) => onChange({ ...address, line2: e.target.value })}
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>City</Label>
               <Input
@@ -1196,7 +1205,7 @@ function StoreAddressSection({
               />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Country</Label>
               <SearchableSelect
@@ -1375,7 +1384,7 @@ function AccountsAndPrivacySection({
         The scheduled retention Cloud Function (<code>runRetentionCleanup</code>) reads these
         values daily. Leave a field blank to keep data indefinitely.
       </FieldDescription>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {retentionField(
           'Inactive accounts (days)',
           'retainInactiveAccountsDays',
@@ -1440,7 +1449,7 @@ function InventorySection({
         </label>
         {enabled && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <Label>Low-stock threshold</Label>
                 <Input
@@ -1471,7 +1480,7 @@ function InventorySection({
                 </FieldDescription>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <Label>Out-of-stock visibility</Label>
                 <Select
@@ -1545,7 +1554,7 @@ function TaxOptionsSubSection({
       </label>
       {enabled && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Prices entered with tax</Label>
               <Select
@@ -1582,7 +1591,7 @@ function TaxOptionsSubSection({
               </FieldDescription>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Shop price display</Label>
               <Select
@@ -1627,7 +1636,7 @@ function TaxOptionsSubSection({
               inline the active rate (e.g. <code>inc. {'{rate}'} VAT</code> → <code>inc. 8% VAT</code>).
             </FieldDescription>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Round tax</Label>
               <Select

@@ -61,7 +61,7 @@ export function HeroSplit({ hero: override, className }: HeroProps) {
       <div
         className="caspian-hero-split-copy"
         style={{
-          padding: 'clamp(32px, 6vw, 80px)',
+          padding: 'clamp(16px, 6vw, 80px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -109,10 +109,14 @@ export function HeroSplit({ hero: override, className }: HeroProps) {
         >
           {hero.subtitle}
         </p>
+        {/* The copy column is `align-items: flex-start`, so the CTA wrapper
+            must go full width too or the button has nothing to fill. */}
         {hero.cta && hero.ctaHref && (
-          <div style={{ marginTop: 12 }}>
+          <div className="caspian-full-mobile" style={{ marginTop: 12 }}>
             <Link href={hero.ctaHref}>
-              <Button size="lg">{hero.cta}</Button>
+              <Button size="lg" className="caspian-full-mobile">
+                {hero.cta}
+              </Button>
             </Link>
           </div>
         )}

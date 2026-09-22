@@ -28,6 +28,7 @@ import { Switch } from '../ui/switch';
 import { ImageUploadField } from '../ui/image-upload-field';
 import { Skeleton } from '../ui/misc';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { slugify } from '../utils/slugify';
 
 export interface AdminCategoryEditorProps {
@@ -222,7 +223,7 @@ export function AdminCategoryEditor({
   }
 
   return (
-    <div className={className} style={{ maxWidth: 720 }}>
+    <div className={cn('caspian-has-sticky-cta', className)} style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
         {categoryId ? 'Edit category' : 'New category'}
       </h1>
@@ -248,7 +249,7 @@ export function AdminCategoryEditor({
             onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
           />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Parent category">
             <Select
               value={draft.parentId ?? ''}
@@ -314,7 +315,7 @@ export function AdminCategoryEditor({
         ) : (
           <span />
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="caspian-hide-mobile" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button variant="outline" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
             Cancel
           </Button>
@@ -322,6 +323,14 @@ export function AdminCategoryEditor({
             {saving ? 'Saving…' : categoryId ? 'Save changes' : 'Create category'}
           </Button>
         </div>
+      </div>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} loading={saving}>
+          {saving ? 'Saving…' : categoryId ? 'Save changes' : 'Create category'}
+        </Button>
+        <Button variant="ghost" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
+          Cancel
+        </Button>
       </div>
 
       <ConfirmDialog

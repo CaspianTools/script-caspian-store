@@ -1593,12 +1593,12 @@ const MANUAL = {
             "summary": "The basket button slides open a panel showing what is in the cart. The full cart page adds a proper order summary and a promo code box. Checkout collects contact details, a delivery address and a delivery method, then hands the shopper over to your payment provider. Afterwards they land on a confirmation page, and anyone can look an order up later with an order number and email address.",
             "steps": [
               "Press the basket button in the top bar. A panel slides in from the right with each item, a quantity box, a Remove link, the subtotal, a Checkout button and a View full cart link.",
-              "Open /cart for the full page: larger item cards with minus and plus buttons and an X to remove, plus a sticky order summary on the right.",
+              "Open /cart for the full page: larger item cards with minus and plus buttons and an X to remove, plus an order summary on the right. On a phone the summary sits under the items and the subtotal with a Proceed to checkout button stays pinned along the bottom of the screen.",
               "Press Proceed to checkout.",
               "On the checkout page, fill in the contact email at the top. Guests can tick 'Create an account for faster checkout next time', or press 'Already have an account? Sign in' to sign in without leaving the page.",
               "Fill in the delivery address. Signed-in shoppers with saved addresses get a drop-down to pick one instead.",
               "Pick a delivery method from the list. Prices and estimated days come from the delivery methods you have set up.",
-              "Check the order summary on the right, then press Continue to payment.",
+              "Check the order summary on the right, then press Continue to payment. On a phone the summary is a collapsible Order summary row above the form showing the total, and the Continue to payment button stays pinned along the bottom of the screen.",
               "For card payments the shopper is taken to the payment provider, pays, and comes back to /orders/success where their order is shown.",
               "Later, anyone can go to /order-status, enter the order number and the email used at checkout, and see the order and where it is going."
             ],
@@ -4530,12 +4530,12 @@ const MANUAL = {
             "summary": "Səbət düyməsi səbətdəkiləri göstərən paneli sürüşdürərək açır. Tam səbət səhifəsində isə əlavə olaraq düzgün sifariş xülasəsi və promo kod qutusu var. Ödəniş səhifəsi (Checkout) əlaqə məlumatlarını, çatdırılma ünvanını və çatdırılma üsulunu yığır, sonra alıcını ödəniş provayderinizə ötürür. Ondan sonra alıcı təsdiq səhifəsinə düşür; sonradan isə istənilən adam sifariş nömrəsi və e-poçt ünvanı ilə sifarişi yoxlaya bilər.",
             "steps": [
               "Yuxarı zolaqdakı səbət düyməsinə basın. Sağdan panel sürüşür: hər məhsul, say qutusu, Sil (Remove) keçidi, ara cəm, Ödənişə keç (Checkout) düyməsi və Tam səbətə bax (View full cart) keçidi.",
-              "Tam səhifə üçün /cart ünvanını açın: daha böyük məhsul kartları, mənfi və artı düymələri, silmək üçün X işarəsi, sağda isə yerində qalan sifariş xülasəsi.",
+              "Tam səhifə üçün /cart ünvanını açın: mənfi və müsbət düymələri və silmək üçün X olan daha böyük məhsul kartları, sağda isə sifariş xülasəsi. Telefonda xülasə məhsulların altında durur, aralıq cəm və Proceed to checkout düyməsi isə ekranın aşağısında sabit qalır.",
               "Ödənişə keç (Proceed to checkout) düyməsinə basın.",
               "Ödəniş səhifəsində yuxarıdakı əlaqə e-poçtunu doldurun. Qonaqlar 'Create an account for faster checkout next time' (Növbəti dəfə daha sürətli olsun deyə hesab yarat) qutusunu işarələyə, ya da 'Already have an account? Sign in' (Hesabınız var? Daxil olun) düyməsi ilə səhifədən çıxmadan daxil ola bilər.",
               "Çatdırılma ünvanını doldurun. Daxil olmuş və yadda saxlanmış ünvanı olan alıcılara əvəzinə ünvanı seçmək üçün açılan siyahı verilir.",
               "Siyahıdan çatdırılma üsulunu seçin. Qiymətlər və təxmini günlər sizin qurduğunuz çatdırılma üsullarından gəlir.",
-              "Sağdakı sifariş xülasəsini yoxlayın, sonra Ödənişə davam et (Continue to payment) düyməsinə basın.",
+              "Sağdakı sifariş xülasəsini yoxlayın, sonra Continue to payment düyməsini basın. Telefonda xülasə formanın üstündə yekunu göstərən açılıb-bağlanan Order summary sətridir, Continue to payment düyməsi isə ekranın aşağısında sabit qalır.",
               "Kartla ödənişdə alıcı ödəniş provayderinə keçirilir, ödəyir və sifarişinin göstərildiyi /orders/success səhifəsinə qayıdır.",
               "Sonradan istənilən adam /order-status səhifəsinə keçib sifariş nömrəsini və ödəniş zamanı yazılan e-poçtu daxil edərək sifarişi və onun hara getdiyini görə bilər."
             ],
@@ -7387,12 +7387,12 @@ const MANUAL = {
             "summary": "Кнопка корзины выдвигает панель с её содержимым. На полной странице корзины к этому добавляются подробный итог заказа и поле для промокода. При оформлении собираются контактные данные, адрес доставки и способ доставки, после чего покупатель переходит к вашему платёжному провайдеру. Затем он попадает на страницу подтверждения, а позже любой может найти заказ по его номеру и email.",
             "steps": [
               "Нажмите кнопку корзины в верхней панели. Справа выдвинется панель со списком товаров, полем количества, ссылкой Удалить (Remove), промежуточной суммой, кнопкой Оформить заказ (Checkout) и ссылкой Открыть корзину полностью (View full cart).",
-              "Откройте /cart — это полная страница: крупные карточки товаров с кнопками минус и плюс и крестиком для удаления, а справа закреплённый итог заказа.",
+              "Откройте /cart для полной страницы: крупные карточки товаров с кнопками минус и плюс и крестиком для удаления, а справа — сводка заказа. На телефоне сводка располагается под товарами, а промежуточный итог с кнопкой Proceed to checkout остаётся закреплённым внизу экрана.",
               "Нажмите Перейти к оформлению (Proceed to checkout).",
               "На странице оформления заполните контактный email вверху. Покупатель без аккаунта может поставить флажок «Create an account for faster checkout next time» («Создать аккаунт, чтобы в следующий раз оформить быстрее») или нажать «Already have an account? Sign in» («Уже есть аккаунт? Войдите») и войти, не покидая страницу.",
               "Заполните адрес доставки. Вошедшим покупателям с сохранёнными адресами вместо этого предлагается выпадающий список для выбора.",
               "Выберите способ доставки из списка. Цены и ориентировочные сроки берутся из настроенных вами способов доставки.",
-              "Проверьте итог заказа справа и нажмите Перейти к оплате (Continue to payment).",
+              "Проверьте сводку заказа справа, затем нажмите Continue to payment. На телефоне сводка — это сворачиваемая строка Order summary над формой с итоговой суммой, а кнопка Continue to payment остаётся закреплённой внизу экрана.",
               "При оплате картой покупатель переходит к платёжному провайдеру, оплачивает и возвращается на /orders/success, где показан его заказ.",
               "Позже любой может зайти на /order-status, ввести номер заказа и email, указанный при оформлении, и увидеть заказ и адрес, куда он едет."
             ],
@@ -10244,12 +10244,12 @@ const MANUAL = {
             "summary": "Sepet düğmesi, sepetin içindekileri gösteren bir paneli kaydırarak açar. Tam sepet sayfası buna düzgün bir sipariş özeti ve indirim kodu kutusu ekler. Ödeme adımı iletişim bilgilerini, teslimat adresini ve teslimat yöntemini toplar, ardından müşteriyi ödeme sağlayıcınıza devreder. Sonrasında müşteri bir onay sayfasına ulaşır; isteyen herkes de siparişi daha sonra sipariş numarası ve e-posta adresiyle sorgulayabilir.",
             "steps": [
               "Üst çubuktaki sepet düğmesine basın. Sağdan kayarak açılan panelde her ürün, adet kutusu, Remove (Kaldır) bağlantısı, ara toplam, Checkout (Ödemeye geç) düğmesi ve View full cart (Sepetin tamamını gör) bağlantısı yer alır.",
-              "Tam sayfa için /cart adresini açın: eksi ve artı düğmeleri ile kaldırmak için X içeren daha büyük ürün kartları ve sağda sayfayla birlikte kayan bir sipariş özeti.",
+              "Tam sayfa için /cart adresini açın: eksi ve artı düğmeleri ve kaldırmak için bir X bulunan daha büyük ürün kartları, sağda ise sipariş özeti. Telefonda özet ürünlerin altında durur; ara toplam ve Proceed to checkout düğmesi ekranın altında sabit kalır.",
               "Proceed to checkout (Ödemeye geç) düğmesine basın.",
               "Ödeme sayfasında en üstteki iletişim e-postasını doldurun. Misafir müşteriler 'Create an account for faster checkout next time' (Sonraki alışverişte daha hızlı ödeme için hesap oluştur) kutusunu işaretleyebilir ya da sayfadan ayrılmadan giriş yapmak için 'Already have an account? Sign in' (Zaten hesabınız var mı? Giriş yapın) bağlantısına basabilir.",
               "Teslimat adresini doldurun. Kayıtlı adresi olan, giriş yapmış müşterilere bunun yerine adres seçebilecekleri bir açılır liste sunulur.",
               "Listeden bir teslimat yöntemi seçin. Fiyatlar ve tahmini gün sayısı, tanımladığınız teslimat yöntemlerinden gelir.",
-              "Sağdaki sipariş özetini kontrol edin, ardından Continue to payment (Ödemeye devam et) düğmesine basın.",
+              "Sağdaki sipariş özetini kontrol edin, sonra Continue to payment düğmesine basın. Telefonda özet, formun üstünde toplamı gösteren açılır-kapanır bir Order summary satırıdır; Continue to payment düğmesi ekranın altında sabit kalır.",
               "Kartla ödemede müşteri ödeme sağlayıcısına yönlendirilir, ödemeyi yapar ve siparişinin gösterildiği /orders/success adresine geri döner.",
               "Daha sonra isteyen herkes /order-status adresine giderek sipariş numarasını ve ödeme sırasında kullanılan e-postayı girebilir, siparişini ve nereye gittiğini görebilir."
             ],

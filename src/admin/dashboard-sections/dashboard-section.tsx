@@ -108,6 +108,7 @@ export function DashboardSection({
         style={{
           display: 'flex',
           alignItems: 'center',
+          flexWrap: 'wrap',
           gap: 12,
           padding: '14px 16px',
           borderBottom: open ? '1px solid #eee' : 'none',

@@ -228,6 +228,7 @@ export function AdminProductsList({
                 trigger={
                   <button
                     type="button"
+                    className="caspian-admin-icon-btn"
                     aria-label={`Actions for ${p.name}`}
                     disabled={busy === p.id}
                     style={{
@@ -284,7 +285,7 @@ export function AdminProductsList({
             {filtered.length} of {products.length} shown
           </p>
         </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+        <div className="caspian-stack-mobile" style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
           <ViewToggle view={view} onChange={setView} />
           <Link href={newProductHref}>
             <Button>+ New product</Button>
@@ -426,6 +427,7 @@ export function AdminProductsList({
                       trigger={
                         <button
                           type="button"
+                          className="caspian-admin-icon-btn"
                           aria-label={`Actions for ${p.name}`}
                           disabled={busy === p.id}
                           style={{

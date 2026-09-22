@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { FieldDescription } from '../ui/field-description';
 import { FieldHelp } from '../ui/field-help';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 
 const DEFAULT_SHIPPING_OPTIONS: ShippingOptions = {
   hideRatesUntilAddressEntered: false,
@@ -76,7 +77,7 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
   };
 
   return (
-    <div className={className}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
       <header className="caspian-admin-page-head" style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
           Shipping options
@@ -149,7 +150,7 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
               </FieldDescription>
             </span>
           </label>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+          <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
             <Button
               size="sm"
               onClick={handleSave}
@@ -161,6 +162,11 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
           </div>
         </div>
       </section>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} disabled={!dirty || !loaded} loading={saving}>
+          Save shipping options
+        </Button>
+      </div>
     </div>
   );
 }
