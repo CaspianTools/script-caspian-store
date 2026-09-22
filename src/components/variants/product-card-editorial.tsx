@@ -136,14 +136,18 @@ export function ProductCardEditorial({
               margin: 0,
               lineHeight: 1.25,
               letterSpacing: '-0.005em',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {product.name}
           </p>
-          <p style={{ fontSize: 14, fontWeight: 500, margin: '4px 0 0', color: 'rgba(0,0,0,0.7)' }}>
+          <p style={{ fontSize: 14, fontWeight: 500, margin: '4px 0 0', color: 'rgba(0,0,0,0.7)', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6 }}>
             {formatPrice(product.price)}
             {priceSuffix && (
-              <span style={{ fontWeight: 400, color: 'rgba(0,0,0,0.45)', fontSize: 11, marginLeft: 6 }}>
+              <span style={{ fontWeight: 400, color: 'rgba(0,0,0,0.45)', fontSize: 11 }}>
                 {priceSuffix}
               </span>
             )}

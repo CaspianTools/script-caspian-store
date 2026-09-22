@@ -20,7 +20,10 @@ import { resolveEnabledTaxonomies, TAXONOMY_BY_ID } from '../taxonomies/catalog'
 import { useTaxonomyTermsByType } from '../hooks/use-taxonomy-terms';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { Select } from '../ui/select';
 import { cn } from '../utils/cn';
+
+type ShopSort = 'featured' | 'priceAsc' | 'priceDesc' | 'newest' | 'nameAsc';
 
 export interface ProductListPageProps {
   /**
@@ -84,6 +87,7 @@ export function ProductListPage({
   const [enabledAttrIds, setEnabledAttrIds] = useState<string[]>([]);
   const [filterState, setFilterState] = useState<ShopFilterState>(EMPTY_SHOP_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [sort, setSort] = useState<ShopSort>('featured');
 
   useEffect(() => {
     let alive = true;
@@ -243,7 +247,41 @@ export function ProductListPage({
     });
   }, [products, filterState]);
 
+  const sortedProducts = useMemo(() => {
+    if (sort === 'featured') return visibleProducts;
+    const list = [...visibleProducts];
+    switch (sort) {
+      case 'priceAsc':
+        return list.sort((a, b) => a.price - b.price);
+      case 'priceDesc':
+        return list.sort((a, b) => b.price - a.price);
+      case 'newest':
+        return list.sort(
+          (a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0),
+        );
+      case 'nameAsc':
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }, [visibleProducts, sort]);
+
+  const sortOptions = [
+    { value: 'featured', label: t('shop.sort.featured') },
+    { value: 'priceAsc', label: t('shop.sort.priceAsc') },
+    { value: 'priceDesc', label: t('shop.sort.priceDesc') },
+    { value: 'newest', label: t('shop.sort.newest') },
+    { value: 'nameAsc', label: t('shop.sort.nameAsc') },
+  ];
+  const sortSelect = (
+    <Select
+      aria-label={t('shop.sort.label')}
+      value={sort}
+      onChange={(e) => setSort(e.target.value as ShopSort)}
+      options={sortOptions}
+    />
+  );
+
   const activeFilterCount = countActiveShopFilters(filterState);
+  const resultCount = loading ? undefined : visibleProducts.length;
   const grid =
     !loading && visibleProducts.length === 0 ? (
       <EmptyState
@@ -258,7 +296,7 @@ export function ProductListPage({
       />
     ) : (
       <ProductGrid
-        products={visibleProducts}
+        products={sortedProducts}
         loading={loading}
         getProductHref={getProductHref}
         formatPrice={formatPrice}
@@ -266,6 +304,23 @@ export function ProductListPage({
         taxConfig={taxConfig}
       />
     );
+  const resultsBar = (
+    <div
+      className="caspian-shop-results-bar"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16,
+      }}
+    >
+      <p style={{ fontSize: 13, color: '#666', margin: 0 }} aria-live="polite">
+        {typeof resultCount === 'number' ? t('shop.filters.resultCount', { count: resultCount }) : ''}
+      </p>
+      {hideFilters ? null : <div className="caspian-hide-mobile">{sortSelect}</div>}
+    </div>
+  );
 
   return (
     <div className={className}>
@@ -276,13 +331,16 @@ export function ProductListPage({
         </header>
       )}
       {hideFilters ? (
-        grid
+        <>
+          {resultsBar}
+          {grid}
+        </>
       ) : (
         <>
           <MobileFilterToolbar
             activeCount={activeFilterCount}
-            resultCount={loading ? undefined : visibleProducts.length}
             onOpen={() => setMobileFiltersOpen(true)}
+            sortSelect={sortSelect}
           />
           <div className={cn('caspian-shop-grid')}>
             <ShopFilterSidebar
@@ -292,9 +350,12 @@ export function ProductListPage({
               categoryLabels={categoryLabels}
               availableSizes={availableSizes}
               availableTaxonomies={availableTaxonomies}
-              resultCount={loading ? undefined : visibleProducts.length}
+              resultCount={resultCount}
             />
-            <div style={{ minWidth: 0 }}>{grid}</div>
+            <div style={{ minWidth: 0 }}>
+              {resultsBar}
+              {grid}
+            </div>
           </div>
           <ShopFilterDrawer
             open={mobileFiltersOpen}
@@ -305,7 +366,7 @@ export function ProductListPage({
             categoryLabels={categoryLabels}
             availableSizes={availableSizes}
             availableTaxonomies={availableTaxonomies}
-            resultCount={loading ? undefined : visibleProducts.length}
+            resultCount={resultCount}
           />
         </>
       )}
@@ -315,12 +376,12 @@ export function ProductListPage({
 
 function MobileFilterToolbar({
   activeCount,
-  resultCount,
   onOpen,
+  sortSelect,
 }: {
   activeCount: number;
-  resultCount: number | undefined;
   onOpen: () => void;
+  sortSelect: React.ReactNode;
 }) {
   const t = useT();
   return (
@@ -328,23 +389,25 @@ function MobileFilterToolbar({
       className="caspian-shop-mobile-toolbar"
       style={{
         display: 'none',
+        position: 'sticky',
+        // Sits just under the 60px phone header (see globals.css).
+        top: 60,
+        zIndex: 5,
+        background: 'var(--caspian-background, #fff)',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 12,
-        marginBottom: 16,
+        padding: '8px 0',
+        marginBottom: 12,
       }}
     >
-      <Button type="button" variant="outline" size="sm" onClick={onOpen}>
+      <Button type="button" variant="outline" size="md" onClick={onOpen} style={{ flex: 1 }}>
         <span aria-hidden="true" style={{ marginRight: 6 }}>☰</span>
         {activeCount > 0
           ? t('shop.filters.openMobileWithCount', { count: activeCount })
           : t('shop.filters.openMobile')}
       </Button>
-      {typeof resultCount === 'number' && (
-        <span style={{ fontSize: 13, color: '#666' }}>
-          {t('shop.filters.resultCount', { count: resultCount })}
-        </span>
-      )}
+      <div style={{ flex: 1, display: 'grid', minWidth: 0 }}>{sortSelect}</div>
     </div>
   );
 }

@@ -624,3 +624,13 @@ export function CashDrawerIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function HomeIcon(props: IconProps) {
+  return (
+    <svg {...svgDefaults(props)}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+      <path d="M10 21v-6h4v6" />
+    </svg>
+  );
+}

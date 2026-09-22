@@ -1439,7 +1439,7 @@ const MANUAL = {
               "Click the heart button to open the saved-items page. A small number on it shows how many items are saved.",
               "Click the basket button to slide the cart open from the right. A small number on it shows how many items are in it.",
               "Click Sign in at the top right, or, once signed in, click your picture for a small menu with My account, Orders, Admin (owners only) and Sign out.",
-              "On a phone, tap the three-line button at the top left to open the menu as a sheet from the bottom."
+              "On a phone, a bar along the bottom of the screen gives Home, Shop, Search, Saved, Cart and Account, and the three-line button at the top left opens the full menu as a sheet from the bottom."
             ],
             "fields": [
               {
@@ -1511,13 +1511,13 @@ const MANUAL = {
               "The Shop page loads at most 500 products, newest first. There is no way to sort them and no page-by-page paging, so a shop with more than 500 products will not show them all.",
               "Filtering happens inside the shopper's browser on the products already loaded, so the filter lists only offer categories, sizes and other values that actually exist among those products.",
               "The Trending row on the home page has nothing to do with sales. It is simply your four most recently added products.",
-              "The banner button on the home page points at /products by default, which is not a page on the site, so a shopper who clicks it lands on 'Page not found'. Applying one of the three ready-made shop looks changes it to /collections, or you can set the link yourself.",
-              "The featured category cards on the home page link to /categories/<name>, which is also not a page on the site. Clicking one shows 'Page not found'.",
+              "The banner button on the home page points at /shop by default. Applying one of the three ready-made shop looks changes it to /collections, or you can set the link yourself in the setup wizard.",
+              "The featured category cards on the home page open the Shop page with that category already selected in the filter.",
               "Search only looks at the product name, brand and category. It does not look inside descriptions, and it does not correct spelling. It is a plain match on the letters typed.",
               "Search loads up to 500 products into the shopper's browser to do the matching, so it is not suitable for a very large catalogue.",
               "What a shopper types and presses Enter on is recorded so you can see popular searches in the admin area. Typing without pressing Enter is not recorded.",
               "Every product card shows a New or Limited label where you have marked one, plus In stock, Low stock or Out of stock labels once you have switched stock tracking on.",
-              "The small basket icon on a product card adds one of that product to the cart straight away, using the first size in the list, without asking the shopper which size they want and without checking stock."
+              "The small basket icon on a product card adds one of that product straight away when the product has a single size or none. A product with several sizes opens its page instead so the shopper can choose, and with stock tracking on, nothing that is out of stock can be added from the card."
             ]
           },
           {
@@ -1582,7 +1582,7 @@ const MANUAL = {
               "Questions show 'awaiting answer' until you write an answer in the admin area.",
               "The heart works without signing in. Saved items are kept in that one browser, and signing in merges them into the account so they follow the shopper to other devices.",
               "Turning the wishlist feature off only hides the heart on product cards. The heart button in the top bar and the /wishlist page stay visible and still work.",
-              "Adding a saved item to the basket from the saved-items page does not ask for a size."
+              "Adding a saved item to the basket from the saved-items page works straight away for products with one size or none; a product with several sizes opens its page so a size can be chosen, and out-of-stock items cannot be added when stock tracking is on."
             ]
           },
           {
@@ -4382,7 +4382,7 @@ const MANUAL = {
               "Seçilmişlər səhifəsini açmaq üçün ürək düyməsinə klikləyin. Üzərindəki kiçik rəqəm neçə məhsulun yadda saxlandığını göstərir.",
               "Səbət düyməsinə klikləyin — səbət sağdan sürüşərək açılır. Üzərindəki kiçik rəqəm içindəki məhsulların sayını göstərir.",
               "Sağ yuxarıdakı Daxil ol (Sign in) düyməsinə klikləyin; daxil olduqdan sonra isə şəklinizə klikləyin — Hesabım (My account), Sifarişlər (Orders), İdarə paneli (Admin, yalnız sahiblər üçün) və Çıxış (Sign out) olan kiçik menyu açılır.",
-              "Telefonda sol yuxarıdakı üç xətli düyməyə toxunun — menyu aşağıdan panel şəklində açılır."
+              "Telefonda ekranın aşağısındakı zolaq Home, Shop, Search, Saved, Cart və Account bəndlərini verir, yuxarı soldakı üç xətli düymə isə tam menyunu aşağıdan çıxan vərəq kimi açır."
             ],
             "fields": [
               {
@@ -4452,13 +4452,13 @@ const MANUAL = {
               "Mağaza səhifəsi ən çoxu 500 məhsul yükləyir, ən yenidən başlayaraq. Sıralama seçimi və səhifə-səhifə keçid yoxdur, ona görə 500-dən çox məhsulu olan mağaza hamısını göstərə bilmir.",
               "Filtrləmə alıcının brauzerində, artıq yüklənmiş məhsullar üzərində baş verir; buna görə filtr siyahılarında yalnız həmin məhsullarda həqiqətən mövcud olan kateqoriyalar, ölçülər və digər dəyərlər çıxır.",
               "Ana səhifədəki Trend sırasının satışlarla heç bir əlaqəsi yoxdur. Bu, sadəcə ən son əlavə etdiyiniz dörd məhsuldur.",
-              "Ana səhifədəki banner düyməsi ilkin olaraq /products ünvanına yönəlir, amma saytda belə səhifə yoxdur — klikləyən alıcı 'Page not found' (Səhifə tapılmadı) səhifəsinə düşür. Hazır üç mağaza görünüşündən birini tətbiq etsəniz, ünvan /collections olur, ya da keçidi özünüz təyin edə bilərsiniz.",
-              "Ana səhifədəki seçilmiş kateqoriya kartları /categories/<name> ünvanına yönəlir, belə səhifə də saytda yoxdur. Klikləyəndə 'Page not found' çıxır.",
+              "Ana səhifədəki banner düyməsi standart olaraq /shop ünvanına aparır. Hazır üç mağaza görünüşündən birini tətbiq etmək onu /collections-ə dəyişir, ya da keçidi quraşdırma sihirbazında özünüz təyin edə bilərsiniz.",
+              "Ana səhifədəki seçilmiş kateqoriya kartları Mağaza səhifəsini həmin kateqoriya filtrdə artıq seçilmiş halda açır.",
               "Axtarış yalnız məhsulun adına, brendinə və kateqoriyasına baxır. Təsvirlərin içinə baxmır və orfoqrafiya səhvlərini düzəltmir. Bu, sadəcə yazılan hərflərin uyğunluğudur.",
               "Axtarış uyğunluğu yoxlamaq üçün alıcının brauzerinə 500-ə qədər məhsul yükləyir, ona görə çox böyük kataloq üçün yararlı deyil.",
               "Alıcının yazıb Enter basdığı sorğular qeyd olunur ki, idarə panelində populyar axtarışları görə biləsiniz. Enter basmadan yazılanlar qeyd edilmir.",
               "Hər məhsul kartında, işarələmisinizsə, Yeni (New) və ya Məhdud (Limited) etiketi görünür; stok izləməsini yandırdıqdan sonra isə Stokda var (In stock), Stok azdır (Low stock) və ya Stokda yoxdur (Out of stock) etiketləri də əlavə olunur.",
-              "Məhsul kartındakı kiçik səbət nişanı həmin məhsuldan bir ədədi dərhal səbətə atır — siyahıdakı birinci ölçünü götürür, alıcıdan hansı ölçünü istədiyini soruşmur və stoku yoxlamır."
+              "Məhsul kartındakı kiçik səbət ikonu məhsulun bir ölçüsü olanda və ya ölçüsü olmayanda ondan birini dərhal əlavə edir. Bir neçə ölçüsü olan məhsul isə alıcı seçə bilsin deyə öz səhifəsini açır; stok izləmə yanılıdırsa, stokda olmayan heç nə kartdan əlavə edilə bilməz."
             ]
           },
           {
@@ -4521,7 +4521,7 @@ const MANUAL = {
               "Siz idarə panelində cavab yazana qədər suallarda 'awaiting answer' (cavab gözlənilir) yazısı durur.",
               "Ürək düyməsi daxil olmadan da işləyir. Yadda saxlanan məhsullar həmin bir brauzerdə qalır; alıcı daxil olanda onlar hesaba birləşir və başqa cihazlarda da onunla gedir.",
               "Seçilmişlər funksiyasını söndürmək yalnız məhsul kartlarındakı ürəyi gizlədir. Yuxarı zolaqdakı ürək düyməsi və /wishlist səhifəsi görünən qalır və işləməyə davam edir.",
-              "Seçilmişlər səhifəsindən məhsulu səbətə atarkən ölçü soruşulmur."
+              "Yadda saxlanmış məhsulu yadda saxlanmışlar səhifəsindən səbətə əlavə etmək bir ölçülü və ya ölçüsüz məhsullarda dərhal işləyir; bir neçə ölçüsü olan məhsul ölçü seçilsin deyə öz səhifəsini açır, stok izləmə yanılı olanda isə stokda olmayanlar əlavə edilə bilmir."
             ]
           },
           {
@@ -7239,7 +7239,7 @@ const MANUAL = {
               "Нажмите кнопку с сердечком, чтобы открыть страницу избранного. Цифра на ней показывает, сколько товаров сохранено.",
               "Нажмите кнопку корзины — корзина выдвинется справа. Цифра на кнопке показывает, сколько в ней товаров.",
               "Нажмите Войти (Sign in) в правом верхнем углу, а после входа нажмите на своё фото — откроется небольшое меню с пунктами Мой аккаунт (My account), Заказы (Orders), Админка (Admin — только для владельцев) и Выйти (Sign out).",
-              "На телефоне нажмите кнопку с тремя полосками в левом верхнем углу — меню откроется панелью снизу."
+              "На телефоне полоса вдоль нижнего края экрана даёт Home, Shop, Search, Saved, Cart и Account, а кнопка с тремя линиями вверху слева открывает полное меню листом снизу."
             ],
             "fields": [
               {
@@ -7309,13 +7309,13 @@ const MANUAL = {
               "Страница Магазин загружает не более 500 товаров, начиная с самых новых. Сортировки нет, постраничного вывода тоже, поэтому магазин с более чем 500 товарами покажет не всё.",
               "Фильтрация происходит в браузере покупателя по уже загруженным товарам, поэтому в списках фильтров предлагаются только те категории, размеры и прочие значения, которые действительно есть среди этих товаров.",
               "Ряд В тренде на главной странице никак не связан с продажами. Это просто четыре последних добавленных вами товара.",
-              "Кнопка на баннере главной страницы по умолчанию ведёт на /products, а такой страницы на сайте нет, поэтому покупатель попадает на «Page not found» («Страница не найдена»). Если применить одно из трёх готовых оформлений магазина, ссылка меняется на /collections; можно задать её и вручную.",
-              "Карточки избранных категорий на главной ведут на /categories/<name> — такой страницы на сайте тоже нет. При нажатии открывается «Page not found».",
+              "Кнопка баннера на главной странице по умолчанию ведёт на /shop. Применение одного из трёх готовых оформлений меняет её на /collections, либо вы задаёте ссылку сами в мастере настройки.",
+              "Карточки избранных категорий на главной открывают страницу магазина с уже выбранной в фильтре этой категорией.",
               "Поиск смотрит только на название товара, бренд и категорию. Он не заглядывает в описания и не исправляет опечатки — это простое совпадение по введённым буквам.",
               "Для поиска в браузер покупателя загружается до 500 товаров, поэтому для очень большого каталога он не подходит.",
               "Запросы, по которым покупатель нажал Enter, сохраняются, и в админке вы видите популярные поисковые запросы. Ввод без нажатия Enter не записывается.",
               "На каждой карточке товара выводится пометка Новинка (New) или Ограниченная серия (Limited), если вы её поставили, а также метки В наличии (In stock), Мало осталось (Low stock) или Нет в наличии (Out of stock) — после того как вы включите учёт остатков.",
-              "Маленький значок корзины на карточке товара сразу добавляет одну единицу товара в корзину, беря первый размер из списка: не спрашивая покупателя о размере и не проверяя остаток."
+              "Маленький значок корзины на карточке товара сразу добавляет одну штуку, если у товара один размер или размеров нет. Товар с несколькими размерами вместо этого открывает свою страницу, чтобы покупатель выбрал; при включённом учёте остатков то, чего нет в наличии, с карточки добавить нельзя."
             ]
           },
           {
@@ -7378,7 +7378,7 @@ const MANUAL = {
               "У вопросов стоит пометка «awaiting answer» («ожидает ответа»), пока вы не напишете ответ в админке.",
               "Сердечко работает и без входа в аккаунт. Избранное хранится в этом конкретном браузере, а при входе объединяется с аккаунтом, и тогда оно переносится на другие устройства покупателя.",
               "Отключение избранного убирает сердечко только с карточек товаров. Кнопка с сердечком в верхней панели и страница /wishlist остаются на месте и продолжают работать.",
-              "При добавлении товара в корзину со страницы избранного размер не запрашивается."
+              "Добавление сохранённого товара в корзину со страницы сохранённых срабатывает сразу для товаров с одним размером или без размеров; товар с несколькими размерами открывает свою страницу для выбора размера, а при включённом учёте остатков отсутствующие товары добавить нельзя."
             ]
           },
           {
@@ -10096,7 +10096,7 @@ const MANUAL = {
               "Kaydedilen ürünler sayfasını açmak için kalp düğmesine tıklayın. Üzerindeki küçük sayı kaç ürünün kaydedildiğini gösterir.",
               "Sepeti sağdan kaydırarak açmak için sepet düğmesine tıklayın. Üzerindeki küçük sayı içinde kaç ürün olduğunu gösterir.",
               "Sağ üstteki Giriş yap (Sign in) bağlantısına tıklayın; giriş yaptıktan sonra ise fotoğrafınıza tıklayarak Hesabım (My account), Siparişler (Orders), Yönetim (Admin — yalnızca mağaza sahipleri) ve Çıkış yap (Sign out) seçeneklerini içeren küçük menüyü açın.",
-              "Telefonda menüyü alttan açılan bir panel olarak açmak için sol üstteki üç çizgili düğmeye dokunun."
+              "Telefonda ekranın altındaki çubuk Home, Shop, Search, Saved, Cart ve Account öğelerini sunar; sol üstteki üç çizgili düğme ise tam menüyü alttan çıkan bir sayfa olarak açar."
             ],
             "fields": [
               {
@@ -10166,13 +10166,13 @@ const MANUAL = {
               "Mağaza sayfası en yenisi başta olacak şekilde en fazla 500 ürün yükler. Sıralama seçeneği ve sayfa sayfa ilerleme yoktur; bu nedenle 500'den fazla ürünü olan bir mağaza ürünlerinin tamamını gösteremez.",
               "Filtreleme, müşterinin tarayıcısında yalnızca yüklenmiş ürünler üzerinde yapılır; bu yüzden filtre listeleri yalnızca bu ürünlerde gerçekten bulunan kategorileri, bedenleri ve diğer değerleri sunar.",
               "Ana sayfadaki Trending sırasının satışlarla hiçbir ilgisi yoktur. Burada yalnızca en son eklediğiniz dört ürün yer alır.",
-              "Ana sayfadaki afiş düğmesi varsayılan olarak /products adresine yönlendirir; bu, sitede var olan bir sayfa değildir, dolayısıyla düğmeye tıklayan müşteri 'Page not found' (Sayfa bulunamadı) ile karşılaşır. Hazır üç mağaza görünümünden birini uyguladığınızda bağlantı /collections olarak değişir; ya da bağlantıyı kendiniz belirleyebilirsiniz.",
-              "Ana sayfadaki öne çıkan kategori kartları /categories/<name> adresine bağlanır; bu da sitede var olan bir sayfa değildir. Birine tıklayan müşteri 'Page not found' görür.",
+              "Ana sayfadaki banner düğmesi varsayılan olarak /shop adresine gider. Hazır üç mağaza görünümünden birini uygulamak bunu /collections olarak değiştirir; bağlantıyı kurulum sihirbazında kendiniz de ayarlayabilirsiniz.",
+              "Ana sayfadaki öne çıkan kategori kartları, Mağaza sayfasını o kategori filtrede seçili hâlde açar.",
               "Arama yalnızca ürün adına, markaya ve kategoriye bakar. Açıklamaların içine bakmaz ve yazım hatalarını düzeltmez. Yalnızca yazılan harflerin düz eşleşmesidir.",
               "Arama, eşleştirmeyi yapmak için müşterinin tarayıcısına en fazla 500 ürün yükler; bu nedenle çok büyük kataloglar için uygun değildir.",
               "Müşterinin yazıp Enter'a bastığı ifadeler kaydedilir; böylece yönetim alanında popüler aramaları görebilirsiniz. Enter'a basılmadan yazılanlar kaydedilmez.",
               "Her ürün kartı, işaretlediyseniz New (Yeni) veya Limited (Sınırlı) etiketini gösterir; stok takibini açtığınızda ayrıca In stock (Stokta var), Low stock (Stok az) veya Out of stock (Stokta yok) etiketleri de görünür.",
-              "Ürün kartındaki küçük sepet simgesi, ürünü listedeki ilk bedenle doğrudan sepete ekler; müşteriye hangi bedeni istediğini sormaz ve stok kontrolü yapmaz."
+              "Ürün kartındaki küçük sepet simgesi, ürünün tek bedeni varsa ya da bedeni yoksa ondan bir adet hemen ekler. Birden fazla bedeni olan bir ürün ise müşteri seçebilsin diye kendi sayfasını açar; stok takibi açıksa stokta olmayan hiçbir şey karttan eklenemez."
             ]
           },
           {
@@ -10235,7 +10235,7 @@ const MANUAL = {
               "Sorular, siz yönetim alanında bir yanıt yazana kadar 'awaiting answer' (yanıt bekliyor) olarak görünür.",
               "Kalp düğmesi giriş yapmadan da çalışır. Kaydedilen ürünler yalnızca o tarayıcıda tutulur; giriş yapıldığında hesapla birleştirilir ve müşteriyi diğer cihazlara da takip eder.",
               "Kaydedilenler özelliğini kapatmak yalnızca ürün kartlarındaki kalbi gizler. Üst çubuktaki kalp düğmesi ve /wishlist sayfası görünür kalır ve çalışmaya devam eder.",
-              "Kaydedilen ürünler sayfasından bir ürünü sepete eklemek beden sormaz."
+              "Kaydedilen bir ürünü kaydedilenler sayfasından sepete eklemek tek bedenli ya da bedensiz ürünlerde hemen çalışır; birden fazla bedeni olan ürün beden seçilebilsin diye kendi sayfasını açar ve stok takibi açıkken stokta olmayanlar eklenemez."
             ]
           },
           {

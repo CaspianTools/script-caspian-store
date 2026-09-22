@@ -81,7 +81,7 @@ export function AskQuestionDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleSubmit} loading={submitting}>
+            <Button className="caspian-full-mobile" onClick={handleSubmit} loading={submitting}>
               {submitting ? t('reviews.dialog.submitting') : t('reviews.dialog.submit')}
             </Button>
           </>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Dialog } from '../ui/dialog';
-import { SearchIcon, XIcon } from '../ui/icons';
+import { SearchIcon } from '../ui/icons';
 import { Button } from '../ui/button';
 import { useT } from '../i18n/locale-context';
 import {
@@ -56,7 +56,13 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
   const trimmed = query.trim();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} maxWidth={640}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      maxWidth={640}
+      className="caspian-search-dialog"
+      showClose={false}
+    >
       <form
         onSubmit={submit}
         role="search"
@@ -69,6 +75,9 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
           ref={inputRef}
           type="search"
           name="q"
+          inputMode="search"
+          enterKeyHint="search"
+          autoComplete="off"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('navigation.searchPlaceholder')}
@@ -86,11 +95,12 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
         <Button
           type="button"
           variant="ghost"
-          size="icon"
+          size="md"
           onClick={() => onOpenChange(false)}
           aria-label={t('navigation.closeSearch')}
+          style={{ height: 44, minWidth: 44, flexShrink: 0 }}
         >
-          <XIcon size={18} />
+          {t('common.cancel')}
         </Button>
       </form>
 
@@ -127,10 +137,14 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
                     <Link
                       href={hrefFor(p.id, p.slug)}
                       onClick={() => onOpenChange(false)}
+                      className="caspian-search-result"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        minHeight: 56,
                         padding: '8px 4px',
                         textDecoration: 'none',
                         color: 'inherit',
@@ -180,6 +194,7 @@ export function SearchDialog({ open, onOpenChange, getProductHref }: SearchDialo
                   marginTop: 8,
                   background: 'none',
                   border: 'none',
+                  minHeight: 44,
                   padding: '8px 4px',
                   fontSize: 13,
                   color: '#111',

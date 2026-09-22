@@ -20,10 +20,12 @@ import { ALL_COUNTRIES } from '../utils/countries';
 import type { SiteSettings, SupportedCountry, UserAddress } from '../types';
 import type { ShippingRate } from '../shipping/types';
 import { Button } from '../ui/button';
+import { ChevronDownIcon } from '../ui/icons';
 import { Input, Label } from '../ui/input';
 import { Skeleton } from '../ui/misc';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 
 export interface CheckoutPageProps {
   /** Where the payment provider returns users after successful payment. */
@@ -59,6 +61,36 @@ interface ShippingForm {
    * which mails a password-setup link to the buyer post-purchase.
    */
   createAccount: boolean;
+}
+
+const CHECKOUT_FORM_ID = 'caspian-checkout-form';
+
+// Countries whose postal codes are digits only, so the phone can show the
+// number pad. Anything else (GB, CA, NL, BR, JP, PL, ...) keeps the text
+// keyboard because letters, spaces or hyphens are part of the code.
+const NUMERIC_POSTCODE_COUNTRIES = new Set([
+  'US', 'DE', 'FR', 'ES', 'IT', 'AT', 'CH', 'BE', 'DK', 'NO', 'FI', 'SE', 'CZ', 'SK', 'HU',
+  'RO', 'BG', 'HR', 'RS', 'SI', 'EE', 'LT', 'LV', 'LU', 'IS', 'GR', 'CY', 'TR', 'RU', 'UA',
+  'KZ', 'GE', 'IN', 'CN', 'KR', 'AU', 'NZ', 'MX', 'ID', 'TH', 'VN', 'PH', 'PK', 'EG', 'ZA',
+  'MY', 'SG', 'TW', 'IL', 'SA',
+]);
+
+/**
+ * "Next" on the phone keyboard fires Enter, which a form treats as submit.
+ * Move focus to the following field instead; the last field is marked
+ * `done` and falls through to the real submit.
+ */
+function advanceOnEnter(e: React.KeyboardEvent<HTMLFormElement>) {
+  if (e.key !== 'Enter') return;
+  const target = e.target as HTMLElement;
+  if (!(target instanceof HTMLInputElement) || target.enterKeyHint !== 'next') return;
+  const fields = Array.from(
+    e.currentTarget.querySelectorAll<HTMLElement>('input:not([type=checkbox]):not([type=radio]), select'),
+  ).filter((el) => !el.hasAttribute('disabled'));
+  const next = fields[fields.indexOf(target) + 1];
+  if (!next) return;
+  e.preventDefault();
+  next.focus();
 }
 
 const emptyForm: ShippingForm = {
@@ -529,8 +561,110 @@ export function CheckoutPage({
 
   // ---- Render ----
 
+  const postalIsNumeric = NUMERIC_POSTCODE_COUNTRIES.has(form.countryCode);
+  const submitDisabled = !selectedRate || !formValid;
+
+  const summaryBody = (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
+        {items.map((item) => {
+          const img = item.product.images?.[0];
+          return (
+            <div
+              key={`${item.product.id}-${item.selectedSize ?? ''}-${item.selectedColor ?? ''}`}
+              style={{ display: 'flex', gap: 12 }}
+            >
+              <div
+                style={{
+                  position: 'relative',
+                  width: 56,
+                  height: 56,
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  background: '#f5f5f5',
+                  flexShrink: 0,
+                }}
+              >
+                {img && <Image src={img.url} alt={img.alt || item.product.name} fill />}
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                    background: '#888',
+                    color: '#fff',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {item.quantity}
+                </span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                  {item.product.name}
+                </p>
+                {(item.selectedSize || item.selectedColor) && (
+                  <p style={{ margin: '2px 0 0', fontSize: 11, color: '#888' }}>
+                    {[item.selectedColor, item.selectedSize].filter(Boolean).join(' / ')}
+                  </p>
+                )}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {formatPrice(item.product.price * item.quantity)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: 12 }}>
+        <SummaryRow label={t('cart.subtotal')} value={formatPrice(subtotal)} />
+        <SummaryRow
+          label={t('checkout.shippingLine')}
+          value={
+            selectedRate
+              ? selectedRate.price > 0
+                ? formatPrice(selectedRate.price)
+                : t('checkout.rate.free')
+              : t('checkout.rate.notSelected')
+          }
+        />
+        {showTaxRow && (
+          <SummaryRow
+            label={taxLabel}
+            value={form.countryCode ? formatPrice(taxAmount) : t('checkout.taxPending')}
+          />
+        )}
+        {promoCode && <SummaryRow label={t('checkout.promoLine')} value={promoCode} />}
+      </div>
+      <div
+        style={{
+          borderTop: '1px solid rgba(0,0,0,0.08)',
+          paddingTop: 12,
+          marginTop: 8,
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span style={{ fontSize: 18, fontWeight: 700 }}>{t('checkout.totalLine')}</span>
+        <span style={{ fontSize: 22, fontWeight: 700 }}>{formatPrice(total)}</span>
+      </div>
+    </>
+  );
+
   return (
-    <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 24px 64px' }}>
+    <div
+      className={cn('caspian-has-sticky-cta', className)}
+      style={{ maxWidth: 1200, margin: '0 auto', padding: '24px clamp(16px, 4vw, 24px) 64px' }}
+    >
       <nav aria-label="breadcrumb" style={{ fontSize: 11, letterSpacing: '0.08em', color: '#888', marginBottom: 12 }}>
         <Link href={cartHref}>
           <span style={{ color: '#888' }}>{t('checkout.breadcrumb.cart')}</span>
@@ -538,9 +672,46 @@ export function CheckoutPage({
         &gt; <span style={{ color: '#111', fontWeight: 600 }}>{t('checkout.breadcrumb.checkout')}</span>
       </nav>
 
-      <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 32px', letterSpacing: '-0.01em' }}>
+      <h1
+        style={{
+          fontSize: 'clamp(26px, 6vw, 32px)',
+          fontWeight: 700,
+          margin: '0 0 24px',
+          letterSpacing: '-0.01em',
+        }}
+      >
         {t('checkout.shippingInformation')}
       </h1>
+
+      {/* Phones only (hidden >= 821px in globals.css): the summary comes
+          first as a collapsible row so the buyer sees what they're paying
+          for before the form. Desktop keeps the sticky aside below. */}
+      <details
+        className="caspian-checkout-summary-mobile"
+        style={{ ...cardStyle, padding: 0, marginBottom: 16 }}
+      >
+        <summary
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            minHeight: 56,
+            padding: '0 16px',
+            cursor: 'pointer',
+            listStyle: 'none',
+            fontSize: 15,
+            fontWeight: 600,
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <ChevronDownIcon className="caspian-checkout-summary-mobile__chevron" size={18} />
+            {t('checkout.orderSummary')}
+          </span>
+          <span>{formatPrice(total)}</span>
+        </summary>
+        <div style={{ padding: '0 16px 16px' }}>{summaryBody}</div>
+      </details>
 
       <div
         className="caspian-checkout-layout"
@@ -551,7 +722,15 @@ export function CheckoutPage({
           alignItems: 'start',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <form
+          id={CHECKOUT_FORM_ID}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handlePay();
+          }}
+          onKeyDown={advanceOnEnter}
+          style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+        >
           {/* --- Contact --- */}
           <section style={cardStyle}>
             <header
@@ -601,6 +780,8 @@ export function CheckoutPage({
                     id="caspian-checkout-signin-email"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
+                    enterKeyHint="next"
                     value={signInEmail}
                     onChange={(e) => setSignInEmail(e.target.value)}
                   />
@@ -611,15 +792,24 @@ export function CheckoutPage({
                     id="caspian-checkout-signin-password"
                     type="password"
                     autoComplete="current-password"
+                    enterKeyHint="go"
                     value={signInPassword}
                     onChange={(e) => setSignInPassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter here signs in; it must not submit the checkout form.
+                      if (e.key !== 'Enter') return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (signInEmail.trim() && signInPassword) void handleInlineSignIn('password');
+                    }}
                   />
                 </div>
                 {signInError && (
                   <p style={{ color: '#b91c1c', fontSize: 12, margin: 0 }}>{signInError}</p>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="caspian-stack-mobile" style={{ display: 'flex', gap: 8 }}>
                   <Button
+                    type="button"
                     size="sm"
                     onClick={() => handleInlineSignIn('password')}
                     loading={signInBusy}
@@ -628,6 +818,7 @@ export function CheckoutPage({
                     {t('auth.login.submit')}
                   </Button>
                   <Button
+                    type="button"
                     size="sm"
                     variant="outline"
                     onClick={() => handleInlineSignIn('google')}
@@ -647,6 +838,8 @@ export function CheckoutPage({
                   id="caspian-checkout-email"
                   type="email"
                   autoComplete="email"
+                  inputMode="email"
+                  enterKeyHint="next"
                   required
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -703,6 +896,7 @@ export function CheckoutPage({
                     <Input
                       id="caspian-checkout-first-name"
                       autoComplete="given-name"
+                      enterKeyHint="next"
                       required
                       value={form.firstName}
                       onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
@@ -713,6 +907,7 @@ export function CheckoutPage({
                     <Input
                       id="caspian-checkout-last-name"
                       autoComplete="family-name"
+                      enterKeyHint="next"
                       value={form.lastName}
                       onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                     />
@@ -725,6 +920,7 @@ export function CheckoutPage({
                   <Input
                     id="caspian-checkout-address"
                     autoComplete="address-line1"
+                    enterKeyHint="next"
                     required
                     value={form.address}
                     onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
@@ -735,6 +931,7 @@ export function CheckoutPage({
                   <Input
                     id="caspian-checkout-apartment"
                     autoComplete="address-line2"
+                    enterKeyHint="next"
                     value={form.apartment}
                     onChange={(e) => setForm((f) => ({ ...f, apartment: e.target.value }))}
                   />
@@ -747,6 +944,7 @@ export function CheckoutPage({
                     <Input
                       id="caspian-checkout-city"
                       autoComplete="address-level2"
+                      enterKeyHint="next"
                       required
                       value={form.city}
                       onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
@@ -775,6 +973,8 @@ export function CheckoutPage({
                     <Input
                       id="caspian-checkout-postal-code"
                       autoComplete="postal-code"
+                      inputMode={postalIsNumeric ? 'numeric' : 'text'}
+                      enterKeyHint="next"
                       required
                       value={form.postalCode}
                       onChange={(e) => setForm((f) => ({ ...f, postalCode: e.target.value }))}
@@ -786,6 +986,8 @@ export function CheckoutPage({
                       id="caspian-checkout-phone"
                       type="tel"
                       autoComplete="tel"
+                      inputMode="tel"
+                      enterKeyHint="done"
                       value={form.phone}
                       onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                     />
@@ -832,7 +1034,10 @@ export function CheckoutPage({
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         gap: 12,
-                        padding: '14px 16px',
+                        minHeight: 56,
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '10px 16px',
                         border: active
                           ? '2px solid var(--caspian-primary, #111)'
                           : '1px solid rgba(0,0,0,0.1)',
@@ -859,7 +1064,15 @@ export function CheckoutPage({
                           )}
                         </span>
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>
+                      <span
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          marginLeft: 'auto',
+                          textAlign: 'right',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {r.price > 0 ? formatPrice(r.price) : t('checkout.rate.free')}
                       </span>
                     </label>
@@ -868,111 +1081,22 @@ export function CheckoutPage({
               </div>
             )}
           </section>
-        </div>
+        </form>
 
         {/* --- Order Summary --- */}
         <aside className="caspian-checkout-summary" style={{ position: 'sticky', top: 16 }}>
           <section style={cardStyle}>
             <h2 style={h2Style}>{t('checkout.orderSummary')}</h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
-              {items.map((item) => {
-                const img = item.product.images?.[0];
-                return (
-                  <div
-                    key={`${item.product.id}-${item.selectedSize ?? ''}-${item.selectedColor ?? ''}`}
-                    style={{ display: 'flex', gap: 12 }}
-                  >
-                    <div
-                      style={{
-                        position: 'relative',
-                        width: 56,
-                        height: 56,
-                        borderRadius: 6,
-                        overflow: 'hidden',
-                        background: '#f5f5f5',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {img && <Image src={img.url} alt={img.alt || item.product.name} fill />}
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: -4,
-                          right: -4,
-                          width: 18,
-                          height: 18,
-                          borderRadius: 9,
-                          background: '#888',
-                          color: '#fff',
-                          fontSize: 10,
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {item.quantity}
-                      </span>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                        {item.product.name}
-                      </p>
-                      {(item.selectedSize || item.selectedColor) && (
-                        <p style={{ margin: '2px 0 0', fontSize: 11, color: '#888' }}>
-                          {[item.selectedColor, item.selectedSize].filter(Boolean).join(' / ')}
-                        </p>
-                      )}
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {formatPrice(item.product.price * item.quantity)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: 12 }}>
-              <SummaryRow label={t('cart.subtotal')} value={formatPrice(subtotal)} />
-              <SummaryRow
-                label={t('checkout.shippingLine')}
-                value={
-                  selectedRate
-                    ? selectedRate.price > 0
-                      ? formatPrice(selectedRate.price)
-                      : t('checkout.rate.free')
-                    : t('checkout.rate.notSelected')
-                }
-              />
-              {showTaxRow && (
-                <SummaryRow
-                  label={taxLabel}
-                  value={form.countryCode ? formatPrice(taxAmount) : t('checkout.taxPending')}
-                />
-              )}
-              {promoCode && <SummaryRow label={t('checkout.promoLine')} value={promoCode} />}
-            </div>
-            <div
-              style={{
-                borderTop: '1px solid rgba(0,0,0,0.08)',
-                paddingTop: 12,
-                marginTop: 8,
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-              }}
-            >
-              <span style={{ fontSize: 18, fontWeight: 700 }}>{t('checkout.totalLine')}</span>
-              <span style={{ fontSize: 22, fontWeight: 700 }}>{formatPrice(total)}</span>
-            </div>
+            {summaryBody}
 
             <Button
+              type="submit"
+              form={CHECKOUT_FORM_ID}
               size="lg"
               style={{ width: '100%', marginTop: 20 }}
-              onClick={handlePay}
               loading={loading}
-              disabled={!selectedRate || !formValid}
+              disabled={submitDisabled}
             >
               {loading ? t('checkout.redirecting') : t('checkout.continueToPayment')}
             </Button>
@@ -1007,6 +1131,22 @@ export function CheckoutPage({
           </div>
         </aside>
       </div>
+
+      <div className="caspian-sticky-cta">
+        <div className="caspian-sticky-cta__price">
+          <strong>{formatPrice(total)}</strong>
+          <span>{t('checkout.totalLine')}</span>
+        </div>
+        <Button
+          type="submit"
+          form={CHECKOUT_FORM_ID}
+          size="lg"
+          loading={loading}
+          disabled={submitDisabled}
+        >
+          {loading ? t('checkout.redirecting') : t('checkout.continueToPayment')}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -1037,7 +1177,7 @@ function CheckoutSkeleton({ className }: { className?: string }) {
     <div
       className={className}
       aria-busy="true"
-      style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 24px 64px' }}
+      style={{ maxWidth: 1200, margin: '0 auto', padding: '24px clamp(16px, 4vw, 24px) 64px' }}
     >
       <Skeleton style={{ height: 12, width: 140, marginBottom: 16 }} />
       <Skeleton style={{ height: 36, width: 320, marginBottom: 32 }} />
@@ -1074,7 +1214,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 const cardStyle: React.CSSProperties = {
-  padding: 24,
+  padding: 'clamp(16px, 4vw, 24px)',
   background: '#fff',
   borderRadius: 12,
   border: '1px solid rgba(0,0,0,0.05)',

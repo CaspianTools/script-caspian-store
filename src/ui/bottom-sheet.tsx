@@ -137,12 +137,20 @@ export function BottomSheet({
               aria-label={closeLabel}
               onClick={() => onOpenChange(false)}
               style={{
+                width: 44,
+                height: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // Offsets the 44px hit area so the glyph stays on the 20px gutter.
+                marginRight: -12,
                 background: 'transparent',
                 border: 0,
+                borderRadius: 999,
                 fontSize: 22,
                 cursor: 'pointer',
                 lineHeight: 1,
-                padding: 4,
+                padding: 0,
                 color: '#444',
               }}
             >
@@ -156,7 +164,7 @@ export function BottomSheet({
             flex: 1,
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
-            padding: '16px 20px 20px',
+            padding: footer != null ? '16px 20px 20px' : '16px 20px calc(20px + env(safe-area-inset-bottom, 0px))',
           }}
         >
           {children}

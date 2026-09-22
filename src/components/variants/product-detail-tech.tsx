@@ -11,6 +11,7 @@ import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useScriptSettings } from '../../context/script-settings-context';
 import { useFormatCurrency } from '../../i18n/locale-context';
+import { cn } from '../../utils/cn';
 
 /**
  * Tech / spec-sheet PDP variant — used by the `electronics-tech` template.
@@ -36,6 +37,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
     blurb,
     selectedSize,
     setSelectedSize,
+    sizeSelectorRef,
     quantity,
     setQuantity,
     avg,
@@ -43,6 +45,8 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
     setAvg,
     setTotalReviews,
     handleAddToCart,
+    handleStickyAddToCart,
+    stickyHint,
     derived,
     t,
   } = state;
@@ -71,7 +75,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
 
   return (
     <div
-      className={className}
+      className={cn('caspian-has-sticky-cta', className)}
       data-pdp-variant="tech"
       style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}
     >
@@ -152,7 +156,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
           )}
 
           {derived.hasSizes && (
-            <div style={{ marginBottom: 16 }}>
+            <div ref={sizeSelectorRef} tabIndex={-1} style={{ marginBottom: 16, outline: 'none' }}>
               <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('product.size')}</p>
               <SizeSelector
                 sizes={product.sizes!}
@@ -173,6 +177,16 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
           </Button>
         </div>
         <ProductGallery images={product.images} />
+      </div>
+
+      <div className="caspian-sticky-cta">
+        <div className="caspian-sticky-cta__price">
+          <strong>{formatPrice(product.price)}</strong>
+          {stickyHint && <span>{stickyHint}</span>}
+        </div>
+        <Button size="lg" onClick={handleStickyAddToCart}>
+          {t('product.addToCart')} →
+        </Button>
       </div>
 
       {(derived.hasDetails || derived.hasLongDescription) && (

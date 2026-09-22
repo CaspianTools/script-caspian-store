@@ -11,6 +11,7 @@ import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useScriptSettings } from '../../context/script-settings-context';
 import { useFormatCurrency } from '../../i18n/locale-context';
+import { cn } from '../../utils/cn';
 
 /**
  * Editorial PDP variant — used by the `home-goods` template. Magazine-
@@ -35,6 +36,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
     blurb,
     selectedSize,
     setSelectedSize,
+    sizeSelectorRef,
     quantity,
     setQuantity,
     avg,
@@ -42,6 +44,8 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
     setAvg,
     setTotalReviews,
     handleAddToCart,
+    handleStickyAddToCart,
+    stickyHint,
     derived,
     t,
   } = state;
@@ -66,7 +70,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
 
   return (
     <div
-      className={className}
+      className={cn('caspian-has-sticky-cta', className)}
       data-pdp-variant="editorial"
       style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 0' }}
     >
@@ -166,7 +170,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
 
         <div style={purchaseRow}>
           {derived.hasSizes && (
-            <div>
+            <div ref={sizeSelectorRef} tabIndex={-1} style={{ outline: 'none' }}>
               <p style={selectorLabel}>{t('product.size')}</p>
               <SizeSelector
                 sizes={product.sizes!}
@@ -183,6 +187,16 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
         </div>
 
         <Button size="lg" onClick={handleAddToCart}>
+          {t('product.addToCart')}
+        </Button>
+      </div>
+
+      <div className="caspian-sticky-cta">
+        <div className="caspian-sticky-cta__price">
+          <strong>{formatPrice(product.price)}</strong>
+          {stickyHint && <span>{stickyHint}</span>}
+        </div>
+        <Button size="lg" onClick={handleStickyAddToCart}>
           {t('product.addToCart')}
         </Button>
       </div>

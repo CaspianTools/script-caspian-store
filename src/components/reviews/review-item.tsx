@@ -20,15 +20,15 @@ export function ReviewItem({ review, showVerifiedBadge = true }: ReviewItemProps
   const t = useT();
   const locale = useLocale();
   return (
-    <div style={{ display: 'flex', gap: 16, padding: '16px 0', borderBottom: '1px solid #eee' }}>
-      <Avatar src={review.photoURL} fallback={review.author} />
+    <div style={{ display: 'flex', gap: 12, padding: '16px 0', borderBottom: '1px solid #eee' }}>
+      <Avatar src={review.photoURL} fallback={review.author} size={36} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <p style={{ fontWeight: 600, margin: 0 }}>{review.author}</p>
+          <p style={{ fontWeight: 600, margin: 0, minWidth: 0, overflowWrap: 'anywhere' }}>{review.author}</p>
           {showVerifiedBadge && review.isVerifiedPurchase && (
             <Badge variant="secondary">{t('reviews.verifiedPurchase')}</Badge>
           )}
-          <p style={{ marginLeft: 'auto', fontSize: 13, color: '#888' }}>{date.toLocaleDateString(locale)}</p>
+          <p style={{ fontSize: 13, color: '#888', margin: '0 0 0 auto' }}>{date.toLocaleDateString(locale)}</p>
         </div>
         <div style={{ display: 'flex', gap: 2, margin: '6px 0' }}>
           {Array.from({ length: 5 }).map((_, i) => (

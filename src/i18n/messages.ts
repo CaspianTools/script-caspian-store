@@ -1554,6 +1554,15 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'common.error': 'Something went wrong',
 
   // [worker-A keys: checkout, cart, orders, auth]
+  // Mobile chrome (tab bar + nav sheet)
+  'navigation.tabbar.home': 'Home',
+  'navigation.tabbar.shop': 'Shop',
+  'navigation.tabbar.search': 'Search',
+  'navigation.tabbar.wishlist': 'Wishlist',
+  'navigation.tabbar.cart': 'Cart',
+  'navigation.tabbar.account': 'Account',
+  'navigation.menu.browse': 'Browse',
+  'navigation.menu.account': 'Account',
 
   // Checkout
   'checkout.error.signInRequired': 'You must be signed in to check out.',
@@ -1604,6 +1613,18 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'guestOrder.seeAllOrders': 'to see all your orders.',
 
   // [worker-B keys: storefront, PDP, home, search, journal]
+  'product.gallery.carouselLabel': 'Product images',
+  'product.gallery.slideLabel': 'Image {index} of {total}',
+  'product.stickyCta.sizeHint': 'Size {size}',
+  'product.quantity.decrease': 'Decrease quantity',
+  'product.quantity.increase': 'Increase quantity',
+  'shop.filters.clearAll': 'Clear all',
+  'shop.sort.label': 'Sort',
+  'shop.sort.featured': 'Featured',
+  'shop.sort.priceAsc': 'Price: low to high',
+  'shop.sort.priceDesc': 'Price: high to low',
+  'shop.sort.newest': 'Newest',
+  'shop.sort.nameAsc': 'Name: A to Z',
   'storefront.shopTitle': 'Shop',
   'storefront.browseAll': 'Browse all products',
   'storefront.disabled.title': 'This store runs at the counter',

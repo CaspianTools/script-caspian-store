@@ -47,6 +47,7 @@ export { StarRatingInput, type StarRatingInputProps } from './components/star-ra
 export { ProductCard, type ProductCardProps } from './components/product-card';
 export { ProductGrid, type ProductGridProps } from './components/product-grid';
 export { EmptyState, type EmptyStateProps } from './components/empty-state';
+export { MobileTabBar, type MobileTabBarProps } from './components/mobile-tab-bar';
 export { ProductListPage, type ProductListPageProps } from './components/product-list-page';
 export {
   ShopFilterSidebar,

@@ -9,6 +9,7 @@ import type { SiteSettings, SocialLink } from '../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { SocialIcon } from './social-icon';
 
 export interface SiteFooterLink {
@@ -101,7 +102,7 @@ export function SiteFooter({
 
   return (
     <footer
-      className={className}
+      className={cn('caspian-site-footer', className)}
       style={{
         background: 'var(--caspian-background, #fff)',
         borderTop: '1px solid #eee',
@@ -109,6 +110,7 @@ export function SiteFooter({
       }}
     >
       <div
+        className="caspian-site-footer__cols"
         style={{
           maxWidth: 1280,
           margin: '0 auto',
@@ -210,7 +212,11 @@ export function SiteFooter({
             <p style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
               {t('footer.newsletter.description')}
             </p>
-            <form onSubmit={handleSubscribe} style={{ display: 'flex', maxWidth: 320 }}>
+            <form
+              onSubmit={handleSubscribe}
+              className="caspian-site-footer__newsletter"
+              style={{ display: 'flex', maxWidth: 320 }}
+            >
               <Input
                 type="email"
                 value={email}
@@ -223,6 +229,7 @@ export function SiteFooter({
                 type="submit"
                 variant="outline"
                 disabled={subscribing}
+                aria-label={t('footer.newsletter.title')}
                 style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: 'none' }}
               >
                 {subscribing ? '…' : '→'}

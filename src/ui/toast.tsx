@@ -70,6 +70,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       {children}
       <div
+        className="caspian-toast-region"
         aria-live="polite"
         aria-relevant="additions"
         style={{

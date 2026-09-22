@@ -90,15 +90,28 @@ export function ProductCardStandard({
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
             <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', margin: 0 }}>
               {brandName}
             </p>
-            <p style={{ fontSize: 15, fontWeight: 500, margin: 0, lineHeight: 1.3 }}>{product.name}</p>
-            <p style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>
+            <p
+              style={{
+                fontSize: 15,
+                fontWeight: 500,
+                margin: 0,
+                lineHeight: 1.3,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {product.name}
+            </p>
+            <p style={{ fontSize: 15, fontWeight: 600, margin: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6 }}>
               {formatPrice(product.price)}
               {priceSuffix && (
-                <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 6 }}>
+                <span style={{ fontWeight: 400, color: '#888', fontSize: 12 }}>
                   {priceSuffix}
                 </span>
               )}

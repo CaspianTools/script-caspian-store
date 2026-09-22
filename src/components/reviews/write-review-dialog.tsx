@@ -97,7 +97,7 @@ export function WriteReviewDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleSubmit} loading={submitting}>
+            <Button className="caspian-full-mobile" onClick={handleSubmit} loading={submitting}>
               {submitting ? t('reviews.dialog.submitting') : t('reviews.dialog.submit')}
             </Button>
           </>
@@ -112,7 +112,7 @@ export function WriteReviewDialog({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <Label>{t('reviews.dialog.ratingLabel')}</Label>
-            <StarRatingInput value={rating} onChange={setRating} />
+            <StarRatingInput className="caspian-star-input" value={rating} onChange={setRating} />
           </div>
           <div>
             <Label htmlFor="review-text">{t('reviews.dialog.reviewLabel')}</Label>
@@ -120,7 +120,7 @@ export function WriteReviewDialog({
               id="review-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              rows={5}
+              rows={4}
               maxLength={2000}
               placeholder={t('reviews.dialog.reviewPlaceholder')}
             />

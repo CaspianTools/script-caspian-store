@@ -76,26 +76,71 @@ export function QuantitySelector({
   max?: number;
   className?: string;
 }) {
+  const t = useT();
   const clamp = (n: number) => Math.max(min, Math.min(max, n));
   const btn: React.CSSProperties = {
-    width: 36,
-    height: 36,
-    border: '1px solid rgba(0,0,0,0.15)',
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    border: 0,
     background: 'transparent',
     cursor: 'pointer',
-    fontSize: 18,
+    fontSize: 20,
     lineHeight: 1,
+    color: 'inherit',
   };
   return (
     <div
       className={cn('caspian-quantity', className)}
-      style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 'var(--caspian-radius, 6px)', overflow: 'hidden' }}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        border: '1px solid rgba(0,0,0,0.15)',
+        borderRadius: 'var(--caspian-radius, 6px)',
+        overflow: 'hidden',
+      }}
     >
-      <button type="button" aria-label="Decrease quantity" onClick={() => onChange(clamp(value - 1))} style={btn}>
+      <button
+        type="button"
+        aria-label={t('product.quantity.decrease')}
+        disabled={value <= min}
+        onClick={() => onChange(clamp(value - 1))}
+        style={{ ...btn, opacity: value <= min ? 0.4 : 1 }}
+      >
         −
       </button>
-      <span style={{ minWidth: 40, textAlign: 'center', fontSize: 14, fontWeight: 600 }}>{value}</span>
-      <button type="button" aria-label="Increase quantity" onClick={() => onChange(clamp(value + 1))} style={btn}>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        aria-label={t('product.quantity')}
+        value={value}
+        onChange={(e) => {
+          const n = Number.parseInt(e.target.value, 10);
+          if (!Number.isNaN(n)) onChange(clamp(n));
+        }}
+        style={{
+          width: 44,
+          height: 44,
+          textAlign: 'center',
+          fontSize: 15,
+          fontWeight: 600,
+          border: 0,
+          borderLeft: '1px solid rgba(0,0,0,0.1)',
+          borderRight: '1px solid rgba(0,0,0,0.1)',
+          background: 'transparent',
+          color: 'inherit',
+          outline: 'none',
+          padding: 0,
+        }}
+      />
+      <button
+        type="button"
+        aria-label={t('product.quantity.increase')}
+        disabled={value >= max}
+        onClick={() => onChange(clamp(value + 1))}
+        style={{ ...btn, opacity: value >= max ? 0.4 : 1 }}
+      >
         +
       </button>
     </div>

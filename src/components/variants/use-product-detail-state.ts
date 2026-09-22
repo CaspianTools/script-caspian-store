@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CartBehavior, InventorySettings, Product } from '../../types';
 import { getProductBySlugOrId } from '../../services/product-service';
 import { getSiteSettings } from '../../services/site-settings-service';
@@ -64,6 +64,7 @@ export function useProductDetailState({
   const [activeTab, setActiveTab] = useState<ProductDetailTabKey>('details');
   const [cartBehavior, setCartBehavior] = useState<CartBehavior | undefined>(cartBehaviorOverride);
   const [inventory, setInventory] = useState<InventorySettings | undefined>(inventoryOverride);
+  const sizeSelectorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (cartBehaviorOverride !== undefined && inventoryOverride !== undefined) {
@@ -219,6 +220,29 @@ export function useProductDetailState({
     }
   };
 
+  // The phone sticky bar sits far from the size selector, so a missing size
+  // brings the shopper to it instead of failing with a toast they can't act on.
+  const handleStickyAddToCart = () => {
+    if (derived.hasSizes && !selectedSize && sizeSelectorRef.current) {
+      sizeSelectorRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      sizeSelectorRef.current.focus({ preventScroll: true });
+      return;
+    }
+    handleAddToCart();
+  };
+
+  const stickyHint = !product
+    ? ''
+    : derived.hasSizes && !selectedSize
+      ? t('product.selectSize')
+      : derived.inventoryActive && derived.allOut
+        ? t('storefront.stock.outOfStock')
+        : selectedSize
+          ? t('product.stickyCta.sizeHint', { size: selectedSize })
+          : derived.inventoryActive
+            ? t('storefront.stock.inStock')
+            : '';
+
   return {
     product,
     loading,
@@ -226,6 +250,9 @@ export function useProductDetailState({
     blurb,
     selectedSize,
     setSelectedSize,
+    sizeSelectorRef,
+    handleStickyAddToCart,
+    stickyHint,
     quantity,
     setQuantity,
     avg,

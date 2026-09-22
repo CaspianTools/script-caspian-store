@@ -39,6 +39,7 @@ import {
   TruckIcon,
   UserIcon,
   UsersIcon,
+  XIcon,
 } from '../ui/icons';
 import { useT } from '../i18n/locale-context';
 import { Badge } from '../ui/misc';
@@ -449,18 +450,42 @@ export function AdminShell({
           }}
         >
           {showLabels ? (
-            <Link href="/admin">
-              <span
-                style={{
-                  fontWeight: 700,
-                  fontSize: 14,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {title}
-              </span>
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <Link href="/admin">
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 14,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {title}
+                </span>
+              </Link>
+              {isMobile && (
+                <button
+                  type="button"
+                  className="caspian-admin-icon-btn"
+                  aria-label={t('admin.shell.closeMenu')}
+                  onClick={() => setMobileOpen(false)}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: 0,
+                    background: 'transparent',
+                    borderRadius: 999,
+                    color: '#444',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <XIcon size={18} />
+                </button>
+              )}
+            </div>
           ) : (
             <Link href="/admin" aria-label={title}>
               <span
@@ -548,6 +573,7 @@ export function AdminShell({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '12px 24px',
+            paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
             borderBottom: '1px solid #eee',
             background: '#fff',
             gap: 12,

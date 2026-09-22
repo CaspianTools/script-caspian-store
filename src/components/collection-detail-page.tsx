@@ -107,7 +107,7 @@ export function CollectionDetailPage({
 
   if (collection === null) {
     return (
-      <div className={cn('caspian-collection-detail-page', className)}>
+      <div className={cn('caspian-collection-detail-page', 'caspian-page-gutter', className)}>
         <EmptyState
           title={notFoundMessage ?? t('collectionDetail.notFound')}
           action={
@@ -123,7 +123,7 @@ export function CollectionDetailPage({
   }
 
   return (
-    <div className={cn('caspian-collection-detail-page', className)}>
+    <div className={cn('caspian-collection-detail-page', 'caspian-page-gutter', className)}>
       <header style={{ marginBottom: 40, textAlign: 'center' }}>
         {collection?.imageUrl && (
           <div

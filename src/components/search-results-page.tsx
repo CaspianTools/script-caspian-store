@@ -10,6 +10,7 @@ import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { ProductGrid } from './product-grid';
 import { EmptyState } from './empty-state';
+import { cn } from '../utils/cn';
 
 export interface SearchResultsPageProps {
   /** Query string. If omitted, read `?q=` from the navigation adapter's
@@ -126,7 +127,7 @@ export function SearchResultsPage({
   }, [products, queryState, categoryLabels, brandLabels]);
 
   return (
-    <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+    <div className={cn('caspian-page-gutter', className)} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>
           {queryState ? t('search.resultsFor', { query: queryState }) : t('search.title')}

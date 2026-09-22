@@ -126,6 +126,10 @@ export function ProductCardCompact({
               lineHeight: 1.3,
               position: 'relative',
               paddingBottom: 6,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {product.name}
@@ -139,10 +143,10 @@ export function ProductCardCompact({
               marginTop: 2,
             }}
           >
-            <p style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6, minWidth: 0 }}>
               {formatPrice(product.price)}
               {priceSuffix && (
-                <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.55)', fontSize: 11, marginLeft: 6 }}>
+                <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>
                   {priceSuffix}
                 </span>
               )}

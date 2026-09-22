@@ -22,7 +22,7 @@ export interface ShopFilterDrawerProps
 /**
  * Mobile filter drawer — a thin wrapper over the shared `<BottomSheet>`
  * primitive. Keeps the legacy `caspian-shop-filter-drawer` class and moves
- * Reset + Apply into the sheet's sticky footer.
+ * Clear all + "Show N results" into the sheet's sticky footer.
  */
 export function ShopFilterDrawer({
   open,
@@ -55,9 +55,9 @@ export function ShopFilterDrawer({
             disabled={!hasActive}
             style={{ flex: '0 0 auto' }}
           >
-            {t('shop.filters.reset')}
+            {t('shop.filters.clearAll')}
           </Button>
-          <Button type="button" onClick={() => onOpenChange(false)} style={{ flex: 1 }}>
+          <Button type="button" size="lg" onClick={() => onOpenChange(false)} style={{ flex: 1 }}>
             {typeof resultCount === 'number'
               ? t('shop.filters.applyWithCount', { count: resultCount })
               : t('shop.filters.apply')}
@@ -75,6 +75,7 @@ export function ShopFilterDrawer({
         resultCount={resultCount}
         hideHeader
         hideReset
+        touchTargets
       />
     </BottomSheet>
   );

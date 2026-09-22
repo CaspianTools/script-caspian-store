@@ -129,7 +129,17 @@ export function CartSheet({
         </div>
 
         {items.length > 0 && (
-          <footer style={{ borderTop: '1px solid #eee', paddingTop: 16, marginTop: 16 }}>
+          <footer
+            style={{
+              position: 'sticky',
+              bottom: 0,
+              background: 'inherit',
+              borderTop: '1px solid #eee',
+              paddingTop: 16,
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              marginTop: 16,
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontWeight: 600 }}>
               <span>{t('cart.subtotal')}</span>
               <span>{formatPrice(subtotal)}</span>
@@ -156,6 +166,21 @@ export function CartSheet({
   );
 }
 
+const stepperButtonStyle: React.CSSProperties = {
+  width: 44,
+  height: 44,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'transparent',
+  border: 0,
+  color: 'inherit',
+  fontSize: 18,
+  lineHeight: 1,
+  cursor: 'pointer',
+  padding: 0,
+};
+
 function CartRow({
   item,
   getProductHref,
@@ -179,8 +204,8 @@ function CartRow({
         <div
           style={{
             position: 'relative',
-            width: 72,
-            height: 96,
+            width: 64,
+            height: 80,
             background: '#f5f5f5',
             borderRadius: 'var(--caspian-radius, 6px)',
             overflow: 'hidden',
@@ -192,7 +217,20 @@ function CartRow({
       </Link>
       <div style={{ flex: 1, minWidth: 0 }}>
         <Link href={getProductHref(item.product.slug ?? item.product.id)}>
-          <p style={{ fontSize: 14, fontWeight: 500, margin: 0, lineHeight: 1.3 }}>{item.product.name}</p>
+          <p
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              margin: 0,
+              lineHeight: 1.3,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {item.product.name}
+          </p>
         </Link>
         {(item.selectedSize || item.selectedColor) && (
           <p style={{ fontSize: 12, color: '#888', margin: '2px 0 0' }}>
@@ -202,22 +240,43 @@ function CartRow({
           </p>
         )}
         <p style={{ fontSize: 14, fontWeight: 600, margin: '4px 0 0' }}>{formatPrice(item.product.price)}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-          <input
-            type="number"
-            min={1}
-            inputMode="numeric"
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+          <div
+            role="group"
             aria-label={t('cart.quantity')}
-            value={item.quantity}
-            onChange={(e) => onUpdate(Math.max(1, Number(e.target.value) || 1))}
             style={{
-              width: 56,
-              padding: '4px 8px',
+              display: 'inline-flex',
+              alignItems: 'center',
               border: '1px solid rgba(0,0,0,0.15)',
-              borderRadius: 6,
-              fontSize: 13,
+              borderRadius: 'var(--caspian-radius, 6px)',
+              overflow: 'hidden',
             }}
-          />
+          >
+            <button
+              type="button"
+              onClick={() => onUpdate(item.quantity - 1)}
+              disabled={item.quantity <= 1}
+              aria-label={t('cart.page.decreaseQty')}
+              style={stepperButtonStyle}
+            >
+              −
+            </button>
+            <span
+              aria-live="polite"
+              aria-atomic="true"
+              style={{ minWidth: 32, textAlign: 'center', fontSize: 14, fontWeight: 600 }}
+            >
+              {item.quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => onUpdate(item.quantity + 1)}
+              aria-label={t('cart.page.increaseQty')}
+              style={stepperButtonStyle}
+            >
+              +
+            </button>
+          </div>
           <button
             type="button"
             onClick={onRemove}
@@ -226,6 +285,7 @@ function CartRow({
               border: 0,
               color: '#b91c1c',
               fontSize: 12,
+              minHeight: 44,
               cursor: 'pointer',
               padding: 0,
             }}

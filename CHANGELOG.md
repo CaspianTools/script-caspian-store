@@ -275,6 +275,33 @@ list cells now split on `;` only, falling back to `,` when a cell has no `;`
 
 ### Added
 
+- **Mobile-first storefront and admin.** The earlier polish made desktop
+  layouts *collapse* on a phone; this release is designed from the phone up.
+  - A bottom tab bar (Home, Shop, Search, Saved, Cart, Account) on every
+    storefront page under 820px, with safe-area padding; the header shrinks
+    to 60px with 44px borderless icon buttons and drops the Sign in button.
+  - Sticky bottom action bars: price + Add to cart on every product page
+    variant (tapping it with no size chosen scrolls to the size picker),
+    subtotal + Proceed to checkout on the cart page, total + Continue to
+    payment on checkout. Page bodies pad for them.
+  - Product galleries are a swipeable snap carousel with dots on phones;
+    the thumbnail rail is desktop-only.
+  - Dialogs render as bottom sheets on phones (slide up, drag handle,
+    stacked full-width footer buttons, home-indicator padding); the search
+    dialog is a full-height top sheet; select popovers, the multi-select and
+    row menus open as bottom sheets.
+  - Every button, input, switch, thumb and menu row is at least 44px on a
+    coarse pointer; every input is 16px on phones so iOS never zooms.
+  - Quantity controls are −/+ steppers; checkout and auth inputs carry the
+    right `autoComplete`, `inputMode` and `enterKeyHint`; the checkout order
+    summary is a collapsible row above the form on phones.
+  - Product grids are two-up on phones; multi-column home sections become
+    horizontal snap strips; the footer is a single stacked column.
+  - Admin tables render as cards on phones, each cell prefixed by its column
+    header (`Table` stamps `data-label` automatically; `responsive={false}`
+    opts out). Page headers stack with full-width actions, editors get a
+    sticky Save bar, the orders board snaps one column per swipe, the drawer
+    has a close button and the header respects the notch.
 - **Interaction polish layer** in `globals.css`: hover, active and
   focus-visible states for every button, input, select, switch, tab, table
   row, nav item and product card; entry animations for dialogs, sheets, menus

@@ -19,6 +19,7 @@ import { CartSheet } from './cart-sheet';
 import { SearchDialog } from './search-dialog';
 import { MobileNavSheet } from './mobile-nav-sheet';
 import { StorefrontProfileMenu } from './storefront-profile-menu';
+import { MobileTabBar } from './mobile-tab-bar';
 
 export interface SiteHeaderNavItem {
   href: string;
@@ -46,6 +47,8 @@ export interface SiteHeaderProps {
   wishlistHref?: string;
   /** Whether to show the search button (opens a popup with live product search). */
   showSearch?: boolean;
+  /** Render the phone-only bottom tab bar (`<MobileTabBar>`). Default true. */
+  showTabBar?: boolean;
   className?: string;
 }
 
@@ -90,6 +93,7 @@ export function SiteHeader({
   accountHref = '/login',
   wishlistHref = '/wishlist',
   showSearch = true,
+  showTabBar = true,
   className,
 }: SiteHeaderProps) {
   const t = useT();
@@ -141,6 +145,7 @@ export function SiteHeader({
         }}
       >
         <div
+          className="caspian-site-header__inner"
           style={{
             maxWidth: 1280,
             margin: '0 auto',
@@ -176,6 +181,7 @@ export function SiteHeader({
 
           <Link
             href="/"
+            className="caspian-site-header__brand"
             style={{
               fontSize: 20,
               fontWeight: 700,
@@ -208,7 +214,10 @@ export function SiteHeader({
             ))}
           </nav>
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+          <div
+            className="caspian-site-header__actions"
+            style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}
+          >
             {showSearch && (
               <Button
                 variant="outline"
@@ -251,7 +260,7 @@ export function SiteHeader({
             {!loading && user ? (
               userMenu ?? <StorefrontProfileMenu />
             ) : (
-              <Link href={accountHref}>
+              <Link href={accountHref} className="caspian-site-header__signin">
                 <Button variant="outline" size="sm">
                   {t('navigation.signIn')}
                 </Button>
@@ -270,6 +279,15 @@ export function SiteHeader({
         accountHref={accountHref}
         wishlistHref={wishlistHref}
       />
+      {showTabBar && (
+        <MobileTabBar
+          onOpenSearch={() => setSearchOpen(true)}
+          onOpenCart={() => setCartOpen(true)}
+          showSearch={showSearch}
+          wishlistHref={wishlistHref}
+          accountHref={accountHref}
+        />
+      )}
     </>
   );
 }
