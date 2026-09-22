@@ -3064,3 +3064,17 @@ h4.pb-w-heading {
     max-width: none !important;
   }
 }
+
+/* --- Product page extras (worker-added hooks) ---------------------------- */
+@media (max-width: 820px) {
+  /* The bar is white on every template, including the dark tech chrome. */
+  .caspian-sticky-cta {
+    color: #111;
+  }
+}
+@media (pointer: coarse) {
+  .caspian-star-input button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

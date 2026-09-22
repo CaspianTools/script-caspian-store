@@ -118,7 +118,7 @@ export function AdminAppearancePage({
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 24 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
           {t('admin.appearance.title')}
         </h1>

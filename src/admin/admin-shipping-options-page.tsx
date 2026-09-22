@@ -77,7 +77,7 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 24 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
           Shipping options
           <FieldHelp>

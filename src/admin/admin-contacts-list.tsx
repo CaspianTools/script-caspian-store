@@ -202,7 +202,7 @@ export function AdminContactsList({ className, refreshKey, onMutated }: AdminCon
                       {t(`admin.contacts.status.${c.status}`)}
                     </Badge>
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {c.status === 'new' && (
                         <Button size="sm" disabled={isBusy} onClick={() => handleStatus(c, 'read')}>

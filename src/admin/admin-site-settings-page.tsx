@@ -233,7 +233,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   if (loadError) {
     return (
       <div className={className}>
-        <header style={{ marginBottom: 16 }}>
+        <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Site settings</h1>
         </header>
         <p
@@ -268,7 +268,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Site settings</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Brand, contact, localization, store behavior, and tax. Rendered by the header, footer,

@@ -1476,7 +1476,7 @@ const MANUAL = {
               "Underneath, any category you have marked as featured appears as a picture card. If you have not marked any, the whole row disappears.",
               "Below that, four products appear under a Trending heading.",
               "At the bottom, a shopper can type an email address into the newsletter box and press the button to subscribe.",
-              "Go to /shop to see everything you sell. On a computer the filters sit down the left. On a phone they hide behind a Filters button, with a sheet that has Reset and Apply buttons at the bottom.",
+              "Go to /shop to see everything you sell. On a computer the filters sit down the left and a Sort dropdown sits above the grid. On a phone a bar under the top bar holds a Filters button, which shows how many filters are on, and the Sort dropdown; the filter sheet ends with Clear all and a Show N results button.",
               "Go to /collections to see your groups as picture cards, then click one to see the products inside it.",
               "Click the search button in the top bar, or go to /search, and type into the box."
             ],
@@ -1508,7 +1508,7 @@ const MANUAL = {
             ],
             "notes": [
               "Only products that are switched on appear. Draft or hidden products never show.",
-              "The Shop page loads at most 500 products, newest first. There is no way to sort them and no page-by-page paging, so a shop with more than 500 products will not show them all.",
+              "The Shop page loads at most 500 products, newest first, and the Sort dropdown reorders those by featured, price, newest or name inside the browser. There is no page-by-page paging, so a shop with more than 500 products will not show them all.",
               "Filtering happens inside the shopper's browser on the products already loaded, so the filter lists only offer categories, sizes and other values that actually exist among those products.",
               "The Trending row on the home page has nothing to do with sales. It is simply your four most recently added products.",
               "The banner button on the home page points at /shop by default. Applying one of the three ready-made shop looks changes it to /collections, or you can set the link yourself in the setup wizard.",
@@ -1528,10 +1528,10 @@ const MANUAL = {
             "summary": "A product page shows the photos on the left and the details on the right: brand, name, star rating, price, size buttons, a quantity box and an Add to cart button. Underneath are three tabs: Details, Reviews and Questions. Shoppers can also save products to a saved-items list using the heart button.",
             "steps": [
               "Open a product by clicking any product card, or go to /product/ followed by the product's web-friendly name.",
-              "Look through the photos. Extra photos appear as small thumbnails beside the main picture.",
+              "Look through the photos. On a computer, extra photos appear as small thumbnails beside the main picture; on a phone you swipe through them, and a row of dots shows which one you are on.",
               "Pick a size. The first size is already chosen for you. Sizes you have run out of are crossed out and cannot be picked.",
               "Set a quantity with the minus and plus buttons.",
-              "Press Add to cart. A small message confirms it. If you have switched on the setting for it, the shopper is taken to the cart page instead of staying put.",
+              "Press Add to cart. On a phone the price and an Add to cart button also stay pinned along the bottom of the screen while you scroll; if a size still needs choosing, that button jumps back to the size list instead of adding. A small message confirms the add. If you have switched on the setting for it, the shopper is taken to the cart page instead of staying put.",
               "Press the Reviews tab to read reviews, see the star breakdown, sort them, and press Write a review.",
               "Press the Questions tab to read questions and their answers, and press Ask a question.",
               "Press the heart on a product card, or open /wishlist, to see everything saved. From there each saved item can be added to the basket or removed."
@@ -4417,7 +4417,7 @@ const MANUAL = {
               "Altda, seçilmiş kimi işarələdiyiniz kateqoriyalar şəkilli kart kimi görünür. Heç birini işarələməmisinizsə, bütün sıra yox olur.",
               "Ondan aşağıda Trend (Trending) başlığı altında dörd məhsul çıxır.",
               "Ən aşağıda alıcı xəbər bülleteni qutusuna e-poçt ünvanını yazıb düyməyə basmaqla abunə ola bilər.",
-              "Satdığınız hər şeyi görmək üçün /shop ünvanına keçin. Kompüterdə filtrlər solda dayanır. Telefonda isə Filtrlər (Filters) düyməsinin arxasında gizlənir; açılan panelin altında Sıfırla (Reset) və Tətbiq et (Apply) düymələri olur.",
+              "Satdığınız hər şeyi görmək üçün /shop ünvanına keçin. Kompüterdə filtrlər solda, Sort (Sırala) açılan siyahısı isə cədvəlin üstündə durur. Telefonda yuxarı zolağın altındakı zolaqda neçə filtrin yanılı olduğunu göstərən Filters düyməsi və Sort siyahısı var; filtr vərəqi Clear all və Show N results düymələri ilə bitir.",
               "Qruplarınızı şəkilli kart kimi görmək üçün /collections ünvanına keçin, sonra birinə klikləyib içindəki məhsullara baxın.",
               "Yuxarı zolaqdakı axtarış düyməsinə klikləyin və ya /search ünvanına keçin, sonra qutuya yazın."
             ],
@@ -4449,7 +4449,7 @@ const MANUAL = {
             ],
             "notes": [
               "Yalnız aktiv məhsullar görünür. Qaralama və ya gizli məhsullar heç vaxt çıxmır.",
-              "Mağaza səhifəsi ən çoxu 500 məhsul yükləyir, ən yenidən başlayaraq. Sıralama seçimi və səhifə-səhifə keçid yoxdur, ona görə 500-dən çox məhsulu olan mağaza hamısını göstərə bilmir.",
+              "Mağaza səhifəsi ən çoxu 500 məhsulu, ən yenidən başlayaraq yükləyir; Sort siyahısı onları brauzer daxilində seçilmişlər, qiymət, yenilik və ya ada görə yenidən sıralayır. Səhifə-səhifə keçid yoxdur, ona görə 500-dən çox məhsulu olan mağaza hamısını göstərməyəcək.",
               "Filtrləmə alıcının brauzerində, artıq yüklənmiş məhsullar üzərində baş verir; buna görə filtr siyahılarında yalnız həmin məhsullarda həqiqətən mövcud olan kateqoriyalar, ölçülər və digər dəyərlər çıxır.",
               "Ana səhifədəki Trend sırasının satışlarla heç bir əlaqəsi yoxdur. Bu, sadəcə ən son əlavə etdiyiniz dörd məhsuldur.",
               "Ana səhifədəki banner düyməsi standart olaraq /shop ünvanına aparır. Hazır üç mağaza görünüşündən birini tətbiq etmək onu /collections-ə dəyişir, ya da keçidi quraşdırma sihirbazında özünüz təyin edə bilərsiniz.",
@@ -4467,10 +4467,10 @@ const MANUAL = {
             "summary": "Məhsul səhifəsində şəkillər solda, təfərrüatlar sağda olur: brend, ad, ulduz reytinqi, qiymət, ölçü düymələri, say qutusu və Səbətə at (Add to cart) düyməsi. Aşağıda üç bölmə var: Təfərrüatlar (Details), Rəylər (Reviews) və Suallar (Questions). Alıcılar ürək düyməsi ilə məhsulları seçilmişlər siyahısına da yığa bilər.",
             "steps": [
               "Hər hansı məhsul kartına klikləyərək məhsulu açın və ya /product/ ünvanından sonra məhsulun veb-adını yazın.",
-              "Şəkillərə baxın. Əlavə şəkillər əsas şəklin yanında kiçik nişanlar kimi görünür.",
+              "Şəkillərə baxın. Kompüterdə əlavə şəkillər əsas şəklin yanında kiçik miniatürlər kimi görünür; telefonda isə onları sürüşdürərək keçirsiniz və nöqtələr sırası hansında olduğunuzu göstərir.",
               "Ölçü seçin. Birinci ölçü qabaqcadan seçilmiş olur. Qurtarmış ölçülərin üstündən xətt çəkilir və onları seçmək olmur.",
               "Sayı mənfi və artı düymələri ilə təyin edin.",
-              "Səbətə at (Add to cart) düyməsinə basın. Kiçik bildiriş bunu təsdiqləyir. Müvafiq tənzimləməni yandırmısınızsa, alıcı səhifədə qalmaq əvəzinə səbət səhifəsinə keçirilir.",
+              "Səbətə əlavə et (Add to cart) düyməsini basın. Telefonda qiymət və Add to cart düyməsi vərəqləyərkən ekranın aşağısında sabit qalır; hələ ölçü seçilməyibsə, həmin düymə əlavə etmək əvəzinə ölçü siyahısına qayıdır. Kiçik bir mesaj əlavəni təsdiqləyir. Bunun üçün tənzimləməni yandırmısınızsa, alıcı yerində qalmaq əvəzinə səbət səhifəsinə aparılır.",
               "Rəyləri oxumaq, ulduzların bölgüsünü görmək və onları sıralamaq üçün Rəylər (Reviews) bölməsinə keçin; rəy yazmaq üçün Rəy yaz (Write a review) düyməsinə basın.",
               "Sualları və cavablarını oxumaq üçün Suallar (Questions) bölməsinə keçin, sual vermək üçün Sual ver (Ask a question) düyməsinə basın.",
               "Məhsul kartındakı ürəyə basın və ya /wishlist səhifəsini açın — yadda saxlanan hər şeyi orada görürsünüz. Oradan hər məhsulu səbətə atmaq və ya siyahıdan silmək olar."
@@ -7274,7 +7274,7 @@ const MANUAL = {
               "Ниже каждая категория, отмеченная как избранная, выводится карточкой с картинкой. Если ни одна не отмечена, весь ряд исчезает.",
               "Ещё ниже, под заголовком В тренде (Trending), выводятся четыре товара.",
               "Внизу покупатель может ввести email в поле подписки и нажать кнопку, чтобы подписаться на рассылку.",
-              "Перейдите на /shop, чтобы увидеть весь ассортимент. На компьютере фильтры расположены слева. На телефоне они спрятаны за кнопкой Фильтры (Filters), а внизу открывающейся панели есть кнопки Сбросить (Reset) и Применить (Apply).",
+              "Перейдите на /shop, чтобы увидеть всё, что вы продаёте. На компьютере фильтры расположены слева, а над сеткой есть выпадающий список Sort. На телефоне под верхней панелью есть полоса с кнопкой Filters, показывающей число включённых фильтров, и списком Sort; лист фильтров заканчивается кнопками Clear all и Show N results.",
               "Перейдите на /collections, чтобы увидеть свои группы товаров карточками с картинками, и нажмите на любую, чтобы открыть товары внутри.",
               "Нажмите кнопку поиска в верхней панели или перейдите на /search и введите запрос в поле."
             ],
@@ -7306,7 +7306,7 @@ const MANUAL = {
             ],
             "notes": [
               "Показываются только включённые товары. Черновики и скрытые товары не выводятся никогда.",
-              "Страница Магазин загружает не более 500 товаров, начиная с самых новых. Сортировки нет, постраничного вывода тоже, поэтому магазин с более чем 500 товарами покажет не всё.",
+              "Страница магазина загружает не более 500 товаров, сначала новые, а список Sort переупорядочивает их в браузере по избранным, цене, новизне или названию. Постраничной навигации нет, поэтому магазин с более чем 500 товарами не покажет их все.",
               "Фильтрация происходит в браузере покупателя по уже загруженным товарам, поэтому в списках фильтров предлагаются только те категории, размеры и прочие значения, которые действительно есть среди этих товаров.",
               "Ряд В тренде на главной странице никак не связан с продажами. Это просто четыре последних добавленных вами товара.",
               "Кнопка баннера на главной странице по умолчанию ведёт на /shop. Применение одного из трёх готовых оформлений меняет её на /collections, либо вы задаёте ссылку сами в мастере настройки.",
@@ -7324,10 +7324,10 @@ const MANUAL = {
             "summary": "На странице товара слева показаны фотографии, справа — данные: бренд, название, оценка звёздами, цена, кнопки размеров, поле количества и кнопка В корзину (Add to cart). Ниже расположены три вкладки: Описание (Details), Отзывы (Reviews) и Вопросы (Questions). Кнопкой с сердечком покупатель может сохранить товар в избранное.",
             "steps": [
               "Откройте товар, нажав на любую карточку, или перейдите по адресу /product/ с веб-именем товара после косой черты.",
-              "Просмотрите фотографии. Дополнительные снимки показываются миниатюрами рядом с основной картинкой.",
+              "Посмотрите фотографии. На компьютере дополнительные фото показаны маленькими миниатюрами рядом с главным снимком; на телефоне их листают свайпом, а ряд точек показывает, на какой вы сейчас.",
               "Выберите размер. Первый размер выбран заранее. Размеры, которых нет в наличии, перечёркнуты, и выбрать их нельзя.",
               "Задайте количество кнопками минус и плюс.",
-              "Нажмите В корзину. Появится короткое подтверждение. Если включена соответствующая настройка, покупателя вместо этого переносит на страницу корзины.",
+              "Нажмите «Add to cart». На телефоне цена и кнопка Add to cart остаются закреплёнными внизу экрана при прокрутке; если размер ещё не выбран, эта кнопка возвращает к списку размеров вместо добавления. Небольшое сообщение подтверждает добавление. Если вы включили соответствующую настройку, покупатель переходит на страницу корзины, а не остаётся на месте.",
               "Откройте вкладку Отзывы, чтобы прочитать отзывы, увидеть распределение оценок, отсортировать их и нажать Написать отзыв (Write a review).",
               "Откройте вкладку Вопросы, чтобы прочитать вопросы и ответы на них, и нажмите Задать вопрос (Ask a question).",
               "Нажмите сердечко на карточке товара или откройте /wishlist, чтобы увидеть всё сохранённое. Оттуда любой товар можно добавить в корзину или удалить."
@@ -10131,7 +10131,7 @@ const MANUAL = {
               "Hemen altında, öne çıkan olarak işaretlediğiniz kategoriler görsel kart olarak görünür. Hiçbirini işaretlemediyseniz bu sıra tamamen kaybolur.",
               "Onun altında, Trending (Öne çıkanlar) başlığı altında dört ürün görünür.",
               "En altta müşteri, bülten kutusuna e-posta adresini yazıp düğmeye basarak abone olabilir.",
-              "Sattığınız her şeyi görmek için /shop adresine gidin. Bilgisayarda filtreler solda yer alır. Telefonda ise Filters (Filtreler) düğmesinin arkasında gizlidir; açılan panelin altında Reset (Sıfırla) ve Apply (Uygula) düğmeleri bulunur.",
+              "Sattığınız her şeyi görmek için /shop adresine gidin. Bilgisayarda filtreler solda durur, ızgaranın üstünde bir Sort açılır listesi vardır. Telefonda üst çubuğun altındaki şeritte kaç filtrenin açık olduğunu gösteren bir Filters düğmesi ve Sort listesi bulunur; filtre sayfası Clear all ve Show N results düğmeleriyle biter.",
               "Gruplarınızı görsel kartlar hâlinde görmek için /collections adresine gidin, ardından içindeki ürünleri görmek için birine tıklayın.",
               "Üst çubuktaki arama düğmesine tıklayın veya /search adresine gidin ve kutuya yazın."
             ],
@@ -10163,7 +10163,7 @@ const MANUAL = {
             ],
             "notes": [
               "Yalnızca yayında olan ürünler görünür. Taslak veya gizli ürünler hiçbir zaman görünmez.",
-              "Mağaza sayfası en yenisi başta olacak şekilde en fazla 500 ürün yükler. Sıralama seçeneği ve sayfa sayfa ilerleme yoktur; bu nedenle 500'den fazla ürünü olan bir mağaza ürünlerinin tamamını gösteremez.",
+              "Mağaza sayfası en fazla 500 ürünü, en yeniden başlayarak yükler; Sort listesi bunları tarayıcı içinde öne çıkanlara, fiyata, yeniliğe veya ada göre yeniden sıralar. Sayfa sayfa gezinme yoktur; bu yüzden 500'den fazla ürünü olan bir mağaza hepsini göstermez.",
               "Filtreleme, müşterinin tarayıcısında yalnızca yüklenmiş ürünler üzerinde yapılır; bu yüzden filtre listeleri yalnızca bu ürünlerde gerçekten bulunan kategorileri, bedenleri ve diğer değerleri sunar.",
               "Ana sayfadaki Trending sırasının satışlarla hiçbir ilgisi yoktur. Burada yalnızca en son eklediğiniz dört ürün yer alır.",
               "Ana sayfadaki banner düğmesi varsayılan olarak /shop adresine gider. Hazır üç mağaza görünümünden birini uygulamak bunu /collections olarak değiştirir; bağlantıyı kurulum sihirbazında kendiniz de ayarlayabilirsiniz.",
@@ -10181,10 +10181,10 @@ const MANUAL = {
             "summary": "Ürün sayfasında solda fotoğraflar, sağda ayrıntılar yer alır: marka, ad, yıldız puanı, fiyat, beden düğmeleri, adet kutusu ve Add to cart (Sepete ekle) düğmesi. Bunların altında üç sekme bulunur: Details (Ayrıntılar), Reviews (Değerlendirmeler) ve Questions (Sorular). Müşteriler ayrıca kalp düğmesiyle ürünleri kaydedilenler listesine ekleyebilir.",
             "steps": [
               "Herhangi bir ürün kartına tıklayarak ürünü açın ya da /product/ adresinin ardından ürünün web adı gelecek şekilde adrese gidin.",
-              "Fotoğraflara göz atın. Ek fotoğraflar, ana görselin yanında küçük önizlemeler hâlinde görünür.",
+              "Fotoğraflara bakın. Bilgisayarda ek fotoğraflar ana resmin yanında küçük görseller olarak görünür; telefonda ise kaydırarak geçersiniz ve bir sıra nokta hangisinde olduğunuzu gösterir.",
               "Bir beden seçin. İlk beden sizin için önceden seçilidir. Stoğu tükenen bedenlerin üzeri çizilidir ve seçilemez.",
               "Eksi ve artı düğmeleriyle adedi belirleyin.",
-              "Add to cart (Sepete ekle) düğmesine basın. Küçük bir mesaj işlemi onaylar. İlgili ayarı açtıysanız müşteri aynı sayfada kalmak yerine sepet sayfasına götürülür.",
+              "Add to cart düğmesine basın. Telefonda fiyat ve Add to cart düğmesi kaydırırken ekranın altında sabit kalır; beden hâlâ seçilmemişse bu düğme eklemek yerine beden listesine geri atlar. Küçük bir mesaj eklemeyi onaylar. İlgili ayarı açtıysanız müşteri olduğu yerde kalmak yerine sepet sayfasına götürülür.",
               "Değerlendirmeleri okumak, yıldız dağılımını görmek ve sıralamak için Reviews (Değerlendirmeler) sekmesine, değerlendirme yazmak için Write a review (Değerlendirme yaz) düğmesine basın.",
               "Soruları ve yanıtlarını okumak için Questions (Sorular) sekmesine, soru sormak için Ask a question (Soru sor) düğmesine basın.",
               "Kaydedilen her şeyi görmek için ürün kartındaki kalbe basın ya da /wishlist adresini açın. Buradan kaydedilen ürünler tek tek sepete eklenebilir veya listeden çıkarılabilir."

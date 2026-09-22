@@ -73,7 +73,12 @@ export function ProfileCard({ className }: { className?: string }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <Label>{t('profile.displayName')}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              autoComplete="name"
+              enterKeyHint="next"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div>
             <Label>{t('profile.email')}</Label>
@@ -89,9 +94,12 @@ export function ProfileCard({ className }: { className?: string }) {
               onChange={(e) => setPhone(e.target.value)}
               placeholder={t('profile.phonePlaceholder')}
               type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              enterKeyHint="done"
             />
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div className="caspian-stack-mobile" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <Button variant="outline" onClick={handleCancel} disabled={saving}>
               {t('common.cancel')}
             </Button>
@@ -113,7 +121,7 @@ export function ProfileCard({ className }: { className?: string }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 8, fontSize: 14 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(96px, 140px) minmax(0, 1fr)', gap: 8, fontSize: 14 }}>
       <span style={{ color: '#888' }}>{label}</span>
       <span>{value}</span>
     </div>

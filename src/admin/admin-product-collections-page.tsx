@@ -164,6 +164,7 @@ export function AdminProductCollectionsPage({ className }: { className?: string 
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
       >
         <div>
@@ -195,7 +196,7 @@ export function AdminProductCollectionsPage({ className }: { className?: string 
             {collections.map((c) => (
               <TR key={c.id}>
                 <TD style={{ fontFamily: 'monospace', fontSize: 13 }}>{c.order}</TD>
-                <TD style={{ fontWeight: 500 }}>{c.name}</TD>
+                <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>{c.name}</TD>
                 <TD style={{ fontSize: 12, color: '#888', fontFamily: 'monospace' }}>{c.slug}</TD>
                 <TD style={{ color: '#666' }}>{c.productIds?.length ?? 0}</TD>
                 <TD>
@@ -204,7 +205,7 @@ export function AdminProductCollectionsPage({ className }: { className?: string 
                     {c.isActive ? 'Active' : 'Hidden'}
                   </Badge>
                 </TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
                       Edit

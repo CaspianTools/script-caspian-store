@@ -99,8 +99,10 @@ export function AdminDashboard({
 
   return (
     <div className={className}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.dashboard.title')}</h1>
-      <p style={{ color: '#666', marginTop: 4 }}>{t('admin.dashboard.subtitle')}</p>
+      <header className="caspian-admin-page-head">
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.dashboard.title')}</h1>
+        <p style={{ color: '#666', marginTop: 4 }}>{t('admin.dashboard.subtitle')}</p>
+      </header>
 
       {countsError && (
         <div

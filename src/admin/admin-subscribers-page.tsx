@@ -62,7 +62,7 @@ export function AdminSubscribersPage({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.subscribers.title')}</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           {subscribers === null ? '…' : t('admin.subscribers.total', { count: subscribers.length })}
@@ -99,7 +99,7 @@ export function AdminSubscribersPage({ className }: { className?: string }) {
                     ? s.subscribedAt.toDate().toLocaleString()
                     : '—'}
                 </TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <Button variant="destructive" size="sm" onClick={() => setPendingDelete(s)}>
                     {t('admin.subscribers.remove')}
                   </Button>

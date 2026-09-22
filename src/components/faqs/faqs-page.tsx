@@ -6,6 +6,7 @@ import { listFaqs } from '../../services/faq-service';
 import { useCaspianFirebase } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n/locale-context';
 import { Skeleton } from '../../ui/misc';
+import { ChevronDownIcon } from '../../ui/icons';
 import { cn } from '../../utils/cn';
 import { EmptyState } from '../empty-state';
 
@@ -85,7 +86,10 @@ export function FaqsPage({
   }, [faqs, order, labels]);
 
   return (
-    <main className={cn('caspian-faqs', className)} style={{ padding: '48px 24px' }}>
+    <main
+      className={cn('caspian-faqs', 'caspian-page-gutter', className)}
+      style={{ padding: '48px clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1
@@ -134,26 +138,36 @@ export function FaqsPage({
                         onToggle={(e) =>
                           setOpenId((e.currentTarget as HTMLDetailsElement).open ? faq.id : null)
                         }
-                        style={{
-                          borderTop: '1px solid #eee',
-                          padding: '14px 0',
-                        }}
+                        style={{ borderTop: '1px solid #eee' }}
                       >
                         <summary
                           style={{
                             cursor: 'pointer',
                             fontWeight: 500,
                             fontSize: 15,
+                            lineHeight: 1.4,
                             listStyle: 'none',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
+                            gap: 12,
+                            minHeight: 56,
+                            padding: '8px 0',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          {faq.question}
-                          <span style={{ color: '#888', fontSize: 18 }}>{open ? '−' : '+'}</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>{faq.question}</span>
+                          <ChevronDownIcon
+                            size={18}
+                            style={{
+                              flexShrink: 0,
+                              color: '#888',
+                              transform: open ? 'rotate(180deg)' : 'none',
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
                         </summary>
-                        <p style={{ color: '#555', marginTop: 10, lineHeight: 1.6, fontSize: 14 }}>
+                        <p style={{ color: '#555', margin: '0 0 16px', lineHeight: 1.6, fontSize: 14 }}>
                           {faq.answer}
                         </p>
                       </details>

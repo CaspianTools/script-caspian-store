@@ -72,6 +72,7 @@ export function AdminTemplatesPage({ className }: AdminTemplatesPageProps) {
 
   return (
     <div className={className}>
+      <header className="caspian-admin-page-head">
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Templates</h1>
       <p style={{ color: '#666', marginTop: 4, maxWidth: 720 }}>
         Apply a starter template to seed your storefront with sample products,
@@ -80,6 +81,7 @@ export function AdminTemplatesPage({ className }: AdminTemplatesPageProps) {
         admin page. Templates are non-destructive in <strong>Merge</strong>{' '}
         mode &mdash; only docs whose id is unused will be written.
       </p>
+      </header>
 
       <section
         style={{

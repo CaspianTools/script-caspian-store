@@ -54,7 +54,10 @@ export function ShippingRatePicker({
               display: 'flex',
               alignItems: 'center',
               gap: 12,
-              padding: 12,
+              minHeight: 56,
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '10px 12px',
               border: `1px solid ${selected ? 'var(--caspian-primary, #111)' : '#e5e5e5'}`,
               borderRadius: 'var(--caspian-radius, 6px)',
               cursor: 'pointer',
@@ -76,7 +79,7 @@ export function ShippingRatePicker({
                   : `${rate.estimatedDays.min}–${rate.estimatedDays.max} ${t('checkout.rate.daysSuffix')}`}
               </div>
             </div>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginLeft: 'auto', textAlign: 'right', whiteSpace: 'nowrap' }}>
               {rate.price > 0 ? formatPrice(rate.price) : t('checkout.rate.free')}
             </div>
           </label>

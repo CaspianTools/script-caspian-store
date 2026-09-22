@@ -277,7 +277,7 @@ export function AdminProductsList({
 
   return (
     <div className={className}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Products</h1>
           <p style={{ color: '#666', marginTop: 4 }}>
@@ -373,8 +373,8 @@ export function AdminProductsList({
               const brandIsLegacy = p.brand && !brandNameById.has(p.brand);
               return (
                 <TR key={p.id}>
-                  <TD style={{ color: '#888', fontVariantNumeric: 'tabular-nums' }}>{idx + 1}</TD>
-                  <TD style={{ fontWeight: 500 }}>
+                  <TD className="caspian-hide-mobile" style={{ color: '#888', fontVariantNumeric: 'tabular-nums' }}>{idx + 1}</TD>
+                  <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       {p.name}
                       <a
@@ -421,7 +421,7 @@ export function AdminProductsList({
                       {p.isActive === false ? 'Hidden' : 'Active'}
                     </Badge>
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <DropdownMenu
                       trigger={
                         <button

@@ -132,6 +132,7 @@ export function AddressBook({ className }: { className?: string }) {
           {addresses.map((addr) => (
             <li
               key={addr.id}
+              className="caspian-stack-mobile"
               style={{
                 padding: 12,
                 border: '1px solid #eee',
@@ -154,7 +155,10 @@ export function AddressBook({ className }: { className?: string }) {
                   {countryName(addr.country)}
                 </p>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+              <div
+                className="caspian-stack-mobile"
+                style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}
+              >
                 {!addr.isDefault && (
                   <Button variant="ghost" size="sm" onClick={() => handleSetDefault(addr)}>
                     {t('addresses.setDefault')}
@@ -194,20 +198,44 @@ export function AddressBook({ className }: { className?: string }) {
         >
           <div>
             <Label>{t('addresses.fullName')}</Label>
-            <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
+            <Input
+              autoComplete="name"
+              enterKeyHint="next"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              required
+            />
           </div>
           <div>
             <Label>{t('addresses.address')}</Label>
-            <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} required />
+            <Input
+              autoComplete="street-address"
+              enterKeyHint="next"
+              value={form.address}
+              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              required
+            />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
             <div>
               <Label>{t('addresses.city')}</Label>
-              <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} required />
+              <Input
+                autoComplete="address-level2"
+                enterKeyHint="next"
+                value={form.city}
+                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                required
+              />
             </div>
             <div>
               <Label>{t('addresses.zip')}</Label>
-              <Input value={form.zip} onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))} required />
+              <Input
+                autoComplete="postal-code"
+                enterKeyHint="done"
+                value={form.zip}
+                onChange={(e) => setForm((f) => ({ ...f, zip: e.target.value }))}
+                required
+              />
             </div>
           </div>
           <div>

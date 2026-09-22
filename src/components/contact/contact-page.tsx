@@ -113,9 +113,9 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
   const showHours = !!hours?.enabled;
 
   return (
-    <div className={cn('caspian-contact-page', className)} style={{ padding: '48px 16px' }}>
+    <div className={cn('caspian-contact-page', 'caspian-page-gutter', className)} style={{ padding: '48px 16px' }}>
       <div style={{ maxWidth: showHours ? 960 : 640, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>{heading}</h1>
+        <h1 style={{ fontSize: 'clamp(26px, 6vw, 32px)', fontWeight: 700, margin: 0 }}>{heading}</h1>
         <p style={{ color: '#555', marginTop: 8, lineHeight: 1.5 }}>{sub}</p>
 
         <div
@@ -148,6 +148,7 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
                 maxLength={120}
                 required
                 autoComplete="name"
+                enterKeyHint="next"
               />
             </div>
             <div>
@@ -160,6 +161,8 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
                 maxLength={200}
                 required
                 autoComplete="email"
+                inputMode="email"
+                enterKeyHint="next"
               />
             </div>
             <div>
@@ -169,6 +172,7 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 maxLength={200}
+                enterKeyHint="next"
               />
             </div>
             <div>
@@ -198,7 +202,7 @@ export function ContactPage({ title, subtitle, className, onSubmitted }: Contact
               />
             </div>
             <div>
-              <Button type="submit" loading={submitting} disabled={submitting}>
+              <Button type="submit" className="caspian-full-mobile" loading={submitting} disabled={submitting}>
                 {submitting ? t('contact.form.submitting') : t('contact.form.submit')}
               </Button>
             </div>

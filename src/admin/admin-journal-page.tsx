@@ -170,7 +170,7 @@ export function AdminJournalPage({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Journal</h1>
           <p style={{ color: '#666', marginTop: 4 }}>Manage editorial articles on the public journal page.</p>
@@ -199,7 +199,7 @@ export function AdminJournalPage({ className }: { className?: string }) {
           <TBody>
             {articles.map((article) => (
               <TR key={article.id}>
-                <TD>
+                <TD data-label="">
                   {article.imageUrl ? (
                     <div
                       style={{
@@ -217,10 +217,10 @@ export function AdminJournalPage({ className }: { className?: string }) {
                     <span style={{ color: '#ccc', fontSize: 12 }}>—</span>
                   )}
                 </TD>
-                <TD style={{ fontWeight: 500 }}>{article.title}</TD>
+                <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>{article.title}</TD>
                 <TD style={{ color: '#666' }}>{article.category}</TD>
                 <TD style={{ color: '#888', fontSize: 13 }}>{article.date}</TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(article)}>
                       Edit

@@ -265,6 +265,7 @@ export function AdminEmailPluginsPage({
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -321,7 +322,7 @@ export function AdminEmailPluginsPage({
               return (
                 <TR key={install.id}>
                   <TD style={{ fontFamily: 'monospace', fontSize: 13 }}>{install.order}</TD>
-                  <TD style={{ fontWeight: 500 }}>
+                  <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>
                     <div>{install.name}</div>
                     {plugin?.description && (
                       <div
@@ -345,7 +346,7 @@ export function AdminEmailPluginsPage({
                         : t('admin.emailPlugins.status.disabled')}
                     </Badge>
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <Button variant="outline" size="sm" onClick={() => toggleEnabled(install)}>
                         {install.enabled

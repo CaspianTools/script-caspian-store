@@ -131,6 +131,7 @@ export function AdminFaqsPage({
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
       >
         <div>
@@ -164,8 +165,8 @@ export function AdminFaqsPage({
                 <TD>
                   <Badge variant="secondary">{faq.category || 'general'}</Badge>
                 </TD>
-                <TD style={{ fontWeight: 500 }}>{faq.question}</TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>{faq.question}</TD>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(faq)}>
                       {t('common.edit')}

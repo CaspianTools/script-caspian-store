@@ -8,6 +8,7 @@ import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Badge } from '../ui/misc';
 import { Button } from '../ui/button';
 import { Input, Label } from '../ui/input';
+import { cn } from '../utils/cn';
 
 interface GuestOrderResponse {
   id: string;
@@ -124,9 +125,12 @@ export function GuestOrderLookupPage({
   }, [autoLoad]);
 
   return (
-    <div className={className} style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px 64px' }}>
+    <div
+      className={cn('caspian-page-gutter', className)}
+      style={{ maxWidth: 760, margin: '0 auto', padding: '32px clamp(16px, 4vw, 24px) 64px' }}
+    >
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t('guestOrder.title')}</h1>
+        <h1 style={{ fontSize: 'clamp(24px, 6vw, 28px)', fontWeight: 700, margin: 0 }}>{t('guestOrder.title')}</h1>
         <p style={{ color: '#666', marginTop: 6 }}>{t('guestOrder.subtitle')}</p>
       </header>
 
@@ -148,6 +152,9 @@ export function GuestOrderLookupPage({
             <Label htmlFor="caspian-guest-order-id">{t('guestOrder.orderNumber')}</Label>
             <Input
               id="caspian-guest-order-id"
+              autoComplete="off"
+              autoCapitalize="off"
+              enterKeyHint="next"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               required
@@ -158,6 +165,9 @@ export function GuestOrderLookupPage({
             <Input
               id="caspian-guest-order-email"
               type="email"
+              autoComplete="email"
+              inputMode="email"
+              enterKeyHint="done"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -165,7 +175,12 @@ export function GuestOrderLookupPage({
           </div>
         </div>
         <div>
-          <Button type="submit" loading={loading} disabled={!orderId.trim() || !email.trim()}>
+          <Button
+            type="submit"
+            className="caspian-full-mobile"
+            loading={loading}
+            disabled={!orderId.trim() || !email.trim()}
+          >
             {t('guestOrder.submit')}
           </Button>
         </div>
@@ -175,13 +190,22 @@ export function GuestOrderLookupPage({
       {order && (
         <section
           style={{
-            padding: 24,
+            padding: 'clamp(16px, 4vw, 24px)',
             background: '#fff',
             border: '1px solid rgba(0,0,0,0.08)',
             borderRadius: 12,
           }}
         >
-          <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+          <header
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 8,
+              marginBottom: 16,
+            }}
+          >
             <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
               {t('guestOrder.orderHeading', { id: order.id.slice(0, 10) })}
             </h2>
@@ -196,7 +220,7 @@ export function GuestOrderLookupPage({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             {order.items.map((it, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 14 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0, fontWeight: 500 }}>{it.name}</p>
                   {(it.selectedSize || it.selectedColor) && (
@@ -208,7 +232,7 @@ export function GuestOrderLookupPage({
                     {t('checkout.qtyShort')} {it.quantity}
                   </p>
                 </div>
-                <span style={{ fontWeight: 600 }}>{formatPrice(it.price * it.quantity)}</span>
+                <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{formatPrice(it.price * it.quantity)}</span>
               </div>
             ))}
           </div>

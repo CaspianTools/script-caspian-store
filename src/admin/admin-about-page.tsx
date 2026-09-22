@@ -133,10 +133,12 @@ export function AdminAboutPage({
 
   return (
     <div className={className}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>About</h1>
-      <p style={{ color: '#666', marginTop: 4 }}>
-        Library version and recent news from {owner}/{repo}.
-      </p>
+      <header className="caspian-admin-page-head">
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>About</h1>
+        <p style={{ color: '#666', marginTop: 4 }}>
+          Library version and recent news from {owner}/{repo}.
+        </p>
+      </header>
 
       <section
         style={{

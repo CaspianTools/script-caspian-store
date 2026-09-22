@@ -95,7 +95,7 @@ export function AdminOrderDetail({
       <Link href={ordersHref} style={backLinkStyle}>
         ← {t('admin.orders.backToOrders')}
       </Link>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Order #{order.id.slice(0, 10)}</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           {order.userEmail || '—'}

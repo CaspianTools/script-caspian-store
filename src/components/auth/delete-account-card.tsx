@@ -145,6 +145,7 @@ export function DeleteAccountCard({
               <Input
                 type="password"
                 autoComplete="current-password"
+                enterKeyHint="next"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -153,6 +154,9 @@ export function DeleteAccountCard({
           <div>
             <Label>{t('deleteAccount.typeToConfirm', { text: CONFIRM_PHRASE })}</Label>
             <Input
+              autoComplete="off"
+              autoCapitalize="characters"
+              enterKeyHint="done"
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
               placeholder={CONFIRM_PHRASE}

@@ -111,7 +111,7 @@ export function AdminPagesPage({
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Pages</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Edit the long-form content on About / Contact / Privacy / Terms / Sustainability / etc.
@@ -146,7 +146,7 @@ export function AdminPagesPage({
                     {existing?.title ?? <span style={{ color: '#aaa' }}>— not set —</span>}
                   </TD>
                   <TD style={{ color: '#888', fontSize: 13 }}>{updated}</TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(key)}>
                       {existing ? 'Edit' : 'Create'}
                     </Button>

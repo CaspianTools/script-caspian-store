@@ -144,6 +144,7 @@ export function AdminLanguagesPage({ className }: { className?: string }) {
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
       >
         <div>
@@ -180,7 +181,7 @@ export function AdminLanguagesPage({ className }: { className?: string }) {
                   {l.flag ? `${l.flag} ` : ''}
                   {l.code}
                 </TD>
-                <TD style={{ fontWeight: 500 }}>{l.name}</TD>
+                <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>{l.name}</TD>
                 <TD>{l.nativeName}</TD>
                 <TD style={{ fontSize: 12, color: '#666' }}>{l.direction.toUpperCase()}</TD>
                 <TD>
@@ -189,7 +190,7 @@ export function AdminLanguagesPage({ className }: { className?: string }) {
                     {l.isActive ? 'Active' : 'Hidden'}
                   </Badge>
                 </TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(l)}>
                       Edit

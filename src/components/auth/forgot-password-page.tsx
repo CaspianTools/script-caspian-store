@@ -76,12 +76,14 @@ export function ForgotPasswordPage({
               id="fp-email"
               type="email"
               autoComplete="email"
+              inputMode="email"
+              enterKeyHint="done"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <Button type="submit" size="lg" loading={submitting}>
+          <Button type="submit" size="lg" className="caspian-full-mobile" loading={submitting}>
             {submitting ? t('auth.forgot.submitting') : t('auth.forgot.submit')}
           </Button>
         </form>

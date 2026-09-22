@@ -97,6 +97,7 @@ export function AdminOrdersList({
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{
           marginBottom: 16,
           display: 'flex',

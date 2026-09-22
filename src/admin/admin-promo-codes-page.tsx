@@ -138,6 +138,7 @@ export function AdminPromoCodesPage({ className }: { className?: string }) {
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
       >
         <div>
@@ -181,7 +182,7 @@ export function AdminPromoCodesPage({ className }: { className?: string }) {
                     {c.isActive ? t('admin.promoCodes.active') : t('admin.promoCodes.inactive')}
                   </Badge>
                 </TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(c)}>
                       {t('common.edit')}

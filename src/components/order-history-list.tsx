@@ -8,6 +8,7 @@ import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-pr
 import { useScriptSettings } from '../context/script-settings-context';
 import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Skeleton, Badge } from '../ui/misc';
+import { ChevronRightIcon } from '../ui/icons';
 
 export interface OrderHistoryListProps {
   getOrderHref?: (orderId: string) => string;
@@ -93,13 +94,15 @@ export function OrderHistoryList({
         const count = order.items.reduce((n, i) => n + i.quantity, 0);
         return (
           <li key={order.id}>
-            <Link href={getOrderHref(order.id)}>
+            <Link href={getOrderHref(order.id)} style={{ display: 'block', color: 'inherit' }}>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
-                  padding: 12,
+                  minHeight: 56,
+                  boxSizing: 'border-box',
+                  padding: '10px 12px',
                   border: '1px solid #eee',
                   borderRadius: 'var(--caspian-radius, 6px)',
                 }}
@@ -112,8 +115,13 @@ export function OrderHistoryList({
                     {placed?.toLocaleDateString(locale)} · {t('orderHistory.itemsCount', { count })}
                   </p>
                 </div>
-                <Badge variant="secondary">{order.status}</Badge>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{formatPrice(order.total)}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
+                    {formatPrice(order.total)}
+                  </span>
+                  <Badge variant="secondary">{order.status}</Badge>
+                </div>
+                <ChevronRightIcon size={18} style={{ color: '#999', flexShrink: 0 }} />
               </div>
             </Link>
           </li>

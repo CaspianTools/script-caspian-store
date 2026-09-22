@@ -8,6 +8,7 @@ import { useScriptSettings } from '../context/script-settings-context';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
 import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Skeleton, Separator, Badge } from '../ui/misc';
+import { cn } from '../utils/cn';
 
 const MAX_POLL_ATTEMPTS = 6;
 const POLL_INTERVAL_MS = 1500;
@@ -117,15 +118,31 @@ export function OrderConfirmationPage({
   const placedAt = order.createdAt?.toDate ? order.createdAt.toDate() : null;
 
   return (
-    <div className={className}>
+    <div
+      className={cn('caspian-page-gutter', className)}
+      style={{ maxWidth: 760, margin: '0 auto', padding: '32px clamp(16px, 4vw, 24px) 64px' }}
+    >
       <header style={{ textAlign: 'center', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t('orderConfirmation.title')}</h1>
+        <h1 style={{ fontSize: 'clamp(24px, 6vw, 28px)', fontWeight: 700, margin: 0 }}>
+          {t('orderConfirmation.title')}
+        </h1>
         <p style={{ color: '#666', marginTop: 6 }}>
           {t('orderConfirmation.emailConfirmation', {
             email: order.userEmail || t('orderConfirmation.defaultEmail'),
           })}
         </p>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 12 }}>
+        <p
+          style={{
+            color: '#888',
+            fontSize: 13,
+            marginTop: 12,
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
           {t('orderConfirmation.orderLine', { id: order.id.slice(0, 10) })}
           <Badge variant="secondary">{order.status}</Badge>
           {placedAt && ` · ${placedAt.toLocaleDateString(locale)}`}
@@ -136,7 +153,7 @@ export function OrderConfirmationPage({
         <h2 style={h2Style}>{t('orderConfirmation.items')}</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {order.items.map((item, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 14 }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <p style={{ margin: 0, fontWeight: 500 }}>{item.name}</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>
@@ -144,7 +161,7 @@ export function OrderConfirmationPage({
                   {t('checkout.qtyShort')} {item.quantity}
                 </p>
               </div>
-              <span style={{ fontWeight: 600 }}>{formatPrice(item.price * item.quantity)}</span>
+              <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{formatPrice(item.price * item.quantity)}</span>
             </div>
           ))}
         </div>
@@ -205,7 +222,7 @@ function SummaryRow({ label, value, strong }: { label: string; value: string; st
 }
 
 const sectionStyle: React.CSSProperties = {
-  padding: 20,
+  padding: 'clamp(16px, 4vw, 20px)',
   border: '1px solid #eee',
   borderRadius: 'var(--caspian-radius, 8px)',
 };

@@ -167,7 +167,7 @@ export function DashboardSearchTermsSection() {
                   <TD style={{ color: '#888', fontSize: 13 }}>
                     {term.firstSearchedAt?.toDate ? term.firstSearchedAt.toDate().toLocaleString() : '—'}
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <Button variant="destructive" size="sm" onClick={() => setPendingDelete(term)}>
                       {t('common.delete')}
                     </Button>

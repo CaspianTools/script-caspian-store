@@ -215,7 +215,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Reviews &amp; Questions</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Moderate customer reviews and Q&amp;A.
@@ -287,7 +287,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
                       <TD>
                         <Badge variant={STATUS_VARIANT[review.status]}>{review.status}</Badge>
                       </TD>
-                      <TD style={{ textAlign: 'right' }}>
+                      <TD data-label="" style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: 4 }}>
                           {review.status !== 'approved' && (
                             <Button size="sm" disabled={isBusy} onClick={() => handleReviewStatus(review, 'approved')}>
@@ -359,7 +359,7 @@ export function AdminReviewsModeration({ className }: { className?: string }) {
                       <TD>
                         <Badge variant={STATUS_VARIANT[question.status]}>{question.status}</Badge>
                       </TD>
-                      <TD style={{ textAlign: 'right' }}>
+                      <TD data-label="" style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: 4 }}>
                           <Button variant="outline" size="sm" disabled={isBusy} onClick={() => openAnswer(question)}>
                             Answer

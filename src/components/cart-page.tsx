@@ -7,6 +7,7 @@ import { useScriptSettings } from '../context/script-settings-context';
 import { useCaspianImage, useCaspianLink } from '../provider/caspian-store-provider';
 import { useFormatCurrency, useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { cn } from '../utils/cn';
 
 export interface CartPageProps {
   /** Link factory for product titles + thumbnails. Default: `/product/{id}`. */
@@ -62,10 +63,17 @@ export function CartPage({
     setAppliedPromo(null);
   };
 
+  const checkoutUrl = appliedPromo
+    ? `${checkoutHref}?promo=${encodeURIComponent(appliedPromo)}`
+    : checkoutHref;
+
   if (items.length === 0) {
     return (
-      <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>{t('cart.page.title')}</h1>
+      <div
+        className={className}
+        style={{ maxWidth: 1200, margin: '0 auto', padding: '48px clamp(16px, 4vw, 24px)' }}
+      >
+        <h1 style={{ fontSize: 'clamp(26px, 6vw, 32px)', fontWeight: 700, margin: 0 }}>{t('cart.page.title')}</h1>
         <div
           style={{
             marginTop: 40,
@@ -99,9 +107,12 @@ export function CartPage({
   }
 
   return (
-    <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
-      <header style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>
+    <div
+      className={cn('caspian-has-sticky-cta', className)}
+      style={{ maxWidth: 1200, margin: '0 auto', padding: '32px clamp(16px, 4vw, 24px)' }}
+    >
+      <header style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 'clamp(26px, 6vw, 32px)', fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>
           {t('cart.page.title')}
         </h1>
       </header>
@@ -143,7 +154,7 @@ export function CartPage({
               background: '#fff',
               borderRadius: 12,
               border: '1px solid rgba(0,0,0,0.05)',
-              padding: 24,
+              padding: 'clamp(16px, 4vw, 24px)',
             }}
           >
             <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 20px' }}>
@@ -228,16 +239,21 @@ export function CartPage({
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="caspian-stack-mobile" style={{ display: 'flex', gap: 8 }}>
                   <input
                     id="caspian-cart-promo"
                     type="text"
                     autoComplete="off"
+                    autoCapitalize="characters"
+                    enterKeyHint="done"
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value)}
                     placeholder={t('cart.page.promoPlaceholder')}
                     style={{
                       flex: 1,
+                      minWidth: 0,
+                      minHeight: 44,
+                      boxSizing: 'border-box',
                       padding: '10px 12px',
                       border: '1px solid rgba(0,0,0,0.15)',
                       borderRadius: 8,
@@ -248,8 +264,10 @@ export function CartPage({
                   />
                   <button
                     type="submit"
+                    className="caspian-full-mobile"
                     disabled={!promoInput.trim()}
                     style={{
+                      minHeight: 44,
                       padding: '10px 16px',
                       background: 'rgba(0,0,0,0.05)',
                       color: '#111',
@@ -269,7 +287,7 @@ export function CartPage({
               )}
             </form>
 
-            <Link href={appliedPromo ? `${checkoutHref}?promo=${encodeURIComponent(appliedPromo)}` : checkoutHref}>
+            <Link href={checkoutUrl}>
               <Button size="lg" style={{ width: '100%' }}>
                 {t('cart.page.proceedToCheckout')}
               </Button>
@@ -291,6 +309,18 @@ export function CartPage({
             </p>
           </div>
         </aside>
+      </div>
+
+      <div className="caspian-sticky-cta">
+        <div className="caspian-sticky-cta__price">
+          <strong>{formatPrice(subtotal)}</strong>
+          <span>{t('cart.subtotal')}</span>
+        </div>
+        <Link href={checkoutUrl} style={{ flex: 1, display: 'flex' }}>
+          <Button size="lg" style={{ width: '100%' }}>
+            {t('cart.page.proceedToCheckout')}
+          </Button>
+        </Link>
       </div>
     </div>
   );
@@ -330,9 +360,9 @@ function CartItemCard({
       style={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: '120px minmax(0, 1fr) auto',
-        gap: 20,
-        padding: 20,
+        gridTemplateColumns: 'clamp(72px, 20vw, 120px) minmax(0, 1fr)',
+        gap: 'clamp(12px, 3vw, 20px)',
+        padding: 'clamp(12px, 3vw, 20px)',
         background: '#fff',
         borderRadius: 12,
         border: '1px solid rgba(0,0,0,0.05)',
@@ -342,12 +372,11 @@ function CartItemCard({
         <div
           style={{
             position: 'relative',
-            width: 120,
-            height: 120,
+            width: '100%',
+            aspectRatio: '1 / 1',
             background: '#f5f5f5',
             borderRadius: 8,
             overflow: 'hidden',
-            flexShrink: 0,
           }}
         >
           {img ? <Image src={img.url} alt={img.alt || item.product.name} fill /> : null}
@@ -355,60 +384,81 @@ function CartItemCard({
       </Link>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
-        <Link href={getProductHref(item.product.slug ?? item.product.id)}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#111' }}>
-            {item.product.name}
-          </h3>
-        </Link>
-        {variantLine && (
-          <p style={{ margin: 0, fontSize: 13, color: '#888' }}>{variantLine}</p>
-        )}
+        <div style={{ paddingRight: 40 }}>
+          <Link href={getProductHref(item.product.slug ?? item.product.id)}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#111',
+                lineHeight: 1.3,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {item.product.name}
+            </h3>
+          </Link>
+          {variantLine && (
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#888' }}>{variantLine}</p>
+          )}
+        </div>
         <div
           style={{
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            gap: 4,
-            padding: '4px 8px',
-            border: '1px solid rgba(0,0,0,0.12)',
-            borderRadius: 999,
-            width: 'fit-content',
-            marginTop: 4,
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+            marginTop: 'auto',
           }}
         >
-          <button
-            type="button"
-            onClick={() => onUpdate(Math.max(1, item.quantity - 1))}
-            aria-label={t('cart.page.decreaseQty')}
-            style={qtyBtnStyle}
-          >
-            −
-          </button>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            value={qtyDraft ?? item.quantity}
-            onChange={(e) => setQtyDraft(e.target.value)}
-            onBlur={commitQty}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur();
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '0 2px',
+              border: '1px solid rgba(0,0,0,0.12)',
+              borderRadius: 999,
             }}
-            aria-label={t('cart.page.quantity')}
-            style={qtyInputStyle}
-          />
-          <button
-            type="button"
-            onClick={() => onUpdate(item.quantity + 1)}
-            aria-label={t('cart.page.increaseQty')}
-            style={qtyBtnStyle}
           >
-            +
-          </button>
+            <button
+              type="button"
+              onClick={() => onUpdate(Math.max(1, item.quantity - 1))}
+              aria-label={t('cart.page.decreaseQty')}
+              style={qtyBtnStyle}
+            >
+              −
+            </button>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={qtyDraft ?? item.quantity}
+              onChange={(e) => setQtyDraft(e.target.value)}
+              onBlur={commitQty}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+              }}
+              aria-label={t('cart.page.quantity')}
+              style={qtyInputStyle}
+            />
+            <button
+              type="button"
+              onClick={() => onUpdate(item.quantity + 1)}
+              aria-label={t('cart.page.increaseQty')}
+              style={qtyBtnStyle}
+            >
+              +
+            </button>
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {formatPrice(item.product.price * item.quantity)}
+          </div>
         </div>
-      </div>
-
-      <div style={{ textAlign: 'right', fontSize: 18, fontWeight: 600 }}>
-        {formatPrice(item.product.price * item.quantity)}
       </div>
 
       <button
@@ -417,18 +467,18 @@ function CartItemCard({
         aria-label={t('cart.remove')}
         style={{
           position: 'absolute',
-          top: 12,
-          right: 12,
-          width: 28,
-          height: 28,
+          top: 4,
+          right: 4,
+          width: 44,
+          height: 44,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           background: 'transparent',
           border: 0,
-          borderRadius: 4,
+          borderRadius: 8,
           color: '#888',
-          fontSize: 18,
+          fontSize: 22,
           lineHeight: 1,
           cursor: 'pointer',
         }}
@@ -441,8 +491,9 @@ function CartItemCard({
 
 const qtyInputStyle: React.CSSProperties = {
   width: 40,
+  height: 44,
   textAlign: 'center',
-  fontSize: 13,
+  fontSize: 14,
   border: 0,
   background: 'transparent',
   outline: 'none',
@@ -452,14 +503,15 @@ const qtyInputStyle: React.CSSProperties = {
 };
 
 const qtyBtnStyle: React.CSSProperties = {
-  width: 24,
-  height: 24,
+  width: 44,
+  height: 44,
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
   background: 'transparent',
   border: 0,
-  fontSize: 14,
+  borderRadius: 999,
+  fontSize: 18,
   cursor: 'pointer',
   color: '#333',
   padding: 0,

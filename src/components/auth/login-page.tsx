@@ -82,6 +82,8 @@ export function LoginPage({
             id="login-email"
             type="email"
             autoComplete="email"
+            inputMode="email"
+            enterKeyHint="next"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -93,12 +95,22 @@ export function LoginPage({
             id="login-password"
             type="password"
             autoComplete="current-password"
+            enterKeyHint="done"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8,
+            fontSize: 13,
+          }}
+        >
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <input
               type="checkbox"
@@ -109,14 +121,22 @@ export function LoginPage({
           </label>
           <Link href={forgotPasswordHref}>{t('auth.login.forgotPassword')}</Link>
         </div>
-        <Button type="submit" size="lg" loading={submitting}>
+        <Button type="submit" size="lg" className="caspian-full-mobile" loading={submitting}>
           {submitting ? t('auth.login.submitting') : t('auth.login.submit')}
         </Button>
       </form>
 
       <Separator />
 
-      <Button variant="outline" size="lg" onClick={handleGoogle} disabled={submitting} style={{ width: '100%' }}>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="caspian-full-mobile"
+        onClick={handleGoogle}
+        disabled={submitting}
+        style={{ width: '100%' }}
+      >
         {t('auth.login.googleCta')}
       </Button>
 

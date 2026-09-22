@@ -69,6 +69,7 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
       >
         <div>
@@ -100,7 +101,7 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
             {cats.map((c) => (
               <TR key={c.id}>
                 <TD style={{ fontFamily: 'monospace', fontSize: 13 }}>{c.order}</TD>
-                <TD style={{ fontWeight: 500 }}>
+                <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>
                   <button
                     type="button"
                     onClick={() => nav.push(`/admin/categories/${c.id}/edit`)}
@@ -131,7 +132,7 @@ export function AdminProductCategoriesPage({ className }: { className?: string }
                     {c.isActive ? 'Active' : 'Hidden'}
                   </Badge>
                 </TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button
                       variant="outline"

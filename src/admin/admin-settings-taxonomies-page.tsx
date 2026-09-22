@@ -181,7 +181,7 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
           {t('admin.settings.taxonomies.title')}
         </h1>

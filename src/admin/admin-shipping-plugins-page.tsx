@@ -293,6 +293,7 @@ export function AdminShippingPluginsPage({
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -351,7 +352,7 @@ export function AdminShippingPluginsPage({
               return (
                 <TR key={install.id}>
                   <TD style={{ fontFamily: 'monospace', fontSize: 13 }}>{install.order}</TD>
-                  <TD style={{ fontWeight: 500 }}>{install.name}</TD>
+                  <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>{install.name}</TD>
                   <TD style={{ color: '#666' }}>{plugin?.name ?? install.pluginId}</TD>
                   <TD style={{ color: '#666' }}>
                     {install.estimatedDays.min}–{install.estimatedDays.max} {t('admin.shippingPlugins.daysSuffix')}
@@ -363,7 +364,7 @@ export function AdminShippingPluginsPage({
                         : t('admin.shippingPlugins.status.disabled')}
                     </Badge>
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <Button variant="outline" size="sm" onClick={() => toggleEnabled(install)}>
                         {install.enabled

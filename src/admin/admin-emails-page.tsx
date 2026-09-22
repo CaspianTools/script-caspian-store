@@ -226,7 +226,7 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Emails</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Transactional emails sent by the Cloud Function when orders are created or updated.
@@ -383,7 +383,7 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
                   {tpl.enabled ? 'Enabled' : 'Disabled'}
                 </Badge>
               </TD>
-              <TD style={{ textAlign: 'right' }}>
+              <TD data-label="" style={{ textAlign: 'right' }}>
                 <Button variant="outline" size="sm" onClick={() => openTemplate(tpl)}>
                   Edit
                 </Button>

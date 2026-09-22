@@ -94,7 +94,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.users.title')}</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           {users === null ? t('admin.users.subtitle') : t('admin.users.total', { count: users.length })}
@@ -159,7 +159,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
                   <TD style={{ color: '#888', fontSize: 13 }}>
                     {u.createdAt?.toDate ? u.createdAt.toDate().toLocaleString() : '—'}
                   </TD>
-                  <TD>
+                  <TD data-label="">
                     {isAdmin && isSelf ? (
                       <span style={{ color: '#888', fontSize: 12 }}>
                         {t('admin.users.action.self')}

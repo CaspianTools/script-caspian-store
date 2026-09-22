@@ -75,17 +75,18 @@ export function ProfilePhotoCard({ className }: { className?: string }) {
             onChange={handleFile}
             style={{ display: 'none' }}
           />
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Button
+              type="button"
               variant="outline"
-              size="sm"
               disabled={uploading}
               onClick={() => fileRef.current?.click()}
+              style={{ minHeight: 44 }}
             >
               {uploading ? t('photo.uploading') : t('photo.change')}
             </Button>
             {userProfile.photoURL && (
-              <Button variant="ghost" size="sm" disabled={uploading} onClick={handleRemove}>
+              <Button type="button" variant="ghost" disabled={uploading} onClick={handleRemove} style={{ minHeight: 44 }}>
                 {t('photo.remove')}
               </Button>
             )}
