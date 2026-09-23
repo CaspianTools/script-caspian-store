@@ -35,7 +35,8 @@ that the library lacked, carried into the library so every store gets them.
 - **Order details page:** `/orders/:id` now shows `<OrderDetailPage>`. It has a
   status timeline (`<OrderStatusTimeline>`), the items with colour and size,
   the totals with the promo code, the delivery address, the notes and the
-  payment method. `OrderHistoryList` always linked here; nothing was routed.
+  payment method. Until now the route reused the order confirmation page,
+  which polls for a webhook-written order and has none of these.
 - **Checkout**
   - An optional order-notes box, saved to `shippingInfo.orderNotes`.
   - Each shipping rate shows the dates it arrives on (`formatDeliveryWindow`).

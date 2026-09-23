@@ -202,17 +202,22 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
     return sessionId ? <OrderConfirmationPage orderId={sessionId} /> : <NotFound path={path} />;
   }
   {
-    // Order history links here. The confirmation page is already a read-only
-    // order view keyed by document id, so it doubles as the detail page.
+    // Order history links here. Until v15.3 this reused the confirmation
+    // page, which polls for a webhook-written order; the detail page reads
+    // once and adds the status timeline, address and notes.
     const m = path.match(/^\/orders\/([^/]+)$/);
-    if (m) return <OrderConfirmationPage key={m[1]} orderId={m[1]} continueHref="/account?section=orders" />;
+    if (m) {
+      let orderId = m[1];
+      try {
+        orderId = decodeURIComponent(orderId);
+      } catch {
+        // A malformed escape is just an id that matches no order.
+      }
+      return <OrderDetailPage key={orderId} orderId={orderId} />;
+    }
   }
 
   if (path === '/order-status') return <GuestOrderLookupPage />;
-  {
-    const m = path.match(/^\/orders\/([^/]+)$/);
-    if (m && m[1] !== 'success') return <OrderDetailPage orderId={decodeURIComponent(m[1])} />;
-  }
 
   if (path === '/account') return <AccountPage />;
   if (path === '/login' || path === '/auth/login') return <LoginPage />;

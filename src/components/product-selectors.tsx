@@ -86,11 +86,12 @@ export function ColorSelector({ variants, value, onChange, className }: ColorSel
       role="group"
       style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}
     >
-      {variants.map((v) => {
+      {variants.map((v, i) => {
         const active = v.name === value;
         return (
           <button
-            key={v.name}
+            // Index too: imported data can repeat a name, and keys must stay unique.
+            key={`${i}:${v.name}`}
             type="button"
             onClick={() => onChange(v.name)}
             aria-pressed={active}
