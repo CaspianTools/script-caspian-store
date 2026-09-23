@@ -83,6 +83,13 @@ a:focus-visible {
   background: var(--caspian-primary, #111);
 }
 
+.caspian-shop-filter-sidebar input[type="radio"],
+.caspian-shop-filter-sidebar input[type="checkbox"],
+.caspian-shop-filter-drawer input[type="radio"],
+.caspian-shop-filter-drawer input[type="checkbox"] {
+  accent-color: var(--caspian-primary, #111);
+}
+
 .caspian-shop-grid {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -327,8 +334,9 @@ a:focus-visible {
   to { opacity: 1; transform: none; }
 }
 @keyframes caspian-slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: none; }
+  /* + 24px: the cart drawer floats 16px in from the edge. */
+  from { transform: translateX(calc(100% + 24px)); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
 }
 @keyframes caspian-toast-in {
   from { opacity: 0; transform: translateY(12px) scale(0.97); }
@@ -2534,10 +2542,14 @@ h4.pb-w-heading {
     right: 8px !important;
   }
 
-  /* Cart drawer covers the viewport on a phone. */
+  /* Cart drawer: nearly full width on a phone, still floating. */
+  .caspian-cart-sheet-overlay {
+    padding: 8px !important;
+  }
   .caspian-cart-sheet {
     width: 100% !important;
     padding: 16px !important;
+    border-radius: 16px !important;
   }
 
   /* Product grids: two columns of real products beat one column of huge

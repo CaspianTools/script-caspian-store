@@ -304,37 +304,52 @@ export function ProductListPage({
         taxConfig={taxConfig}
       />
     );
-  const resultsBar = (
-    <div
-      className="caspian-shop-results-bar"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        marginBottom: 16,
-      }}
-    >
-      <p style={{ fontSize: 13, color: '#666', margin: 0 }} aria-live="polite">
-        {typeof resultCount === 'number' ? t('shop.filters.resultCount', { count: resultCount }) : ''}
-      </p>
-      {hideFilters ? null : <div className="caspian-hide-mobile">{sortSelect}</div>}
-    </div>
-  );
+  const countLabel =
+    typeof resultCount === 'number' ? t('shop.filters.resultCount', { count: resultCount }) : '\u00a0';
 
   return (
-    <div className={className}>
-      {(title || subtitle) && (
-        <header style={{ marginBottom: 24 }}>
-          {title && <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{title}</h1>}
-          {subtitle && <p style={{ color: '#666', marginTop: 4 }}>{subtitle}</p>}
-        </header>
-      )}
+    <div
+      className={cn('caspian-page-gutter', 'caspian-shop-page', className)}
+      style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) 24px 72px' }}
+    >
+      <header
+        className="caspian-shop-header"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: 16,
+          paddingBottom: 20,
+          marginBottom: 28,
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          {title && (
+            <h1
+              style={{
+                fontSize: 'clamp(28px, 4vw, 40px)',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                margin: 0,
+              }}
+            >
+              {title}
+            </h1>
+          )}
+          {subtitle && <p style={{ color: '#666', margin: '8px 0 0', fontSize: 15 }}>{subtitle}</p>}
+          <p style={{ fontSize: 13, color: '#888', margin: '8px 0 0' }} aria-live="polite">
+            {countLabel}
+          </p>
+        </div>
+        <div className="caspian-hide-mobile" style={{ width: 200 }}>
+          {sortSelect}
+        </div>
+      </header>
       {hideFilters ? (
-        <>
-          {resultsBar}
-          {grid}
-        </>
+        grid
       ) : (
         <>
           <MobileFilterToolbar
@@ -350,12 +365,8 @@ export function ProductListPage({
               categoryLabels={categoryLabels}
               availableSizes={availableSizes}
               availableTaxonomies={availableTaxonomies}
-              resultCount={resultCount}
             />
-            <div style={{ minWidth: 0 }}>
-              {resultsBar}
-              {grid}
-            </div>
+            <div style={{ minWidth: 0 }}>{grid}</div>
           </div>
           <ShopFilterDrawer
             open={mobileFiltersOpen}

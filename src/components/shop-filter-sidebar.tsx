@@ -305,13 +305,14 @@ export function ShopFilterSidebar({
     <aside
       className={cn('caspian-shop-filter-sidebar', className)}
       style={{
-        padding: 20,
-        border: '1px solid rgba(0,0,0,0.08)',
-        borderRadius: 'var(--caspian-radius, 8px)',
-        background: '#fff',
+        // A plain column, not a boxed card: the grid next to it is the page's
+        // focus. Sticks below the ~80px site header while the grid scrolls.
         alignSelf: 'start',
         position: 'sticky',
-        top: 16,
+        top: 104,
+        maxHeight: 'calc(100vh - 128px)',
+        overflowY: 'auto',
+        paddingRight: 4,
       }}
     >
       <ShopFilterFields {...fieldsProps} />

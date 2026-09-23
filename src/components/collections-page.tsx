@@ -55,9 +55,22 @@ export function CollectionsPage({
   const resolvedEmpty = emptyMessage ?? t('collections.empty');
 
   return (
-    <div className={cn('caspian-collections-page', 'caspian-page-gutter', className)}>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{resolvedTitle}</h1>
+    <div
+      className={cn('caspian-collections-page', 'caspian-page-gutter', className)}
+      style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) 24px 72px' }}
+    >
+      <header style={{ paddingBottom: 20, marginBottom: 28, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+        <h1
+          style={{
+            fontSize: 'clamp(28px, 4vw, 40px)',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+            margin: 0,
+          }}
+        >
+          {resolvedTitle}
+        </h1>
         {resolvedSubtitle && <p style={{ color: '#666', marginTop: 4 }}>{resolvedSubtitle}</p>}
       </header>
 

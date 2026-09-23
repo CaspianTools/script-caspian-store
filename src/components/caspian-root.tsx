@@ -161,7 +161,9 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
     <LayoutShell
       header={header}
       footer={footer}
-      contentPaddingY={path === '/' ? 0 : 100}
+      // Pages pad themselves inside their own containers; a 100px band above
+      // every page made the header look detached from the content.
+      contentPaddingY={path === '/' ? 0 : 8}
     >
       {renderStorefrontPage()}
     </LayoutShell>

@@ -62,10 +62,14 @@ export function CartSheet({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.5)',
+        background: 'rgba(15, 15, 20, 0.35)',
+        backdropFilter: 'blur(2px)',
+        WebkitBackdropFilter: 'blur(2px)',
         zIndex: 900,
         display: 'flex',
         justifyContent: 'flex-end',
+        // The drawer floats: inset from the viewport edges, rounded.
+        padding: 16,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
@@ -83,7 +87,9 @@ export function CartSheet({
           display: 'flex',
           flexDirection: 'column',
           padding: 24,
-          boxShadow: '-12px 0 40px rgba(0,0,0,0.18)',
+          borderRadius: 20,
+          overflow: 'hidden',
+          boxShadow: '0 24px 64px rgba(15, 15, 20, 0.22), 0 2px 8px rgba(15, 15, 20, 0.08)',
         }}
       >
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
