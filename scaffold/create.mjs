@@ -182,6 +182,7 @@ const ourScripts = {
   typecheck: 'tsc --noEmit',
   'firebase:deploy': 'firebase deploy',
   'firebase:sync': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/sync-rules.mjs',
+  'firebase:sync-functions': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/sync-functions.mjs',
   'deploy:admin': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-admin',
   'deploy:email': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-email',
   'deploy:stripe': 'node node_modules/@caspian-explorer/script-caspian-store/firebase/scripts/deploy-functions.mjs --codebase caspian-stripe',
@@ -878,6 +879,12 @@ export async function POST(req: Request) {
   return caspianHandleSelfUpdate(req);
 }
 `);
+
+// ---- One-click updates: redeploy Firebase on every package bump ----
+// The /admin/about Update button commits the package bump; this workflow
+// deploys the new release's rules, indexes and functions from that commit.
+// It skips itself until the FIREBASE_SERVICE_ACCOUNT secret is added.
+write('.github/workflows/caspian-firebase-deploy.yml', readFileSync(join(packageRoot, 'scaffold', 'caspian-firebase-deploy.yml'), 'utf8'));
 
 // ---- Firebase config ----
 // Copy the real rule files from the package's own firebase/ tree, so the user

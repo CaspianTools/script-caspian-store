@@ -54,6 +54,16 @@ that the library lacked, carried into the library so every store gets them.
   navigation. The Stripe success and cancel URLs that `CaspianRoot` infers now
   keep it too. New helpers `getLocalePrefix` and `withLocalePrefix`.
 - Order statuses are translated on the shopper pages (`order.status.*`).
+- **One-click updates cover Firebase too:**
+  - A new GitHub Actions workflow template,
+    `scaffold/caspian-firebase-deploy.yml`, which the scaffolder writes to
+    `.github/workflows/`. It runs on every push that bumps the package (such
+    as the commit from the Update button on `/admin/about`) and deploys that
+    release's rules, indexes, Storage rules and Cloud Functions.
+  - A new script, `firebase/scripts/sync-functions.mjs`, run with
+    `npm run firebase:sync-functions`. It refreshes the site's `functions-*`
+    copies from the installed package, so upgrades no longer deploy stale
+    functions.
 
 ### Changed
 
@@ -64,7 +74,10 @@ that the library lacked, carried into the library so every store gets them.
 ### No consumer action required
 
 Library-only changes. No rules, indexes or Cloud Functions changed; upgrade
-the package and everything is picked up. `localeInUrl` is opt-in.
+the package and everything is picked up. `localeInUrl` is opt-in. To make
+future updates one click end to end, add the new deploy workflow and its
+`FIREBASE_SERVICE_ACCOUNT` secret (INSTALL.md, "Self-update from
+`/admin/about`").
 
 ## v15.2.0 — Stripe charges the tax it shows, the success page finds the order, and colour variants are buyable
 

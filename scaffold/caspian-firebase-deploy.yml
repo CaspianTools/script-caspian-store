@@ -1,0 +1,82 @@
+# Caspian Store — redeploy Firebase after every library update.
+#
+# The "Update" button on /admin/about (GitHub-commit mode) pushes a commit
+# that bumps @caspian-explorer/script-caspian-store in package.json. Your host
+# rebuilds the site from that push; this workflow ships the rest of the
+# release on the same push: Firestore rules + indexes, Storage rules and the
+# Cloud Functions codebases listed in firebase.json, all taken from the newly
+# installed package. Together that makes the update one click.
+#
+# One-time setup (repo → Settings → Secrets and variables → Actions):
+#   secret   FIREBASE_SERVICE_ACCOUNT  JSON key of a service account with the
+#            roles: Firebase Admin, Cloud Functions Admin, Service Account User,
+#            Artifact Registry Administrator, Secret Manager Viewer.
+#   variable FIREBASE_PROJECT_ID       your Firebase project id.
+# Without the secret the workflow skips itself (it never fails a push).
+#
+# Source: node_modules/@caspian-explorer/script-caspian-store/scaffold/caspian-firebase-deploy.yml
+
+name: Caspian Firebase deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+
+concurrency:
+  group: caspian-firebase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - name: Skip (FIREBASE_SERVICE_ACCOUNT not set)
+        if: env.HAS_SA != 'true'
+        run: echo "::notice::Add the FIREBASE_SERVICE_ACCOUNT secret to deploy rules and functions automatically."
+
+      - uses: actions/checkout@v4
+        if: env.HAS_SA == 'true'
+
+      - uses: actions/setup-node@v4
+        if: env.HAS_SA == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        if: env.HAS_SA == 'true'
+        run: npm ci --ignore-scripts
+
+      - name: Sync rules, indexes and functions from the installed package
+        if: env.HAS_SA == 'true'
+        run: |
+          LIB=node_modules/@caspian-explorer/script-caspian-store/firebase/scripts
+          node "$LIB/sync-rules.mjs"
+          node "$LIB/sync-functions.mjs"
+
+      - name: Install functions dependencies
+        if: env.HAS_SA == 'true'
+        run: |
+          for dir in $(node -e "const c=require('./firebase.json');const f=[].concat(c.functions||[]);console.log(f.map(x=>x.source).join(' '))"); do
+            if [ -f "$dir/package.json" ]; then npm ci --prefix "$dir"; fi
+          done
+
+      - name: Deploy
+        if: env.HAS_SA == 'true'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PROJECT: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          printf '%s' "$SA_JSON" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          if [ -z "$PROJECT" ]; then PROJECT=$(node -e "console.log(JSON.parse(process.env.SA_JSON).project_id)"); fi
+          # Only the targets firebase.json actually configures.
+          ONLY=$(node -e "const c=require('./firebase.json');const t=[];if(c.firestore)t.push('firestore:rules','firestore:indexes');if(c.storage)t.push('storage');if(c.functions)t.push('functions');console.log(t.join(','))")
+          if [ -z "$ONLY" ]; then echo "firebase.json configures nothing to deploy"; exit 0; fi
+          npx --yes firebase-tools@latest deploy --project "$PROJECT" --non-interactive --only "$ONLY"
