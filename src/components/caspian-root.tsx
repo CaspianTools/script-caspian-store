@@ -13,6 +13,7 @@ import { SearchResultsPage } from './search-results-page';
 import { CartPage } from './cart-page';
 import { CheckoutPage } from './checkout-page';
 import { OrderConfirmationPage } from './order-confirmation-page';
+import { OrderDetailPage } from './order-detail-page';
 import { GuestOrderLookupPage } from './guest-order-lookup-page';
 
 import {
@@ -208,6 +209,10 @@ export function CaspianRoot(props: CaspianRootProps = {}): ReactNode {
   }
 
   if (path === '/order-status') return <GuestOrderLookupPage />;
+  {
+    const m = path.match(/^\/orders\/([^/]+)$/);
+    if (m && m[1] !== 'success') return <OrderDetailPage orderId={decodeURIComponent(m[1])} />;
+  }
 
   if (path === '/account') return <AccountPage />;
   if (path === '/login' || path === '/auth/login') return <LoginPage />;

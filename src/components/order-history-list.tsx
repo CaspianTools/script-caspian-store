@@ -119,7 +119,7 @@ export function OrderHistoryList({
                   <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
                     {formatPrice(order.total)}
                   </span>
-                  <Badge variant="secondary">{order.status}</Badge>
+                  <Badge variant="secondary">{t(`order.status.${order.status}`)}</Badge>
                 </div>
                 <ChevronRightIcon size={18} style={{ color: '#999', flexShrink: 0 }} />
               </div>

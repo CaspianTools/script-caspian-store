@@ -1,6 +1,6 @@
 'use client';
 
-import { useT } from '../../i18n/locale-context';
+import { useLocale, useT } from '../../i18n/locale-context';
 import { Skeleton } from '../../ui/misc';
 import type { ShippingRate } from '../../shipping/types';
 
@@ -12,6 +12,34 @@ export interface ShippingRatePickerProps {
   className?: string;
 }
 
+/**
+ * "Jun 3 – Jun 5": the calendar dates a rate's `estimatedDays` window lands
+ * on, counted from `from` (today). Shoppers plan around dates, not day
+ * counts. Returns '' when the window is missing or not a number.
+ */
+export function formatDeliveryWindow(
+  estimatedDays: { min: number; max: number } | undefined,
+  locale: string,
+  from: Date = new Date(),
+): string {
+  const min = Number(estimatedDays?.min);
+  const max = Number(estimatedDays?.max);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return '';
+  const addDays = (n: number) => {
+    const d = new Date(from);
+    d.setDate(d.getDate() + n);
+    return d;
+  };
+  let fmt: Intl.DateTimeFormat;
+  try {
+    fmt = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
+  } catch {
+    fmt = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' });
+  }
+  const first = fmt.format(addDays(min));
+  return min === max ? first : `${first} – ${fmt.format(addDays(Math.max(min, max)))}`;
+}
+
 export function ShippingRatePicker({
   rates,
   selectedInstallId,
@@ -20,6 +48,7 @@ export function ShippingRatePicker({
   className,
 }: ShippingRatePickerProps) {
   const t = useT();
+  const locale = useLocale();
 
   if (rates === null) {
     return (
@@ -77,6 +106,10 @@ export function ShippingRatePicker({
                 {rate.estimatedDays.min === rate.estimatedDays.max
                   ? `${rate.estimatedDays.min} ${t('checkout.rate.daysSuffix')}`
                   : `${rate.estimatedDays.min}–${rate.estimatedDays.max} ${t('checkout.rate.daysSuffix')}`}
+                {(() => {
+                  const dates = formatDeliveryWindow(rate.estimatedDays, locale);
+                  return dates ? ` · ${t('checkout.rate.arrives', { dates })}` : '';
+                })()}
               </div>
             </div>
             <div style={{ fontWeight: 600, fontSize: 14, marginLeft: 'auto', textAlign: 'right', whiteSpace: 'nowrap' }}>

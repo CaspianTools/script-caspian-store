@@ -209,7 +209,7 @@ export function GuestOrderLookupPage({
             <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
               {t('guestOrder.orderHeading', { id: order.id.slice(0, 10) })}
             </h2>
-            <Badge variant="secondary">{order.status}</Badge>
+            <Badge variant="secondary">{t(`order.status.${order.status}`)}</Badge>
           </header>
 
           {order.createdAt && (

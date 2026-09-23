@@ -21,7 +21,7 @@ import type { SiteSettings, SupportedCountry, UserAddress } from '../types';
 import type { ShippingRate } from '../shipping/types';
 import { Button } from '../ui/button';
 import { ChevronDownIcon } from '../ui/icons';
-import { Input, Label } from '../ui/input';
+import { Input, Label, Textarea } from '../ui/input';
 import { Skeleton } from '../ui/misc';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
@@ -52,6 +52,7 @@ interface ShippingForm {
   countryCode: string;
   postalCode: string;
   phone: string;
+  orderNotes: string;
   saveAddressToProfile: boolean;
   /**
    * "Create an account for faster checkout next time" — WooCommerce-style
@@ -64,6 +65,9 @@ interface ShippingForm {
 }
 
 const CHECKOUT_FORM_ID = 'caspian-checkout-form';
+
+// Same cap the hadiyyam checkout used; long enough for delivery instructions.
+const ORDER_NOTES_MAX = 500;
 
 // Countries whose postal codes are digits only, so the phone can show the
 // number pad. Anything else (GB, CA, NL, BR, JP, PL, ...) keeps the text
@@ -104,6 +108,7 @@ const emptyForm: ShippingForm = {
   countryCode: '',
   postalCode: '',
   phone: '',
+  orderNotes: '',
   saveAddressToProfile: true,
   createAccount: false,
 };
@@ -533,6 +538,7 @@ export function CheckoutPage({
               country: form.countryCode,
               shippingMethod: selectedRate.label,
               phone: form.phone.trim() || undefined,
+              orderNotes: form.orderNotes.trim() || undefined,
             }
           : undefined,
       });
@@ -992,6 +998,17 @@ export function CheckoutPage({
                       onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                     />
                   </div>
+                </div>
+                <div>
+                  <FieldLabel htmlFor="caspian-checkout-notes">{t('checkout.orderNotes')}</FieldLabel>
+                  <Textarea
+                    id="caspian-checkout-notes"
+                    rows={3}
+                    maxLength={ORDER_NOTES_MAX}
+                    placeholder={t('checkout.orderNotesPlaceholder')}
+                    value={form.orderNotes}
+                    onChange={(e) => setForm((f) => ({ ...f, orderNotes: e.target.value }))}
+                  />
                 </div>
                 <p style={{ margin: 0, fontSize: 12, color: '#888' }}>{t('checkout.requiredHint')}</p>
                 {user && !user.isAnonymous && (

@@ -94,6 +94,11 @@ export {
   OrderHistoryList,
   type OrderHistoryListProps,
 } from './components/order-history-list';
+export { OrderDetailPage, type OrderDetailPageProps } from './components/order-detail-page';
+export {
+  OrderStatusTimeline,
+  type OrderStatusTimelineProps,
+} from './components/order-status-timeline';
 export { WishlistButton, type WishlistButtonProps } from './components/wishlist-button';
 export {
   QuickAddToCartButton,
@@ -806,7 +811,7 @@ export {
   type FreeOverThresholdConfig,
   type WeightBasedConfig,
 } from './shipping';
-export { ShippingRatePicker, type ShippingRatePickerProps } from './components/checkout';
+export { ShippingRatePicker, formatDeliveryWindow, type ShippingRatePickerProps } from './components/checkout';
 export {
   uploadAdminImage,
   deleteStorageObject,

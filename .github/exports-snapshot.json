@@ -168,7 +168,9 @@
     "MultiSelect",
     "NewsletterSignup",
     "OrderConfirmationPage",
+    "OrderDetailPage",
     "OrderHistoryList",
+    "OrderStatusTimeline",
     "PAGE_TEMPLATES",
     "PAYMENT_PLUGIN_CATALOG",
     "PAYMENT_PLUGIN_IDS",
@@ -337,6 +339,7 @@
     "findCatalogTheme",
     "findCountryCode",
     "formatCurrency",
+    "formatDeliveryWindow",
     "getApprovedQuestionsForProduct",
     "getApprovedReviewsForProduct",
     "getBlockType",
@@ -348,6 +351,7 @@
     "getEmailSettings",
     "getFeaturedCategories",
     "getJournalArticle",
+    "getLocalePrefix",
     "getOrderById",
     "getOrderByStripeSession",
     "getOrdersByUser",
@@ -531,7 +535,8 @@
     "useToast",
     "useWishlist",
     "validatePromoCode",
-    "verifyAdminTodos"
+    "verifyAdminTodos",
+    "withLocalePrefix"
   ],
   "firebaseEntry": [
     "CASPIAN_FIRESTORE_INDEXES",

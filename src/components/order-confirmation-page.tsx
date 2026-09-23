@@ -156,7 +156,7 @@ export function OrderConfirmationPage({
           }}
         >
           {t('orderConfirmation.orderLine', { id: order.id.slice(0, 10) })}
-          <Badge variant="secondary">{order.status}</Badge>
+          <Badge variant="secondary">{t(`order.status.${order.status}`)}</Badge>
           {placedAt && ` · ${placedAt.toLocaleDateString(locale)}`}
         </p>
       </header>
