@@ -74,7 +74,9 @@ export function validateProductDraft(
   if (!draft.brand.trim()) errors.brand = `${v}brandRequired`;
 
   const price = isBlank(draft.price) ? NaN : Number(draft.price);
-  if (!Number.isFinite(price) || price <= 0) errors.price = `${v}pricePositive`;
+  // 0 stays valid: stores list free samples, and rejecting it would block
+  // re-saving every product that was already priced at 0.
+  if (!Number.isFinite(price) || price < 0) errors.price = `${v}pricePositive`;
 
   if (!isBlank(draft.weightKg)) {
     const weight = Number(draft.weightKg);

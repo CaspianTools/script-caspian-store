@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v15.2.0 firebase
-# v15.2.0 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v15.3.0 firebase
+# v15.3.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -602,6 +602,21 @@ const messages = {
 ```
 
 RTL locales (ar, he, fa, ur) automatically set `--caspian-direction: rtl` on the document — point your CSS at it. See the package's [i18n README](./src/i18n) for ICU-subset plural syntax.
+
+### Locale in the URL (`/fr/cart`, v15.3.0+)
+
+When the host app puts the locale in the path (a next-intl `[locale]` segment, say), mount the catch-all under it — `app/[locale]/[[...slug]]/page.tsx` — and pin `locale` from the URL so the provider never falls back to the device's saved choice. `CaspianRoot` already ignores a leading two-letter segment when it routes.
+
+Then pick **one** way to keep that segment on the library's own links:
+
+- your adapters already add it (next-intl's `Link` and `useRouter` from `createNavigation`) — pass them as `adapters.Link` / `adapters.useNavigation` and leave `localeInUrl` off; or
+- your adapters are plain `next/link` / `next/navigation` — pass `localeInUrl`, and the library prefixes every root-relative href with the current page's locale segment.
+
+```tsx
+<CaspianStoreProvider firebaseConfig={...} locale={locale} messagesByLocale={...} localeInUrl adapters={...}>
+```
+
+Turning `localeInUrl` on together with locale-aware adapters prefixes links twice. The Stripe success and cancel URLs that `CaspianRoot` infers keep the segment either way.
 
 ---
 

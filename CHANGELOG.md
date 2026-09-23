@@ -16,6 +16,55 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v15.3.0 — Product editor checks and colour editor, order details page, related products, locale-prefixed URLs
+
+The second round of the hadiyyam gap analysis: features the hadiyyam shop had
+that the library lacked, carried into the library so every store gets them.
+
+### Added
+
+- **Product editor**
+  - Every field is checked, with the error under the field; saving waits until
+    they are fixed. The rules live in the exported `validateProductDraft`.
+  - A Color variants section adds, orders and removes `colorVariants`
+    (a name plus an uploaded or pasted image).
+  - An optional Step-by-step layout: Basic info → Details → Review. Full form
+    stays the default.
+- **Import / export:** new products column `colorVariants`, written as
+  `name|url;name|url`.
+- **Order details page:** `/orders/:id` now shows `<OrderDetailPage>`. It has a
+  status timeline (`<OrderStatusTimeline>`), the items with colour and size,
+  the totals with the promo code, the delivery address, the notes and the
+  payment method. `OrderHistoryList` always linked here; nothing was routed.
+- **Checkout**
+  - An optional order-notes box, saved to `shippingInfo.orderNotes`.
+  - Each shipping rate shows the dates it arrives on (`formatDeliveryWindow`).
+- **Product page**
+  - "You may also like" (`<RelatedProducts>`, same category) at the bottom of
+    all three layouts. Controlled by `hideRelated`, `relatedLimit` and
+    `getProductHref`.
+  - Swipeable gallery with previous/next buttons.
+- **Collection pages**
+  - A slug with no curated collection falls back to the product category with
+    that slug.
+  - A sort control: featured, price up, price down, newest.
+- **Locale in the URL:** new `CaspianStoreProvider` prop `localeInUrl`, which
+  keeps the page's locale segment (`/fr/…`) on the library's links and
+  navigation. The Stripe success and cancel URLs that `CaspianRoot` infers now
+  keep it too. New helpers `getLocalePrefix` and `withLocalePrefix`.
+- Order statuses are translated on the shopper pages (`order.status.*`).
+
+### Changed
+
+- **Product editor validation:** a filled stock cell must be a whole number of
+  0 or more. Before, other values were quietly rounded. A blank cell still
+  means untracked. Image URLs must be `http(s)` or root-relative.
+
+### No consumer action required
+
+Library-only changes. No rules, indexes or Cloud Functions changed; upgrade
+the package and everything is picked up. `localeInUrl` is opt-in.
+
 ## v15.2.0 — Stripe charges the tax it shows, the success page finds the order, and colour variants are buyable
 
 Three storefront defects found while comparing the library with the hadiyyam
