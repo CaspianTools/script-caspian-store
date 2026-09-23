@@ -432,11 +432,11 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.paymentPlugins.field.stripe.modeTest': 'Test',
   'admin.paymentPlugins.field.stripe.modeLive': 'Live',
   'admin.paymentPlugins.field.stripe.modeHint':
-    'Which key pair is active. Keep the Cloud Functions `STRIPE_SECRET_KEY` in sync with this mode.',
+    'Which key pair is active. The server’s STRIPE_SECRET_KEY must be from the same mode.',
   'admin.paymentPlugins.field.stripe.publishableKeyTest': 'Test publishable key',
   'admin.paymentPlugins.field.stripe.publishableKeyLive': 'Live publishable key',
   'admin.paymentPlugins.field.stripe.publishableKeyHint':
-    'The `pk_test_...` / `pk_live_...` keys from your Stripe dashboard. Secret keys live in Cloud Functions secrets, not here.',
+    'The pk_test_… / pk_live_… keys from your Stripe dashboard. The secret key is never entered here; it is a server secret (STRIPE_SECRET_KEY).',
   'admin.paymentPlugins.field.description': 'Checkout description (optional)',
   'admin.paymentPlugins.field.descriptionHint':
     "Leave blank to use the plugin's own description.",

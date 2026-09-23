@@ -54,6 +54,19 @@ that the library lacked, carried into the library so every store gets them.
   navigation. The Stripe success and cancel URLs that `CaspianRoot` infers now
   keep it too. New helpers `getLocalePrefix` and `withLocalePrefix`.
 - Order statuses are translated on the shopper pages (`order.status.*`).
+- **Plugins, reworked.** There is now one Plugins page with a card per plugin.
+  - Each card has an **Enable** switch and a **Settings** link, which opens
+    that plugin's own page (`/admin/plugins/<pluginId>`) instead of a dialog.
+  - Plugins that need details first (Stripe, bank transfer, email
+    providers) open their settings page when switched on.
+  - The separate `/admin/plugins/manage/*` pages now redirect to the list,
+    and the category page exports are wrappers around it.
+  - New export: `AdminPluginSettingsPage`.
+- **Storefront polish:**
+  - The Shop and Collections pages sit in the same centred container as the
+    header.
+  - The large gap above every page is gone.
+  - The cart drawer floats with a margin and rounded corners.
 - **Server mode — no Firebase CLI, no Cloud Functions.**
   - New `caspianHandleApi` (`./server` entry) for one route,
     `app/api/caspian-store/[...path]/route.ts`, plus a new
