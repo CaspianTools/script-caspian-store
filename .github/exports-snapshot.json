@@ -193,6 +193,7 @@
     "QuestionList",
     "QuickAddToCartButton",
     "RegisterPage",
+    "RelatedProducts",
     "ReviewItem",
     "ReviewList",
     "ReviewSummary",
@@ -348,6 +349,7 @@
     "getEmailSettings",
     "getFeaturedCategories",
     "getJournalArticle",
+    "getLocalePrefix",
     "getOrderById",
     "getOrderByStripeSession",
     "getOrdersByUser",
@@ -531,7 +533,8 @@
     "useToast",
     "useWishlist",
     "validatePromoCode",
-    "verifyAdminTodos"
+    "verifyAdminTodos",
+    "withLocalePrefix"
   ],
   "firebaseEntry": [
     "CASPIAN_FIRESTORE_INDEXES",

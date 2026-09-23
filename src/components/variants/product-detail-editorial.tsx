@@ -7,6 +7,7 @@ import { Badge, Skeleton } from '../../ui/misc';
 import { ProductGallery } from '../product-gallery';
 import { ColorSelector, QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
+import { RelatedProducts } from '../related-products';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useScriptSettings } from '../../context/script-settings-context';
@@ -24,7 +25,14 @@ import { cn } from '../../utils/cn';
  * still converts but the storytelling is the lead.
  */
 export function ProductDetailEditorial(props: ProductDetailPageProps) {
-  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const {
+    formatPrice: formatPriceProp,
+    hideReviews,
+    hideRelated,
+    relatedLimit,
+    getProductHref,
+    className,
+  } = props;
   const { settings } = useScriptSettings();
   const currency = useFormatCurrency(settings.defaultCurrency);
   const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
@@ -49,6 +57,8 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
     handleAddToCart,
     handleStickyAddToCart,
     stickyHint,
+    inventory,
+    taxConfig,
     derived,
     t,
   } = state;
@@ -300,6 +310,19 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
             }}
           />
         </section>
+      )}
+
+      {!hideRelated && (
+        <RelatedProducts
+          product={product}
+          limit={relatedLimit}
+          getProductHref={getProductHref}
+          formatPrice={formatPrice}
+          inventory={inventory}
+          taxConfig={taxConfig}
+          style={{ marginTop: 72, paddingTop: 36, borderTop: '1px solid rgba(124, 93, 63, 0.18)' }}
+          headingStyle={{ textAlign: 'center', fontWeight: 400, fontStyle: 'italic', color: 'var(--caspian-primary, #7c5d3f)' }}
+        />
       )}
     </div>
   );

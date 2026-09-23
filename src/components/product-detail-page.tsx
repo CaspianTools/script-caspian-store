@@ -34,6 +34,14 @@ export interface ProductDetailPageProps {
    * Drives per-size disabled state and the global out-of-stock banner. Added in v2.9.
    */
   inventory?: InventorySettings;
+  /** Hide the "You may also like" row of same-category products. */
+  hideRelated?: boolean;
+  /** How many related products to show. Default: 4. */
+  relatedLimit?: number;
+  /**
+   * Build the URL for a related-product card. Default: `/product/{slug}`.
+   */
+  getProductHref?: (productId: string) => string;
   onNotFound?: () => void;
   className?: string;
 }
