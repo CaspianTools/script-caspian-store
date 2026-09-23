@@ -66,13 +66,23 @@ export async function callCaspianServer<Res>(
     body: method === 'POST' ? JSON.stringify(init.body ?? {}) : undefined,
   });
   const payload = (await res.json().catch(() => null)) as
-    | (Res & { error?: { code?: string; message?: string; details?: unknown } })
+    | (Res & { error?: unknown })
     | null;
-  if (!res.ok || payload?.error) {
-    const err = payload?.error;
+  // Failures come back as `{ error: { code, message } }`. A successful reply
+  // may carry its own `error` string (setup/status reports a problem it found
+  // that way), which is data for the caller, not a failed request.
+  const envelope =
+    payload && typeof payload.error === 'object' && payload.error !== null
+      ? (payload.error as { code?: string; message?: string; details?: unknown })
+      : null;
+  if (!res.ok || envelope || payload === null) {
+    const err = envelope;
     throw new CaspianCallableError(
       err?.code ?? (res.status === 404 ? 'not-found' : 'internal'),
-      err?.message ?? `Server request failed (${res.status}).`,
+      err?.message ??
+        (payload === null
+          ? `The server API did not answer with JSON (${res.status}). Check that app/api/caspian-store/[...path]/route.ts is deployed.`
+          : `Server request failed (${res.status}).`),
       err?.details,
     );
   }

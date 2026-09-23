@@ -105,6 +105,14 @@ that the library lacked, carried into the library so every store gets them.
   `header ?? null` to the chrome, so a `<CaspianRoot />` mounted without
   `header` / `footer` props rendered neither. Now only an explicit `null`
   hides them.
+- **Settings → General no longer crashes on migrated stores.** A
+  `settings/site` doc whose `socialLinks` was saved as a `{ platform: url }`
+  map (older hadiyyam) made the page throw; `getSiteSettings` now normalizes
+  the doc (map → list, null/number text fields → strings). The storefront
+  footer had the same latent crash.
+- **The setup banner shows the real problem.** A setup-status reply that
+  carried an `error` string was read as a failed request ("Server request
+  failed (200)"); the server's message is shown instead.
 - **Admin pages work under a locale prefix.** `AdminRoot`, the admin
   sidebar's active state and the Settings / Taxonomies sub-navs matched
   `/admin/...` against the raw pathname, so `/en/admin/products` always

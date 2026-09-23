@@ -1,5 +1,5 @@
 import { deleteField, doc, getDoc, setDoc, type Firestore } from 'firebase/firestore';
-import type { SiteSettings } from '../types';
+import type { SiteSettings, SocialLink } from '../types';
 
 /**
  * Loads the site-level settings doc (`settings/site`) that stores brand /
@@ -9,7 +9,53 @@ import type { SiteSettings } from '../types';
 export async function getSiteSettings(db: Firestore): Promise<SiteSettings | null> {
   const snap = await getDoc(doc(db, 'settings', 'site'));
   if (!snap.exists()) return null;
-  return snap.data() as SiteSettings;
+  return normalizeSiteSettings(snap.data());
+}
+
+const STRING_FIELDS = [
+  'logoUrl',
+  'faviconUrl',
+  'brandName',
+  'brandDescription',
+  'contactEmail',
+  'contactPhone',
+  'contactAddress',
+  'businessHours',
+] as const;
+
+/**
+ * Coerces a stored `settings/site` doc into the shape the UI renders.
+ * Stores migrated from other apps carry older shapes, and one bad field
+ * crashed the whole Settings page (and the storefront footer). Known cases:
+ * `socialLinks` saved as a `{ platform: url }` map instead of a list, and
+ * text fields saved as null or numbers.
+ */
+export function normalizeSiteSettings(raw: Record<string, unknown>): SiteSettings {
+  const out: Record<string, unknown> = { ...raw };
+  for (const key of STRING_FIELDS) {
+    const v = raw[key];
+    out[key] = typeof v === 'string' ? v : v == null ? '' : String(v);
+  }
+  out.socialLinks = normalizeSocialLinks(raw.socialLinks);
+  return out as unknown as SiteSettings;
+}
+
+function normalizeSocialLinks(raw: unknown): SocialLink[] {
+  const valid = (platform: unknown, url: unknown): SocialLink | null =>
+    typeof platform === 'string' && platform && typeof url === 'string' && url
+      ? ({ platform, url } as SocialLink)
+      : null;
+  if (Array.isArray(raw)) {
+    return raw
+      .map((l) => (l && typeof l === 'object' ? valid((l as SocialLink).platform, (l as SocialLink).url) : null))
+      .filter((l): l is SocialLink => l !== null);
+  }
+  if (raw && typeof raw === 'object') {
+    return Object.entries(raw as Record<string, unknown>)
+      .map(([platform, url]) => valid(platform, url))
+      .filter((l): l is SocialLink => l !== null);
+  }
+  return [];
 }
 
 /**
