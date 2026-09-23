@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CartBehavior, InventorySettings, Product, ProductImage } from '../../types';
+import type { CartBehavior, InventorySettings, Product, ProductImage, TaxConfig } from '../../types';
 import { getProductBySlugOrId } from '../../services/product-service';
 import { getSiteSettings } from '../../services/site-settings-service';
 import { getApprovedReviewsForProduct } from '../../services/review-service';
@@ -65,6 +65,9 @@ export function useProductDetailState({
   const [activeTab, setActiveTab] = useState<ProductDetailTabKey>('details');
   const [cartBehavior, setCartBehavior] = useState<CartBehavior | undefined>(cartBehaviorOverride);
   const [inventory, setInventory] = useState<InventorySettings | undefined>(inventoryOverride);
+  // Only read for the related-products cards' price suffix; skipped along
+  // with the settings fetch when both overrides are supplied.
+  const [taxConfig, setTaxConfig] = useState<TaxConfig | undefined>();
   const sizeSelectorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -79,6 +82,7 @@ export function useProductDetailState({
         if (!alive) return;
         if (cartBehaviorOverride === undefined) setCartBehavior(s?.cartBehavior);
         if (inventoryOverride === undefined) setInventory(s?.inventory);
+        setTaxConfig(s?.taxConfig);
       })
       .catch(() => {
         /* fall through to defaults */
@@ -290,6 +294,7 @@ export function useProductDetailState({
     setActiveTab,
     handleAddToCart,
     inventory,
+    taxConfig,
     cartBehavior,
     derived,
     t,

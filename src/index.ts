@@ -70,7 +70,8 @@ export {
 } from './components/collection-detail-page';
 export { SearchResultsPage, type SearchResultsPageProps } from './components/search-results-page';
 export { SearchDialog, type SearchDialogProps } from './components/search-dialog';
-export { ProductGallery } from './components/product-gallery';
+export { ProductGallery, type ProductGalleryProps } from './components/product-gallery';
+export { RelatedProducts, type RelatedProductsProps } from './components/related-products';
 export {
   SizeSelector,
   ColorSelector,

@@ -7,6 +7,7 @@ import { Badge, Skeleton } from '../../ui/misc';
 import { ProductGallery } from '../product-gallery';
 import { ColorSelector, QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
+import { RelatedProducts } from '../related-products';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useScriptSettings } from '../../context/script-settings-context';
@@ -25,7 +26,14 @@ import { cn } from '../../utils/cn';
  * appears under price, full description below the fold.
  */
 export function ProductDetailTech(props: ProductDetailPageProps) {
-  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const {
+    formatPrice: formatPriceProp,
+    hideReviews,
+    hideRelated,
+    relatedLimit,
+    getProductHref,
+    className,
+  } = props;
   const { settings } = useScriptSettings();
   const currency = useFormatCurrency(settings.defaultCurrency);
   const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
@@ -50,6 +58,8 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
     handleAddToCart,
     handleStickyAddToCart,
     stickyHint,
+    inventory,
+    taxConfig,
     derived,
     t,
   } = state;
@@ -268,6 +278,18 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
             }}
           />
         </section>
+      )}
+
+      {!hideRelated && (
+        <RelatedProducts
+          product={product}
+          limit={relatedLimit}
+          getProductHref={getProductHref}
+          formatPrice={formatPrice}
+          inventory={inventory}
+          taxConfig={taxConfig}
+          style={{ marginTop: 48, paddingTop: 28, borderTop: '1px solid rgba(255,255,255,0.08)' }}
+        />
       )}
     </div>
   );

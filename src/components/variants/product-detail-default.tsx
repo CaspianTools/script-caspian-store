@@ -7,6 +7,7 @@ import { Badge, Separator, Skeleton } from '../../ui/misc';
 import { ProductGallery } from '../product-gallery';
 import { ColorSelector, QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
+import { RelatedProducts } from '../related-products';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useTaxonomyTermsByType } from '../../hooks/use-taxonomy-terms';
@@ -26,7 +27,14 @@ import { cn } from '../../utils/cn';
  * `useTemplateComponent('ProductDetailPage', ProductDetailDefault)`.
  */
 export function ProductDetailDefault(props: ProductDetailPageProps) {
-  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const {
+    formatPrice: formatPriceProp,
+    hideReviews,
+    hideRelated,
+    relatedLimit,
+    getProductHref,
+    className,
+  } = props;
   const { settings } = useScriptSettings();
   const currency = useFormatCurrency(settings.defaultCurrency);
   const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
@@ -53,6 +61,8 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
     handleAddToCart,
     handleStickyAddToCart,
     stickyHint,
+    inventory,
+    taxConfig,
     derived,
     t,
   } = state;
@@ -292,6 +302,17 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
             <ProductReviews productId={product.id} mode="questions-only" />
           )}
         </div>
+      )}
+
+      {!hideRelated && (
+        <RelatedProducts
+          product={product}
+          limit={relatedLimit}
+          getProductHref={getProductHref}
+          formatPrice={formatPrice}
+          inventory={inventory}
+          taxConfig={taxConfig}
+        />
       )}
     </div>
   );

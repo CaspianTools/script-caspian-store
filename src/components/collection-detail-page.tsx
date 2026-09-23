@@ -1,23 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type {
-  InventorySettings,
-  Product,
-  ProductCollectionDoc,
-  TaxConfig,
-} from '../types';
+import { useEffect, useMemo, useState } from 'react';
+import type { InventorySettings, Product, TaxConfig } from '../types';
 import { getProductCollectionBySlug } from '../services/product-collection-service';
-import { getProductsByIds } from '../services/product-service';
+import { listActiveCategories } from '../services/category-service';
+import { getProducts, getProductsByIds } from '../services/product-service';
 import { getSiteSettings } from '../services/site-settings-service';
 import { useCaspianFirebase, useCaspianImage, useCaspianLink } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { Select } from '../ui/select';
 import { ProductGrid } from './product-grid';
 import { EmptyState } from './empty-state';
+import { isProductOutOfStock } from '../utils/inventory';
 import { cn } from '../utils/cn';
 
+type CollectionSort = 'featured' | 'priceAsc' | 'priceDesc' | 'newest';
+
+/** What the slug resolved to: a curated collection, or a category fallback. */
+interface CollectionSource {
+  kind: 'collection' | 'category';
+  name: string;
+  description?: string;
+  imageUrl?: string;
+}
+
 export interface CollectionDetailPageProps {
+  /**
+   * Curated-collection slug. When no active collection has it, the page falls
+   * back to the active product category whose slug (or document id) matches
+   * and lists that category's products; only then does it render not-found.
+   */
   slug: string;
   getProductHref?: (productId: string) => string;
   formatPrice?: (price: number) => string;
@@ -45,9 +58,10 @@ export function CollectionDetailPage({
   const Link = useCaspianLink();
   const t = useT();
 
-  const [collection, setCollection] = useState<ProductCollectionDoc | null | undefined>(undefined);
+  const [source, setSource] = useState<CollectionSource | null | undefined>(undefined);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<CollectionSort>('featured');
   const [inventory, setInventory] = useState<InventorySettings | undefined>(inventoryOverride);
   const [taxConfig, setTaxConfig] = useState<TaxConfig | undefined>(taxConfigOverride);
 
@@ -76,26 +90,49 @@ export function CollectionDetailPage({
     let alive = true;
     // Clear the previous collection so a slug change never shows the old
     // header over the new grid while the fetch is in flight.
-    setCollection(undefined);
+    setSource(undefined);
     setProducts([]);
+    setSort('featured');
     (async () => {
       setLoading(true);
       try {
         const col = await getProductCollectionBySlug(db, slug);
         if (!alive) return;
-        setCollection(col);
-        if (!col || col.productIds.length === 0) {
-          setProducts([]);
+        if (col) {
+          setSource({
+            kind: 'collection',
+            name: col.name,
+            description: col.description,
+            imageUrl: col.imageUrl,
+          });
+          if (col.productIds.length === 0) return;
+          const list = await getProductsByIds(db, col.productIds);
+          if (!alive) return;
+          const order = new Map(col.productIds.map((id, i) => [id, i]));
+          list.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+          setProducts(list);
           return;
         }
-        const list = await getProductsByIds(db, col.productIds);
+        // No curated collection — `/collections/<category-slug>` is a natural
+        // URL to try, so resolve it against the categories before giving up.
+        const categories = await listActiveCategories(db);
         if (!alive) return;
-        const order = new Map(col.productIds.map((id, i) => [id, i]));
-        list.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
-        setProducts(list);
+        const category = categories.find((c) => c.slug === slug || c.id === slug);
+        if (!category) {
+          setSource(null);
+          return;
+        }
+        setSource({
+          kind: 'category',
+          name: category.name,
+          description: category.description,
+          imageUrl: category.imageUrl,
+        });
+        const list = await getProducts(db, { category: category.id });
+        if (alive) setProducts(list);
       } catch (error) {
         console.error('[caspian-store] Failed to load collection:', error);
-        if (alive) setCollection(null);
+        if (alive) setSource(null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -105,7 +142,30 @@ export function CollectionDetailPage({
     };
   }, [db, slug]);
 
-  if (collection === null) {
+  const sortedProducts = useMemo(() => {
+    // A curated collection is hand-picked, so sold-out items stay; a category
+    // listing follows the shop grid's hide-sold-out rule.
+    const visible =
+      source?.kind === 'category' &&
+      inventory?.trackStock &&
+      inventory.outOfStockVisibility === 'hide'
+        ? products.filter((p) => !isProductOutOfStock(p, inventory))
+        : products;
+    if (sort === 'featured') return visible;
+    const list = [...visible];
+    switch (sort) {
+      case 'priceAsc':
+        return list.sort((a, b) => a.price - b.price);
+      case 'priceDesc':
+        return list.sort((a, b) => b.price - a.price);
+      case 'newest':
+        return list.sort(
+          (a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0),
+        );
+    }
+  }, [products, sort, source, inventory]);
+
+  if (source === null) {
     return (
       <div className={cn('caspian-collection-detail-page', 'caspian-page-gutter', className)}>
         <EmptyState
@@ -125,7 +185,7 @@ export function CollectionDetailPage({
   return (
     <div className={cn('caspian-collection-detail-page', 'caspian-page-gutter', className)}>
       <header style={{ marginBottom: 40, textAlign: 'center' }}>
-        {collection?.imageUrl && (
+        {source?.imageUrl && (
           <div
             style={{
               position: 'relative',
@@ -137,7 +197,7 @@ export function CollectionDetailPage({
               marginBottom: 28,
             }}
           >
-            <Image src={collection.imageUrl} alt={collection.name} fill />
+            <Image src={source.imageUrl} alt={source.name} fill />
           </div>
         )}
         <h1
@@ -149,9 +209,9 @@ export function CollectionDetailPage({
             lineHeight: 1.2,
           }}
         >
-          {collection?.name ?? ''}
+          {source?.name ?? ''}
         </h1>
-        {collection?.description && (
+        {source?.description && (
           <p
             style={{
               color: '#666',
@@ -163,12 +223,28 @@ export function CollectionDetailPage({
               lineHeight: 1.6,
             }}
           >
-            {collection.description}
+            {source.description}
           </p>
         )}
       </header>
 
-      {!loading && products.length === 0 ? (
+      {!loading && sortedProducts.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+          <Select
+            aria-label={t('shop.sort.label')}
+            value={sort}
+            onChange={(e) => setSort(e.target.value as CollectionSort)}
+            options={[
+              { value: 'featured', label: t('shop.sort.featured') },
+              { value: 'priceAsc', label: t('shop.sort.priceAsc') },
+              { value: 'priceDesc', label: t('shop.sort.priceDesc') },
+              { value: 'newest', label: t('shop.sort.newest') },
+            ]}
+          />
+        </div>
+      )}
+
+      {!loading && sortedProducts.length === 0 ? (
         <EmptyState
           title={emptyMessage ?? t('collectionDetail.emptyProducts')}
           action={
@@ -181,7 +257,7 @@ export function CollectionDetailPage({
         />
       ) : (
         <ProductGrid
-          products={products}
+          products={sortedProducts}
           loading={loading}
           getProductHref={getProductHref}
           formatPrice={formatPrice}
