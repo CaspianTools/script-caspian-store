@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { EMAIL_PLUGIN_CATALOG, getEmailPlugin } from '../email/catalog';
 import { EMAIL_PLUGIN_IDS, type EmailPluginId } from '../email/types';
 import { useT } from '../i18n/locale-context';
@@ -15,6 +15,7 @@ import {
 import type { EmailPluginInstall } from '../types';
 import { Button } from '../ui/button';
 import { Dialog } from '../ui/dialog';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input, Label } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
@@ -103,6 +104,11 @@ export function AdminEmailPluginsPage({
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [saving, setSaving] = useState(false);
   const [autoConfigureHandled, setAutoConfigureHandled] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<EmailPluginInstall | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const formId = useId();
+  const nameId = `${formId}-name`;
+  const orderId = `${formId}-order`;
 
   const load = async () => {
     try {
@@ -210,19 +216,37 @@ export function AdminEmailPluginsPage({
     }
   };
 
-  const handleDelete = async (install: EmailPluginInstall) => {
-    if (!confirm(`${t('admin.emailPlugins.confirmRemove')}\n\n"${install.name}"`)) return;
+  const handleDelete = async () => {
+    const install = removeTarget;
+    if (!install) return;
+    setRemoving(true);
     try {
       await deleteEmailPluginInstall(db, install.id);
       setInstalls((prev) => (prev ? prev.filter((x) => x.id !== install.id) : prev));
       toast({ title: t('admin.emailPlugins.toasts.removed') });
+      setRemoveTarget(null);
     } catch (error) {
       console.error('[caspian-store] Email plugin remove failed:', error);
       toast({ title: t('admin.emailPlugins.errors.removeFailed'), variant: 'destructive' });
+    } finally {
+      setRemoving(false);
     }
   };
 
   const toggleEnabled = async (install: EmailPluginInstall) => {
+    if (!install.enabled) {
+      const plugin = getEmailPlugin(install.pluginId);
+      try {
+        plugin?.validateConfig(install.config);
+      } catch (error) {
+        toast({
+          title: t('admin.emailPlugins.errors.invalidConfig'),
+          description: error instanceof Error ? error.message : undefined,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
     try {
       await updateEmailPluginInstall(db, install.id, { enabled: !install.enabled });
       setInstalls((prev) =>
@@ -241,6 +265,7 @@ export function AdminEmailPluginsPage({
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -297,7 +322,7 @@ export function AdminEmailPluginsPage({
               return (
                 <TR key={install.id}>
                   <TD style={{ fontFamily: 'monospace', fontSize: 13 }}>{install.order}</TD>
-                  <TD style={{ fontWeight: 500 }}>
+                  <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>
                     <div>{install.name}</div>
                     {plugin?.description && (
                       <div
@@ -321,7 +346,7 @@ export function AdminEmailPluginsPage({
                         : t('admin.emailPlugins.status.disabled')}
                     </Badge>
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <Button variant="outline" size="sm" onClick={() => toggleEnabled(install)}>
                         {install.enabled
@@ -338,7 +363,7 @@ export function AdminEmailPluginsPage({
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(install)}
+                        onClick={() => setRemoveTarget(install)}
                       >
                         {t('admin.emailPlugins.action.remove')}
                       </Button>
@@ -406,16 +431,24 @@ export function AdminEmailPluginsPage({
               <Button variant="outline" onClick={() => setConfigOpen(false)} disabled={saving}>
                 {t('common.cancel')}
               </Button>
-              <Button onClick={handleSave} loading={saving}>
+              <Button type="submit" form={formId} loading={saving}>
                 {t('common.save')}
               </Button>
             </>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <form
+            id={formId}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSave();
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+          >
             <div>
-              <Label>{t('admin.emailPlugins.field.name')}</Label>
+              <Label htmlFor={nameId}>{t('admin.emailPlugins.field.name')}</Label>
               <Input
+                id={nameId}
                 value={draft.name}
                 onChange={(e) => setDraft((d) => (d ? { ...d, name: e.target.value } : d))}
                 placeholder={activePlugin?.name}
@@ -425,8 +458,9 @@ export function AdminEmailPluginsPage({
               </p>
             </div>
             <div>
-              <Label>{t('admin.emailPlugins.field.order')}</Label>
+              <Label htmlFor={orderId}>{t('admin.emailPlugins.field.order')}</Label>
               <Input
+                id={orderId}
                 type="number"
                 value={draft.order}
                 onChange={(e) =>
@@ -469,9 +503,22 @@ export function AdminEmailPluginsPage({
                 </p>
               </div>
             )}
-          </div>
+          </form>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(v) => {
+          if (!v) setRemoveTarget(null);
+        }}
+        title={t('admin.confirm.removeTitle')}
+        description={`${t('admin.emailPlugins.confirmRemove')} "${removeTarget?.name ?? ''}"`}
+        confirmLabel={t('admin.confirm.remove')}
+        destructive
+        loading={removing}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

@@ -33,9 +33,13 @@ const HELP_SECTIONS: HelpSection[] = [
           here is gated to <b>admin</b> accounts.
         </p>
         <p>
-          <b>Navigating:</b> the left sidebar groups pages by area. Create records from the <b>Quick add</b>{' '}
-          button (or the header search) — there are no per-page “Add” buttons; act on a row from its menu;
-          filter with each list’s toolbar; and run bulk actions by selecting rows.
+          <b>Navigating:</b> the left sidebar groups pages by area (Catalog, People, Sales, Content, then
+          Plugins, Settings, Help and About). Each list page creates records from its own <b>+ New</b>{' '}
+          button in the page header; rows carry inline <b>Edit</b> / <b>Delete</b> buttons (the Products
+          list uses a row menu instead), and every list has a search box or filter row above the table.
+          Deleting anything asks for confirmation first. The bell in the header shows pending moderation,
+          new contact-form messages and library updates; the avatar menu opens your profile or signs you
+          out.
         </p>
       </>
     ),
@@ -46,23 +50,29 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <ul>
         <li>
-          <b>Products</b> — the catalog list (image, price, status, stock). Open a product to edit it; set
-          its images, price, sale, sizes/variants, categories, tags, and description. New products start as{' '}
-          <b>draft</b> — publish when ready.
+          <b>Products</b> — the catalog list, switchable between a table and a card grid, filterable by
+          status, category and brand. Open a product to edit its name, brand, price, images, sizes with
+          per-size stock, category, collections, and any taxonomy terms you have enabled. The{' '}
+          <b>Active</b> checkbox controls whether it shows on the storefront; unticked products are hidden.
         </li>
         <li>
-          <b>Categories / Collections / Tags / Taxonomies</b> organize the catalog and drive storefront
-          filtering. Categories can nest (parent → child); collections and taxonomy terms (colors,
-          materials, …) are flat.
+          <b>Categories / Collections / Taxonomies</b> organize the catalog and drive storefront filtering.
+          Categories can nest (parent → child); collections are flat. <b>Taxonomies</b> holds the terms for
+          each taxonomy you have switched on under Settings → Taxonomies (brands, colors, materials, sizes,
+          …).
         </li>
         <li>
           <b>Stock</b> is a per-size count on each product, edited in the product editor. Online orders and
-          in-person sales both decrement it automatically. Turn tracking, low-stock badges, and
-          out-of-stock behaviour on or off under Settings → General → Inventory.
+          in-person sales both decrement it automatically. Tracking, low-stock badges and out-of-stock
+          behaviour are set in the <b>Inventory</b> section of Settings → General.
         </li>
         <li>
-          <b>Import / Export</b> (Settings) moves catalog data in bulk as CSV — download a template, fill it
-          in, and resolve each existing row on import (Skip / Overwrite / Create new).
+          <b>Promo codes</b> are percentage or fixed-amount discounts with an optional minimum order and
+          maximum discount; untick <b>Active</b> to pause one without deleting it.
+        </li>
+        <li>
+          <b>Import / Export</b> (Settings) moves data in bulk as CSV — download a template, fill it in,
+          and choose <b>Skip</b>, <b>Overwrite</b> or <b>Create new</b> for each row that already exists.
         </li>
       </ul>
     ),
@@ -73,12 +83,14 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <ul>
         <li>
-          <b>Orders</b> lists every order with its channel (online vs in-person POS), status, total, and
-          customer. Open one to see line items, totals, and shipping; change its status as you fulfil it.
+          <b>Orders</b> lists every order with its channel badge (<b>Online</b> or <b>POS</b>), status,
+          total and customer. Open one to see line items, totals and the shipping address; change its
+          status from the detail page as you fulfil it.
         </li>
         <li>
-          <b>Users</b> are the registered customers (and staff/admins). Open a user to see their profile and
-          recent orders. <b>Abandoned carts</b> surfaces shoppers who added items but didn’t check out.
+          <b>Users</b> are the registered accounts. Filter by role, change a role from the picker in the
+          row (you confirm the change first), and open a user to see their profile, order count, lifetime
+          spend, order history and current cart.
         </li>
         <li>
           Refunds and payment captures happen in your payment provider’s own dashboard (e.g. Stripe); the
@@ -94,11 +106,13 @@ const HELP_SECTIONS: HelpSection[] = [
       <ul>
         <li>
           <b>Reviews</b> and <b>Questions</b> are customer-submitted and start <b>pending</b> — approve or
-          reject them; only approved ones show on the storefront. Answer questions inline.
+          reject them; only approved ones show on the storefront. Each row links to the product it belongs
+          to. Use <b>Answer</b> on a question to reply; the answer appears under it on the product page.
         </li>
         <li>
-          <b>Subscribers</b> is the newsletter list (export it for your email tool). <b>Contacts</b> holds
-          “Contact us” form submissions — read and action them here.
+          <b>Subscribers</b> is the newsletter list — search it, remove addresses, or export it as CSV from
+          Settings → Import / Export. <b>Contacts</b> holds “Contact us” form submissions: open one to read
+          it (which marks it read), then archive or delete it.
         </li>
       </ul>
     ),
@@ -109,17 +123,18 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <ul>
         <li>
-          <b>Pages</b> — the page builder edits the homepage and custom/content pages (About, Privacy, Terms,
-          …) as drag-and-drop blocks with per-block styling. Choose which page visitors land on at{' '}
-          <code>/</code>.
+          <b>Pages</b> edits the long-form content pages (About, Contact, Privacy, Terms, Sustainability,
+          Shipping & returns, Size guide) — each has a title, subtitle and body text where paragraphs are
+          separated by blank lines.
         </li>
         <li>
-          <b>Journal</b> is the blog/editorial; <b>FAQs</b> are the storefront help entries (the <b>Order</b>{' '}
-          field controls their sort).
+          <b>Journal</b> is the blog/editorial: title, category, date, cover image, excerpt and body.{' '}
+          <b>FAQs</b> are the storefront help entries; the <b>Display order</b> field controls their sort.
         </li>
         <li>
-          <b>Appearance / Templates</b> (Settings) pick the overall look; brand name, logo, and social links
-          live under Settings → General.
+          <b>Appearance</b> picks a theme preset and <b>Templates</b> seeds a starter storefront (theme,
+          products, categories, pages, journal). Brand name, logo and social links live under Settings →
+          General.
         </li>
       </ul>
     ),
@@ -130,20 +145,20 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <>
         <p>
-          Shipping, payment, and email providers are <b>plugins</b>: browse the catalog, <b>Install</b> the
-          one you need, <b>configure</b> it, then flip its <b>Enable</b> toggle. A provider can’t be enabled
-          until its config validates.
+          Shipping, payment, and email providers are <b>plugins</b>: browse the catalog under{' '}
+          <b>Plugins</b>, <b>Install</b> the one you need, <b>configure</b> it, then switch it on with
+          its <b>Enabled</b> toggle. A provider can’t be enabled until its config validates.
         </p>
         <ul>
           <li>
-            <b>Payments</b> — e.g. Stripe (cards) and regional gateways. The <b>publishable</b> key lives in
-            the install record; the <b>secret</b> key + webhook secret are <b>Cloud Functions secrets</b>{' '}
-            (never stored in the database). Add the gateway’s webhook endpoint where required.
+            <b>Payments</b> — e.g. Stripe (cards) and manual methods such as cash on delivery, bank transfer
+            or cheque. The Stripe <b>publishable</b> key lives in the install record; the <b>secret</b> key
+            and webhook secret are <b>Cloud Functions secrets</b> (never stored in the database).
           </li>
           <li>
-            <b>Email</b> — SendGrid or Brevo for order + contact emails. The API key is a Cloud Functions
-            secret; set it, deploy the email functions, then install + enable the provider. Edit templates
-            under Settings → Emails.
+            <b>Email</b> — SendGrid or Brevo for order and contact emails. The provider API key is saved
+            in the install record, which only admins can read; deploy the email functions, then install
+            and enable the provider. Sender identity and templates are edited under Settings → Emails.
           </li>
           <li>
             <b>Shipping</b> — rate methods shown at checkout; configure each and enable the ones shoppers
@@ -158,10 +173,16 @@ const HELP_SECTIONS: HelpSection[] = [
     title: 'Settings',
     body: (
       <ul>
-        <li><b>General</b> — brand name, logo, favicon, social links, contact details.</li>
-        <li><b>Localization / Languages</b> — currency, timezone, and which storefront locales are available.</li>
-        <li><b>Tax / Returns / Reviews / Inventory</b> — store policies and behavior toggles.</li>
-        <li><b>Emails</b> — sender identity + transactional templates. <b>Import / Export</b> — bulk CSV.</li>
+        <li>
+          <b>General</b> — brand, coming-soon mode, localization (currency, timezone, currency display),
+          contact details, social links, business hours, store address, accounts & privacy, reviews
+          policy, cart behaviour, inventory, and tax & supported countries.
+        </li>
+        <li><b>Taxonomies</b> — switch product taxonomies (brands, colors, sizes, …) on or off.</li>
+        <li><b>Shipping options</b> — site-wide toggles for how shipping is presented at checkout (the rate providers themselves live under Plugins).</li>
+        <li><b>Emails</b> — sender identity + transactional templates.</li>
+        <li><b>Languages</b> — which storefront locales are available and which is the default.</li>
+        <li><b>Import / Export</b> — bulk CSV in and out.</li>
       </ul>
     ),
   },
@@ -171,13 +192,14 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <ul>
         <li>
-          Accounts have a <b>role</b>: <b>admin</b> (full access), <b>staff</b> (inventory, no admin
-          settings), or <b>customer</b>.
+          Accounts have a <b>role</b>: <b>admin</b> (full access), <b>staff</b> (can use a register and
+          read the catalog, no admin access), or <b>customer</b>. Change roles from the Users page.
         </li>
         <li>
-          <b>First admin:</b> when the admin Cloud Functions are deployed, the very first user to register is
-          auto-promoted to admin. Otherwise grant it from the command line (the <code>grant-admin</code>{' '}
-          script) or via the setup wizard.
+          <b>First admin:</b> a signed-in account without the admin role sees an <b>Access denied</b> page
+          with a <b>Claim admin role</b> button, which works only while the store has no admin yet.
+          Otherwise grant the role from the command line (the <code>grant-admin</code> script) or by
+          setting <code>role</code> to <code>"admin"</code> on the user’s document in Firestore.
         </li>
       </ul>
     ),
@@ -232,9 +254,9 @@ const HELP_SECTIONS: HelpSection[] = [
     title: 'Updates & about',
     body: (
       <p>
-        <b>Admin → About</b> shows the version this store is running and recent release notes. Apply updates
-        per your deployment (the store’s update flow or a redeploy), and re-deploy Firestore rules when a
-        release note calls for it.
+        <b>About</b> shows the version this store is running and recent release notes, with an{' '}
+        <b>Update</b> button when a newer release exists. Apply updates per your deployment (the store’s
+        update flow or a redeploy), and re-deploy Firestore rules when a release note calls for it.
       </p>
     ),
   },
@@ -264,7 +286,9 @@ const HELP_STYLES = `
 .cs-help__toc button:hover { background: #f2f4f7; color: #111827; }
 .cs-help__toc button.is-on { color: #2563eb; background: rgba(37,99,235,0.08); border-left-color: #2563eb; }
 .cs-help__toc .cs-help__empty { color: #98a2b3; font-size: 13px; padding: 6px 9px; }
-.cs-help__body { font-size: 14px; line-height: 1.6; color: #1f2937; }
+.cs-help__body { font-size: 14px; line-height: 1.6; color: #1f2937; min-width: 0; overflow-wrap: anywhere; }
+.cs-help__section pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.cs-help__section table { display: block; max-width: 100%; overflow-x: auto; }
 .cs-help__section { scroll-margin-top: 12px; }
 .cs-help__section.is-hidden { display: none; }
 .cs-help__section h2 { font-size: 16px; font-weight: 700; margin: 22px 0 6px; }
@@ -272,6 +296,14 @@ const HELP_STYLES = `
 .cs-help__section ul, .cs-help__section ol { margin: 6px 0; padding-left: 20px; }
 .cs-help__section li { margin: 5px 0; }
 .cs-help__section code { background: #f2f4f7; border-radius: 4px; padding: 0 4px; font-size: 12.5px; }
+/* Below 900px the shared .caspian-admin-subshell rules collapse the grid to one
+   column and turn the aside into a horizontally scrolling row; only the TOC's
+   own vertical-list styling needs undoing here. */
+@media (max-width: 900px) {
+  .cs-help__layout { gap: 16px; }
+  .cs-help__toc { flex-direction: row; max-height: none; overflow: visible; }
+  .cs-help__toc button { border-left: 0; }
+}
 `;
 
 function SearchGlyph(): ReactNode {
@@ -342,7 +374,7 @@ export function AdminHelpPage({ className }: AdminHelpPageProps): ReactNode {
         <p>Run the store and go live with the Instagram channel.</p>
       </div>
 
-      <div className="cs-help__layout">
+      <div className="cs-help__layout caspian-admin-subshell">
         <aside className="cs-help__nav">
           <div className="cs-help__search">
             <SearchGlyph />

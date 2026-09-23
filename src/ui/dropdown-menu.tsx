@@ -8,6 +8,7 @@ import {
   useId,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
   type ReactElement,
@@ -63,15 +64,32 @@ export function DropdownMenu({
 }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const [panelPos, setPanelPos] = useState<PanelPos | null>(null);
+  // Phones get a bottom action sheet instead of an anchored popover.
+  // Decided once per open, so a resize mid-open does not flip the layout.
+  const [sheet, setSheet] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const menuId = useId();
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => {
+    // The panel is portaled to <body>, so without this the browser drops
+    // focus to <body> when the focused item unmounts.
+    if (panelRef.current?.contains(document.activeElement)) {
+      returnFocusRef.current?.focus();
+    }
+    setOpen(false);
+  }, []);
   const toggle = useCallback(() => setOpen((v) => !v), []);
 
   useEffect(() => {
     if (!open) return;
+    const isSheet = window.matchMedia('(max-width: 820px)').matches;
+    setSheet(isSheet);
+    if (isSheet) {
+      setPanelPos({ top: 0, left: null, right: null });
+      return;
+    }
     const update = () => {
       if (!rootRef.current) return;
       const r = rootRef.current.getBoundingClientRect();
@@ -115,6 +133,7 @@ export function DropdownMenu({
 
   useEffect(() => {
     if (!open) return;
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
     const id = requestAnimationFrame(() => {
       const first = panelRef.current?.querySelector<HTMLElement>(
         '[role="menuitem"]:not([aria-disabled="true"])',
@@ -182,37 +201,67 @@ export function DropdownMenu({
       })
     : trigger;
 
+  const panelStyle: CSSProperties = sheet
+    ? {
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+        maxHeight: '70dvh',
+        overflowY: 'auto',
+        background: 'var(--cpos-surface, #fff)',
+        borderRadius: '16px 16px 0 0',
+        border: '1px solid var(--cpos-border, rgba(0,0,0,0.1))',
+        borderBottom: 0,
+        boxShadow: '0 -6px 24px rgba(0,0,0,0.12)',
+        padding: '8px 8px calc(8px + env(safe-area-inset-bottom, 0px))',
+        display: 'flex',
+        flexDirection: 'column',
+      }
+    : {
+        position: 'fixed',
+        top: panelPos?.top,
+        ...(panelPos?.left != null ? { left: panelPos.left } : {}),
+        ...(panelPos?.right != null ? { right: panelPos.right } : {}),
+        zIndex: 50,
+        minWidth,
+        background: 'var(--cpos-surface, #fff)',
+        borderRadius: 'var(--caspian-radius, 8px)',
+        border: '1px solid var(--cpos-border, rgba(0,0,0,0.1))',
+        boxShadow: '0 6px 24px rgba(0,0,0,0.08)',
+        padding: 4,
+        display: 'flex',
+        flexDirection: 'column',
+      };
+
   const panel =
     open && panelPos && typeof document !== 'undefined'
       ? createPortal(
-          <div
-            ref={panelRef}
-            id={menuId}
-            role="menu"
-            tabIndex={-1}
-            onKeyDown={handlePanelKeyDown}
-            style={{
-              position: 'fixed',
-              top: panelPos.top,
-              ...(panelPos.left != null ? { left: panelPos.left } : {}),
-              ...(panelPos.right != null ? { right: panelPos.right } : {}),
-              zIndex: 50,
-              minWidth,
-              background: 'var(--cpos-surface, #fff)',
-              borderRadius: 'var(--caspian-radius, 8px)',
-              border: '1px solid var(--cpos-border, rgba(0,0,0,0.1))',
-              boxShadow: '0 6px 24px rgba(0,0,0,0.08)',
-              padding: 4,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-            onClick={(e) => {
-              const target = e.target as HTMLElement;
-              if (target.closest('[role="menuitem"]')) close();
-            }}
-          >
-            {children}
-          </div>,
+          <>
+            {sheet && (
+              <div
+                aria-hidden
+                className="caspian-dropdown-backdrop"
+                style={{ position: 'fixed', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.32)' }}
+              />
+            )}
+            <div
+              ref={panelRef}
+              id={menuId}
+              role="menu"
+              className={cn('caspian-dropdown-panel', sheet && 'caspian-dropdown-panel--sheet')}
+              tabIndex={-1}
+              onKeyDown={handlePanelKeyDown}
+              style={panelStyle}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('[role="menuitem"]')) close();
+              }}
+            >
+              {children}
+            </div>
+          </>,
           document.body,
         )
       : null;

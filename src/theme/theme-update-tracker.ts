@@ -51,7 +51,12 @@ export function useThemeUpdateTracker() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const existing = window.localStorage.getItem(STORAGE_KEY);
+    let existing: string | null = null;
+    try {
+      existing = window.localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* localStorage disabled — seed in memory only */
+    }
     if (existing === null) {
       const seedSeed: SeenMap = {};
       for (const theme of THEME_CATALOG) seedSeed[theme.id] = BASELINE_VERSION;

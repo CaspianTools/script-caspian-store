@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import { useCaspianLink } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n';
 import { EditableImage } from '../editor/editable';
+import { safeLinkHref } from '../safe-url';
 import type { BlockComponentProps, BlockType } from '../types';
 
 /**
@@ -16,7 +17,7 @@ function ImageWidget({ props, editing }: BlockComponentProps) {
   const Link = useCaspianLink();
   const t = useT();
   const imageUrl = String(props.imageUrl ?? '');
-  const href = String(props.href ?? '');
+  const href = safeLinkHref(String(props.href ?? ''));
   const align = String(props.align ?? 'center');
   const openInNewTab = Boolean(props.openInNewTab);
   const radius = props.radius;
@@ -51,7 +52,7 @@ function ImageWidget({ props, editing }: BlockComponentProps) {
     />
   );
 
-  const credit = renderCredit(props.imageAttribution);
+  const credit = renderCredit(props.imageAttribution, t('pageBuilder.credit.source'));
 
   return (
     <div className="pb-w-image-wrap" style={{ textAlign: align as 'left' | 'center' | 'right' }}>
@@ -68,10 +69,10 @@ function ImageWidget({ props, editing }: BlockComponentProps) {
 }
 
 /** Render a small attribution credit when a stock image carries one. */
-function renderCredit(attribution: unknown) {
+function renderCredit(attribution: unknown, sourceLabel: string) {
   if (!attribution || typeof attribution !== 'object') return null;
   const a = attribution as { creator?: string | null; foreignLandingUrl?: string; license?: string };
-  const name = a.creator || (a.foreignLandingUrl ? 'Source' : '');
+  const name = a.creator || (a.foreignLandingUrl ? sourceLabel : '');
   const license = a.license ? a.license.toUpperCase() : '';
   if (!name && !license) return null;
   return (

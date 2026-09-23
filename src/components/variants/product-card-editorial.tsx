@@ -3,7 +3,7 @@
 import type { ProductCardProps } from '../product-card';
 import { useCaspianLink, useCaspianImage } from '../../provider/caspian-store-provider';
 import { useBrandName } from '../../hooks/use-brands';
-import { useT } from '../../i18n/locale-context';
+import { useFormatCurrency, useT } from '../../i18n/locale-context';
 import { useScriptSettings } from '../../context/script-settings-context';
 import { Badge } from '../../ui/misc';
 import { cn } from '../../utils/cn';
@@ -27,7 +27,7 @@ export function ProductCardEditorial({
   product,
   getProductHref = (id) => `/product/${id}`,
   className,
-  formatPrice = (p) => `$${p.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   inventory,
   taxConfig,
 }: ProductCardProps) {
@@ -36,6 +36,8 @@ export function ProductCardEditorial({
   const t = useT();
   const brandName = useBrandName(product.brand);
   const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const img = product.images?.[0];
   const stockBadge = inventory ? resolveStockBadge(product, inventory) : null;
   const priceSuffix = renderPriceSuffix(taxConfig);
@@ -85,7 +87,7 @@ export function ProductCardEditorial({
           <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 4 }}>
             {product.isNew && <Badge variant="outline">{t('storefront.badges.new')}</Badge>}
             {product.limited && <Badge variant="outline">{t('storefront.badges.limited')}</Badge>}
-            {stockBadge === 'out-of-stock' && <Badge variant="outline">Out of stock</Badge>}
+            {stockBadge === 'out-of-stock' && <Badge variant="outline">{t('storefront.stock.outOfStock')}</Badge>}
           </div>
           {showWishlistIcon && (
             <div style={{ position: 'absolute', top: 8, right: 8 }}>
@@ -111,7 +113,7 @@ export function ProductCardEditorial({
               pointerEvents: 'none',
             }}
           >
-            View product →
+            {t('product.viewProduct')} →
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 2px' }}>
@@ -134,14 +136,18 @@ export function ProductCardEditorial({
               margin: 0,
               lineHeight: 1.25,
               letterSpacing: '-0.005em',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {product.name}
           </p>
-          <p style={{ fontSize: 14, fontWeight: 500, margin: '4px 0 0', color: 'rgba(0,0,0,0.7)' }}>
+          <p style={{ fontSize: 14, fontWeight: 500, margin: '4px 0 0', color: 'rgba(0,0,0,0.7)', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6 }}>
             {formatPrice(product.price)}
             {priceSuffix && (
-              <span style={{ fontWeight: 400, color: 'rgba(0,0,0,0.45)', fontSize: 11, marginLeft: 6 }}>
+              <span style={{ fontWeight: 400, color: 'rgba(0,0,0,0.45)', fontSize: 11 }}>
                 {priceSuffix}
               </span>
             )}

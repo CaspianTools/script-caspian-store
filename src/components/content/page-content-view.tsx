@@ -60,7 +60,7 @@ export function PageContentView({
 
   if (loading) {
     return (
-      <main className={className} style={mainStyle}>
+      <main className={cn('caspian-page-gutter', className)} style={mainStyle}>
         <Skeleton style={{ height: 36, width: '40%' }} />
         <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Skeleton style={{ height: 14, width: '90%' }} />
@@ -77,7 +77,7 @@ export function PageContentView({
 
   if (!title) {
     return (
-      <main className={className} style={mainStyle}>
+      <main className={cn('caspian-page-gutter', className)} style={mainStyle}>
         <p style={{ color: '#888' }}>
           {t('page.notFound')} <em>({pageKey})</em>
         </p>
@@ -89,7 +89,7 @@ export function PageContentView({
   const paragraphs = rawContent.split(/\n{2,}/).filter(Boolean);
 
   return (
-    <main className={cn('caspian-page-content', className)} style={mainStyle}>
+    <main className={cn('caspian-page-content', 'caspian-page-gutter', className)} style={mainStyle}>
       <header style={{ marginBottom: 28 }}>
         <h1
           style={{
@@ -120,5 +120,5 @@ export function PageContentView({
 const mainStyle: React.CSSProperties = {
   maxWidth: 820,
   margin: '0 auto',
-  padding: '48px 24px',
+  padding: '48px clamp(16px, 4vw, 24px)',
 };

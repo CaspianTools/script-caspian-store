@@ -61,10 +61,48 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Orders. The only client-side writer is the manual-payment path
+    // (src/payments/plugins/manual-base.ts), which records the shopper's
+    // intent to pay by bank transfer / cheque / cash on delivery. Everything
+    // else — Stripe, the register — is written by Cloud Functions through the
+    // Admin SDK. So a client create is pinned to that one shape: own userId,
+    // `on-hold` (never `paid`), a manual payment method, a non-empty items
+    // list, non-negative money fields and no `channel` (that field marks a
+    // POS sale). Without this, any signed-in or anonymous session could write
+    // a `paid` order for any userId/email, which shows as paid in admin and
+    // fires the merchant + customer emails.
     match /orders/{id} {
       allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
-      allow create: if isAuth();
+      allow create: if isAuth()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'on-hold'
+                    && request.resource.data.payment.method in ['bacs', 'cheque', 'cod']
+                    && request.resource.data.items is list
+                    && request.resource.data.items.size() > 0
+                    && !('channel' in request.resource.data)
+                    && request.resource.data.subtotal is number
+                    && request.resource.data.subtotal >= 0
+                    && request.resource.data.total is number
+                    && request.resource.data.total >= 0;
       allow update: if isAdmin();
+    }
+
+    // Server-side checkout state for Stripe (functions-stripe). The callable
+    // writes the priced cart + shipping address here instead of into Stripe
+    // session metadata (500-char cap per value — two items with image URLs
+    // already overflow it), and the webhook reads it back to build the order.
+    // Cloud Functions use the Admin SDK, which bypasses rules; no client ever
+    // needs this collection, so deny everything.
+    match /pendingCheckouts/{id} {
+      allow read, write: if false;
+    }
+
+    // Idempotency markers for delivered Stripe webhook events, created inside
+    // the order-writing transaction so a concurrent redelivery fails fast
+    // instead of writing a second order and decrementing stock twice.
+    // Server-only for the same reason as pendingCheckouts.
+    match /stripeEvents/{id} {
+      allow read, write: if false;
     }
 
     match /users/{uid} {
@@ -81,6 +119,9 @@ service cloud.firestore {
       // self-promotion. Admin writes go through the isAdmin() branch below.
       allow update: if isAuth() && request.auth.uid == uid
                     && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role);
+      // "Delete my account" removes the Auth user client-side; without this
+      // the profile doc (name, addresses, email) was orphaned as PII.
+      allow delete: if isAuth() && request.auth.uid == uid;
       allow read, write: if isAdmin();
     }
 
@@ -99,7 +140,13 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.rating is number
         && request.resource.data.rating >= 1
-        && request.resource.data.rating <= 5;
+        && request.resource.data.rating <= 5
+        // The "verified purchase" badge is stamped server-side by the
+        // functions-admin `stampVerifiedPurchase` trigger after it checks the
+        // reviewer's orders. A client may only write `false` (or nothing) —
+        // otherwise the badge is a free-text claim anyone can make.
+        && (!('isVerifiedPurchase' in request.resource.data)
+            || request.resource.data.isVerifiedPurchase == false);
       allow update, delete: if isAdmin();
     }
 
@@ -111,8 +158,13 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Promo codes. Shoppers never read this collection: the cart page only
+    // stashes the typed code, the Stripe callable validates it server-side and
+    // the manual-payment flows apply no discount at all. `isAuth()` read let
+    // any anonymous session enumerate every live code. Staff keep read so a
+    // till can show a discount before the server-side commit re-validates it.
     match /promoCodes/{id} {
-      allow read: if isAuth();
+      allow read: if isStaff();
       allow write: if isAdmin();
     }
 
@@ -133,10 +185,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Email plugin installs — admin-only read AND write. The plugin config
-    // stores the provider API key (SendGrid / Brevo). Cloud Functions read
-    // via the Admin SDK, which bypasses rules. Shoppers never need to see
-    // this collection, unlike shipping/payment installs. Added in v2.14.
+    // Email plugin installs — admin-only read AND write. Records which
+    // provider (SendGrid / Brevo) is enabled; since v8.0.0 the API key itself
+    // is a Cloud Functions secret (CASPIAN_EMAIL_<PROVIDER>_API_KEY), not a
+    // field here. Cloud Functions read via the Admin SDK, which bypasses
+    // rules. Shoppers never need to see this collection, unlike
+    // shipping/payment installs. Added in v2.14.
     match /emailPluginInstalls/{id} {
       allow read: if isAdmin();
       allow write: if isAdmin();
@@ -195,8 +249,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Newsletter signups. The doc id is `encodeURIComponent(email)` (see
+    // src/services/subscriber-service.ts) so a second signup for the same
+    // address is an update, which is denied — that denial is the client's
+    // "already subscribed" signal. Because the id is encoded it cannot be
+    // compared to the email field here; the shape gate is what keeps a
+    // public create from stuffing arbitrary fields into the collection.
     match /subscribers/{id} {
-      allow create: if true;
+      allow create: if id.size() > 0
+                    && request.resource.data.keys().hasOnly(['email', 'subscribedAt'])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 0
+                    && request.resource.data.email.size() <= 320;
       allow read, delete: if isAdmin();
     }
 
@@ -233,9 +297,13 @@ service cloud.firestore {
                     && request.resource.data.term.size() > 0
                     && request.resource.data.term.size() <= 200
                     && request.resource.data.count == 1;
-      allow update: if request.resource.data.term == resource.data.term
+      // One search = one increment. `count > resource.count` let a visitor
+      // set any count in a single write; only `count` and `lastSearchedAt`
+      // may change so `term`/`firstSearchedAt` cannot be rewritten either.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['count', 'lastSearchedAt'])
                     && request.resource.data.count is number
-                    && request.resource.data.count > resource.data.count;
+                    && request.resource.data.count == resource.data.count + 1;
     }
 
     match /settings/{id} {

@@ -42,11 +42,28 @@ function log(...parts) {
   console.log('[check-exports]', ...parts);
 }
 
+// Newest by semver, not by string order: a plain sort puts `-9.9.0.tgz`
+// after `-15.1.0.tgz`, so a stale tarball left in the repo root would be
+// smoke-tested instead of the one just packed.
+function semverKey(name) {
+  const m = name.match(/-(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?\.tgz$/);
+  if (!m) return [-1, -1, -1, ''];
+  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] ?? '~'];
+}
+
+function compareSemver(a, b) {
+  const ka = semverKey(a);
+  const kb = semverKey(b);
+  for (let i = 0; i < 3; i += 1) if (ka[i] !== kb[i]) return ka[i] - kb[i];
+  // '~' sorts after any prerelease tag, so a release outranks its prereleases.
+  return ka[3] < kb[3] ? -1 : ka[3] > kb[3] ? 1 : 0;
+}
+
 function findTarball() {
   const entries = readdirSync(repoRoot).filter((n) =>
     n.startsWith('caspian-explorer-script-caspian-store-') && n.endsWith('.tgz'),
   );
-  return entries.length > 0 ? join(repoRoot, entries.sort().pop()) : null;
+  return entries.length > 0 ? join(repoRoot, entries.sort(compareSemver).pop()) : null;
 }
 
 let tarball = reuseTarball ? findTarball() : null;

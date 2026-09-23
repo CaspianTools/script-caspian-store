@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useT } from '../i18n/locale-context';
 import { createPortal } from 'react-dom';
 import { ChevronDownIcon, PlusIcon, SearchIcon, XIcon } from '../ui/icons';
 
@@ -48,13 +49,19 @@ export function MultiSelect({
   items,
   picked,
   onChange,
-  label = 'Select',
-  placeholder = 'Search…',
+  label,
+  placeholder,
   indent = true,
   allowCreate = false,
   onCreate,
 }: MultiSelectProps) {
+  const t = useT();
+  const resolvedLabel = label ?? t('admin.multiSelect.label');
+  const resolvedPlaceholder = placeholder ?? t('admin.multiSelect.searchPlaceholder');
   const [open, setOpen] = useState(false);
+  // Phones get a bottom sheet instead of an anchored popover; decided once
+  // per open so a resize mid-open does not flip the layout.
+  const [sheet, setSheet] = useState(false);
   const [search, setSearch] = useState('');
   const [pos, setPos] = useState<MenuPos | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -66,6 +73,12 @@ export function MultiSelect({
       setPos(null);
       return;
     }
+    if (window.matchMedia('(max-width: 820px)').matches) {
+      setSheet(true);
+      setPos({ top: 0, left: 0, width: 0 });
+      return;
+    }
+    setSheet(false);
     const update = () => {
       const row = rowRef.current;
       if (!row) return;
@@ -126,77 +139,108 @@ export function MultiSelect({
   const menu =
     open && pos && typeof document !== 'undefined'
       ? createPortal(
-          <div
-            className="caspian-msel__menu"
-            ref={panelRef}
-            style={{
-              position: 'fixed',
-              top: pos.top,
-              left: pos.left,
-              width: pos.width,
-              minWidth: 0,
-              maxWidth: 'none',
-              zIndex: 1000,
-              boxSizing: 'border-box',
-            }}
-          >
-            <div className="caspian-catpick__search">
-              <SearchIcon size={13} />
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={placeholder}
+          <>
+            {sheet && (
+              <div
+                aria-hidden
+                style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.32)' }}
               />
-            </div>
-            <ul className="caspian-catpick__list">
-              {filtered.map((it) => {
-                const on = picked.has(it.id);
-                const isChild = indent && !!it.parent;
-                return (
-                  <li key={it.id}>
-                    <label className={on ? 'is-on' : ''}>
-                      <input type="checkbox" checked={on} onChange={() => toggle(it.id)} />
-                      <span
-                        style={{
-                          paddingLeft: isChild ? 20 : 0,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          flex: 1,
-                        }}
-                      >
-                        {isChild && <span style={{ color: '#dadce0', fontSize: 12 }}>└</span>}
-                        <span style={{ fontWeight: isChild ? 400 : 500 }}>{it.name}</span>
-                        {it.meta != null && (
-                          <span style={{ marginLeft: 'auto', color: '#5f6368', fontSize: 11 }}>
-                            {it.meta}
-                          </span>
-                        )}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-              {filtered.length === 0 && (
-                <li className="caspian-catpick__empty">
-                  No matches{search ? ` for “${search}”` : ''}.
-                </li>
-              )}
-            </ul>
-            {allowCreate && search.trim() && (
-              <button
-                type="button"
-                className="caspian-catpick__create"
-                onClick={() => {
-                  onCreate?.(search.trim());
-                  setSearch('');
-                }}
-              >
-                <PlusIcon size={12} /> Create “{search.trim()}”
-              </button>
             )}
-          </div>,
+            <div
+              className={sheet ? 'caspian-msel__menu caspian-msel__menu--sheet' : 'caspian-msel__menu'}
+              ref={panelRef}
+              style={
+                sheet
+                  ? {
+                      position: 'fixed',
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      width: 'auto',
+                      minWidth: 0,
+                      maxWidth: 'none',
+                      maxHeight: '60dvh',
+                      borderRadius: '16px 16px 0 0',
+                      paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
+                      zIndex: 1000,
+                      boxSizing: 'border-box',
+                    }
+                  : {
+                      position: 'fixed',
+                      top: pos.top,
+                      left: pos.left,
+                      width: pos.width,
+                      minWidth: 0,
+                      maxWidth: 'none',
+                      zIndex: 1000,
+                      boxSizing: 'border-box',
+                    }
+              }
+            >
+              <div className="caspian-catpick__search">
+                <SearchIcon size={13} />
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={resolvedPlaceholder}
+                  inputMode="search"
+                />
+              </div>
+              <ul
+                className="caspian-catpick__list"
+                style={sheet ? { maxHeight: 'none', flex: '1 1 auto', minHeight: 0 } : undefined}
+              >
+                {filtered.map((it) => {
+                  const on = picked.has(it.id);
+                  const isChild = indent && !!it.parent;
+                  return (
+                    <li key={it.id}>
+                      <label className={on ? 'is-on' : ''}>
+                        <input type="checkbox" checked={on} onChange={() => toggle(it.id)} />
+                        <span
+                          style={{
+                            paddingLeft: isChild ? 20 : 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            flex: 1,
+                          }}
+                        >
+                          {isChild && <span style={{ color: '#dadce0', fontSize: 12 }}>└</span>}
+                          <span style={{ fontWeight: isChild ? 400 : 500 }}>{it.name}</span>
+                          {it.meta != null && (
+                            <span style={{ marginLeft: 'auto', color: '#5f6368', fontSize: 11 }}>
+                              {it.meta}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <li className="caspian-catpick__empty">
+                    {search
+                      ? t('admin.multiSelect.noMatchesFor', { query: search })
+                      : t('admin.multiSelect.noMatches')}
+                  </li>
+                )}
+              </ul>
+              {allowCreate && search.trim() && (
+                <button
+                  type="button"
+                  className="caspian-catpick__create"
+                  onClick={() => {
+                    onCreate?.(search.trim());
+                    setSearch('');
+                  }}
+                >
+                  <PlusIcon size={12} /> {t('admin.multiSelect.create', { name: search.trim() })}
+                </button>
+              )}
+            </div>
+          </>,
           document.body,
         )
       : null;
@@ -209,7 +253,7 @@ export function MultiSelect({
           className={`caspian-msel__pill ${open ? 'is-open' : ''} ${pickedItems.length ? 'has-pick' : ''}`}
           onClick={() => setOpen((v) => !v)}
         >
-          <span>{label}</span>
+          <span>{resolvedLabel}</span>
           {pickedItems.length > 0 && <em>{pickedItems.length}</em>}
           <ChevronDownIcon size={12} />
         </button>
@@ -218,7 +262,7 @@ export function MultiSelect({
             {pickedItems.map((it) => (
               <span key={it.id} className="caspian-msel__chip">
                 {it.name}
-                <button type="button" onClick={() => toggle(it.id)} aria-label={`Remove ${it.name}`}>
+                <button type="button" onClick={() => toggle(it.id)} aria-label={t('admin.multiSelect.remove', { name: it.name })}>
                   <XIcon size={10} />
                 </button>
               </span>

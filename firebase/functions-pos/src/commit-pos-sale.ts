@@ -103,6 +103,17 @@ function assertShape(data: unknown): CommitSaleInput {
     if (typeof t.amount !== 'number' || !Number.isFinite(t.amount) || t.amount < 0) {
       throw new HttpsError('invalid-argument', 'Tender amount must be a positive number.');
     }
+    if (t.tendered != null && (typeof t.tendered !== 'number' || !Number.isFinite(t.tendered))) {
+      throw new HttpsError('invalid-argument', 'Tender tendered must be a number.');
+    }
+  }
+  // These land on the order as `userId` / `userEmail`; a non-string would
+  // break the rules' `resource.data.userId == request.auth.uid` read check.
+  if (d.customerId != null && (typeof d.customerId !== 'string' || d.customerId.length === 0)) {
+    throw new HttpsError('invalid-argument', 'customerId must be a non-empty string.');
+  }
+  if (d.customerEmail != null && typeof d.customerEmail !== 'string') {
+    throw new HttpsError('invalid-argument', 'customerEmail must be a string.');
   }
   if (d.receipt != null) {
     const r = d.receipt as { leaseId?: unknown; ordinal?: unknown };
@@ -172,9 +183,19 @@ export const commitPosSale = onCall({ cors: true }, async (request: CallableRequ
     const byId = new Map(productSnaps.map((s) => [s.id, s]));
 
     const settingsSnap = await tx.get(db.collection('settings').doc('site'));
-    const promoSnap = data.promoCode
-      ? await tx.get(db.collection('promoCodes').doc(String(data.promoCode).toUpperCase()))
+    // Promo docs have auto ids and carry the code in a field (see
+    // src/services/promo-code-service.ts), so a doc-id lookup never matched.
+    // Same query the Stripe callable runs, executed inside the transaction.
+    const promoQuery = data.promoCode
+      ? await tx.get(
+          db
+            .collection('promoCodes')
+            .where('code', '==', String(data.promoCode).trim().toUpperCase())
+            .where('isActive', '==', true)
+            .limit(1),
+        )
       : null;
+    const promoSnap = promoQuery && !promoQuery.empty ? promoQuery.docs[0] : null;
     const counterRef = db.collection('posCounters').doc('receipt');
 
     const posSettings = (settingsSnap.data()?.pos ?? {}) as Record<string, unknown>;

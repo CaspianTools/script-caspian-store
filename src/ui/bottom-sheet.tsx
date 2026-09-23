@@ -46,12 +46,17 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
+  // Keyed on `open` only: callers pass `onOpenChange` inline, and re-running
+  // this effect on every parent render would refocus the close button while
+  // the user is typing in the sheet.
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
 
   useEffect(() => {
     if (!open) return;
     const prevFocus = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
+      if (e.key === 'Escape') onOpenChangeRef.current(false);
     };
     document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -65,12 +70,13 @@ export function BottomSheet({
       document.body.style.overflow = prevOverflow;
       prevFocus?.focus?.();
     };
-  }, [open, onOpenChange]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div
+      className="caspian-bottom-sheet-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -131,12 +137,20 @@ export function BottomSheet({
               aria-label={closeLabel}
               onClick={() => onOpenChange(false)}
               style={{
+                width: 44,
+                height: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // Offsets the 44px hit area so the glyph stays on the 20px gutter.
+                marginRight: -12,
                 background: 'transparent',
                 border: 0,
+                borderRadius: 999,
                 fontSize: 22,
                 cursor: 'pointer',
                 lineHeight: 1,
-                padding: 4,
+                padding: 0,
                 color: '#444',
               }}
             >
@@ -150,7 +164,7 @@ export function BottomSheet({
             flex: 1,
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
-            padding: '16px 20px 20px',
+            padding: footer != null ? '16px 20px 20px' : '16px 20px calc(20px + env(safe-area-inset-bottom, 0px))',
           }}
         >
           {children}

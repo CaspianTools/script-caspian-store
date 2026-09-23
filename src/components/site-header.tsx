@@ -8,16 +8,18 @@ import { useT } from '../i18n/locale-context';
 import {
   useCaspianFirebase,
   useCaspianLink,
+  useCaspianNavigation,
 } from '../provider/caspian-store-provider';
 import { getSiteSettings } from '../services/site-settings-service';
 import type { SiteSettings } from '../types';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { Button } from '../ui/button';
-import { MenuIcon, SearchIcon } from '../ui/icons';
-import { Badge } from '../ui/misc';
+import { HeartIcon, MenuIcon, SearchIcon, ShoppingCartIcon } from '../ui/icons';
 import { CartSheet } from './cart-sheet';
 import { SearchDialog } from './search-dialog';
 import { MobileNavSheet } from './mobile-nav-sheet';
 import { StorefrontProfileMenu } from './storefront-profile-menu';
+import { MobileTabBar } from './mobile-tab-bar';
 
 export interface SiteHeaderNavItem {
   href: string;
@@ -45,13 +47,43 @@ export interface SiteHeaderProps {
   wishlistHref?: string;
   /** Whether to show the search button (opens a popup with live product search). */
   showSearch?: boolean;
+  /** Render the phone-only bottom tab bar (`<MobileTabBar>`). Default true. */
+  showTabBar?: boolean;
   className?: string;
 }
 
+/**
+ * Marker for the built-in nav so the header can translate its two default
+ * labels through `useT()` while leaving consumer-supplied labels untouched.
+ */
+const DEFAULT_NAV_KEYS: Record<string, string> = {
+  '/shop': 'navigation.shop',
+  '/collections': 'navigation.collections',
+};
 const DEFAULT_NAV: SiteHeaderNavItem[] = [
   { href: '/shop', label: 'Shop' },
   { href: '/collections', label: 'Collections' },
 ];
+
+const countBubble: React.CSSProperties = {
+  position: 'absolute',
+  top: -6,
+  right: -6,
+  minWidth: 18,
+  height: 18,
+  padding: '0 5px',
+  boxSizing: 'border-box',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'var(--caspian-primary, #111)',
+  color: 'var(--caspian-primary-foreground, #fff)',
+  borderRadius: 999,
+  fontSize: 10,
+  fontWeight: 700,
+  lineHeight: 1,
+  boxShadow: '0 0 0 2px var(--caspian-background, #fff)',
+};
 
 export function SiteHeader({
   brandFallback = 'STORE',
@@ -61,12 +93,14 @@ export function SiteHeader({
   accountHref = '/login',
   wishlistHref = '/wishlist',
   showSearch = true,
+  showTabBar = true,
   className,
 }: SiteHeaderProps) {
   const t = useT();
   const Link = useCaspianLink();
   const { db } = useCaspianFirebase();
   const { user, loading } = useAuth();
+  const navPathname = useCaspianNavigation().pathname;
   const { count: cartCount } = useCart();
   const { wishlist } = useWishlist();
   const wishlistCount = wishlist.length;
@@ -89,6 +123,12 @@ export function SiteHeader({
   }, [db]);
 
   const brand = settings?.brandName?.trim() || brandFallback;
+  const navLabel = (item: SiteHeaderNavItem) =>
+    nav === DEFAULT_NAV && typeof item.label === 'string' && DEFAULT_NAV_KEYS[item.href]
+      ? t(DEFAULT_NAV_KEYS[item.href])
+      : item.label;
+  const isCurrent = (href: string) => stripLocalePrefix(navPathname) === href;
+  const resolvedNav = nav.map((item) => ({ ...item, label: navLabel(item) }));
 
   return (
     <>
@@ -105,6 +145,7 @@ export function SiteHeader({
         }}
       >
         <div
+          className="caspian-site-header__inner"
           style={{
             maxWidth: 1280,
             margin: '0 auto',
@@ -140,6 +181,7 @@ export function SiteHeader({
 
           <Link
             href="/"
+            className="caspian-site-header__brand"
             style={{
               fontSize: 20,
               fontWeight: 700,
@@ -157,21 +199,25 @@ export function SiteHeader({
               <Link
                 key={i}
                 href={item.href}
+                aria-current={isCurrent(item.href) ? 'page' : undefined}
                 style={{
                   fontSize: 12,
                   fontWeight: 500,
                   textTransform: 'uppercase',
                   letterSpacing: 1,
-                  color: '#666',
+                  color: isCurrent(item.href) ? 'inherit' : '#666',
                   textDecoration: 'none',
                 }}
               >
-                {item.label}
+                {navLabel(item)}
               </Link>
             ))}
           </nav>
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+          <div
+            className="caspian-site-header__actions"
+            style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}
+          >
             {showSearch && (
               <Button
                 variant="outline"
@@ -185,24 +231,12 @@ export function SiteHeader({
 
             {languageSwitcher}
 
-            <Link href={wishlistHref}>
-              <Button variant="outline" size="sm" style={{ position: 'relative' }}>
-                ♥
+            <Link href={wishlistHref} aria-label={t('navigation.wishlist')}>
+              <Button variant="outline" size="sm" tabIndex={-1} style={{ position: 'relative' }}>
+                <HeartIcon size={18} />
                 {wishlistCount > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: -4,
-                      right: -4,
-                      background: '#111',
-                      color: '#fff',
-                      borderRadius: 999,
-                      fontSize: 10,
-                      padding: '1px 5px',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {wishlistCount}
+                  <span style={countBubble} aria-hidden="true">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
                   </span>
                 )}
               </Button>
@@ -212,13 +246,13 @@ export function SiteHeader({
               variant="outline"
               size="sm"
               onClick={() => setCartOpen(true)}
-              aria-label={t('navigation.openCart')}
+              aria-label={cartCount > 0 ? `${t('navigation.openCart')} (${cartCount})` : t('navigation.openCart')}
               style={{ position: 'relative' }}
             >
-              🛒
+              <ShoppingCartIcon size={18} />
               {cartCount > 0 && (
-                <span style={{ marginLeft: 6 }}>
-                  <Badge variant="default">{cartCount}</Badge>
+                <span style={countBubble} aria-hidden="true">
+                  {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
             </Button>
@@ -226,7 +260,7 @@ export function SiteHeader({
             {!loading && user ? (
               userMenu ?? <StorefrontProfileMenu />
             ) : (
-              <Link href={accountHref}>
+              <Link href={accountHref} className="caspian-site-header__signin">
                 <Button variant="outline" size="sm">
                   {t('navigation.signIn')}
                 </Button>
@@ -241,10 +275,19 @@ export function SiteHeader({
       <MobileNavSheet
         open={menuOpen}
         onOpenChange={setMenuOpen}
-        nav={nav}
+        nav={resolvedNav}
         accountHref={accountHref}
         wishlistHref={wishlistHref}
       />
+      {showTabBar && (
+        <MobileTabBar
+          onOpenSearch={() => setSearchOpen(true)}
+          onOpenCart={() => setCartOpen(true)}
+          showSearch={showSearch}
+          wishlistHref={wishlistHref}
+          accountHref={accountHref}
+        />
+      )}
     </>
   );
 }

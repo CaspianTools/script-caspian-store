@@ -26,10 +26,14 @@ export function FontLoader() {
     if (fonts.body) root.style.setProperty('--caspian-font-body', fonts.body);
     if (fonts.headline) root.style.setProperty('--caspian-font-headline', fonts.headline);
 
-    const families = fonts.googleFamilies ?? [];
-    if (families.length === 0) return;
-
     const LINK_ID = 'caspian-google-fonts';
+    const families = fonts.googleFamilies ?? [];
+    if (families.length === 0) {
+      // Otherwise the previous theme's stylesheet keeps loading its families.
+      document.getElementById(LINK_ID)?.remove();
+      return;
+    }
+
     const href = `https://fonts.googleapis.com/css2?${families
       .map((f) => `family=${encodeURIComponent(f)}`)
       .join('&')}&display=swap`;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCaspianLink } from '../../provider/caspian-store-provider';
+import { useT } from '../../i18n/locale-context';
 import {
   useAdminNotifications,
   type AdminNotification,
@@ -12,11 +13,11 @@ import { RefreshIcon } from '../../ui/icons';
 import { Badge, Skeleton } from '../../ui/misc';
 import { DashboardSection } from './dashboard-section';
 
-const KIND_LABEL: Record<AdminNotificationKind, string> = {
-  'update-available': 'Update',
-  'pending-reviews': 'Moderation',
-  'pending-questions': 'Moderation',
-  'new-contacts': 'Inbox',
+const KIND_LABEL_KEY: Record<AdminNotificationKind, string> = {
+  'update-available': 'admin.dashboard.notifications.kind.update',
+  'pending-reviews': 'admin.dashboard.notifications.kind.moderation',
+  'pending-questions': 'admin.dashboard.notifications.kind.moderation',
+  'new-contacts': 'admin.dashboard.notifications.kind.inbox',
 };
 
 export interface DashboardNotificationsSectionProps extends UseAdminNotificationsOptions {
@@ -25,17 +26,18 @@ export interface DashboardNotificationsSectionProps extends UseAdminNotification
 
 export function DashboardNotificationsSection(options: DashboardNotificationsSectionProps) {
   const { notifications, loading, refresh, unreadCount } = useAdminNotifications(options);
+  const t = useT();
 
   return (
     <DashboardSection
-      title="Notifications"
-      subtitle="Live signals from your store and this library. Clear automatically when resolved."
+      title={t('admin.dashboard.notifications.title')}
+      subtitle={t('admin.dashboard.notifications.subtitle')}
       count={unreadCount}
       defaultOpen={unreadCount > 0}
       anchorId="notifications"
       action={
         <Button variant="outline" size="sm" onClick={refresh} loading={loading}>
-          <RefreshIcon size={14} /> Refresh
+          <RefreshIcon size={14} /> {t('admin.dashboard.notifications.refresh')}
         </Button>
       }
     >
@@ -55,7 +57,7 @@ export function DashboardNotificationsSection(options: DashboardNotificationsSec
             borderRadius: 8,
           }}
         >
-          All clear — no pending notifications.
+          {t('admin.dashboard.notifications.empty')}
         </div>
       ) : (
         <ul
@@ -79,6 +81,7 @@ export function DashboardNotificationsSection(options: DashboardNotificationsSec
 
 function NotificationCard({ notification }: { notification: AdminNotification }) {
   const Link = useCaspianLink();
+  const t = useT();
   const inner = (
     <div
       style={{
@@ -92,7 +95,9 @@ function NotificationCard({ notification }: { notification: AdminNotification })
         cursor: notification.href ? 'pointer' : 'default',
       }}
     >
-      <Badge variant="outline">{KIND_LABEL[notification.kind] ?? notification.kind}</Badge>
+      <Badge variant="outline">
+        {KIND_LABEL_KEY[notification.kind] ? t(KIND_LABEL_KEY[notification.kind]) : notification.kind}
+      </Badge>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: 15, color: '#111' }}>{notification.title}</div>
         {notification.description && (
@@ -101,7 +106,7 @@ function NotificationCard({ notification }: { notification: AdminNotification })
       </div>
       {notification.createdAt && (
         <div style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>
-          {formatRelative(notification.createdAt)}
+          {formatRelative(notification.createdAt, t)}
         </div>
       )}
     </div>
@@ -111,13 +116,13 @@ function NotificationCard({ notification }: { notification: AdminNotification })
   );
 }
 
-function formatRelative(iso: string): string {
+function formatRelative(iso: string, t: ReturnType<typeof useT>): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   const diff = Date.now() - d.getTime();
   const day = 24 * 60 * 60 * 1000;
-  if (diff < day) return 'Today';
-  if (diff < 2 * day) return 'Yesterday';
-  if (diff < 30 * day) return `${Math.floor(diff / day)} days ago`;
+  if (diff < day) return t('admin.dashboard.relative.today');
+  if (diff < 2 * day) return t('admin.dashboard.relative.yesterday');
+  if (diff < 30 * day) return t('admin.dashboard.relative.daysAgo', { count: Math.floor(diff / day) });
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }

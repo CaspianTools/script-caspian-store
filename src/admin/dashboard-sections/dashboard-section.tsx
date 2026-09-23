@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDownIcon } from '../../ui/icons';
 import { Badge } from '../../ui/misc';
 import { cn } from '../../utils/cn';
@@ -42,25 +42,43 @@ export function DashboardSection({
   children,
 }: DashboardSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+  // `null` until the first effect runs, then the persisted preference (if
+  // any). A saved preference always beats `defaultOpen`, which callers derive
+  // from data that is still loading on first render.
+  const savedPreference = useRef<'open' | 'closed' | null | undefined>(undefined);
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY_PREFIX + anchorId);
+      savedPreference.current = saved === 'open' || saved === 'closed' ? saved : null;
       if (saved === 'open') setOpen(true);
       else if (saved === 'closed') setOpen(false);
     } catch {
-      /* no-op */
+      savedPreference.current = null;
     }
-    // Auto-scroll to matching anchor hash on first mount so the header bell's
-    // "View all" link (`/admin#notifications`) lands directly on the section.
-    if (typeof window !== 'undefined' && window.location.hash === `#${anchorId}`) {
+    // Open + scroll to the section when the URL hash names it, so the header
+    // bell's "View all" link (`/admin#notifications`) lands directly on it.
+    // Runs on mount and on every later hash change (the dashboard may already
+    // be mounted when the bell link is clicked, so a mount-only check would
+    // miss it).
+    const syncHash = () => {
+      if (window.location.hash !== `#${anchorId}`) return;
       setOpen(true);
       setTimeout(() => {
         document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    };
+    syncHash();
+    window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, [anchorId]);
+
+  // `defaultOpen` is computed from async data (pending counts), so it usually
+  // flips from false to true after mount. Honour that flip unless the user has
+  // an explicit saved preference for this section.
+  useEffect(() => {
+    if (defaultOpen && savedPreference.current === null) setOpen(true);
+  }, [defaultOpen]);
 
   const toggle = () => {
     setOpen((prev) => {
@@ -90,6 +108,7 @@ export function DashboardSection({
         style={{
           display: 'flex',
           alignItems: 'center',
+          flexWrap: 'wrap',
           gap: 12,
           padding: '14px 16px',
           borderBottom: open ? '1px solid #eee' : 'none',

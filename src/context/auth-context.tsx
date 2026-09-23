@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useCallback,
@@ -29,6 +30,7 @@ import type { CaspianFirebase } from '../firebase/client';
 import type { UserProfile } from '../types';
 import { logError, reportServiceError } from '../services/error-log-service';
 import { tryEnsureAdminClaim } from '../services/storage-service';
+import { tryLinkGuestOrders } from '../services/guest-order-link-service';
 
 interface AuthContextValue {
   user: User | null;
@@ -103,6 +105,7 @@ export function AuthProvider({
   // we don't loop on consumers whose `caspian-admin` Cloud Functions are
   // undeployed (the claim will never arrive — refreshing again won't help).
   const refreshedClaimForUid = useRef<string | null>(null);
+  const linkedGuestOrdersForUid = useRef<string | null>(null);
 
   const requireFirebase = useCallback((): CaspianFirebase => {
     if (!firebase) {
@@ -125,10 +128,26 @@ export function AuthProvider({
     }
     const unsubscribe = onAuthStateChanged(firebase.auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      // The profile fetch is async; if auth moves on (guest → registered
+      // account, or sign-out) before it resolves, the stale profile must
+      // not overwrite the newer one.
+      const isCurrent = () => firebase.auth.currentUser?.uid === firebaseUser?.uid;
       if (firebaseUser) {
         try {
           const profile = await fetchOrCreateUserProfile(firebase, firebaseUser);
+          if (!isCurrent()) return;
           setUserProfile(profile);
+          // Guest orders placed under this (now verified) email get attached
+          // to the account. Once per uid per page load; the callable itself
+          // is idempotent.
+          if (
+            !firebaseUser.isAnonymous &&
+            firebaseUser.emailVerified &&
+            linkedGuestOrdersForUid.current !== firebaseUser.uid
+          ) {
+            linkedGuestOrdersForUid.current = firebaseUser.uid;
+            void tryLinkGuestOrders({ functions: firebase.functions, auth: firebase.auth });
+          }
           // If Firestore says admin but the cached ID token is missing the
           // `role: 'admin'` custom claim, force-refresh once. This pre-empts
           // the most common storage/unauthorized cause: the claim was set
@@ -162,6 +181,7 @@ export function AuthProvider({
           }
         } catch (error) {
           reportServiceError(firebase.db, 'auth-context.fetchProfile', error);
+          if (!isCurrent()) return;
           setUserProfile(null);
         }
       } else {
@@ -261,25 +281,38 @@ export function AuthProvider({
     }
   }, [firebase, user]);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userProfile,
-        loading,
-        signIn,
-        signUp,
-        signUpWithSetupLink,
-        signInWithGoogle,
-        signInAsGuest,
-        signOut,
-        refreshProfile,
-        resetPassword,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  // Memoised so a re-render of the provider (a `loading` flip, a profile
+  // refresh) does not hand every `useAuth()` consumer a new object.
+  const value = useMemo(
+    () => ({
+      user,
+      userProfile,
+      loading,
+      signIn,
+      signUp,
+      signUpWithSetupLink,
+      signInWithGoogle,
+      signInAsGuest,
+      signOut,
+      refreshProfile,
+      resetPassword,
+    }),
+    [
+      user,
+      userProfile,
+      loading,
+      signIn,
+      signUp,
+      signUpWithSetupLink,
+      signInWithGoogle,
+      signInAsGuest,
+      signOut,
+      refreshProfile,
+      resetPassword,
+    ],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

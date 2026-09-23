@@ -30,6 +30,7 @@ import {
   setDoc,
   type Firestore,
 } from 'firebase/firestore';
+import type { FontTokens } from '../types';
 import type {
   ApplyTemplateMode,
   ApplyTemplateOptions,
@@ -226,6 +227,7 @@ async function applySettings(
       ...existingScript,
       activeTemplateId: template.id,
       theme: template.theme,
+      ...(template.theme.fontFamily ? { fonts: fontsFromStack(template.theme.fontFamily) } : {}),
       hero: template.hero,
       features: { ...existingScript.features, ...template.features },
       updatedAt: serverTimestamp(),
@@ -261,6 +263,31 @@ async function applySettings(
       await setDoc(siteRef, patch, { merge: true });
     }
   }
+}
+
+const GENERIC_FAMILIES = new Set([
+  'system-ui',
+  '-apple-system',
+  'sans-serif',
+  'serif',
+  'monospace',
+  'georgia',
+  'times new roman',
+  'arial',
+  'helvetica',
+]);
+
+/**
+ * Derive `settings.fonts` from a template's `theme.fontFamily` stack. Templates
+ * only declare the CSS stack, so the Google Fonts request is inferred from its
+ * first named family; `googleFamilies` is always written (possibly empty) so a
+ * merge write clears the previous theme's stylesheet instead of keeping it.
+ */
+function fontsFromStack(stack: string): FontTokens {
+  const first = stack.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '') ?? '';
+  const googleFamilies =
+    first && !GENERIC_FAMILIES.has(first.toLowerCase()) ? [`${first}:wght@400;500;600;700`] : [];
+  return { body: stack, headline: stack, googleFamilies };
 }
 
 /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getProducts } from '../services/product-service';
 import { listActiveBrands } from '../services/brand-service';
 import { listActiveCategories } from '../services/category-service';
@@ -18,6 +18,9 @@ export interface UseProductSearchResult {
   matches: Product[];
   loading: boolean;
   loaded: boolean;
+  /** Set when the catalog fetch failed. `retry()` clears it and fetches again. */
+  error: unknown;
+  retry: () => void;
 }
 
 /**
@@ -38,9 +41,18 @@ export function useProductSearch(
   const [categoryLabels, setCategoryLabels] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  // Bumped by retry(); listed as an effect dependency so a failed load can be
+  // re-attempted instead of leaving the dialog on "no results" for the session.
+  const [attempt, setAttempt] = useState(0);
+
+  const retry = useCallback(() => {
+    setError(null);
+    setAttempt((n) => n + 1);
+  }, []);
 
   useEffect(() => {
-    if (!enabled || loaded) return;
+    if (!enabled || loaded || error) return;
     let alive = true;
     setLoading(true);
     Promise.all([
@@ -57,6 +69,7 @@ export function useProductSearch(
       })
       .catch((err) => {
         console.error('[caspian-store] useProductSearch load failed:', err);
+        if (alive) setError(err);
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -64,7 +77,7 @@ export function useProductSearch(
     return () => {
       alive = false;
     };
-  }, [db, enabled, loaded, max]);
+  }, [db, enabled, loaded, max, error, attempt]);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -76,5 +89,5 @@ export function useProductSearch(
     });
   }, [products, brandLabels, categoryLabels, query]);
 
-  return { matches, loading, loaded };
+  return { matches, loading, loaded, error, retry };
 }

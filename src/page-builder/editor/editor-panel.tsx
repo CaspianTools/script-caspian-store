@@ -253,7 +253,7 @@ function FieldControl({
           type="text"
           value={str}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholderKey ? t(field.placeholderKey) : '/path or https://…'}
+          placeholder={t(field.placeholderKey ?? 'pageBuilder.field.linkPlaceholder')}
         />
       </div>
     );

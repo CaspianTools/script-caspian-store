@@ -20,6 +20,7 @@ import { Input, Label, Textarea } from '../ui/input';
 import { Badge, Skeleton } from '../ui/misc';
 import { Table, TBody, TD, TH, THead, TR } from '../ui/table';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { FieldDescription } from '../ui/field-description';
 import { FieldHelp } from '../ui/field-help';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -225,8 +226,8 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
   }
 
   return (
-    <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Emails</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Transactional emails sent by the Cloud Function when orders are created or updated.
@@ -264,7 +265,7 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
             development to prevent accidental sends.
           </FieldDescription>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>From name</Label>
               <Input
@@ -309,7 +310,7 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
             </FieldDescription>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Accent color</Label>
               <Input
@@ -336,13 +337,18 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button
               size="sm"
               onClick={handleSaveSettings}
               loading={savingSettings}
               disabled={!settingsDirty}
             >
+              Save sender settings
+            </Button>
+          </div>
+          <div className="caspian-sticky-cta">
+            <Button onClick={handleSaveSettings} loading={savingSettings} disabled={!settingsDirty}>
               Save sender settings
             </Button>
           </div>
@@ -383,7 +389,7 @@ export function AdminEmailsPage({ className }: AdminEmailsPageProps) {
                   {tpl.enabled ? 'Enabled' : 'Disabled'}
                 </Badge>
               </TD>
-              <TD style={{ textAlign: 'right' }}>
+              <TD data-label="" style={{ textAlign: 'right' }}>
                 <Button variant="outline" size="sm" onClick={() => openTemplate(tpl)}>
                   Edit
                 </Button>

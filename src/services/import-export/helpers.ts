@@ -1,11 +1,19 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { DecidedRow, ImportSummary, RowAction, RowPlan, RowResult } from './types';
 
-/** Split a `;`/`,`-delimited cell into a trimmed, non-empty list. */
+/**
+ * Split a list cell into a trimmed, non-empty list. `;` is the delimiter
+ * `joinList` writes; a cell with no `;` at all is treated as a legacy
+ * comma-separated list. Splitting on both at once (as before v15.1) broke
+ * any element that legitimately contains a comma — an image URL with
+ * `?fit=crop,w=800`, an EU half size `40,5` — so an export no longer
+ * round-tripped.
+ */
 export function parseList(raw: string | undefined): string[] {
   if (!raw) return [];
+  const delimiter = raw.includes(';') ? ';' : ',';
   return raw
-    .split(/[;,]/)
+    .split(delimiter)
     .map((s) => s.trim())
     .filter(Boolean);
 }

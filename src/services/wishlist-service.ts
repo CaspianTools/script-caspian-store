@@ -3,6 +3,7 @@ import {
   arrayUnion,
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   type Firestore,
 } from 'firebase/firestore';
@@ -27,7 +28,11 @@ export async function saveUserWishlist(
   uid: string,
   ids: string[],
 ): Promise<void> {
-  await updateDoc(doc(db, 'users', uid), { wishlist: ids });
+  // `setDoc(merge)` rather than `updateDoc`: on a brand-new account the
+  // profile doc is created *after* auth state flips, and the merge that runs
+  // in between used to throw "No document to update" and strand the
+  // shopper's pre-sign-in hearts in localStorage.
+  await setDoc(doc(db, 'users', uid), { wishlist: ids }, { merge: true });
 }
 
 // Union the local (anon) wishlist with the server wishlist on sign-in. Writes

@@ -1,6 +1,7 @@
 'use client';
 
 import { useScriptSettings } from '../context/script-settings-context';
+import { DEFAULT_SCRIPT_SETTINGS } from '../types';
 import { useToast } from '../ui/toast';
 import { cn } from '../utils/cn';
 import { THEME_PRESETS, THEME_PRESET_LABELS, type ThemePresetName } from './presets';
@@ -20,7 +21,16 @@ export function ThemePresetPicker({ className, onApplied }: ThemePresetPickerPro
 
   const apply = async (name: ThemePresetName) => {
     try {
-      await save({ theme: THEME_PRESETS[name] });
+      // `save` merges nested maps; write the optional tokens explicitly so a
+      // previous preset's background/font cannot survive the switch.
+      const tokens = THEME_PRESETS[name];
+      await save({
+        theme: {
+          ...tokens,
+          background: tokens.background ?? DEFAULT_SCRIPT_SETTINGS.theme.background!,
+          fontFamily: tokens.fontFamily ?? DEFAULT_SCRIPT_SETTINGS.theme.fontFamily!,
+        },
+      });
       toast({ title: `Applied "${THEME_PRESET_LABELS[name]}"` });
       onApplied?.(name);
     } catch (error) {

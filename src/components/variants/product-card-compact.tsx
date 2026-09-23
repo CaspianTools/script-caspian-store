@@ -3,7 +3,7 @@
 import type { ProductCardProps } from '../product-card';
 import { useCaspianLink, useCaspianImage } from '../../provider/caspian-store-provider';
 import { useBrandName } from '../../hooks/use-brands';
-import { useT } from '../../i18n/locale-context';
+import { useFormatCurrency, useT } from '../../i18n/locale-context';
 import { useScriptSettings } from '../../context/script-settings-context';
 import { Badge } from '../../ui/misc';
 import { cn } from '../../utils/cn';
@@ -28,7 +28,7 @@ export function ProductCardCompact({
   product,
   getProductHref = (id) => `/product/${id}`,
   className,
-  formatPrice = (p) => `$${p.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   inventory,
   taxConfig,
 }: ProductCardProps) {
@@ -37,6 +37,8 @@ export function ProductCardCompact({
   const t = useT();
   const brandName = useBrandName(product.brand);
   const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const img = product.images?.[0];
   const stockBadge = inventory ? resolveStockBadge(product, inventory) : null;
   const priceSuffix = renderPriceSuffix(taxConfig);
@@ -94,7 +96,7 @@ export function ProductCardCompact({
           <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4 }}>
             {product.isNew && <Badge>{t('storefront.badges.new')}</Badge>}
             {product.limited && <Badge variant="destructive">{t('storefront.badges.limited')}</Badge>}
-            {stockBadge === 'out-of-stock' && <Badge variant="destructive">Out</Badge>}
+            {stockBadge === 'out-of-stock' && <Badge variant="destructive">{t('storefront.stock.outShort')}</Badge>}
           </div>
           {showWishlistIcon && (
             <div style={{ position: 'absolute', top: 6, right: 6 }}>
@@ -124,6 +126,10 @@ export function ProductCardCompact({
               lineHeight: 1.3,
               position: 'relative',
               paddingBottom: 6,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {product.name}
@@ -137,15 +143,21 @@ export function ProductCardCompact({
               marginTop: 2,
             }}
           >
-            <p style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, margin: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6, minWidth: 0 }}>
               {formatPrice(product.price)}
               {priceSuffix && (
-                <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.55)', fontSize: 11, marginLeft: 6 }}>
+                <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>
                   {priceSuffix}
                 </span>
               )}
             </p>
-            {showQuickAddIcon && <QuickAddToCartButton product={product} />}
+            {showQuickAddIcon && (
+            <QuickAddToCartButton
+              product={product}
+              inventory={inventory}
+              productHref={getProductHref(product.slug ?? product.id)}
+            />
+          )}
           </div>
         </div>
       </div>

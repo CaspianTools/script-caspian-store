@@ -10,12 +10,14 @@ on:
     branches: [main]
     paths:
       - 'src/admin/admin-shell.tsx'
+      - 'src/admin/admin-root.tsx'
       - 'scaffold/create.mjs'
       - 'scripts/check-scaffold-routes.mjs'
       - '.github/workflows/scaffold-routes-smoke.yml'
   pull_request:
     paths:
       - 'src/admin/admin-shell.tsx'
+      - 'src/admin/admin-root.tsx'
       - 'scaffold/create.mjs'
       - 'scripts/check-scaffold-routes.mjs'
       - '.github/workflows/scaffold-routes-smoke.yml'

@@ -24,13 +24,15 @@ export function Badge({
   className,
 }: {
   children: ReactNode;
-  variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning';
   className?: string;
 }) {
   const palette = {
     default: { bg: 'var(--caspian-primary, #111)', color: 'var(--caspian-primary-foreground, #fff)' },
     secondary: { bg: '#f1f5f9', color: '#111' },
     destructive: { bg: '#fee2e2', color: '#991b1b' },
+    success: { bg: '#dcfce7', color: '#166534' },
+    warning: { bg: '#fef3c7', color: '#92400e' },
     outline: { bg: 'transparent', color: 'inherit', border: '1px solid rgba(0,0,0,0.2)' as const },
   }[variant];
   return (

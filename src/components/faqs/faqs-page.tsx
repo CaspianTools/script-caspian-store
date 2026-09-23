@@ -6,7 +6,9 @@ import { listFaqs } from '../../services/faq-service';
 import { useCaspianFirebase } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n/locale-context';
 import { Skeleton } from '../../ui/misc';
+import { ChevronDownIcon } from '../../ui/icons';
 import { cn } from '../../utils/cn';
+import { EmptyState } from '../empty-state';
 
 export interface FaqsPageProps {
   title?: string;
@@ -19,13 +21,7 @@ export interface FaqsPageProps {
   className?: string;
 }
 
-const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
-  orders: 'Orders & Shipping',
-  returns: 'Returns & Exchanges',
-  products: 'Products & Sizing',
-  account: 'Account & Payment',
-  general: 'General',
-};
+const DEFAULT_CATEGORY_KEYS = ['orders', 'returns', 'products', 'account', 'general'] as const;
 
 const DEFAULT_CATEGORY_ORDER = ['orders', 'returns', 'products', 'account'];
 
@@ -57,7 +53,11 @@ export function FaqsPage({
     };
   }, [db]);
 
-  const labels = { ...DEFAULT_CATEGORY_LABELS, ...(categoryLabels ?? {}) };
+  const labels = useMemo(() => {
+    const defaults: Record<string, string> = {};
+    for (const key of DEFAULT_CATEGORY_KEYS) defaults[key] = t(`faqs.category.${key}`);
+    return { ...defaults, ...(categoryLabels ?? {}) };
+  }, [t, categoryLabels]);
   const order = categoryOrder ?? DEFAULT_CATEGORY_ORDER;
 
   const grouped = useMemo(() => {
@@ -86,7 +86,10 @@ export function FaqsPage({
   }, [faqs, order, labels]);
 
   return (
-    <main className={cn('caspian-faqs', className)} style={{ padding: '48px 24px' }}>
+    <main
+      className={cn('caspian-faqs', 'caspian-page-gutter', className)}
+      style={{ padding: '48px clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ maxWidth: 820, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1
@@ -109,9 +112,7 @@ export function FaqsPage({
             <Skeleton style={{ height: 48 }} />
           </div>
         ) : grouped.length === 0 ? (
-          <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>
-            {emptyMessage ?? t('faqs.empty')}
-          </p>
+          <EmptyState title={emptyMessage ?? t('faqs.empty')} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
             {grouped.map((group) => (
@@ -137,26 +138,36 @@ export function FaqsPage({
                         onToggle={(e) =>
                           setOpenId((e.currentTarget as HTMLDetailsElement).open ? faq.id : null)
                         }
-                        style={{
-                          borderTop: '1px solid #eee',
-                          padding: '14px 0',
-                        }}
+                        style={{ borderTop: '1px solid #eee' }}
                       >
                         <summary
                           style={{
                             cursor: 'pointer',
                             fontWeight: 500,
                             fontSize: 15,
+                            lineHeight: 1.4,
                             listStyle: 'none',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
+                            gap: 12,
+                            minHeight: 56,
+                            padding: '8px 0',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          {faq.question}
-                          <span style={{ color: '#888', fontSize: 18 }}>{open ? '−' : '+'}</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>{faq.question}</span>
+                          <ChevronDownIcon
+                            size={18}
+                            style={{
+                              flexShrink: 0,
+                              color: '#888',
+                              transform: open ? 'rotate(180deg)' : 'none',
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
                         </summary>
-                        <p style={{ color: '#555', marginTop: 10, lineHeight: 1.6, fontSize: 14 }}>
+                        <p style={{ color: '#555', margin: '0 0 16px', lineHeight: 1.6, fontSize: 14 }}>
                           {faq.answer}
                         </p>
                       </details>

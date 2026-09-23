@@ -61,6 +61,9 @@ export interface ShopFilterFieldsProps {
   /** When true, omit the inline Reset button — drawers typically render it in
    *  a sticky footer instead. */
   hideReset?: boolean;
+  /** Render every row, chip and input at a 44px finger-sized height. The
+   *  phone drawer sets this; the desktop sidebar keeps its denser rows. */
+  touchTargets?: boolean;
 }
 
 export interface ShopFilterSidebarProps
@@ -111,8 +114,17 @@ export function ShopFilterFields({
   resultCount,
   hideHeader,
   hideReset,
+  touchTargets,
 }: ShopFilterFieldsProps) {
   const t = useT();
+  const rowStyle: React.CSSProperties = touchTargets
+    ? { ...radioRowStyle, minHeight: 44, padding: 0 }
+    : radioRowStyle;
+  const inputStyle: React.CSSProperties = touchTargets
+    ? { ...priceInputStyle, minHeight: 44, fontSize: 16 }
+    : priceInputStyle;
+  const chipStyle = (active: boolean): React.CSSProperties =>
+    touchTargets ? { ...pillStyle(active), minHeight: 44, padding: '10px 16px' } : pillStyle(active);
 
   const setCategory = (cat: string | null) => onChange({ ...state, category: cat });
   const setMinPrice = (v: string) => onChange({ ...state, minPrice: v });
@@ -159,7 +171,7 @@ export function ShopFilterFields({
       {availableCategories.length > 0 && (
         <div style={sectionStyle}>
           <p style={sectionTitleStyle}>{t('shop.filters.category')}</p>
-          <label style={radioRowStyle}>
+          <label style={rowStyle}>
             <input
               type="radio"
               name="caspian-shop-category"
@@ -169,7 +181,7 @@ export function ShopFilterFields({
             <span>{t('shop.filters.allCategories')}</span>
           </label>
           {availableCategories.map((cat) => (
-            <label key={cat} style={radioRowStyle}>
+            <label key={cat} style={rowStyle}>
               <input
                 type="radio"
                 name="caspian-shop-category"
@@ -192,7 +204,7 @@ export function ShopFilterFields({
             onChange={(e) => setMinPrice(e.target.value)}
             placeholder={t('shop.filters.minPrice')}
             min={0}
-            style={priceInputStyle}
+            style={inputStyle}
           />
           <input
             type="number"
@@ -201,7 +213,7 @@ export function ShopFilterFields({
             onChange={(e) => setMaxPrice(e.target.value)}
             placeholder={t('shop.filters.maxPrice')}
             min={0}
-            style={priceInputStyle}
+            style={inputStyle}
           />
         </div>
       </div>
@@ -215,7 +227,7 @@ export function ShopFilterFields({
                 key={size}
                 type="button"
                 onClick={() => toggleSize(size)}
-                style={pillStyle(state.sizes.has(size))}
+                style={chipStyle(state.sizes.has(size))}
               >
                 {size}
               </button>
@@ -234,7 +246,7 @@ export function ShopFilterFields({
                   key={term.id}
                   type="button"
                   onClick={() => toggleTaxonomyTerm(facet.id, term.id)}
-                  style={pillStyle(state.taxonomies[facet.id]?.has(term.id) ?? false)}
+                  style={chipStyle(state.taxonomies[facet.id]?.has(term.id) ?? false)}
                 >
                   {term.name}
                 </button>
@@ -246,7 +258,7 @@ export function ShopFilterFields({
 
       <div style={{ ...sectionStyle, borderBottom: 'none', marginBottom: 8, paddingBottom: 8 }}>
         <p style={sectionTitleStyle}>{t('shop.filters.quickFilters')}</p>
-        <label style={radioRowStyle}>
+        <label style={rowStyle}>
           <input
             type="checkbox"
             checked={state.isNew}
@@ -254,7 +266,7 @@ export function ShopFilterFields({
           />
           <span>{t('shop.filters.newArrivals')}</span>
         </label>
-        <label style={radioRowStyle}>
+        <label style={rowStyle}>
           <input
             type="checkbox"
             checked={state.limited}

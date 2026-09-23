@@ -1,6 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import type { ProductCategoryDoc } from '../types';
 import {
   createCategory,
@@ -10,13 +19,16 @@ import {
   type CategoryWriteInput,
 } from '../services/category-service';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Input, Label, Textarea } from '../ui/input';
 import { Select } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { ImageUploadField } from '../ui/image-upload-field';
 import { Skeleton } from '../ui/misc';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { slugify } from '../utils/slugify';
 
 export interface AdminCategoryEditorProps {
@@ -71,12 +83,14 @@ export function AdminCategoryEditor({
   const { db } = useCaspianFirebase();
   const nav = useCaspianNavigation();
   const { toast } = useToast();
+  const t = useT();
 
   const [cats, setCats] = useState<ProductCategoryDoc[] | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [loading, setLoading] = useState(Boolean(categoryId));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -105,7 +119,9 @@ export function AdminCategoryEditor({
         }
       } catch (error) {
         console.error('[caspian-store] Failed to load categories:', error);
-        if (alive && categoryId) setNotFound(true);
+        if (!alive) return;
+        toast({ title: t('admin.loadFailed'), variant: 'destructive' });
+        if (categoryId) setNotFound(true);
       } finally {
         if (alive) setLoading(false);
       }
@@ -113,7 +129,13 @@ export function AdminCategoryEditor({
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db, categoryId]);
+
+  const childCount = useMemo(
+    () => (categoryId ? (cats ?? []).filter((c) => c.parentId === categoryId).length : 0),
+    [cats, categoryId],
+  );
 
   // Parent options exclude the category itself AND every descendant, so an
   // admin can't create a cycle (A → B → A) from the dropdown. The full list is
@@ -166,7 +188,6 @@ export function AdminCategoryEditor({
 
   const handleDelete = async () => {
     if (!categoryId) return;
-    if (!confirm(`Delete category "${draft.name || 'this category'}"?`)) return;
     setDeleting(true);
     try {
       await deleteCategory(db, categoryId);
@@ -202,7 +223,7 @@ export function AdminCategoryEditor({
   }
 
   return (
-    <div className={className} style={{ maxWidth: 720 }}>
+    <div className={cn('caspian-has-sticky-cta', className)} style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
         {categoryId ? 'Edit category' : 'New category'}
       </h1>
@@ -228,7 +249,7 @@ export function AdminCategoryEditor({
             onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
           />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Parent category">
             <Select
               value={draft.parentId ?? ''}
@@ -283,13 +304,18 @@ export function AdminCategoryEditor({
 
       <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
         {categoryId ? (
-          <Button variant="destructive" onClick={handleDelete} loading={deleting} disabled={saving}>
+          <Button
+            variant="destructive"
+            onClick={() => setConfirmDeleteOpen(true)}
+            loading={deleting}
+            disabled={saving}
+          >
             {deleting ? 'Deleting…' : 'Delete category'}
           </Button>
         ) : (
           <span />
         )}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="caspian-hide-mobile" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button variant="outline" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
             Cancel
           </Button>
@@ -298,15 +324,49 @@ export function AdminCategoryEditor({
           </Button>
         </div>
       </div>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} loading={saving}>
+          {saving ? 'Saving…' : categoryId ? 'Save changes' : 'Create category'}
+        </Button>
+        <Button variant="ghost" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
+          Cancel
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title={t('admin.confirm.deleteTitle')}
+        description={
+          childCount > 0
+            ? t('admin.categories.confirmDeleteWithChildren', {
+                name: draft.name || categoryId || '',
+                count: childCount,
+              })
+            : t('admin.categories.confirmDelete', { name: draft.name || categoryId || '' })
+        }
+        confirmLabel={t('admin.confirm.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
 
+/**
+ * Labelled form row. When the child is a single component (Input, Select,
+ * Textarea…) it receives a generated `id` so the label is clickable and
+ * announced by screen readers; plain markup children are rendered as-is.
+ */
 function Field({ label, children }: { label: string; children: ReactNode }) {
+  const generatedId = useId();
+  const bindable = isValidElement<{ id?: string }>(children) && typeof children.type !== 'string';
+  const controlId = bindable ? children.props.id ?? generatedId : undefined;
   return (
     <div style={{ marginBottom: 12 }}>
-      <Label>{label}</Label>
-      {children}
+      <Label htmlFor={controlId}>{label}</Label>
+      {bindable ? cloneElement(children, { id: controlId }) : children}
     </div>
   );
 }

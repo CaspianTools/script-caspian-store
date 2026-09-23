@@ -23,6 +23,7 @@ export function ReviewSummary({
   const t = useT();
   return (
     <div
+      className="caspian-review-summary"
       style={{
         display: 'grid',
         gap: 32,

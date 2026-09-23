@@ -31,6 +31,7 @@ import {
   deleteDoc,
   collection,
   addDoc,
+  increment,
   serverTimestamp,
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -193,6 +194,29 @@ test('users/{uid}: auth user can read own profile', async () => {
   await assertSucceeds(getDoc(doc(authed('alice'), 'users', 'alice')));
 });
 
+test('users/{uid}: auth user can delete their own profile ("Delete my account")', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users', 'alice'), {
+      email: 'alice@test.example',
+      role: 'customer',
+    });
+  });
+  await assertSucceeds(deleteDoc(doc(authed('alice'), 'users', 'alice')));
+});
+
+test('users/{uid}: auth user CANNOT delete another user\'s profile', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users', 'bob'), {
+      email: 'bob@test.example',
+      role: 'customer',
+    });
+  });
+  await assertFails(deleteDoc(doc(authed('alice'), 'users', 'bob')));
+  await assertFails(deleteDoc(doc(unauthed(), 'users', 'bob')));
+});
+
 // ---- products/{id} ----------------------------------------------------
 
 test('products/{id}: public read allowed', async () => {
@@ -218,16 +242,152 @@ test('products/{id}: admin write allowed', async () => {
 
 // ---- orders/{id} ------------------------------------------------------
 
-test('orders/{id}: auth user can create their own order', async () => {
+// The only legitimate client-side order writer is the manual-payment path
+// (src/payments/plugins/manual-base.ts): own uid, `on-hold`, a manual
+// payment method, a non-empty items list, no `channel`. Everything else is
+// written by Cloud Functions through the Admin SDK, so the create rule pins
+// this exact shape — a signed-in (or anonymous) session must not be able to
+// write itself a `paid` order.
+const VALID_MANUAL_ORDER = (userId) => ({
+  userId,
+  userEmail: 'alice@test.example',
+  status: 'on-hold',
+  items: [
+    {
+      productId: 'p1',
+      name: 'Tee',
+      brand: '',
+      price: 20,
+      quantity: 2,
+      selectedSize: null,
+      selectedColor: null,
+      imageUrl: '',
+    },
+  ],
+  shippingInfo: {
+    name: 'Alice',
+    address: '1 Main St',
+    city: 'Baku',
+    zip: 'AZ1000',
+    country: 'AZ',
+    shippingMethod: 'Standard',
+  },
+  payment: { stripeSessionId: '', last4: '', brand: '', amount: 45, method: 'bacs' },
+  subtotal: 40,
+  shippingCost: 5,
+  discount: 0,
+  promoCode: null,
+  tax: 0,
+  total: 45,
+  createdAt: serverTimestamp(),
+});
+
+test('orders/{id}: auth user can create their own on-hold manual-payment order', async () => {
   await env.clearFirestore();
   const db = authed('alice');
-  await assertSucceeds(
-    addDoc(collection(db, 'orders'), {
-      userId: 'alice',
-      total: 42,
-      status: 'pending',
-    }),
+  await assertSucceeds(addDoc(collection(db, 'orders'), VALID_MANUAL_ORDER('alice')));
+});
+
+test('orders/{id}: every manual method (bacs, cheque, cod) is accepted', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  for (const method of ['bacs', 'cheque', 'cod']) {
+    const order = VALID_MANUAL_ORDER('alice');
+    order.payment.method = method;
+    await assertSucceeds(addDoc(collection(db, 'orders'), order));
+  }
+});
+
+test('orders/{id}: create rejected when userId is not the caller', async () => {
+  await env.clearFirestore();
+  const db = authed('mallory');
+  await assertFails(addDoc(collection(db, 'orders'), VALID_MANUAL_ORDER('alice')));
+});
+
+test('orders/{id}: create rejected with status=paid', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  await assertFails(
+    addDoc(collection(db, 'orders'), { ...VALID_MANUAL_ORDER('alice'), status: 'paid' }),
   );
+});
+
+test('orders/{id}: create rejected with payment.method=stripe', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  const order = VALID_MANUAL_ORDER('alice');
+  order.payment.method = 'stripe';
+  await assertFails(addDoc(collection(db, 'orders'), order));
+});
+
+test('orders/{id}: create rejected when payment.method is absent', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  const order = VALID_MANUAL_ORDER('alice');
+  delete order.payment.method;
+  await assertFails(addDoc(collection(db, 'orders'), order));
+});
+
+test('orders/{id}: create rejected with an empty items list', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  await assertFails(
+    addDoc(collection(db, 'orders'), { ...VALID_MANUAL_ORDER('alice'), items: [] }),
+  );
+});
+
+test('orders/{id}: create rejected when it claims a POS channel', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  await assertFails(
+    addDoc(collection(db, 'orders'), { ...VALID_MANUAL_ORDER('alice'), channel: 'pos' }),
+  );
+});
+
+test('orders/{id}: create rejected with a negative total', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  await assertFails(
+    addDoc(collection(db, 'orders'), { ...VALID_MANUAL_ORDER('alice'), total: -1 }),
+  );
+});
+
+test('orders/{id}: unauthenticated create denied', async () => {
+  await env.clearFirestore();
+  await assertFails(addDoc(collection(unauthed(), 'orders'), VALID_MANUAL_ORDER('alice')));
+});
+
+test('orders/{id}: owner cannot update their own order (admin only)', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'orders', 'o1'), VALID_MANUAL_ORDER('alice'));
+  });
+  await assertFails(updateDoc(doc(authed('alice'), 'orders', 'o1'), { status: 'paid' }));
+});
+
+// ---- pendingCheckouts / stripeEvents (server-only) ----------------------
+
+test('pendingCheckouts/{id}: nobody reads or writes, not even admins', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'pendingCheckouts', 'pc1'), { userId: 'alice' });
+  });
+  await assertFails(getDoc(doc(authed('alice'), 'pendingCheckouts', 'pc1')));
+  await assertFails(getDoc(doc(authed('admin1'), 'pendingCheckouts', 'pc1')));
+  await assertFails(setDoc(doc(authed('alice'), 'pendingCheckouts', 'pc2'), { userId: 'alice' }));
+  await assertFails(setDoc(doc(authed('admin1'), 'pendingCheckouts', 'pc2'), { userId: 'alice' }));
+});
+
+test('stripeEvents/{id}: nobody reads or writes, not even admins', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'stripeEvents', 'evt_1'), { sessionId: 'cs_1' });
+  });
+  await assertFails(getDoc(doc(authed('alice'), 'stripeEvents', 'evt_1')));
+  await assertFails(getDoc(doc(authed('admin1'), 'stripeEvents', 'evt_1')));
+  await assertFails(setDoc(doc(authed('admin1'), 'stripeEvents', 'evt_2'), { sessionId: 'cs_2' }));
 });
 
 test('orders/{id}: auth user CANNOT read another user\'s order', async () => {
@@ -285,6 +445,207 @@ test('reviews/{id}: rating out of [1,5] denied', async () => {
       productId: 'p1',
       status: 'pending',
       rating: 6,
+    }),
+  );
+});
+
+// The verified-purchase badge is stamped server-side (functions-admin
+// `stampVerifiedPurchase`). A client may write `false` or omit the field;
+// writing `true` would make the badge a free-text claim.
+test('reviews/{id}: create with isVerifiedPurchase=false allowed', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  await assertSucceeds(
+    addDoc(collection(db, 'reviews'), {
+      userId: 'alice',
+      productId: 'p1',
+      status: 'pending',
+      rating: 4,
+      text: 'fine',
+      isVerifiedPurchase: false,
+    }),
+  );
+});
+
+test('reviews/{id}: create with isVerifiedPurchase=true denied', async () => {
+  await env.clearFirestore();
+  const db = authed('alice');
+  await assertFails(
+    addDoc(collection(db, 'reviews'), {
+      userId: 'alice',
+      productId: 'p1',
+      status: 'pending',
+      rating: 4,
+      text: 'fine',
+      isVerifiedPurchase: true,
+    }),
+  );
+});
+
+// ---- promoCodes/{id} --------------------------------------------------
+// Shoppers never read this collection (the Stripe callable validates the
+// code server-side; manual flows apply no discount), so `isAuth()` read only
+// let anonymous sessions enumerate every live code. Staff + admin keep read.
+
+test('promoCodes/{id}: anonymous / customer read denied', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'promoCodes', 'pc1'), {
+      code: 'SAVE10',
+      type: 'percentage',
+      value: 10,
+      isActive: true,
+    });
+  });
+  await assertFails(getDoc(doc(unauthed(), 'promoCodes', 'pc1')));
+  await assertFails(getDoc(doc(authed('alice'), 'promoCodes', 'pc1')));
+});
+
+test('promoCodes/{id}: staff and admin read allowed; customer write denied', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'promoCodes', 'pc1'), {
+      code: 'SAVE10',
+      type: 'percentage',
+      value: 10,
+      isActive: true,
+    });
+  });
+  await assertSucceeds(getDoc(doc(staffClaim('cashier1'), 'promoCodes', 'pc1')));
+  await assertSucceeds(getDoc(doc(authed('admin1'), 'promoCodes', 'pc1')));
+  await assertFails(
+    setDoc(doc(authed('alice'), 'promoCodes', 'pc2'), { code: 'FREE', type: 'fixed', value: 999 }),
+  );
+});
+
+// ---- subscribers/{id} -------------------------------------------------
+// Public create with a strict shape (doc id = encodeURIComponent(email), so
+// the id can't be compared to the field). A second write to the same id is
+// an update, which is denied — the client's "already subscribed" signal.
+
+test('subscribers/{id}: unauthenticated create allowed with valid shape', async () => {
+  await env.clearFirestore();
+  await assertSucceeds(
+    setDoc(doc(unauthed(), 'subscribers', encodeURIComponent('jane@example.com')), {
+      email: 'jane@example.com',
+      subscribedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test('subscribers/{id}: create rejected with extra fields', async () => {
+  await env.clearFirestore();
+  await assertFails(
+    setDoc(doc(unauthed(), 'subscribers', encodeURIComponent('jane@example.com')), {
+      email: 'jane@example.com',
+      subscribedAt: serverTimestamp(),
+      role: 'admin',
+    }),
+  );
+});
+
+test('subscribers/{id}: create rejected when email is not a string or is oversize', async () => {
+  await env.clearFirestore();
+  await assertFails(
+    setDoc(doc(unauthed(), 'subscribers', 'x1'), { email: 42, subscribedAt: serverTimestamp() }),
+  );
+  await assertFails(
+    setDoc(doc(unauthed(), 'subscribers', 'x2'), {
+      email: 'a'.repeat(321),
+      subscribedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test('subscribers/{id}: second signup for the same address is denied (update)', async () => {
+  await env.clearFirestore();
+  const id = encodeURIComponent('jane@example.com');
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'subscribers', id), {
+      email: 'jane@example.com',
+      subscribedAt: serverTimestamp(),
+    });
+  });
+  await assertFails(
+    setDoc(doc(unauthed(), 'subscribers', id), {
+      email: 'jane@example.com',
+      subscribedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test('subscribers/{id}: non-admin read denied, admin read allowed', async () => {
+  await env.clearFirestore();
+  await seedAdmin('admin1');
+  const id = encodeURIComponent('jane@example.com');
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'subscribers', id), {
+      email: 'jane@example.com',
+      subscribedAt: serverTimestamp(),
+    });
+  });
+  await assertFails(getDoc(doc(authed('alice'), 'subscribers', id)));
+  await assertSucceeds(getDoc(doc(authed('admin1'), 'subscribers', id)));
+});
+
+// ---- searchTerms/{id} -------------------------------------------------
+// Public upsert, but one search = exactly one increment, and only `count`
+// and `lastSearchedAt` may change on update.
+
+const SEED_SEARCH_TERM = {
+  term: 'shoes',
+  count: 3,
+  firstSearchedAt: serverTimestamp(),
+  lastSearchedAt: serverTimestamp(),
+};
+
+test('searchTerms/{id}: create with count=1 allowed; count=5 denied', async () => {
+  await env.clearFirestore();
+  await assertSucceeds(
+    setDoc(doc(unauthed(), 'searchTerms', 'shoes'), { ...SEED_SEARCH_TERM, count: 1 }),
+  );
+  await assertFails(
+    setDoc(doc(unauthed(), 'searchTerms', 'boots'), { ...SEED_SEARCH_TERM, term: 'boots', count: 5 }),
+  );
+});
+
+test('searchTerms/{id}: update by exactly +1 allowed', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'searchTerms', 'shoes'), SEED_SEARCH_TERM);
+  });
+  await assertSucceeds(
+    updateDoc(doc(unauthed(), 'searchTerms', 'shoes'), {
+      count: increment(1),
+      lastSearchedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test('searchTerms/{id}: update by more than +1 denied', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'searchTerms', 'shoes'), SEED_SEARCH_TERM);
+  });
+  await assertFails(
+    updateDoc(doc(unauthed(), 'searchTerms', 'shoes'), {
+      count: 1000,
+      lastSearchedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test('searchTerms/{id}: update touching other fields denied', async () => {
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'searchTerms', 'shoes'), SEED_SEARCH_TERM);
+  });
+  await assertFails(
+    updateDoc(doc(unauthed(), 'searchTerms', 'shoes'), {
+      count: increment(1),
+      lastSearchedAt: serverTimestamp(),
+      term: 'hijacked',
     }),
   );
 });

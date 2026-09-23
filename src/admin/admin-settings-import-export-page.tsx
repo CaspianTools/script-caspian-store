@@ -136,7 +136,7 @@ export function AdminSettingsImportExportPage({ className }: { className?: strin
       setActions(init);
     } catch (err) {
       console.error('[caspian-store] Analyze failed:', err);
-      toast({ title: t('admin.importExport.export.failed'), variant: 'destructive' });
+      toast({ title: t('admin.importExport.import.failed'), variant: 'destructive' });
     } finally {
       setAnalyzing(false);
     }
@@ -193,7 +193,7 @@ export function AdminSettingsImportExportPage({ className }: { className?: strin
       });
     } catch (err) {
       console.error('[caspian-store] Import failed:', err);
-      toast({ title: t('admin.importExport.export.failed'), variant: 'destructive' });
+      toast({ title: t('admin.importExport.import.failed'), variant: 'destructive' });
     } finally {
       setRunning(false);
     }
@@ -201,7 +201,7 @@ export function AdminSettingsImportExportPage({ className }: { className?: strin
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
           {t('admin.importExport.title')}
         </h1>

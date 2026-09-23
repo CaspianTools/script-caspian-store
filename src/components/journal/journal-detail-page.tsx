@@ -74,7 +74,10 @@ export function JournalDetailPage({
   const paragraphs = (article.content ?? '').split(/\n{2,}/).filter(Boolean);
 
   return (
-    <main className={cn('caspian-journal-detail', className)} style={{ maxWidth: 820, margin: '0 auto', padding: '48px 24px' }}>
+    <main
+      className={cn('caspian-journal-detail', 'caspian-page-gutter', className)}
+      style={{ maxWidth: 820, margin: '0 auto', padding: '48px clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ marginBottom: 16 }}>
         <Link href={backHref}>
           <span style={{ fontSize: 13 }}>← {t('journal.backToList')}</span>

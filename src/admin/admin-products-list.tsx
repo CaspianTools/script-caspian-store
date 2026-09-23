@@ -10,7 +10,9 @@ import {
   useCaspianLink,
   useCaspianNavigation,
 } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { EditIcon, ExternalLinkIcon, MoreHorizontalIcon, TrashIcon } from '../ui/icons';
 import { Input } from '../ui/input';
@@ -41,7 +43,9 @@ export function AdminProductsList({
   const Link = useCaspianLink();
   const nav = useCaspianNavigation();
   const { toast } = useToast();
+  const t = useT();
   const [products, setProducts] = useState<Product[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const [categories, setCategories] = useState<ProductCategoryDoc[]>([]);
   const [brands, setBrands] = useState<ProductBrandDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,16 +119,18 @@ export function AdminProductsList({
     [categoryNameById],
   );
 
-  const handleDelete = async (product: Product) => {
-    if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    const product = pendingDelete;
+    if (!product) return;
     setBusy(product.id);
     try {
       await deleteProduct(db, product.id);
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
+      setPendingDelete(null);
       toast({ title: 'Product deleted' });
     } catch (error) {
       console.error('[caspian-store] Delete failed:', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.common.deleteFailed'), variant: 'destructive' });
     } finally {
       setBusy(null);
     }
@@ -164,11 +170,12 @@ export function AdminProductsList({
     setBrandFilter('');
   };
 
-  const hasActiveFilter =
-    search.trim() !== '' ||
-    statusFilter !== 'all' ||
-    categoryFilter !== '' ||
-    brandFilter !== '';
+  const activeFilterCount =
+    (search.trim() !== '' ? 1 : 0) +
+    (statusFilter !== 'all' ? 1 : 0) +
+    (categoryFilter !== '' ? 1 : 0) +
+    (brandFilter !== '' ? 1 : 0);
+  const hasActiveFilter = activeFilterCount > 0;
 
   const renderMasonry = () => (
     <div className="caspian-pmasonry">
@@ -221,6 +228,7 @@ export function AdminProductsList({
                 trigger={
                   <button
                     type="button"
+                    className="caspian-admin-icon-btn"
                     aria-label={`Actions for ${p.name}`}
                     disabled={busy === p.id}
                     style={{
@@ -256,7 +264,7 @@ export function AdminProductsList({
                 <DropdownMenuItem
                   icon={<TrashIcon size={14} />}
                   destructive
-                  onSelect={() => handleDelete(p)}
+                  onSelect={() => setPendingDelete(p)}
                 >
                   Delete
                 </DropdownMenuItem>
@@ -270,14 +278,14 @@ export function AdminProductsList({
 
   return (
     <div className={className}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Products</h1>
           <p style={{ color: '#666', marginTop: 4 }}>
             {filtered.length} of {products.length} shown
           </p>
         </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+        <div className="caspian-stack-mobile" style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
           <ViewToggle view={view} onChange={setView} />
           <Link href={newProductHref}>
             <Button>+ New product</Button>
@@ -285,21 +293,16 @@ export function AdminProductsList({
         </div>
       </header>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 160px 220px 180px auto',
-          gap: 8,
-          marginBottom: 16,
-          alignItems: 'center',
-        }}
-      >
+      <div className="caspian-admin-filters" style={{ marginBottom: 16 }}>
         <Input
           placeholder="Search name, brand, or category…"
+          aria-label="Search name, brand, or category"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: '2 1 240px' }}
         />
         <Select
+          aria-label="Status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           options={[
@@ -307,27 +310,32 @@ export function AdminProductsList({
             { value: 'active', label: 'Active only' },
             { value: 'hidden', label: 'Hidden only' },
           ]}
-          style={{ width: '100%' }}
+          style={{ flex: '1 1 150px' }}
         />
         <Select
+          aria-label="Category"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           options={categoryOptions}
-          style={{ width: '100%' }}
+          style={{ flex: '1 1 180px' }}
         />
         <Select
+          aria-label="Brand"
           value={brandFilter}
           onChange={(e) => setBrandFilter(e.target.value)}
           options={brandOptions}
-          style={{ width: '100%' }}
+          style={{ flex: '1 1 160px' }}
         />
         <Button
           variant="outline"
           size="sm"
           onClick={clearFilters}
           disabled={!hasActiveFilter}
+          style={{ flex: '0 0 auto' }}
         >
-          Clear
+          {hasActiveFilter
+            ? t('admin.products.clearFilters', { count: activeFilterCount })
+            : t('admin.products.clear')}
         </Button>
       </div>
 
@@ -366,8 +374,8 @@ export function AdminProductsList({
               const brandIsLegacy = p.brand && !brandNameById.has(p.brand);
               return (
                 <TR key={p.id}>
-                  <TD style={{ color: '#888', fontVariantNumeric: 'tabular-nums' }}>{idx + 1}</TD>
-                  <TD style={{ fontWeight: 500 }}>
+                  <TD className="caspian-hide-mobile" style={{ color: '#888', fontVariantNumeric: 'tabular-nums' }}>{idx + 1}</TD>
+                  <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       {p.name}
                       <a
@@ -414,11 +422,12 @@ export function AdminProductsList({
                       {p.isActive === false ? 'Hidden' : 'Active'}
                     </Badge>
                   </TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <DropdownMenu
                       trigger={
                         <button
                           type="button"
+                          className="caspian-admin-icon-btn"
                           aria-label={`Actions for ${p.name}`}
                           disabled={busy === p.id}
                           style={{
@@ -454,7 +463,7 @@ export function AdminProductsList({
                       <DropdownMenuItem
                         icon={<TrashIcon size={14} />}
                         destructive
-                        onSelect={() => handleDelete(p)}
+                        onSelect={() => setPendingDelete(p)}
                       >
                         Delete
                       </DropdownMenuItem>
@@ -466,6 +475,19 @@ export function AdminProductsList({
           </TBody>
         </Table>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={t('admin.confirm.deleteNamedTitle', { name: pendingDelete?.name ?? '' })}
+        description={t('admin.confirm.deleteBody')}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={pendingDelete !== null && busy === pendingDelete.id}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

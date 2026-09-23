@@ -11,6 +11,9 @@ import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
 import { useTaxonomyTermsByType } from '../../hooks/use-taxonomy-terms';
 import { TAXONOMY_BY_ID } from '../../taxonomies/catalog';
+import { useScriptSettings } from '../../context/script-settings-context';
+import { useFormatCurrency } from '../../i18n/locale-context';
+import { cn } from '../../utils/cn';
 
 /**
  * Default PDP variant — the v8.x layout extracted into its own file.
@@ -23,7 +26,10 @@ import { TAXONOMY_BY_ID } from '../../taxonomies/catalog';
  * `useTemplateComponent('ProductDetailPage', ProductDetailDefault)`.
  */
 export function ProductDetailDefault(props: ProductDetailPageProps) {
-  const { formatPrice = (p) => `$${p.toFixed(2)}`, hideReviews, className } = props;
+  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const state = useProductDetailState(props);
   const {
     product,
@@ -32,6 +38,7 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
     blurb,
     selectedSize,
     setSelectedSize,
+    sizeSelectorRef,
     quantity,
     setQuantity,
     avg,
@@ -41,6 +48,8 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
     activeTab,
     setActiveTab,
     handleAddToCart,
+    handleStickyAddToCart,
+    stickyHint,
     derived,
     t,
   } = state;
@@ -64,7 +73,7 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
   if (loading) {
     return (
       <div className={className} style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}>
-        <div style={gridStyle}>
+        <div className="caspian-pdp-grid" style={gridStyle}>
           <Skeleton style={{ aspectRatio: '4 / 5' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Skeleton style={{ height: 14, width: '30%' }} />
@@ -83,11 +92,11 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
 
   return (
     <div
-      className={className}
+      className={cn('caspian-has-sticky-cta', className)}
       data-pdp-variant="default"
       style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}
     >
-      <div style={gridStyle}>
+      <div className="caspian-pdp-grid" style={gridStyle}>
         <ProductGallery images={product.images} />
         <div className="caspian-pdp-default-info" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -123,12 +132,12 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
                 fontWeight: 600,
               }}
             >
-              Out of stock
+              {t('storefront.stock.outOfStock')}
             </div>
           )}
 
           {derived.hasSizes && (
-            <div style={{ marginBottom: 16 }}>
+            <div ref={sizeSelectorRef} tabIndex={-1} style={{ marginBottom: 16, outline: 'none' }}>
               <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('product.size')}</p>
               <SizeSelector
                 sizes={product.sizes!}
@@ -186,6 +195,16 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
             {t('product.addToCart')}
           </Button>
         </div>
+      </div>
+
+      <div className="caspian-sticky-cta">
+        <div className="caspian-sticky-cta__price">
+          <strong>{formatPrice(product.price)}</strong>
+          {stickyHint && <span>{stickyHint}</span>}
+        </div>
+        <Button size="lg" onClick={handleStickyAddToCart}>
+          {t('product.addToCart')}
+        </Button>
       </div>
 
       {(!hideReviews || derived.detailsTabHasContent) && (
@@ -268,6 +287,7 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
       role="tab"
       aria-selected={active}
       onClick={onClick}
+      className="caspian-pdp-tab"
       style={{
         background: 'transparent',
         border: 0,

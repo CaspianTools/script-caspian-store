@@ -1,7 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
+import { resolveStoreCurrency, toStripeAmount } from './currency';
+import { assertShippingCost, type ShippingCartLine } from './shipping-rates';
 
 const STRIPE_SECRET = defineSecret('STRIPE_SECRET_KEY');
 
@@ -28,7 +30,7 @@ export interface CreateCheckoutRequest {
   cancelUrl: string;
   /** Optional — server-validated. */
   promoCode?: string | null;
-  /** Optional — if provided, added as a shipping line item. */
+  /** Optional — verified against the store's enabled shipping installs. */
   shippingCost?: number;
   /** Optional — stored on the order doc when the webhook fires. */
   shippingInfo?: CheckoutShippingInfo;
@@ -42,6 +44,38 @@ export interface CreateCheckoutRequest {
    * Added in v9.1 alongside guest checkout.
    */
   email?: string | null;
+}
+
+/** Priced cart line as stored on `pendingCheckouts/{id}` and, later, the order. */
+export interface PendingOrderItem {
+  productId: string;
+  name: string;
+  brand: string;
+  price: number;
+  quantity: number;
+  selectedSize: string | null;
+  selectedColor: string | null;
+  imageUrl: string;
+}
+
+/**
+ * Everything the webhook needs to write the order, keyed by the id the
+ * session carries in `metadata.pendingCheckoutId`. Stripe caps every metadata
+ * value at 500 characters, so the priced items list (image URLs alone run
+ * ~150 chars each) and the shipping address no longer fit there — two items
+ * in a cart already failed session creation. Server-only collection.
+ */
+export interface PendingCheckout {
+  userId: string;
+  userEmail: string;
+  isGuest: boolean;
+  items: PendingOrderItem[];
+  shippingInfo: CheckoutShippingInfo | null;
+  shippingCost: number;
+  discount: number;
+  promoCode: string | null;
+  currency: string;
+  locale: string;
 }
 
 function computeDiscount(subtotal: number, promo: FirebaseFirestore.DocumentData): number {
@@ -61,9 +95,11 @@ function computeDiscount(subtotal: number, promo: FirebaseFirestore.DocumentData
  * Callable Cloud Function that:
  * 1. Validates each cart item against Firestore (existence, active, stock).
  * 2. Computes subtotal server-side (never trust client).
- * 3. Resolves & validates promo code against the `promoCodes` collection.
- * 4. Adds shipping as a line item when cost > 0.
- * 5. Creates a Stripe Checkout Session with rich metadata so the webhook can
+ * 3. Verifies the requested shipping cost against the store's enabled
+ *    shipping installs and adds it as a line item when > 0.
+ * 4. Resolves & validates promo code against the `promoCodes` collection.
+ * 5. Writes the priced cart to `pendingCheckouts/{id}` and creates a Stripe
+ *    Checkout Session whose metadata points at it, so the webhook can
  *    reconstruct the order.
  *
  * Consumers invoke via:
@@ -86,6 +122,8 @@ export const createStripeCheckoutSession = onCall(
       apiVersion: '2024-11-20.acacia' as any,
     });
 
+    const currency = await resolveStoreCurrency(db);
+
     // From v8.4 the library stores `Product.brand` as a brand-doc id (was a
     // free-text name). Orders are historical records, so we capture the
     // human-readable brand name at the moment of purchase — falling back to
@@ -100,19 +138,14 @@ export const createStripeCheckoutSession = onCall(
 
     // --- Validate items & compute subtotal server-side ---
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-    const orderItems: Array<{
-      productId: string;
-      name: string;
-      brand: string;
-      price: number;
-      quantity: number;
-      selectedSize: string | null;
-      selectedColor: string | null;
-      imageUrl: string;
-    }> = [];
+    const orderItems: PendingOrderItem[] = [];
+    const shippingLines: ShippingCartLine[] = [];
     let subtotal = 0;
 
     for (const item of data.items) {
+      if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+        throw new HttpsError('invalid-argument', 'Item quantity must be a positive integer.');
+      }
       const snap = await db.collection('products').doc(item.productId).get();
       if (!snap.exists) {
         throw new HttpsError('not-found', `Product ${item.productId} not found.`);
@@ -134,8 +167,11 @@ export const createStripeCheckoutSession = onCall(
         );
       }
 
-      const unitPriceCents = Math.round(product.price * 100);
       subtotal += product.price * item.quantity;
+      shippingLines.push({
+        quantity: item.quantity,
+        weightKg: typeof product.weightKg === 'number' ? product.weightKg : null,
+      });
 
       const variant = item.selectedColor
         ? (product.colorVariants as Array<{ name: string; imageUrl: string }> | undefined)?.find(
@@ -150,8 +186,8 @@ export const createStripeCheckoutSession = onCall(
 
       lineItems.push({
         price_data: {
-          currency: 'usd',
-          unit_amount: unitPriceCents,
+          currency,
+          unit_amount: toStripeAmount(product.price, currency),
           product_data: {
             name: product.name,
             description: descriptionParts.length > 0 ? descriptionParts.join(' · ') : undefined,
@@ -174,13 +210,19 @@ export const createStripeCheckoutSession = onCall(
       });
     }
 
-    // --- Shipping as a line item ---
-    const shippingCost = data.shippingCost ?? 0;
+    // --- Shipping: verified against the store's offered rates, then a line item ---
+    const shippingCost = await assertShippingCost(
+      db,
+      data.shippingCost,
+      data.shippingInfo?.shippingMethod,
+      subtotal,
+      shippingLines,
+    );
     if (shippingCost > 0) {
       lineItems.push({
         price_data: {
-          currency: 'usd',
-          unit_amount: Math.round(shippingCost * 100),
+          currency,
+          unit_amount: toStripeAmount(shippingCost, currency),
           product_data: {
             name: `Shipping${
               data.shippingInfo?.shippingMethod ? ` (${data.shippingInfo.shippingMethod})` : ''
@@ -211,10 +253,26 @@ export const createStripeCheckoutSession = onCall(
     // Anonymous-auth users (WooCommerce-style guest checkout) have an empty
     // token email, so the form-collected email is the only contact channel.
     // Form email wins when present, even for signed-in buyers — they may want
-    // the order receipt to go to a different address.
+    // the order receipt to go to a different address. Lowercased so the
+    // guest-order linking trigger's equality query matches the Auth record.
     const formEmail = typeof data.email === 'string' ? data.email.trim() : '';
-    const resolvedEmail = formEmail || request.auth.token.email || '';
+    const resolvedEmail = (formEmail || request.auth.token.email || '').toLowerCase();
     const isGuest = request.auth.token.firebase?.sign_in_provider === 'anonymous';
+
+    const pending: PendingCheckout = {
+      userId: request.auth.uid,
+      userEmail: resolvedEmail,
+      isGuest,
+      items: orderItems,
+      shippingInfo: data.shippingInfo ?? null,
+      shippingCost,
+      discount,
+      promoCode: appliedPromoCode,
+      currency,
+      locale: data.locale ?? '',
+    };
+    const pendingRef = db.collection('pendingCheckouts').doc();
+    await pendingRef.set({ ...pending, createdAt: FieldValue.serverTimestamp() });
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
@@ -227,22 +285,17 @@ export const createStripeCheckoutSession = onCall(
       client_reference_id: request.auth.uid,
       customer_email: resolvedEmail || undefined,
       metadata: {
+        pendingCheckoutId: pendingRef.id,
         userId: request.auth.uid,
         userEmail: resolvedEmail,
         isGuest: isGuest ? '1' : '',
-        promoCode: appliedPromoCode ?? '',
-        discount: discount.toFixed(2),
-        shippingCost: shippingCost.toFixed(2),
-        shippingInfo: data.shippingInfo ? JSON.stringify(data.shippingInfo) : '',
-        items: JSON.stringify(orderItems),
-        locale: data.locale ?? '',
       },
     };
 
     if (discount > 0) {
       const coupon = await stripe.coupons.create({
-        amount_off: Math.round(discount * 100),
-        currency: 'usd',
+        amount_off: toStripeAmount(discount, currency),
+        currency,
         duration: 'once',
         name: appliedPromoCode ?? 'Discount',
       });
@@ -250,6 +303,7 @@ export const createStripeCheckoutSession = onCall(
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
+    await pendingRef.update({ stripeSessionId: session.id });
     return { sessionId: session.id, url: session.url };
   },
 );

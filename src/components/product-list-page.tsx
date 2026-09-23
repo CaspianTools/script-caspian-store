@@ -5,8 +5,9 @@ import type { InventorySettings, Product, ProductCategoryDoc, TaxConfig } from '
 import { getProducts, type ProductFilters } from '../services/product-service';
 import { getSiteSettings } from '../services/site-settings-service';
 import { listActiveCategories } from '../services/category-service';
-import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { ProductGrid } from './product-grid';
+import { EmptyState } from './empty-state';
 import {
   ShopFilterSidebar,
   EMPTY_SHOP_FILTERS,
@@ -19,7 +20,10 @@ import { resolveEnabledTaxonomies, TAXONOMY_BY_ID } from '../taxonomies/catalog'
 import { useTaxonomyTermsByType } from '../hooks/use-taxonomy-terms';
 import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { Select } from '../ui/select';
 import { cn } from '../utils/cn';
+
+type ShopSort = 'featured' | 'priceAsc' | 'priceDesc' | 'newest' | 'nameAsc';
 
 export interface ProductListPageProps {
   /**
@@ -73,6 +77,7 @@ export function ProductListPage({
   hideFilters,
 }: ProductListPageProps) {
   const { db } = useCaspianFirebase();
+  const nav = useCaspianNavigation();
   const t = useT();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +87,7 @@ export function ProductListPage({
   const [enabledAttrIds, setEnabledAttrIds] = useState<string[]>([]);
   const [filterState, setFilterState] = useState<ShopFilterState>(EMPTY_SHOP_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [sort, setSort] = useState<ShopSort>('featured');
 
   useEffect(() => {
     let alive = true;
@@ -121,6 +127,20 @@ export function ProductListPage({
   }, [db]);
 
   const { byType: attrTermsByType } = useTaxonomyTermsByType(enabledAttrIds);
+
+  // `/shop?category=<slug|id>` (featured-category cards, external links)
+  // pre-selects the category filter. Resolved against the loaded category
+  // list so a slug in the URL maps to the id the filter is keyed on.
+  const urlCategory =
+    nav.searchParams?.get('category') ??
+    (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('category')
+      : null);
+  useEffect(() => {
+    if (!urlCategory) return;
+    const match = categories.find((c) => c.id === urlCategory || c.slug === urlCategory);
+    setFilterState((s) => ({ ...s, category: match?.id ?? urlCategory }));
+  }, [urlCategory, categories]);
 
   useEffect(() => {
     if (inventoryOverride !== undefined && taxConfigOverride !== undefined) {
@@ -227,16 +247,79 @@ export function ProductListPage({
     });
   }, [products, filterState]);
 
-  const grid = (
-    <ProductGrid
-      products={visibleProducts}
-      loading={loading}
-      getProductHref={getProductHref}
-      formatPrice={formatPrice}
-      emptyMessage={emptyMessage}
-      inventory={inventory}
-      taxConfig={taxConfig}
+  const sortedProducts = useMemo(() => {
+    if (sort === 'featured') return visibleProducts;
+    const list = [...visibleProducts];
+    switch (sort) {
+      case 'priceAsc':
+        return list.sort((a, b) => a.price - b.price);
+      case 'priceDesc':
+        return list.sort((a, b) => b.price - a.price);
+      case 'newest':
+        return list.sort(
+          (a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0),
+        );
+      case 'nameAsc':
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }, [visibleProducts, sort]);
+
+  const sortOptions = [
+    { value: 'featured', label: t('shop.sort.featured') },
+    { value: 'priceAsc', label: t('shop.sort.priceAsc') },
+    { value: 'priceDesc', label: t('shop.sort.priceDesc') },
+    { value: 'newest', label: t('shop.sort.newest') },
+    { value: 'nameAsc', label: t('shop.sort.nameAsc') },
+  ];
+  const sortSelect = (
+    <Select
+      aria-label={t('shop.sort.label')}
+      value={sort}
+      onChange={(e) => setSort(e.target.value as ShopSort)}
+      options={sortOptions}
     />
+  );
+
+  const activeFilterCount = countActiveShopFilters(filterState);
+  const resultCount = loading ? undefined : visibleProducts.length;
+  const grid =
+    !loading && visibleProducts.length === 0 ? (
+      <EmptyState
+        title={emptyMessage ?? t('storefront.empty')}
+        action={
+          activeFilterCount > 0 ? (
+            <Button variant="outline" size="sm" onClick={() => setFilterState(EMPTY_SHOP_FILTERS)}>
+              {t('shop.filters.reset')}
+            </Button>
+          ) : undefined
+        }
+      />
+    ) : (
+      <ProductGrid
+        products={sortedProducts}
+        loading={loading}
+        getProductHref={getProductHref}
+        formatPrice={formatPrice}
+        inventory={inventory}
+        taxConfig={taxConfig}
+      />
+    );
+  const resultsBar = (
+    <div
+      className="caspian-shop-results-bar"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16,
+      }}
+    >
+      <p style={{ fontSize: 13, color: '#666', margin: 0 }} aria-live="polite">
+        {typeof resultCount === 'number' ? t('shop.filters.resultCount', { count: resultCount }) : ''}
+      </p>
+      {hideFilters ? null : <div className="caspian-hide-mobile">{sortSelect}</div>}
+    </div>
   );
 
   return (
@@ -248,13 +331,16 @@ export function ProductListPage({
         </header>
       )}
       {hideFilters ? (
-        grid
+        <>
+          {resultsBar}
+          {grid}
+        </>
       ) : (
         <>
           <MobileFilterToolbar
-            activeCount={countActiveShopFilters(filterState)}
-            resultCount={loading ? undefined : visibleProducts.length}
+            activeCount={activeFilterCount}
             onOpen={() => setMobileFiltersOpen(true)}
+            sortSelect={sortSelect}
           />
           <div className={cn('caspian-shop-grid')}>
             <ShopFilterSidebar
@@ -264,9 +350,12 @@ export function ProductListPage({
               categoryLabels={categoryLabels}
               availableSizes={availableSizes}
               availableTaxonomies={availableTaxonomies}
-              resultCount={loading ? undefined : visibleProducts.length}
+              resultCount={resultCount}
             />
-            <div style={{ minWidth: 0 }}>{grid}</div>
+            <div style={{ minWidth: 0 }}>
+              {resultsBar}
+              {grid}
+            </div>
           </div>
           <ShopFilterDrawer
             open={mobileFiltersOpen}
@@ -277,7 +366,7 @@ export function ProductListPage({
             categoryLabels={categoryLabels}
             availableSizes={availableSizes}
             availableTaxonomies={availableTaxonomies}
-            resultCount={loading ? undefined : visibleProducts.length}
+            resultCount={resultCount}
           />
         </>
       )}
@@ -287,12 +376,12 @@ export function ProductListPage({
 
 function MobileFilterToolbar({
   activeCount,
-  resultCount,
   onOpen,
+  sortSelect,
 }: {
   activeCount: number;
-  resultCount: number | undefined;
   onOpen: () => void;
+  sortSelect: React.ReactNode;
 }) {
   const t = useT();
   return (
@@ -300,23 +389,25 @@ function MobileFilterToolbar({
       className="caspian-shop-mobile-toolbar"
       style={{
         display: 'none',
+        position: 'sticky',
+        // Sits just under the 60px phone header (see globals.css).
+        top: 60,
+        zIndex: 5,
+        background: 'var(--caspian-background, #fff)',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 12,
-        marginBottom: 16,
+        padding: '8px 0',
+        marginBottom: 12,
       }}
     >
-      <Button type="button" variant="outline" size="sm" onClick={onOpen}>
+      <Button type="button" variant="outline" size="md" onClick={onOpen} style={{ flex: 1 }}>
         <span aria-hidden="true" style={{ marginRight: 6 }}>☰</span>
         {activeCount > 0
           ? t('shop.filters.openMobileWithCount', { count: activeCount })
           : t('shop.filters.openMobile')}
       </Button>
-      {typeof resultCount === 'number' && (
-        <span style={{ fontSize: 13, color: '#666' }}>
-          {t('shop.filters.resultCount', { count: resultCount })}
-        </span>
-      )}
+      <div style={{ flex: 1, display: 'grid', minWidth: 0 }}>{sortSelect}</div>
     </div>
   );
 }

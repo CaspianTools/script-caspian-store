@@ -131,6 +131,7 @@ export function AdminTaxonomiesShell({ className }: AdminTaxonomiesShellProps) {
       {header}
 
       <div
+        className="caspian-admin-subshell"
         style={{
           display: 'grid',
           gridTemplateColumns: '240px minmax(0, 1fr)',

@@ -10,9 +10,11 @@ import type {
 import { getProductCollectionBySlug } from '../services/product-collection-service';
 import { getProductsByIds } from '../services/product-service';
 import { getSiteSettings } from '../services/site-settings-service';
-import { useCaspianFirebase, useCaspianImage } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianImage, useCaspianLink } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
+import { Button } from '../ui/button';
 import { ProductGrid } from './product-grid';
+import { EmptyState } from './empty-state';
 import { cn } from '../utils/cn';
 
 export interface CollectionDetailPageProps {
@@ -40,6 +42,7 @@ export function CollectionDetailPage({
 }: CollectionDetailPageProps) {
   const { db } = useCaspianFirebase();
   const Image = useCaspianImage();
+  const Link = useCaspianLink();
   const t = useT();
 
   const [collection, setCollection] = useState<ProductCollectionDoc | null | undefined>(undefined);
@@ -71,6 +74,10 @@ export function CollectionDetailPage({
 
   useEffect(() => {
     let alive = true;
+    // Clear the previous collection so a slug change never shows the old
+    // header over the new grid while the fetch is in flight.
+    setCollection(undefined);
+    setProducts([]);
     (async () => {
       setLoading(true);
       try {
@@ -100,16 +107,23 @@ export function CollectionDetailPage({
 
   if (collection === null) {
     return (
-      <div className={cn('caspian-collection-detail-page', className)}>
-        <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>
-          {notFoundMessage ?? t('collectionDetail.notFound')}
-        </p>
+      <div className={cn('caspian-collection-detail-page', 'caspian-page-gutter', className)}>
+        <EmptyState
+          title={notFoundMessage ?? t('collectionDetail.notFound')}
+          action={
+            <Link href="/collections" style={{ textDecoration: 'none' }}>
+              <Button variant="outline" size="sm">
+                {t('collectionDetail.backToCollections')}
+              </Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className={cn('caspian-collection-detail-page', className)}>
+    <div className={cn('caspian-collection-detail-page', 'caspian-page-gutter', className)}>
       <header style={{ marginBottom: 40, textAlign: 'center' }}>
         {collection?.imageUrl && (
           <div
@@ -154,15 +168,27 @@ export function CollectionDetailPage({
         )}
       </header>
 
-      <ProductGrid
-        products={products}
-        loading={loading}
-        getProductHref={getProductHref}
-        formatPrice={formatPrice}
-        emptyMessage={emptyMessage ?? t('collectionDetail.emptyProducts')}
-        inventory={inventory}
-        taxConfig={taxConfig}
-      />
+      {!loading && products.length === 0 ? (
+        <EmptyState
+          title={emptyMessage ?? t('collectionDetail.emptyProducts')}
+          action={
+            <Link href="/shop" style={{ textDecoration: 'none' }}>
+              <Button variant="outline" size="sm">
+                {t('storefront.browseAll')}
+              </Button>
+            </Link>
+          }
+        />
+      ) : (
+        <ProductGrid
+          products={products}
+          loading={loading}
+          getProductHref={getProductHref}
+          formatPrice={formatPrice}
+          inventory={inventory}
+          taxConfig={taxConfig}
+        />
+      )}
     </div>
   );
 }

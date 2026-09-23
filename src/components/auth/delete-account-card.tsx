@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
   deleteUser,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
 } from 'firebase/auth';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../context/auth-context';
+import { caspianCollections } from '../../firebase/collections';
 import { useCaspianFirebase, useCaspianNavigation } from '../../provider/caspian-store-provider';
 import { useT } from '../../i18n/locale-context';
 import { Button } from '../../ui/button';
@@ -61,11 +64,26 @@ export function DeleteAccountCard({
         const credential = EmailAuthProvider.credential(user.email, password);
         await reauthenticateWithCredential(user, credential);
       }
-      // Clear per-user data. Orders are preserved for records.
-      await deleteDoc(doc(db, 'users', user.uid)).catch(() => undefined);
-      await deleteDoc(doc(db, 'carts', user.uid)).catch(() => undefined);
-      await deleteUser(user);
-      toast({ title: t('deleteAccount.success') });
+      // Per-user docs go before the auth user: once `deleteUser` resolves the
+      // client has no auth and the owner-scoped rules deny both deletes.
+      // Orders are preserved for records.
+      const collections = caspianCollections(db);
+      await deleteDoc(doc(collections.users, user.uid)).catch(() => undefined);
+      await deleteDoc(doc(collections.carts, user.uid)).catch(() => undefined);
+      // A Google account has no password to reauthenticate with up front, so
+      // a stale session surfaces here as `auth/requires-recent-login`; confirm
+      // through the Google popup and retry once.
+      try {
+        await deleteUser(user);
+      } catch (error) {
+        if ((error as { code?: string })?.code === 'auth/requires-recent-login' && isGoogleAccount) {
+          await reauthenticateWithPopup(user, new GoogleAuthProvider());
+          await deleteUser(user);
+        } else {
+          throw error;
+        }
+      }
+      toast({ title: t('deleteAccount.success'), variant: 'success' });
       // Sign out the stale session if still attached.
       try {
         await auth.signOut();
@@ -127,6 +145,7 @@ export function DeleteAccountCard({
               <Input
                 type="password"
                 autoComplete="current-password"
+                enterKeyHint="next"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -135,6 +154,9 @@ export function DeleteAccountCard({
           <div>
             <Label>{t('deleteAccount.typeToConfirm', { text: CONFIRM_PHRASE })}</Label>
             <Input
+              autoComplete="off"
+              autoCapitalize="characters"
+              enterKeyHint="done"
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
               placeholder={CONFIRM_PHRASE}

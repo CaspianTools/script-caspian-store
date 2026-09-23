@@ -205,7 +205,13 @@ export function useFormatCurrency(currency = 'USD', options?: Intl.NumberFormatO
     try {
       return new Intl.NumberFormat(locale, { style: 'currency', currency, ...options });
     } catch {
-      return new Intl.NumberFormat('en', { style: 'currency', currency, ...options });
+      try {
+        return new Intl.NumberFormat('en', { style: 'currency', currency, ...options });
+      } catch {
+        // The currency code itself is invalid — a bad locale would have been
+        // caught by the first fallback.
+        return new Intl.NumberFormat('en', { style: 'currency', currency: 'USD', ...options });
+      }
     }
   }, [locale, currency, options]);
 }

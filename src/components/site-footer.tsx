@@ -9,6 +9,7 @@ import type { SiteSettings, SocialLink } from '../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { SocialIcon } from './social-icon';
 
 export interface SiteFooterLink {
@@ -28,28 +29,35 @@ export interface SiteFooterProps {
   className?: string;
 }
 
+// Label values are i18n keys; resolved through `t()` at render so the
+// defaults follow the active locale.
 const DEFAULT_ABOUT: SiteFooterLink[] = [
-  { href: '/about', label: 'About us' },
-  { href: '/privacy', label: 'Privacy' },
-  { href: '/terms', label: 'Terms' },
+  { href: '/about', label: 'navigation.footer.aboutUs' },
+  { href: '/privacy', label: 'navigation.footer.privacy' },
+  { href: '/terms', label: 'navigation.footer.terms' },
 ];
 
 const DEFAULT_CUSTOMER_CARE: SiteFooterLink[] = [
-  { href: '/contact', label: 'Contact' },
-  { href: '/shipping-returns', label: 'Shipping & returns' },
-  { href: '/size-guide', label: 'Size guide' },
-  { href: '/faqs', label: 'FAQs' },
+  { href: '/contact', label: 'navigation.footer.contact' },
+  { href: '/shipping-returns', label: 'navigation.footer.shippingReturns' },
+  { href: '/size-guide', label: 'navigation.footer.sizeGuide' },
+  { href: '/faqs', label: 'navigation.footer.faqs' },
 ];
 
 export function SiteFooter({
-  brandFallback = 'STORE',
-  aboutLinks = DEFAULT_ABOUT,
-  customerCareLinks = DEFAULT_CUSTOMER_CARE,
+  brandFallback,
+  aboutLinks: aboutLinksProp,
+  customerCareLinks: customerCareLinksProp,
   showNewsletter = true,
   renderSocialIcon,
   className,
 }: SiteFooterProps) {
   const t = useT();
+  const aboutLinks =
+    aboutLinksProp ?? DEFAULT_ABOUT.map((l) => ({ ...l, label: t(l.label as string) }));
+  const customerCareLinks =
+    customerCareLinksProp ??
+    DEFAULT_CUSTOMER_CARE.map((l) => ({ ...l, label: t(l.label as string) }));
   const Link = useCaspianLink();
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
@@ -87,14 +95,14 @@ export function SiteFooter({
     }
   };
 
-  const brand = settings?.brandName?.trim() || brandFallback;
+  const brand = settings?.brandName?.trim() || brandFallback || t('navigation.brand');
   const description = settings?.brandDescription?.trim() ?? '';
   const socialLinks: SocialLink[] = settings?.socialLinks ?? [];
   const renderIcon = renderSocialIcon ?? ((platform: string) => <SocialIcon platform={platform} />);
 
   return (
     <footer
-      className={className}
+      className={cn('caspian-site-footer', className)}
       style={{
         background: 'var(--caspian-background, #fff)',
         borderTop: '1px solid #eee',
@@ -102,6 +110,7 @@ export function SiteFooter({
       }}
     >
       <div
+        className="caspian-site-footer__cols"
         style={{
           maxWidth: 1280,
           margin: '0 auto',
@@ -203,7 +212,11 @@ export function SiteFooter({
             <p style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
               {t('footer.newsletter.description')}
             </p>
-            <form onSubmit={handleSubscribe} style={{ display: 'flex', maxWidth: 320 }}>
+            <form
+              onSubmit={handleSubscribe}
+              className="caspian-site-footer__newsletter"
+              style={{ display: 'flex', maxWidth: 320 }}
+            >
               <Input
                 type="email"
                 value={email}
@@ -216,6 +229,7 @@ export function SiteFooter({
                 type="submit"
                 variant="outline"
                 disabled={subscribing}
+                aria-label={t('footer.newsletter.title')}
                 style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: 'none' }}
               >
                 {subscribing ? '…' : '→'}

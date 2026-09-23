@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ShippingOptions, SiteSettings } from '../types';
-import { getSiteSettings, saveSiteSettings } from '../services/site-settings-service';
+import type { ShippingOptions } from '../types';
+import { getSiteSettings, updateSiteSettings } from '../services/site-settings-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { Button } from '../ui/button';
 import { FieldDescription } from '../ui/field-description';
 import { FieldHelp } from '../ui/field-help';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 
 const DEFAULT_SHIPPING_OPTIONS: ShippingOptions = {
   hideRatesUntilAddressEntered: false,
@@ -27,22 +28,28 @@ export interface AdminShippingOptionsPageProps {
 export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPageProps) {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
-  const [site, setSite] = useState<SiteSettings | null>(null);
   const [options, setOptions] = useState<ShippingOptions>(DEFAULT_SHIPPING_OPTIONS);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let alive = true;
+    setLoaded(false);
+    setLoadError(false);
     getSiteSettings(db)
       .then((s) => {
         if (!alive) return;
-        setSite(s ?? null);
+        // A fresh store has no `settings/site` yet; the defaults are a valid
+        // draft and Save is a merge write, so nothing else is needed.
         setOptions(s?.shippingOptions ?? DEFAULT_SHIPPING_OPTIONS);
         setDirty(false);
+        setLoaded(true);
       })
-      .catch(() => {
-        if (alive) setSite(null);
+      .catch((error) => {
+        console.error('[caspian-store] Failed to load shipping options:', error);
+        if (alive) setLoadError(true);
       });
     return () => {
       alive = false;
@@ -55,12 +62,10 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
   };
 
   const handleSave = async () => {
-    if (!site) return;
+    if (!loaded) return;
     setSaving(true);
     try {
-      const next: SiteSettings = { ...site, shippingOptions: options };
-      await saveSiteSettings(db, next);
-      setSite(next);
+      await updateSiteSettings(db, { shippingOptions: options });
       setDirty(false);
       toast({ title: 'Shipping options saved' });
     } catch (error) {
@@ -72,8 +77,8 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
   };
 
   return (
-    <div className={className}>
-      <header style={{ marginBottom: 24 }}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
           Shipping options
           <FieldHelp>
@@ -85,6 +90,22 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
           Site-wide checkout behavior for shipping rate calculation.
         </p>
       </header>
+
+      {loadError && (
+        <p
+          role="alert"
+          style={{
+            margin: '0 0 16px',
+            padding: 12,
+            borderRadius: 'var(--caspian-radius, 8px)',
+            background: '#fee2e2',
+            color: '#991b1b',
+            fontSize: 14,
+          }}
+        >
+          Could not load the current shipping options. Reload the page to try again.
+        </p>
+      )}
 
       <section
         style={{
@@ -129,11 +150,11 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
               </FieldDescription>
             </span>
           </label>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+          <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
             <Button
               size="sm"
               onClick={handleSave}
-              disabled={!dirty || !site}
+              disabled={!dirty || !loaded}
               loading={saving}
             >
               Save shipping options
@@ -141,6 +162,11 @@ export function AdminShippingOptionsPage({ className }: AdminShippingOptionsPage
           </div>
         </div>
       </section>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} disabled={!dirty || !loaded} loading={saving}>
+          Save shipping options
+        </Button>
+      </div>
     </div>
   );
 }

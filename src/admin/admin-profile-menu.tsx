@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { useAuth } from '../context/auth-context';
 import { useCaspianNavigation } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { ExternalLinkIcon, LogOutIcon, UserIcon } from '../ui/icons';
 import { Avatar } from '../ui/misc';
@@ -39,6 +40,7 @@ export function AdminProfileMenu({
   const { user, userProfile, loading, signOut } = useAuth();
   const nav = useCaspianNavigation();
   const { toast } = useToast();
+  const t = useT();
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -46,9 +48,9 @@ export function AdminProfileMenu({
       nav.push(afterSignOutHref);
     } catch (error) {
       console.error('[caspian-store] Sign-out failed:', error);
-      toast({ title: 'Sign-out failed', variant: 'destructive' });
+      toast({ title: t('admin.profileMenu.signOutFailed'), variant: 'destructive' });
     }
-  }, [signOut, nav, afterSignOutHref, toast]);
+  }, [signOut, nav, afterSignOutHref, toast, t]);
 
   if (loading) return null;
 
@@ -64,7 +66,7 @@ export function AdminProfileMenu({
       trigger={
         <button
           type="button"
-          aria-label="Account menu"
+          aria-label={t('admin.profileMenu.accountMenu')}
           style={{
             background: 'transparent',
             border: 0,
@@ -106,13 +108,13 @@ export function AdminProfileMenu({
           window.open(storefrontHref, '_blank', 'noreferrer');
         }}
       >
-        View storefront
+        {t('admin.profileMenu.viewStorefront')}
       </DropdownMenuItem>
       <DropdownMenuItem
         icon={<UserIcon size={14} />}
         onSelect={() => nav.push(profileHref)}
       >
-        My profile
+        {t('admin.profileMenu.myProfile')}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem
@@ -120,7 +122,7 @@ export function AdminProfileMenu({
         destructive
         onSelect={handleSignOut}
       >
-        Sign out
+        {t('admin.profileMenu.signOut')}
       </DropdownMenuItem>
     </DropdownMenu>
   );

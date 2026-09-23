@@ -11,6 +11,7 @@ import {
 import { useT } from '../../i18n/locale-context';
 import { Badge, Skeleton } from '../../ui/misc';
 import { cn } from '../../utils/cn';
+import { EmptyState } from '../empty-state';
 
 export interface JournalListPageProps {
   title?: string;
@@ -50,7 +51,10 @@ export function JournalListPage({
   }, [db]);
 
   return (
-    <main className={cn('caspian-journal-list', className)} style={{ padding: '64px 24px' }}>
+    <main
+      className={cn('caspian-journal-list', 'caspian-page-gutter', className)}
+      style={{ padding: 'clamp(40px, 8vw, 64px) clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 48 }}>
           <h1
@@ -69,25 +73,24 @@ export function JournalListPage({
         </header>
 
         {articles === null ? (
-          <div style={gridStyle}>
+          <div className="caspian-journal-grid" style={gridStyle}>
             {Array.from({ length: 3 }).map((_, i) => (
               <article key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <Skeleton style={{ aspectRatio: '16 / 10' }} />
+                <Skeleton className="caspian-journal-card__image" style={{ aspectRatio: '16 / 10' }} />
                 <Skeleton style={{ height: 20, width: '80%' }} />
                 <Skeleton style={{ height: 14, width: '100%' }} />
               </article>
             ))}
           </div>
         ) : articles.length === 0 ? (
-          <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>
-            {emptyMessage ?? t('journal.empty')}
-          </p>
+          <EmptyState title={emptyMessage ?? t('journal.empty')} />
         ) : (
-          <div style={gridStyle}>
+          <div className="caspian-journal-grid" style={gridStyle}>
             {articles.map((article) => (
               <Link key={article.id} href={getArticleHref(article.id)}>
                 <article style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div
+                    className="caspian-journal-card__image"
                     style={{
                       position: 'relative',
                       aspectRatio: '16 / 10',
@@ -159,6 +162,6 @@ export function JournalListPage({
 
 const gridStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
   gap: 32,
 };

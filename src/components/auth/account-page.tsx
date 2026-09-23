@@ -160,14 +160,15 @@ export function AccountPage({
   return (
     <div
       className={`caspian-account-page${className ? ` ${className}` : ''}`}
-      style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}
+      style={{ maxWidth: 1200, margin: '0 auto', padding: '32px clamp(16px, 4vw, 24px)' }}
     >
       <header
         style={{
           display: 'flex',
           alignItems: 'center',
+          flexWrap: 'wrap',
           gap: 16,
-          padding: 24,
+          padding: 'clamp(16px, 4vw, 24px)',
           marginBottom: 24,
           borderRadius: 'var(--caspian-radius, 12px)',
           background: 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',

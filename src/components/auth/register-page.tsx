@@ -151,6 +151,8 @@ export function RegisterPage({
             id="reg-email"
             type="email"
             autoComplete="email"
+            inputMode="email"
+            enterKeyHint={setupLinkMode ? 'done' : 'next'}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -164,6 +166,7 @@ export function RegisterPage({
                 id="reg-password"
                 type="password"
                 autoComplete="new-password"
+                enterKeyHint="next"
                 required
                 minLength={minPasswordLength}
                 value={password}
@@ -176,6 +179,7 @@ export function RegisterPage({
                 id="reg-confirm"
                 type="password"
                 autoComplete="new-password"
+                enterKeyHint="done"
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
@@ -188,14 +192,22 @@ export function RegisterPage({
             We'll email you a link to set your password after you sign up.
           </p>
         )}
-        <Button type="submit" size="lg" loading={submitting}>
+        <Button type="submit" size="lg" className="caspian-full-mobile" loading={submitting}>
           {submitting ? t('auth.register.submitting') : t('auth.register.submit')}
         </Button>
       </form>
 
       <Separator />
 
-      <Button variant="outline" size="lg" onClick={handleGoogle} disabled={submitting} style={{ width: '100%' }}>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="caspian-full-mobile"
+        onClick={handleGoogle}
+        disabled={submitting}
+        style={{ width: '100%' }}
+      >
         {t('auth.login.googleCta')}
       </Button>
 

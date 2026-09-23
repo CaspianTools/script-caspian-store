@@ -11,6 +11,7 @@ import {
 import { useT } from '../i18n/locale-context';
 import { Skeleton } from '../ui/misc';
 import { cn } from '../utils/cn';
+import { EmptyState } from './empty-state';
 
 export interface CollectionsPageProps {
   title?: string;
@@ -54,24 +55,24 @@ export function CollectionsPage({
   const resolvedEmpty = emptyMessage ?? t('collections.empty');
 
   return (
-    <div className={cn('caspian-collections-page', className)}>
+    <div className={cn('caspian-collections-page', 'caspian-page-gutter', className)}>
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{resolvedTitle}</h1>
         {resolvedSubtitle && <p style={{ color: '#666', marginTop: 4 }}>{resolvedSubtitle}</p>}
       </header>
 
       {collections === null ? (
-        <div style={gridStyle}>
+        <div className="caspian-collection-grid" style={gridStyle}>
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} style={{ aspectRatio: '3 / 4' }} />
           ))}
         </div>
       ) : collections.length === 0 ? (
-        <p style={{ color: '#888', textAlign: 'center', padding: 40 }}>{resolvedEmpty}</p>
+        <EmptyState title={resolvedEmpty} />
       ) : (
-        <div style={gridStyle}>
+        <div className="caspian-collection-grid" style={gridStyle}>
           {collections.map((c) => (
-            <Link key={c.id} href={getCollectionHref(c)}>
+            <Link key={c.id} href={getCollectionHref(c)} className="caspian-collection-card">
               <article style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div
                   style={{

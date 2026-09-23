@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { Firestore } from 'firebase/firestore';
 import type { ProductBrandDoc } from '../types';
 import { listActiveBrands } from '../services/brand-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 
 /**
- * Module-level cache of the active-brand list. A grid of product cards
- * mounted on the same page would otherwise fire one read per card; the
- * cache collapses that into a single Firestore read for the whole tree.
+ * Module-level cache of the active-brand list, keyed by Firestore instance
+ * so a preview + live store on the same page never share a list. A grid of
+ * product cards mounted on the same page would otherwise fire one read per
+ * card; the cache collapses that into a single Firestore read for the tree.
+ * A rejected load is evicted so the next mount retries instead of every
+ * card inheriting the failure for the session.
  *
  * The Brands admin page calls {@link refreshBrandsCache} after every
  * create / update / delete / migrate so storefront tabs see fresh data
@@ -16,10 +20,22 @@ import { useCaspianFirebase } from '../provider/caspian-store-provider';
  * while a storefront is open in tab B) is not handled — refreshing the
  * storefront tab picks it up.
  */
-let cachedPromise: Promise<ProductBrandDoc[]> | null = null;
+const cache = new Map<Firestore, Promise<ProductBrandDoc[]>>();
 
 export function refreshBrandsCache(): void {
-  cachedPromise = null;
+  cache.clear();
+}
+
+function loadBrands(db: Firestore): Promise<ProductBrandDoc[]> {
+  let promise = cache.get(db);
+  if (!promise) {
+    promise = listActiveBrands(db).catch((error) => {
+      if (cache.get(db) === promise) cache.delete(db);
+      throw error;
+    });
+    cache.set(db, promise);
+  }
+  return promise;
 }
 
 export function useBrands(): {
@@ -32,8 +48,7 @@ export function useBrands(): {
 
   useEffect(() => {
     let alive = true;
-    if (!cachedPromise) cachedPromise = listActiveBrands(db);
-    cachedPromise
+    loadBrands(db)
       .then((list) => {
         if (alive) setBrands(list);
       })

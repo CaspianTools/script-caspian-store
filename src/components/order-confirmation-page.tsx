@@ -1,11 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Order } from '../types';
 import { getOrderById } from '../services/order-service';
+import { useCart } from '../context/cart-context';
+import { useScriptSettings } from '../context/script-settings-context';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
-import { useT } from '../i18n/locale-context';
+import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Skeleton, Separator, Badge } from '../ui/misc';
+import { cn } from '../utils/cn';
+
+const MAX_POLL_ATTEMPTS = 6;
+const POLL_INTERVAL_MS = 1500;
 
 export interface OrderConfirmationPageProps {
   /**
@@ -22,20 +28,28 @@ export interface OrderConfirmationPageProps {
 export function OrderConfirmationPage({
   orderId,
   continueHref = '/',
-  formatPrice = (n) => `$${n.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   className,
 }: OrderConfirmationPageProps) {
   const { db } = useCaspianFirebase();
   const Link = useCaspianLink();
   const t = useT();
+  const locale = useLocale();
+  const { settings } = useScriptSettings();
+  const { clearCart } = useCart();
+  const currencyFormat = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((n: number) => currencyFormat.format(n));
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [attempts, setAttempts] = useState(0);
+  const clearedFor = useRef<string | null>(null);
 
   // The webhook creates the order document asynchronously — we may need to
-  // poll briefly after returning from the payment provider.
+  // poll briefly after returning from the payment provider. The attempt
+  // counter lives inside the effect: React state would be read through a
+  // stale closure and never stop the loop.
   useEffect(() => {
     let alive = true;
+    let attempts = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const load = async () => {
       try {
@@ -44,9 +58,9 @@ export function OrderConfirmationPage({
         if (o) {
           setOrder(o);
           setLoading(false);
-        } else if (attempts < 6) {
-          setAttempts((n) => n + 1);
-          timer = setTimeout(load, 1500);
+        } else if (attempts < MAX_POLL_ATTEMPTS) {
+          attempts += 1;
+          timer = setTimeout(load, POLL_INTERVAL_MS);
         } else {
           setLoading(false);
         }
@@ -60,8 +74,17 @@ export function OrderConfirmationPage({
       alive = false;
       if (timer) clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db, orderId]);
+
+  // The checkout hook leaves the cart intact so a cancelled hosted payment
+  // returns to a full cart; the order document existing is the signal that
+  // the purchase went through. Guarded per order id so a re-render (or
+  // StrictMode's double effect) clears once.
+  useEffect(() => {
+    if (!order || clearedFor.current === order.id) return;
+    clearedFor.current = order.id;
+    clearCart();
+  }, [order, clearCart]);
 
   if (loading) {
     return (
@@ -95,18 +118,34 @@ export function OrderConfirmationPage({
   const placedAt = order.createdAt?.toDate ? order.createdAt.toDate() : null;
 
   return (
-    <div className={className}>
+    <div
+      className={cn('caspian-page-gutter', className)}
+      style={{ maxWidth: 760, margin: '0 auto', padding: '32px clamp(16px, 4vw, 24px) 64px' }}
+    >
       <header style={{ textAlign: 'center', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>{t('orderConfirmation.title')}</h1>
+        <h1 style={{ fontSize: 'clamp(24px, 6vw, 28px)', fontWeight: 700, margin: 0 }}>
+          {t('orderConfirmation.title')}
+        </h1>
         <p style={{ color: '#666', marginTop: 6 }}>
           {t('orderConfirmation.emailConfirmation', {
             email: order.userEmail || t('orderConfirmation.defaultEmail'),
           })}
         </p>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 12 }}>
+        <p
+          style={{
+            color: '#888',
+            fontSize: 13,
+            marginTop: 12,
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
           {t('orderConfirmation.orderLine', { id: order.id.slice(0, 10) })}
           <Badge variant="secondary">{order.status}</Badge>
-          {placedAt && ` · ${placedAt.toLocaleDateString()}`}
+          {placedAt && ` · ${placedAt.toLocaleDateString(locale)}`}
         </p>
       </header>
 
@@ -114,7 +153,7 @@ export function OrderConfirmationPage({
         <h2 style={h2Style}>{t('orderConfirmation.items')}</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {order.items.map((item, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 14 }}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <p style={{ margin: 0, fontWeight: 500 }}>{item.name}</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>
@@ -122,7 +161,7 @@ export function OrderConfirmationPage({
                   {t('checkout.qtyShort')} {item.quantity}
                 </p>
               </div>
-              <span style={{ fontWeight: 600 }}>{formatPrice(item.price * item.quantity)}</span>
+              <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{formatPrice(item.price * item.quantity)}</span>
             </div>
           ))}
         </div>
@@ -134,8 +173,29 @@ export function OrderConfirmationPage({
         {order.discount > 0 && (
           <SummaryRow label={t('orderConfirmation.discount')} value={`−${formatPrice(order.discount)}`} />
         )}
+        {typeof order.tax === 'number' && order.tax > 0 && (
+          <SummaryRow label={t('orderConfirmation.tax')} value={formatPrice(order.tax)} />
+        )}
         <SummaryRow label={t('orderConfirmation.total')} value={formatPrice(order.total)} strong />
       </section>
+
+      {(order.payment?.method || order.shippingInfo?.shippingMethod) && (
+        <section style={{ ...sectionStyle, marginTop: 16 }}>
+          <h2 style={h2Style}>{t('orderConfirmation.details')}</h2>
+          {order.payment?.method && (
+            <SummaryRow
+              label={t('orderConfirmation.paymentMethod')}
+              value={t(`orderConfirmation.paymentMethod.${order.payment.method}`)}
+            />
+          )}
+          {order.shippingInfo?.shippingMethod && (
+            <SummaryRow
+              label={t('orderConfirmation.shippingMethod')}
+              value={order.shippingInfo.shippingMethod}
+            />
+          )}
+        </section>
+      )}
 
       <div style={{ textAlign: 'center', marginTop: 24 }}>
         <Link href={continueHref}>{t('orderConfirmation.continueShopping')}</Link>
@@ -162,7 +222,7 @@ function SummaryRow({ label, value, strong }: { label: string; value: string; st
 }
 
 const sectionStyle: React.CSSProperties = {
-  padding: 20,
+  padding: 'clamp(16px, 4vw, 20px)',
   border: '1px solid #eee',
   borderRadius: 'var(--caspian-radius, 8px)',
 };

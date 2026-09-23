@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import type { FaqItem } from '../types';
 import { createFaq, deleteFaq, listFaqs, updateFaq, type FaqWriteInput } from '../services/faq-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Dialog } from '../ui/dialog';
 import { Input, Label, Textarea } from '../ui/input';
 import { Select, type SelectOption } from '../ui/select';
@@ -38,17 +40,23 @@ export function AdminFaqsPage({
 }: AdminFaqsPageProps) {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
+  const t = useT();
+  const formId = useId();
   const [faqs, setFaqs] = useState<FaqItem[] | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<FaqWriteInput>(emptyDraft);
   const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<FaqItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     try {
       setFaqs(await listFaqs(db));
     } catch (error) {
       console.error('[caspian-store] Failed to list FAQs:', error);
+      setFaqs((prev) => prev ?? []);
+      toast({ title: t('admin.common.loadFailed'), variant: 'destructive' });
     }
   };
 
@@ -77,54 +85,60 @@ export function AdminFaqsPage({
     setDialogOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (saving) return;
     if (!draft.question.trim() || !draft.answer.trim()) {
-      toast({ title: 'Question and answer are required', variant: 'destructive' });
+      toast({ title: t('admin.faqs.requiredFields'), variant: 'destructive' });
       return;
     }
     setSaving(true);
     try {
       if (editingId) {
         await updateFaq(db, editingId, draft);
-        toast({ title: 'FAQ updated' });
+        toast({ title: t('admin.faqs.updated') });
       } else {
         await createFaq(db, draft);
-        toast({ title: 'FAQ created' });
+        toast({ title: t('admin.faqs.created') });
       }
       setDialogOpen(false);
       await load();
     } catch (error) {
       console.error('[caspian-store] FAQ save failed:', error);
-      toast({ title: 'Save failed', variant: 'destructive' });
+      toast({ title: t('admin.common.saveFailed'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (faq: FaqItem) => {
-    if (!confirm(`Delete: "${faq.question}"?`)) return;
+  const handleDelete = async () => {
+    const faq = pendingDelete;
+    if (!faq) return;
+    setDeleting(true);
     try {
       await deleteFaq(db, faq.id);
       setFaqs((prev) => (prev ? prev.filter((f) => f.id !== faq.id) : prev));
-      toast({ title: 'FAQ deleted' });
+      setPendingDelete(null);
+      toast({ title: t('admin.faqs.deleted') });
     } catch (error) {
       console.error('[caspian-store] FAQ delete failed:', error);
-      toast({ title: 'Delete failed', variant: 'destructive' });
+      toast({ title: t('admin.common.deleteFailed'), variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
     <div className={className}>
       <header
+        className="caspian-admin-page-head"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
       >
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>FAQs</h1>
-          <p style={{ color: '#666', marginTop: 4 }}>
-            Manage the questions shown on the public FAQs page.
-          </p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.faqs.title')}</h1>
+          <p style={{ color: '#666', marginTop: 4 }}>{t('admin.faqs.subtitle')}</p>
         </div>
-        <Button onClick={openCreate}>+ New FAQ</Button>
+        <Button onClick={openCreate}>{t('admin.faqs.new')}</Button>
       </header>
 
       {faqs === null ? (
@@ -133,15 +147,15 @@ export function AdminFaqsPage({
           <Skeleton style={{ height: 48 }} />
         </div>
       ) : faqs.length === 0 ? (
-        <p style={{ color: '#888', padding: 32, textAlign: 'center' }}>No FAQs yet.</p>
+        <p style={{ color: '#888', padding: 32, textAlign: 'center' }}>{t('admin.faqs.empty')}</p>
       ) : (
         <Table>
           <THead>
             <TR>
-              <TH>Order</TH>
-              <TH>Category</TH>
-              <TH>Question</TH>
-              <TH style={{ textAlign: 'right' }}>Actions</TH>
+              <TH>{t('admin.faqs.col.order')}</TH>
+              <TH>{t('admin.faqs.col.category')}</TH>
+              <TH>{t('admin.faqs.col.question')}</TH>
+              <TH style={{ textAlign: 'right' }}>{t('admin.faqs.col.actions')}</TH>
             </TR>
           </THead>
           <TBody>
@@ -151,14 +165,14 @@ export function AdminFaqsPage({
                 <TD>
                   <Badge variant="secondary">{faq.category || 'general'}</Badge>
                 </TD>
-                <TD style={{ fontWeight: 500 }}>{faq.question}</TD>
-                <TD style={{ textAlign: 'right' }}>
+                <TD className="caspian-td-primary" style={{ fontWeight: 500 }}>{faq.question}</TD>
+                <TD data-label="" style={{ textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: 6 }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(faq)}>
-                      Edit
+                      {t('common.edit')}
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(faq)}>
-                      Delete
+                    <Button variant="destructive" size="sm" onClick={() => setPendingDelete(faq)}>
+                      {t('common.delete')}
                     </Button>
                   </div>
                 </TD>
@@ -171,53 +185,70 @@ export function AdminFaqsPage({
       <Dialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        title={editingId ? 'Edit FAQ' : 'New FAQ'}
+        title={editingId ? t('admin.faqs.editTitle') : t('admin.faqs.newTitle')}
         maxWidth={560}
         footer={
           <>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-              Cancel
+            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleSave} loading={saving}>
-              Save
+            <Button type="submit" form={formId} loading={saving}>
+              {t('common.save')}
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form id={formId} onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <Label>Category</Label>
+            <Label htmlFor={`${formId}-category`}>{t('admin.faqs.field.category')}</Label>
             <Select
+              id={`${formId}-category`}
               options={categoryOptions}
               value={draft.category}
               onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
             />
           </div>
           <div>
-            <Label>Question</Label>
+            <Label htmlFor={`${formId}-question`}>{t('admin.faqs.field.question')}</Label>
             <Input
+              id={`${formId}-question`}
               value={draft.question}
               onChange={(e) => setDraft((d) => ({ ...d, question: e.target.value }))}
             />
           </div>
           <div>
-            <Label>Answer</Label>
+            <Label htmlFor={`${formId}-answer`}>{t('admin.faqs.field.answer')}</Label>
             <Textarea
+              id={`${formId}-answer`}
               rows={5}
               value={draft.answer}
               onChange={(e) => setDraft((d) => ({ ...d, answer: e.target.value }))}
             />
           </div>
           <div>
-            <Label>Display order</Label>
+            <Label htmlFor={`${formId}-order`}>{t('admin.faqs.field.order')}</Label>
             <Input
+              id={`${formId}-order`}
               type="number"
               value={draft.order}
               onChange={(e) => setDraft((d) => ({ ...d, order: Number(e.target.value) || 0 }))}
             />
           </div>
-        </div>
+        </form>
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingDelete(null);
+        }}
+        title={t('admin.confirm.deleteNamedTitle', { name: pendingDelete?.question ?? '' })}
+        description={t('admin.confirm.deleteBody')}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

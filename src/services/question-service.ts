@@ -82,12 +82,12 @@ export async function listAllQuestions(
   db: Firestore,
   statusFilter?: ModerationStatus,
 ): Promise<FirestoreQuestion[]> {
-  const constraints = statusFilter
-    ? [where('status', '==', statusFilter), orderBy('createdAt', 'desc')]
-    : [orderBy('createdAt', 'desc')];
-  const q = query(caspianCollections(db).questions, ...constraints);
+  // Filtered in memory: `status ==` + `orderBy(createdAt)` needs a composite
+  // index that the shipped indexes.json does not include.
+  const q = query(caspianCollections(db).questions, orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
-  return snap.docs.map(docToQuestion);
+  const all = snap.docs.map(docToQuestion);
+  return statusFilter ? all.filter((x) => x.status === statusFilter) : all;
 }
 
 export async function setQuestionStatus(

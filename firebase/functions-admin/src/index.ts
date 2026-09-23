@@ -13,5 +13,6 @@ export { promoteUserToAdmin } from './promote-user-to-admin';
 export { demoteAdminToCustomer } from './demote-admin-to-customer';
 export { runRetentionCleanup } from './retention-cleanup';
 export { runScheduledPublish } from './scheduled-publish';
-export { linkGuestOrdersOnUserCreate } from './link-guest-orders';
+export { linkGuestOrdersOnUserCreate, linkMyGuestOrders } from './link-guest-orders';
 export { getGuestOrder } from './get-guest-order';
+export { stampVerifiedPurchase } from './stamp-verified-purchase';

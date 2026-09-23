@@ -58,11 +58,15 @@ export function NewsletterSignup({
 
   const form = (
     <form
+      className="caspian-stack-mobile"
       onSubmit={handleSubmit}
       style={{ display: 'flex', gap: 8, maxWidth: 420, width: '100%' }}
     >
       <Input
         type="email"
+        autoComplete="email"
+        inputMode="email"
+        enterKeyHint="send"
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -82,7 +86,7 @@ export function NewsletterSignup({
   return (
     <section
       className={cn('caspian-newsletter', className)}
-      style={{ padding: '64px 24px', background: 'rgba(0,0,0,0.03)' }}
+      style={{ padding: 'clamp(40px, 8vw, 64px) clamp(16px, 4vw, 24px)', background: 'rgba(0,0,0,0.03)' }}
     >
       <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
         <h2

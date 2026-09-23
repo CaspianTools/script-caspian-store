@@ -9,6 +9,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  type FieldValue,
   type Firestore,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
@@ -43,6 +44,15 @@ export async function listPaymentPluginInstalls(
 
 export type PaymentPluginInstallWriteInput = Omit<PaymentPluginInstall, 'id' | 'createdAt'>;
 
+/**
+ * Update payload. `description` additionally accepts `deleteField()` so a
+ * cleared optional value is actually removed — `undefined` is stripped
+ * before the write and would leave the stored value untouched.
+ */
+export type PaymentPluginInstallUpdateInput = Partial<Omit<PaymentPluginInstallWriteInput, 'description'>> & {
+  description?: PaymentPluginInstallWriteInput['description'] | FieldValue;
+};
+
 export async function createPaymentPluginInstall(
   db: Firestore,
   input: PaymentPluginInstallWriteInput,
@@ -60,7 +70,7 @@ export async function createPaymentPluginInstall(
 export async function updatePaymentPluginInstall(
   db: Firestore,
   id: string,
-  input: Partial<PaymentPluginInstallWriteInput>,
+  input: PaymentPluginInstallUpdateInput,
 ): Promise<void> {
   await updateDoc(doc(db, 'paymentPluginInstalls', id), stripUndefined({ ...input }));
 }

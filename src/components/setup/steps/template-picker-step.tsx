@@ -1,6 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { useT } from '../../../i18n';
 import { TEMPLATE_LIST } from '../../../templates/catalog';
 
 export interface TemplatePickerStepProps {
@@ -17,13 +18,12 @@ export interface TemplatePickerStepProps {
  * completion in [setup-wizard.tsx](../setup-wizard.tsx).
  */
 export function TemplatePickerStep({ draft, onChange }: TemplatePickerStepProps) {
+  const t = useT();
   return (
     <div>
       <p style={{ color: '#444', fontSize: 14, marginTop: 0, marginBottom: 16 }}>
-        Pick a starter template to seed your storefront with sample products,
-        categories, pages, and editorial content. You can change everything
-        after, and apply a different template later from{' '}
-        <strong>Admin → Settings → Templates</strong>. Or start blank.
+        {t('setup.template.intro')} <strong>{t('setup.template.introPath')}</strong>.{' '}
+        {t('setup.template.introSuffix')}
       </p>
 
       <div
@@ -90,13 +90,10 @@ export function TemplatePickerStep({ draft, onChange }: TemplatePickerStepProps)
           </div>
           <div style={{ padding: 12 }}>
             <div style={tileTagRow}>
-              <span style={tileTag}>blank</span>
+              <span style={tileTag}>{t('setup.template.blankTag')}</span>
             </div>
-            <div style={tileTitle}>Start blank</div>
-            <p style={tileDesc}>
-              Skip the sample data and start with an empty storefront. You
-              can apply a template later from the admin.
-            </p>
+            <div style={tileTitle}>{t('setup.template.blankTitle')}</div>
+            <p style={tileDesc}>{t('setup.template.blankDesc')}</p>
           </div>
         </button>
       </div>

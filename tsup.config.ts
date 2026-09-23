@@ -37,6 +37,12 @@ if (existing !== versionContents) {
 // it, and JSON.stringify does the escaping that the old hand-maintained
 // template literal (with its \\ / \` / \$ dance) got wrong. Output is
 // committed — same as src/version.ts — so `tsc --noEmit` needs no prior build.
+// Windows checkouts with autocrlf hand us `\r\n`; the committed constant must
+// not depend on who last ran the build, or every Linux build shows a diff.
+function readText(file: string): string {
+  return readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+}
+
 function writeIfChanged(file: string, contents: string): void {
   const current = (() => {
     try {
@@ -57,10 +63,10 @@ writeIfChanged(
   join('src', 'firebase', 'rules.generated.ts'),
   GENERATED_BANNER +
     `\nexport const CASPIAN_FIRESTORE_RULES = ${JSON.stringify(
-      readFileSync(join('firebase', 'firestore.rules'), 'utf8'),
+      readText(join('firebase', 'firestore.rules')),
     )};\n` +
     `\nexport const CASPIAN_STORAGE_RULES = ${JSON.stringify(
-      readFileSync(join('firebase', 'storage.rules'), 'utf8'),
+      readText(join('firebase', 'storage.rules')),
     )};\n`,
 );
 

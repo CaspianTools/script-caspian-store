@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../i18n/locale-context';
 import { Input, Label } from './input';
 
 export interface ColorFieldProps {
@@ -11,12 +12,30 @@ export interface ColorFieldProps {
 }
 
 /**
+ * `<input type="color">` only accepts `#rrggbb`; shorthand and alpha forms
+ * are valid CSS but leave the swatch black, so widen/truncate for the swatch
+ * only — the text field keeps whatever the admin typed.
+ */
+function swatchHex(value: string): string {
+  const m = /^#([0-9a-fA-F]{3,8})$/.exec(value);
+  if (!m) return '#000000';
+  const h = m[1];
+  if (h.length === 6) return `#${h}`;
+  if (h.length === 8) return `#${h.slice(0, 6)}`;
+  if (h.length === 3 || h.length === 4) {
+    return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+  }
+  return '#000000';
+}
+
+/**
  * Color control: a native swatch picker paired with a free-text field (so
  * `transparent`, `rgba(...)`, or a token can be typed) and a clear button.
  * Empty value = inherit / no override.
  */
 export function ColorField({ label, value, onChange, ariaLabel }: ColorFieldProps) {
-  const hex = /^#[0-9a-fA-F]{3,8}$/.test(value) ? value : '#000000';
+  const t = useT();
+  const hex = swatchHex(value);
   return (
     <div className="pb-field">
       {label && <Label>{label}</Label>}
@@ -33,8 +52,8 @@ export function ColorField({ label, value, onChange, ariaLabel }: ColorFieldProp
           <button
             type="button"
             className="pb-color-clear"
-            title="Clear"
-            aria-label="Clear color"
+            title={t('colorField.clear')}
+            aria-label={t('colorField.clear')}
             onClick={() => onChange('')}
           >
             ✕

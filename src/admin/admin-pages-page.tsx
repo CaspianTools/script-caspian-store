@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import type { PageContent } from '../types';
 import {
   listPageContents,
   savePageContent,
 } from '../services/page-content-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
+import { useT } from '../i18n/locale-context';
 import { Button } from '../ui/button';
 import { Input, Label, Textarea } from '../ui/input';
 import { Dialog } from '../ui/dialog';
@@ -46,6 +47,8 @@ export function AdminPagesPage({
 }: AdminPagesPageProps) {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
+  const t = useT();
+  const formId = useId();
   const [pages, setPages] = useState<PageContent[] | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -56,6 +59,8 @@ export function AdminPagesPage({
       setPages(await listPageContents(db));
     } catch (error) {
       console.error('[caspian-store] Failed to load page contents:', error);
+      setPages((prev) => prev ?? []);
+      toast({ title: t('admin.common.loadFailed'), variant: 'destructive' });
     }
   };
 
@@ -75,7 +80,9 @@ export function AdminPagesPage({
     setDialogOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (saving) return;
     if (!draft.title.trim()) {
       toast({ title: 'Title is required', variant: 'destructive' });
       return;
@@ -93,7 +100,7 @@ export function AdminPagesPage({
       await load();
     } catch (error) {
       console.error('[caspian-store] Save page failed:', error);
-      toast({ title: 'Save failed', variant: 'destructive' });
+      toast({ title: t('admin.common.saveFailed'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -104,7 +111,7 @@ export function AdminPagesPage({
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Pages</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Edit the long-form content on About / Contact / Privacy / Terms / Sustainability / etc.
@@ -139,7 +146,7 @@ export function AdminPagesPage({
                     {existing?.title ?? <span style={{ color: '#aaa' }}>— not set —</span>}
                   </TD>
                   <TD style={{ color: '#888', fontSize: 13 }}>{updated}</TD>
-                  <TD style={{ textAlign: 'right' }}>
+                  <TD data-label="" style={{ textAlign: 'right' }}>
                     <Button variant="outline" size="sm" onClick={() => openEdit(key)}>
                       {existing ? 'Edit' : 'Create'}
                     </Button>
@@ -159,36 +166,42 @@ export function AdminPagesPage({
         maxWidth={640}
         footer={
           <>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-              Cancel
+            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleSave} loading={saving}>
-              Save
+            <Button type="submit" form={formId} loading={saving}>
+              {t('common.save')}
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form id={formId} onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <Label>Title</Label>
-            <Input value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} />
+            <Label htmlFor={`${formId}-title`}>Title</Label>
+            <Input
+              id={`${formId}-title`}
+              value={draft.title}
+              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+            />
           </div>
           <div>
-            <Label>Subtitle</Label>
+            <Label htmlFor={`${formId}-subtitle`}>Subtitle</Label>
             <Input
+              id={`${formId}-subtitle`}
               value={draft.subtitle}
               onChange={(e) => setDraft((d) => ({ ...d, subtitle: e.target.value }))}
             />
           </div>
           <div>
-            <Label>Content</Label>
+            <Label htmlFor={`${formId}-content`}>Content</Label>
             <Textarea
+              id={`${formId}-content`}
               rows={12}
               value={draft.content}
               onChange={(e) => setDraft((d) => ({ ...d, content: e.target.value }))}
             />
           </div>
-        </div>
+        </form>
       </Dialog>
     </div>
   );

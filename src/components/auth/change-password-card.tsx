@@ -120,6 +120,7 @@ export function ChangePasswordCard({
               <Input
                 type="password"
                 autoComplete="current-password"
+                enterKeyHint="next"
                 value={currentPassword}
                 onChange={(e) => setCurrent(e.target.value)}
               />
@@ -130,6 +131,7 @@ export function ChangePasswordCard({
             <Input
               type="password"
               autoComplete="new-password"
+              enterKeyHint="next"
               minLength={minPasswordLength}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -140,11 +142,12 @@ export function ChangePasswordCard({
             <Input
               type="password"
               autoComplete="new-password"
+              enterKeyHint="done"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
             />
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <div className="caspian-stack-mobile" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <Button variant="outline" onClick={reset} disabled={saving}>
               {t('common.cancel')}
             </Button>

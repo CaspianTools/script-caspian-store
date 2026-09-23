@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { useT } from '../i18n';
 import type { Breakpoint, PageBlock, SiteSettings } from '../types';
 import { cn } from '../utils/cn';
 import { blockCategoryOf, getBlockType } from './catalog';
@@ -89,6 +90,7 @@ function BlockNode({
   formatPrice,
   dnd,
 }: Omit<BlockRendererProps, 'blocks'> & { block: PageBlock }): ReactElement | null {
+  const t = useT();
   const entry = getBlockType(block.type);
   if (!entry) return null;
   if (!editing && !block.visible) return null;
@@ -104,7 +106,7 @@ function BlockNode({
   const needsWrapper = hasStyle(block.style) || hasResponsive;
   const idAttr = needsWrapper || isWidget ? block.id : undefined;
   const bpHidden = breakpoint !== 'desktop' && block.responsive?.[breakpoint]?.hidden;
-  const bgCredit = renderBgCredit(block.style?.background?.imageAttribution);
+  const bgCredit = renderBgCredit(block.style?.background?.imageAttribution, t('pageBuilder.credit.source'));
 
   const childrenSlot: ReactNode =
     block.children && block.children.length > 0 ? (
@@ -198,10 +200,10 @@ function BlockNode({
 }
 
 /** Small credit pill for a stock background image (attribution = legal for CC-BY). */
-function renderBgCredit(attribution: unknown): ReactNode {
+function renderBgCredit(attribution: unknown, sourceLabel: string): ReactNode {
   if (!attribution || typeof attribution !== 'object') return null;
   const a = attribution as { creator?: string | null; foreignLandingUrl?: string; license?: string };
-  const name = a.creator || (a.foreignLandingUrl ? 'Source' : '');
+  const name = a.creator || (a.foreignLandingUrl ? sourceLabel : '');
   const license = a.license ? a.license.toUpperCase() : '';
   if (!name && !license) return null;
   return (

@@ -46,6 +46,8 @@ export { StarIcon } from './components/star-icon';
 export { StarRatingInput, type StarRatingInputProps } from './components/star-rating-input';
 export { ProductCard, type ProductCardProps } from './components/product-card';
 export { ProductGrid, type ProductGridProps } from './components/product-grid';
+export { EmptyState, type EmptyStateProps } from './components/empty-state';
+export { MobileTabBar, type MobileTabBarProps } from './components/mobile-tab-bar';
 export { ProductListPage, type ProductListPageProps } from './components/product-list-page';
 export {
   ShopFilterSidebar,
@@ -433,6 +435,8 @@ export {
   Label,
   Dialog,
   type DialogProps,
+  ConfirmDialog,
+  type ConfirmDialogProps,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -806,6 +810,7 @@ export {
   tryEnsureAdminClaim,
   type UploadDenialDiagnosis,
 } from './services/storage-service';
+export { tryLinkGuestOrders } from './services/guest-order-link-service';
 
 // --- Admin surface ---
 export {
@@ -854,6 +859,7 @@ export {
   AdminAppearancePreviewPage,
   AdminOnboardingProgress,
   AdminAboutPage,
+  AdminHelpPage,
   AdminTemplatesPage,
   AdminNotificationsBell,
   AdminProfileMenu,
@@ -882,6 +888,7 @@ export {
   type AdminPagesPageProps,
   type AdminFaqsPageProps,
   type AdminAboutPageProps,
+  type AdminHelpPageProps,
   type AdminTemplatesPageProps,
   type AdminNotificationsBellProps,
   type AdminAppearancePageProps,

@@ -73,8 +73,9 @@ export async function startManualCheckout(
 
   const subtotal = items.reduce((acc, it) => acc + it.price * it.quantity, 0);
   const shippingCost = options.shippingCost ?? 0;
+  const tax = Math.max(0, options.tax ?? 0);
   const discount = 0; // Admin re-validates promo on fulfillment for manual flows.
-  const total = Math.max(0, subtotal + shippingCost - discount);
+  const total = Math.max(0, subtotal + shippingCost + tax - discount);
 
   if (!options.shippingInfo) {
     throw new Error('Shipping information is required for manual-payment checkout.');
@@ -105,7 +106,10 @@ export async function startManualCheckout(
     subtotal,
     shippingCost,
     discount,
-    promoCode: options.promoCode ?? null,
+    // No discount is applied on manual flows, so a stored code would claim a
+    // reduction the total does not carry.
+    promoCode: null,
+    tax,
     total,
     ...(isGuest ? { isGuest: true } : {}),
     createdAt: serverTimestamp() as unknown as Timestamp,

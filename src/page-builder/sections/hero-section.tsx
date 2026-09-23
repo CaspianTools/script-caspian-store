@@ -3,6 +3,7 @@
 import { useCaspianLink } from '../../provider/caspian-store-provider';
 import { cn } from '../../utils/cn';
 import { EditableImage, EditableText } from '../editor/editable';
+import { safeLinkHref } from '../safe-url';
 import type { SectionComponentProps, SectionType } from '../types';
 
 function HeroSection({ props, variant, editing, siteSettings }: SectionComponentProps) {
@@ -34,10 +35,10 @@ function HeroSection({ props, variant, editing, siteSettings }: SectionComponent
             </>
           ) : (
             <>
-              <Link href={s('primaryCtaHref') || '/shop'} className="btn btn--primary">
+              <Link href={safeLinkHref(s('primaryCtaHref')) || '/shop'} className="btn btn--primary">
                 {s('primaryCtaLabel')}
               </Link>
-              <Link href={s('secondaryCtaHref') || '/journal'} className="btn btn--ghost">
+              <Link href={safeLinkHref(s('secondaryCtaHref')) || '/journal'} className="btn btn--ghost">
                 {s('secondaryCtaLabel')}
               </Link>
             </>

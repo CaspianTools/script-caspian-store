@@ -9,6 +9,9 @@ import { QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
+import { useScriptSettings } from '../../context/script-settings-context';
+import { useFormatCurrency } from '../../i18n/locale-context';
+import { cn } from '../../utils/cn';
 
 /**
  * Editorial PDP variant — used by the `home-goods` template. Magazine-
@@ -21,7 +24,10 @@ import { useProductDetailState } from './use-product-detail-state';
  * still converts but the storytelling is the lead.
  */
 export function ProductDetailEditorial(props: ProductDetailPageProps) {
-  const { formatPrice = (p) => `$${p.toFixed(2)}`, hideReviews, className } = props;
+  const { formatPrice: formatPriceProp, hideReviews, className } = props;
+  const { settings } = useScriptSettings();
+  const currency = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((p: number) => currency.format(p));
   const state = useProductDetailState(props);
   const {
     product,
@@ -30,6 +36,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
     blurb,
     selectedSize,
     setSelectedSize,
+    sizeSelectorRef,
     quantity,
     setQuantity,
     avg,
@@ -37,6 +44,8 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
     setAvg,
     setTotalReviews,
     handleAddToCart,
+    handleStickyAddToCart,
+    stickyHint,
     derived,
     t,
   } = state;
@@ -61,7 +70,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
 
   return (
     <div
-      className={className}
+      className={cn('caspian-has-sticky-cta', className)}
       data-pdp-variant="editorial"
       style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 0' }}
     >
@@ -155,13 +164,13 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
               fontWeight: 500,
             }}
           >
-            Out of stock — get in touch to be notified
+            {t('storefront.stock.outOfStockNotify')}
           </div>
         )}
 
         <div style={purchaseRow}>
           {derived.hasSizes && (
-            <div>
+            <div ref={sizeSelectorRef} tabIndex={-1} style={{ outline: 'none' }}>
               <p style={selectorLabel}>{t('product.size')}</p>
               <SizeSelector
                 sizes={product.sizes!}
@@ -178,6 +187,16 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
         </div>
 
         <Button size="lg" onClick={handleAddToCart}>
+          {t('product.addToCart')}
+        </Button>
+      </div>
+
+      <div className="caspian-sticky-cta">
+        <div className="caspian-sticky-cta__price">
+          <strong>{formatPrice(product.price)}</strong>
+          {stickyHint && <span>{stickyHint}</span>}
+        </div>
+        <Button size="lg" onClick={handleStickyAddToCart}>
           {t('product.addToCart')}
         </Button>
       </div>
@@ -203,7 +222,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
               margin: '0 0 18px',
             }}
           >
-            Story &amp; Details
+            {t('product.editorial.storyDetails')}
           </p>
           {derived.hasLongDescription && (
             <p
@@ -253,7 +272,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
               margin: '0 0 24px',
             }}
           >
-            From buyers
+            {t('product.editorial.fromBuyers')}
           </p>
           <ProductReviews
             productId={product.id}

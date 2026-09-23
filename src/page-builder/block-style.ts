@@ -89,7 +89,9 @@ export function blockStyleToCss(style: BlockStyle | undefined): CSSProperties {
   // backslashes from the URL so an admin-pasted value can't break out of the
   // `url("…")` token in the generated `@media` stylesheet.
   const safeUrl = bg?.imageUrl ? bg.imageUrl.replace(/["\\]/g, '') : '';
-  const overlayLayer = resolveGradient(bg?.overlayGradient) ?? (bg?.overlay ? `linear-gradient(${bg.overlay}, ${bg.overlay})` : undefined);
+  const overlayColor = bg?.overlay && !UNSAFE_CSS.test(bg.overlay) ? bg.overlay.replace(/[{}<>;]/g, '').trim() : '';
+  const overlayLayer =
+    resolveGradient(bg?.overlayGradient) ?? (overlayColor ? `linear-gradient(${overlayColor}, ${overlayColor})` : undefined);
   const gradientBg = resolveGradient(bg?.gradient);
   // Compose the background as an ordered layer list (top layer first): an
   // optional overlay, then the image; or — with no image — a standalone gradient.
@@ -98,6 +100,9 @@ export function blockStyleToCss(style: BlockStyle | undefined): CSSProperties {
     : gradientBg;
   const border = style.border;
   const typo = style.typography;
+  const margin = spacing(style.margin, 'margin');
+  // A max-width block is centered unless the admin set an explicit side margin.
+  const centered = style.width ? 'auto' : undefined;
   return {
     backgroundColor: bg?.color || undefined,
     backgroundImage: bgImage || undefined,
@@ -105,12 +110,12 @@ export function blockStyleToCss(style: BlockStyle | undefined): CSSProperties {
     backgroundPosition: bg?.imageUrl ? bg.position || 'center' : undefined,
     backgroundRepeat: bg?.imageUrl ? (bg.repeat ? 'repeat' : 'no-repeat') : undefined,
     ...spacing(style.padding, 'padding'),
-    ...spacing(style.margin, 'margin'),
+    ...margin,
+    marginLeft: margin.marginLeft ?? centered,
+    marginRight: margin.marginRight ?? centered,
     textAlign: style.align,
     color: style.textColor || undefined,
     maxWidth: style.width || undefined,
-    marginLeft: style.width ? 'auto' : undefined,
-    marginRight: style.width ? 'auto' : undefined,
     fontSize: typo?.fontSize || undefined,
     fontWeight: typo?.fontWeight || undefined,
     lineHeight: typo?.lineHeight || undefined,

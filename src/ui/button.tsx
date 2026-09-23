@@ -56,7 +56,6 @@ function styleFor(variant: ButtonVariant, size: ButtonSize): React.CSSProperties
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    transition: 'opacity 0.15s, transform 0.05s',
     userSelect: 'none',
     whiteSpace: 'nowrap',
   };
@@ -72,7 +71,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(base, className)}
+        data-variant={variant}
+        data-size={size}
         disabled={isDisabled}
+        aria-busy={loading || undefined}
         style={{
           ...styleFor(variant, size),
           opacity: isDisabled ? 0.6 : 1,
@@ -81,6 +83,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         }}
         {...rest}
       >
+        {loading && <span className="caspian-btn-spinner" aria-hidden="true" />}
         {children}
       </button>
     );

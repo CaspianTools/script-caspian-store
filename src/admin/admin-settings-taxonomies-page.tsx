@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getCountFromServer, query, type Firestore } from 'firebase/firestore';
 import type { SiteSettings } from '../types';
-import { getSiteSettings, saveSiteSettings } from '../services/site-settings-service';
+import { getSiteSettings, updateSiteSettings } from '../services/site-settings-service';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { caspianCollections } from '../firebase/collections';
@@ -19,6 +19,7 @@ import { Skeleton } from '../ui/misc';
 import { Switch } from '../ui/switch';
 import { FieldDescription } from '../ui/field-description';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 
 const EMPTY_SETTINGS: SiteSettings = {
   logoUrl: '',
@@ -52,14 +53,20 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
   const t = useT();
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let alive = true;
     getSiteSettings(db)
+      // A fresh store has no `settings/site` yet; Save is a merge write of
+      // `enabledTaxonomies` only, so an empty draft is safe here.
       .then((s) => alive && setSettings(s ?? EMPTY_SETTINGS))
-      .catch(() => alive && setSettings(EMPTY_SETTINGS));
+      .catch((error) => {
+        console.error('[caspian-store] Failed to load site settings:', error);
+        if (alive) setLoadError(true);
+      });
     return () => {
       alive = false;
     };
@@ -83,6 +90,26 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
       alive = false;
     };
   }, [db]);
+
+  if (loadError) {
+    return (
+      <div className={className}>
+        <p
+          role="alert"
+          style={{
+            margin: 0,
+            padding: 12,
+            borderRadius: 'var(--caspian-radius, 8px)',
+            background: '#fee2e2',
+            color: '#991b1b',
+            fontSize: 14,
+          }}
+        >
+          {t('admin.settings.loadFailed')}
+        </p>
+      </div>
+    );
+  }
 
   if (!settings || counts === null) {
     return (
@@ -141,7 +168,9 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
   const save = async () => {
     setSaving(true);
     try {
-      await saveSiteSettings(db, settings);
+      await updateSiteSettings(db, {
+        enabledTaxonomies: COMMON_TAXONOMIES.filter((tx) => enabled.has(tx.id)).map((tx) => tx.id),
+      });
       toast({ title: t('admin.taxonomies.settings.saved') });
     } catch (error) {
       console.error('[caspian-store] Save failed:', error);
@@ -152,8 +181,8 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
   };
 
   return (
-    <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
           {t('admin.settings.taxonomies.title')}
         </h1>
@@ -218,12 +247,17 @@ export function AdminSettingsTaxonomiesPage({ className }: { className?: string 
           );
         })}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={save} loading={saving}>
             {t('admin.taxonomies.settings.save')}
           </Button>
         </div>
       </section>
+      <div className="caspian-sticky-cta">
+        <Button onClick={save} loading={saving}>
+          {t('admin.taxonomies.settings.save')}
+        </Button>
+      </div>
     </div>
   );
 }

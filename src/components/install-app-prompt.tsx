@@ -149,6 +149,7 @@ export function InstallAppPrompt({
     <div
       role="dialog"
       aria-label={t('pwa.install')}
+      className="caspian-install-prompt"
       style={{
         position: 'fixed',
         left: '50%',
@@ -184,7 +185,8 @@ export function InstallAppPrompt({
               color: '#111',
               border: 0,
               borderRadius: 999,
-              padding: '8px 14px',
+              minHeight: 44,
+              padding: '0 16px',
               fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
@@ -201,11 +203,16 @@ export function InstallAppPrompt({
             background: 'transparent',
             border: 0,
             color: '#fff',
+            width: 44,
+            height: 44,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             fontSize: 20,
             lineHeight: 1,
             cursor: 'pointer',
             opacity: 0.7,
-            padding: 4,
+            padding: 0,
           }}
         >
           ×

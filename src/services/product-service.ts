@@ -11,6 +11,7 @@ import {
   orderBy,
   limit as firestoreLimit,
   Timestamp,
+  type FieldValue,
   type Firestore,
   type QueryDocumentSnapshot,
   type DocumentSnapshot,
@@ -45,6 +46,8 @@ function docToProduct(docSnap: QueryDocumentSnapshot | DocumentSnapshot): Produc
     name: data.name,
     brand: data.brand,
     sku: data.sku,
+    barcode: data.barcode,
+    weightKg: data.weightKg,
     description: data.description,
     shortDescription: data.shortDescription,
     details: data.details,
@@ -72,12 +75,15 @@ export async function getProducts(
   const products = caspianCollections(db).products;
   const constraints: Parameters<typeof query>[1][] = [where('isActive', '==', true)];
   if (filters?.category) constraints.push(where('category', '==', filters.category));
-  if (filters?.isNew) constraints.push(where('isNew', '==', true));
-  if (filters?.limited) constraints.push(where('limited', '==', true));
 
   const q = query(products, ...constraints, orderBy('createdAt', 'desc'), firestoreLimit(max));
   const snapshot = await getDocs(q);
   let list = snapshot.docs.map(docToProduct);
+  // Applied in memory: a second equality before `orderBy('createdAt')` needs a
+  // composite index that no consumer project ships, and the query would throw
+  // `failed-precondition` instead of filtering.
+  if (filters?.isNew) list = list.filter((p) => p.isNew);
+  if (filters?.limited) list = list.filter((p) => p.limited);
   if (filters?.minPrice !== undefined) list = list.filter((p) => p.price >= filters.minPrice!);
   if (filters?.maxPrice !== undefined) list = list.filter((p) => p.price <= filters.maxPrice!);
   if (filters?.sizes?.length) {
@@ -206,10 +212,30 @@ export async function createProduct(
   return ref.id;
 }
 
+/** Optional product fields an admin can clear from the editor. */
+type ClearableProductKey =
+  | 'sku'
+  | 'barcode'
+  | 'shortDescription'
+  | 'details'
+  | 'weightKg'
+  | 'color'
+  | 'taxonomies'
+  | 'stock';
+
+/**
+ * Update payload. Clearable optional fields additionally accept
+ * `deleteField()` — `undefined` is stripped before the write, which would
+ * leave the previous value in place instead of removing it.
+ */
+export type ProductUpdateInput = Partial<Omit<ProductWriteInput, ClearableProductKey>> & {
+  [K in ClearableProductKey]?: ProductWriteInput[K] | FieldValue;
+};
+
 export async function updateProduct(
   db: Firestore,
   id: string,
-  data: Partial<ProductWriteInput>,
+  data: ProductUpdateInput,
 ): Promise<void> {
   // On update, regenerate the slug only when:
   //   1. the admin explicitly typed one (`data.slug` provided), OR

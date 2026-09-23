@@ -107,6 +107,16 @@ export function AdminAboutPage({
           variant: 'destructive',
         });
       }
+    } catch (err) {
+      // `triggerSelfUpdate` re-throws AbortError (and anything unexpected);
+      // without this the button would stay in its loading state forever.
+      const aborted = err instanceof Error && err.name === 'AbortError';
+      if (!aborted) console.error('[caspian-store] Self-update failed:', err);
+      toast({
+        title: aborted ? 'Update cancelled' : 'Update failed',
+        description: !aborted && err instanceof Error ? err.message : undefined,
+        variant: 'destructive',
+      });
     } finally {
       setUpdating(false);
     }
@@ -123,10 +133,12 @@ export function AdminAboutPage({
 
   return (
     <div className={className}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>About</h1>
-      <p style={{ color: '#666', marginTop: 4 }}>
-        Library version and recent news from {owner}/{repo}.
-      </p>
+      <header className="caspian-admin-page-head">
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>About</h1>
+        <p style={{ color: '#666', marginTop: 4 }}>
+          Library version and recent news from {owner}/{repo}.
+        </p>
+      </header>
 
       <section
         style={{
@@ -288,7 +300,7 @@ function ErrorsSection({ owner, repo }: { owner: string; repo: string }) {
 
   return (
     <section style={{ margin: '16px 0 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('admin.about.errors.title')}</h2>
         <Button variant="outline" size="sm" onClick={() => void load()}>
           <RefreshIcon size={14} /> {t('admin.about.errors.refresh')}

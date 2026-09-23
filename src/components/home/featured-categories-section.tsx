@@ -11,7 +11,7 @@ import { cn } from '../../utils/cn';
 export interface FeaturedCategoriesSectionProps {
   label?: string;
   title?: string;
-  /** Link target for each category card. Default: `/categories/{slug}`. */
+  /** Link target for each category card. Default: `/shop?category={slug}` — `<ProductListPage>` pre-selects that category filter. */
   getCategoryHref?: (category: ProductCategoryDoc) => string;
   className?: string;
 }
@@ -19,7 +19,7 @@ export interface FeaturedCategoriesSectionProps {
 export function FeaturedCategoriesSection({
   label,
   title,
-  getCategoryHref = (c) => `/categories/${c.slug}`,
+  getCategoryHref = (c) => `/shop?category=${encodeURIComponent(c.slug || c.id)}`,
   className,
 }: FeaturedCategoriesSectionProps) {
   const { db } = useCaspianFirebase();
@@ -46,7 +46,10 @@ export function FeaturedCategoriesSection({
   if (categories !== null && categories.length === 0) return null;
 
   return (
-    <section className={cn('caspian-featured-categories', className)} style={{ padding: '64px 24px' }}>
+    <section
+      className={cn('caspian-featured-categories', className)}
+      style={{ padding: 'clamp(40px, 8vw, 64px) clamp(16px, 4vw, 24px)' }}
+    >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: 40 }}>
           <p
@@ -72,13 +75,13 @@ export function FeaturedCategoriesSection({
           </h2>
         </header>
         {categories === null ? (
-          <div style={gridStyle}>
+          <div className="caspian-snap-row" style={gridStyle}>
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} style={{ aspectRatio: '3 / 4' }} />
             ))}
           </div>
         ) : (
-          <div style={gridStyle}>
+          <div className="caspian-snap-row" style={gridStyle}>
             {categories.map((cat) => (
               <Link key={cat.id} href={getCategoryHref(cat)}>
                 <article style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

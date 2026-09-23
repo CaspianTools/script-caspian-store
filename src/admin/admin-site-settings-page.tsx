@@ -36,6 +36,7 @@ import { Input, Label, Textarea } from '../ui/input';
 import { Skeleton } from '../ui/misc';
 import { Select } from '../ui/select';
 import { useToast } from '../ui/toast';
+import { cn } from '../utils/cn';
 import { FieldHelp } from '../ui/field-help';
 import { FieldDescription } from '../ui/field-description';
 import { SearchableSelect, type SearchableSelectOption } from '../ui/searchable-select';
@@ -121,6 +122,8 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   const { db } = useCaspianFirebase();
   const { toast } = useToast();
   const [draft, setDraft] = useState<SiteSettings | null>(null);
+  const [loaded, setLoaded] = useState<SiteSettings | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
 
@@ -143,16 +146,43 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   );
 
   useEffect(() => {
+    let alive = true;
+    setLoadError(false);
     (async () => {
       try {
         const existing = await getSiteSettings(db);
-        setDraft(existing ?? emptySettings);
+        if (!alive) return;
+        // No doc yet on a fresh store is fine — the save is a merge write.
+        // A failed read is not: saving an empty draft over it would wipe
+        // settings we simply couldn't see.
+        const initial = existing ?? emptySettings;
+        setDraft(initial);
+        setLoaded(initial);
       } catch (error) {
         console.error('[caspian-store] Failed to load site settings:', error);
-        setDraft(emptySettings);
+        if (alive) setLoadError(true);
       }
     })();
+    return () => {
+      alive = false;
+    };
   }, [db]);
+
+  const dirty = useMemo(
+    () => draft !== null && loaded !== null && JSON.stringify(draft) !== JSON.stringify(loaded),
+    [draft, loaded],
+  );
+
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Legacy browsers only show the prompt when returnValue is set.
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
 
   const patch = (p: Partial<SiteSettings>) =>
     setDraft((d) => (d ? { ...d, ...p } : d));
@@ -166,6 +196,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
     setSaving(true);
     try {
       await saveSiteSettings(db, draft);
+      setLoaded(draft);
       toast({ title: 'Site settings saved' });
     } catch (error) {
       console.error('[caspian-store] Save failed:', error);
@@ -200,6 +231,34 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
     );
   };
 
+  if (loadError) {
+    return (
+      <div className={className}>
+        <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Site settings</h1>
+        </header>
+        <p
+          role="alert"
+          style={{
+            margin: 0,
+            padding: 12,
+            borderRadius: 'var(--caspian-radius, 8px)',
+            background: '#fee2e2',
+            color: '#991b1b',
+            fontSize: 14,
+            maxWidth: 720,
+          }}
+        >
+          Could not load the current site settings. Reload the page to try again — saving is
+          disabled so nothing gets overwritten with blank values.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', maxWidth: 720, marginTop: 16 }}>
+          <Button disabled>Save settings</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!draft) {
     return (
       <div className={className}>
@@ -209,8 +268,8 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
   }
 
   return (
-    <div className={className}>
-      <header style={{ marginBottom: 16 }}>
+    <div className={cn('caspian-has-sticky-cta', className)}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Site settings</h1>
         <p style={{ color: '#666', marginTop: 4 }}>
           Brand, contact, localization, store behavior, and tax. Rendered by the header, footer,
@@ -237,7 +296,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                 onChange={(e) => patch({ brandDescription: e.target.value })}
               />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <ImageUploadField
                 label="Logo"
                 value={draft.logoUrl}
@@ -350,7 +409,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
             Used by the storefront for price formatting and checkout defaults. Safe to change
             later — existing orders retain the currency they were placed in.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-3" style={{ display: 'grid', gap: 12 }}>
             <div>
               <Label>Currency</Label>
               <SearchableSelect
@@ -408,7 +467,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
               <span>Override automatic formatting</span>
             </label>
             {draft.currencyDisplay && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+              <div className="caspian-admin-grid-4" style={{ display: 'grid', gap: 12 }}>
                 <div>
                   <Label>Symbol position</Label>
                   <Select
@@ -485,7 +544,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
         <div>
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Contact</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div>
                 <Label>Email</Label>
                 <Input
@@ -546,6 +605,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                 return (
                   <div
                     key={idx}
+                    className="caspian-admin-inline-row"
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '32px 200px 1fr auto',
@@ -751,7 +811,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
             Controls which countries shoppers can pick at checkout and how tax is estimated.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 640 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <Label>Tax mode</Label>
                 <Select
@@ -818,6 +878,7 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
                   {(draft.supportedCountries ?? []).map((c, idx) => (
                     <div
                       key={c.code}
+                      className="caspian-admin-inline-row"
                       style={{
                         display: 'grid',
                         gridTemplateColumns:
@@ -905,12 +966,17 @@ export function AdminSiteSettingsPage({ className }: { className?: string }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button onClick={handleSave} loading={saving}>
+        <div className="caspian-hide-mobile" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button onClick={handleSave} loading={saving} disabled={!dirty}>
             Save settings
           </Button>
         </div>
       </section>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} loading={saving} disabled={!dirty}>
+          Save settings
+        </Button>
+      </div>
 
       <CountryPickerDialog
         open={countryPickerOpen}
@@ -1015,6 +1081,7 @@ function BusinessHoursSection({
               return (
                 <div
                   key={day}
+                  className="caspian-admin-inline-row"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '150px 1fr 1fr',
@@ -1122,7 +1189,7 @@ function StoreAddressSection({
               onChange={(e) => onChange({ ...address, line2: e.target.value })}
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>City</Label>
               <Input
@@ -1138,7 +1205,7 @@ function StoreAddressSection({
               />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Country</Label>
               <SearchableSelect
@@ -1317,7 +1384,7 @@ function AccountsAndPrivacySection({
         The scheduled retention Cloud Function (<code>runRetentionCleanup</code>) reads these
         values daily. Leave a field blank to keep data indefinitely.
       </FieldDescription>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {retentionField(
           'Inactive accounts (days)',
           'retainInactiveAccountsDays',
@@ -1382,7 +1449,7 @@ function InventorySection({
         </label>
         {enabled && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <Label>Low-stock threshold</Label>
                 <Input
@@ -1413,7 +1480,7 @@ function InventorySection({
                 </FieldDescription>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <Label>Out-of-stock visibility</Label>
                 <Select
@@ -1487,7 +1554,7 @@ function TaxOptionsSubSection({
       </label>
       {enabled && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Prices entered with tax</Label>
               <Select
@@ -1524,7 +1591,7 @@ function TaxOptionsSubSection({
               </FieldDescription>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Shop price display</Label>
               <Select
@@ -1569,7 +1636,7 @@ function TaxOptionsSubSection({
               inline the active rate (e.g. <code>inc. {'{rate}'} VAT</code> → <code>inc. 8% VAT</code>).
             </FieldDescription>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="caspian-admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <Label>Round tax</Label>
               <Select

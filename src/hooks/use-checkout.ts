@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useCaspianFirebase } from '../provider/caspian-store-provider';
 import { useCart } from '../context/cart-context';
 import { useAuth } from '../context/auth-context';
+import { useT } from '../i18n/locale-context';
 import { listPaymentPluginInstalls } from '../services/payment-plugin-service';
 import { getPaymentPlugin } from '../payments/catalog';
 import type { PaymentPlugin, StartCheckoutOptions } from '../payments/types';
@@ -24,18 +25,28 @@ interface ActiveCheckout {
  * Picks the first enabled install in `paymentPluginInstalls` (by `order`).
  * If none is installed-and-enabled, `startCheckout` throws and the returned
  * `activeInstall` / `activePlugin` are null so the UI can render guidance
- * toward `/admin/plugins/payments`.
+ * toward `/admin/plugins/payments`. `ready` is false until the installs
+ * query has settled, so callers can hold a loading state instead of flashing
+ * the "no provider" message.
+ *
+ * The cart is deliberately NOT cleared here: the shopper may cancel at the
+ * provider's hosted page and land back on `/checkout`, where an emptied cart
+ * would look like a lost order. `<OrderConfirmationPage>` clears it once the
+ * order document exists.
  */
 export function useCheckout() {
   const { db, functions, auth } = useCaspianFirebase();
-  const { items, clearCart } = useCart();
+  const { items } = useCart();
   const { user } = useAuth();
+  const t = useT();
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<ActiveCheckout | null>(null);
 
   useEffect(() => {
     let alive = true;
+    setReady(false);
     listPaymentPluginInstalls(db, { onlyEnabled: true })
       .then((installs) => {
         if (!alive) return;
@@ -73,6 +84,9 @@ export function useCheckout() {
       .catch((err) => {
         console.error('[caspian-store] Failed to load payment plugin installs:', err);
         if (alive) setActive(null);
+      })
+      .finally(() => {
+        if (alive) setReady(true);
       });
     return () => {
       alive = false;
@@ -87,18 +101,17 @@ export function useCheckout() {
       // by a tick because it's driven by the onAuthStateChanged listener.
       const currentUser = auth.currentUser ?? user;
       if (!currentUser) {
-        const msg = 'You must be signed in to check out.';
+        const msg = t('checkout.error.signInRequired');
         setError(msg);
         throw new Error(msg);
       }
       if (items.length === 0) {
-        const msg = 'Your cart is empty.';
+        const msg = t('checkout.error.emptyCart');
         setError(msg);
         throw new Error(msg);
       }
       if (!active) {
-        const msg =
-          'No payment provider is configured. Ask an admin to install a payment plugin.';
+        const msg = t('checkout.error.noProvider');
         setError(msg);
         throw new Error(msg);
       }
@@ -118,24 +131,28 @@ export function useCheckout() {
           options,
         );
 
-        clearCart();
         if (result.redirectUrl && typeof window !== 'undefined') {
+          // Keep `loading` on: the page is about to unload.
           window.location.href = result.redirectUrl;
+        } else {
+          setLoading(false);
         }
         return result;
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Checkout failed.';
+        const msg = e instanceof Error ? e.message : t('checkout.error.failed');
         setError(msg);
         setLoading(false);
         throw e;
       }
     },
-    [active, auth, functions, items, user, clearCart],
+    [active, auth, functions, items, user, t],
   );
 
   return {
     startCheckout,
     loading,
+    /** False until the payment-plugin installs query has settled. */
+    ready,
     error,
     activePlugin: active?.plugin ?? null,
     activeInstall: active?.install ?? null,

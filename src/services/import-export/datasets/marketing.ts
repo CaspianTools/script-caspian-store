@@ -83,7 +83,7 @@ export const PROMO_CODES_DATASET: DatasetDescriptor = {
       };
       const explicitId = (rec.id ?? '').trim() || undefined;
       const payload: PromoPayload = { input, explicitId };
-      const match = explicitId ? byId.get(explicitId) : byCode.get(code);
+      const match = (explicitId && byId.get(explicitId)) || byCode.get(code);
       const key = explicitId ?? code;
       return match
         ? duplicatePlan(row, key, code, match.id, payload, ['skip', 'overwrite', 'create'])

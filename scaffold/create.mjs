@@ -402,9 +402,9 @@ import { readFirebaseConfigFromEnv } from '@caspian-explorer/script-caspian-stor
 // next.config.mjs forwards FIREBASE_WEBAPP_CONFIG into the client bundle.
 export const caspianFirebaseConfig = readFirebaseConfigFromEnv();
 
-export function CaspianNextLink({ href, children, className, style, onClick, target, rel, 'aria-label': al }: CaspianLinkProps) {
+export function CaspianNextLink({ href, children, className, style, onClick, target, rel, 'aria-label': al, 'aria-current': ariaCurrent }: CaspianLinkProps) {
   return (
-    <Link href={href as any} className={className} style={style} onClick={onClick} target={target} rel={rel} aria-label={al}>
+    <Link href={href as any} className={className} style={style} onClick={onClick} target={target} rel={rel} aria-label={al} aria-current={ariaCurrent}>
       {children}
     </Link>
   );
@@ -504,7 +504,7 @@ export function Providers({ children }: { children: ReactNode }) {
 // {children} in <LayoutShell> at the root layout double-wraps every page,
 // producing two stacked headers and two stacked footers (v7.0.2 fix).
 write('src/app/layout.tsx', `import type { ReactNode } from 'react';
-import { DynamicFavicon } from '@caspian-explorer/script-caspian-store';
+import { DynamicFavicon, ServiceWorkerRegister } from '@caspian-explorer/script-caspian-store';
 import '@caspian-explorer/script-caspian-store/styles.css';
 import { Providers } from './providers';
 
@@ -520,6 +520,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Providers>
           {children}
           <DynamicFavicon />
+          <ServiceWorkerRegister />
         </Providers>
       </body>
     </html>
@@ -762,9 +763,36 @@ import path from 'node:path';
 // its own env vars from a browser. Next.js also makes the filesystem
 // effectively read-only on most hosts (Vercel, App Hosting), so this route
 // would fail there anyway — the explicit guard returns a cleaner 403.
+// A dev server still listens on the network, so the route also refuses
+// anything that is not a same-origin JSON POST from localhost: a page on
+// another site must not be able to rewrite .env.local through the
+// developer's browser, and a value carrying a newline must not be able to
+// smuggle a second env var into the file.
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+// Accepts a Host header ("localhost:3000", "[::1]:3000") or an Origin URL.
+function isLocalhost(value: string | null): boolean {
+  if (!value) return false;
+  try {
+    return LOCAL_HOSTS.has(new URL(value.includes('://') ? value : \`http://\${value}\`).hostname);
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   if (process.env.NODE_ENV !== 'development') {
     return new NextResponse('setup/init is dev-only', { status: 403 });
+  }
+  if (!isLocalhost(request.headers.get('host'))) {
+    return new NextResponse('setup/init only answers on localhost', { status: 403 });
+  }
+  const origin = request.headers.get('origin');
+  if (origin && !isLocalhost(origin)) {
+    return new NextResponse('cross-origin request refused', { status: 403 });
+  }
+  if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
+    return new NextResponse('expected application/json', { status: 415 });
   }
 
   const body = await request.json().catch(() => null);
@@ -783,6 +811,9 @@ export async function POST(request: Request) {
   for (const key of required) {
     if (!body[key] || typeof body[key] !== 'string') {
       return new NextResponse(\`missing \${key}\`, { status: 400 });
+    }
+    if (/[\\r\\n]/.test(body[key]) || body[key].length > 500) {
+      return new NextResponse(\`invalid \${key}\`, { status: 400 });
     }
   }
 
@@ -866,9 +897,10 @@ write('storage.rules', readFileSync(join(sourceFirebaseDir, 'storage.rules'), 'u
 //   - caspian-stripe (v1.16.0+) — checkout + webhook + session lookup.
 //     Requires STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET; opt in with --with-stripe.
 //   - caspian-email (v2.14.0+) — transactional order + contact-form emails
-//     + sendTestEmail callable. Reads the configured provider (SendGrid or
-//     Brevo) from Firestore at runtime, so no secrets are declared at deploy
-//     time. Opt in with --with-email.
+//     + sendTestEmail callable. Reads which provider (SendGrid or Brevo) is
+//     enabled from Firestore at runtime; the provider API key is a Cloud
+//     Functions secret (CASPIAN_EMAIL_SENDGRID_API_KEY /
+//     CASPIAN_EMAIL_BREVO_API_KEY, v8.0.0+). Opt in with --with-email.
 //
 // Pre-split behaviour (single `caspian-store` codebase; then v2.11's
 // SENDGRID_API_KEY leak into functions-admin) forced installs to pre-configure
@@ -1022,13 +1054,15 @@ npm run dev                  # http://localhost:3000
 
    Then go to \`/admin/plugins/payments\`, click **Browse providers → Install** on the Stripe card, paste your publishable (\`pk_...\`) key, save, and click **Enable**. The publishable key lives in Firestore under \`paymentPluginInstalls\`; only server-side secrets live in Cloud Functions secrets.
 
-   If you also scaffolded with \`--with-email\`, deploy the email codebase. **No secrets to set** — the provider (SendGrid or Brevo) API key is stored in Firestore under \`emailPluginInstalls\` (admin-only read) and loaded by the dispatcher at runtime:
+   If you also scaffolded with \`--with-email\`, deploy the email codebase. The provider API key is a **Cloud Functions secret**, not a Firestore field — set both secrets before the first deploy (the deploy fails fast if a referenced secret is missing; leave the one you don't use empty):
    \`\`\`bash
    cd functions-email && npm install && cd ..
+   firebase functions:secrets:set CASPIAN_EMAIL_SENDGRID_API_KEY  # paste SG.... or leave empty
+   firebase functions:secrets:set CASPIAN_EMAIL_BREVO_API_KEY     # paste xkeysib-... or leave empty
    npm run deploy:email
    \`\`\`
 
-   Then go to \`/admin/plugins/email-providers\`, click **Browse providers → Install** on SendGrid or Brevo, paste the API key, save, and click **Enable**. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
+   Then go to \`/admin/plugins/email-providers\`, click **Browse providers → Install** on SendGrid or Brevo, save, and click **Enable** — the install only records which provider is active; the key stays in Secret Manager. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
 
    If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase — it lets store staff view the feed, moderate comments, **publish a product as a post**, and **delete posts** (the Meta app secret + token stay server-side). Set the Meta app credentials first, then deploy:
    \`\`\`bash

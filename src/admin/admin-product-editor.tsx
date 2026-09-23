@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useMemo, useState } from 'react';
+import { deleteField } from 'firebase/firestore';
 import type { ProductBrandDoc, ProductCategoryDoc, ProductImage, TaxonomyTermDoc } from '../types';
 import {
   createProduct,
   getProductById,
   updateProduct,
+  type ProductUpdateInput,
   type ProductWriteInput,
 } from '../services/product-service';
-import { listActiveBrands } from '../services/brand-service';
+import { listAllBrands } from '../services/brand-service';
 import { listAllCategories } from '../services/category-service';
 import { getSiteSettings } from '../services/site-settings-service';
 import { createTerm, listActiveTerms } from '../services/taxonomy-term-service';
@@ -19,6 +21,7 @@ import {
   TAXONOMY_BY_ID,
 } from '../taxonomies/catalog';
 import type { TaxonomyDef } from '../taxonomies/types';
+import { cn } from '../utils/cn';
 import { slugify } from '../utils/slugify';
 import { useT } from '../i18n/locale-context';
 import { useCaspianFirebase, useCaspianNavigation } from '../provider/caspian-store-provider';
@@ -49,7 +52,8 @@ interface FormState {
    * before v8.4 may store a free-text brand name here, in which case the
    * editor synthesises a "(legacy — not migrated)" option to preserve
    * the value until an admin reselects or runs the migration banner on
-   * `/admin/brands`.
+   * `/admin/brands`. Inactive brands are listed as "(hidden)" so a product
+   * on one is never mistaken for a legacy string.
    */
   brand: string;
   /** Optional stock-keeping unit. Free text; not enforced unique. */
@@ -154,6 +158,15 @@ function buildCategoryOptions(
     }
   };
   walk('__root__', 0);
+  // A category whose parent no longer exists (deleted before v-current
+  // re-parented children, or imported with a bad id) is unreachable from
+  // the root walk. Surface it at top level rather than dropping it.
+  const seen = new Set(out.map((o) => o.value));
+  for (const cat of categories) {
+    if (seen.has(cat.id)) continue;
+    const inactiveTag = cat.isActive === false ? ' (hidden)' : '';
+    out.push({ value: cat.id, label: `${cat.name}${inactiveTag}` });
+  }
   return out;
 }
 
@@ -168,6 +181,7 @@ export function AdminProductEditor({
   const t = useT();
   const [form, setForm] = useState<FormState>(empty);
   const [loading, setLoading] = useState(Boolean(productId));
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<ProductCategoryDoc[]>([]);
   const [brands, setBrands] = useState<ProductBrandDoc[] | null>(null);
@@ -185,7 +199,7 @@ export function AdminProductEditor({
       // composite index on a fresh project) must not blank the other dropdown.
       const [cats, brs, settings] = await Promise.allSettled([
         listAllCategories(db),
-        listActiveBrands(db),
+        listAllBrands(db),
         getSiteSettings(db),
       ]);
       if (!alive) return;
@@ -232,7 +246,7 @@ export function AdminProductEditor({
         const p = await getProductById(db, productId);
         if (!alive) return;
         if (!p) {
-          toast({ title: 'Product not found', variant: 'destructive' });
+          setNotFound(true);
           return;
         }
         const sizeList = p.sizes ?? [];
@@ -262,6 +276,11 @@ export function AdminProductEditor({
           isActive: p.isActive !== false,
           images: p.images,
         });
+      } catch (error) {
+        console.error('[caspian-store] Failed to load product:', error);
+        if (!alive) return;
+        toast({ title: t('admin.loadFailed'), variant: 'destructive' });
+        setNotFound(true);
       } finally {
         if (alive) setLoading(false);
       }
@@ -269,6 +288,7 @@ export function AdminProductEditor({
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db, productId, toast]);
 
   const categoryOptions = useMemo(
@@ -289,7 +309,7 @@ export function AdminProductEditor({
       { value: '', label: '— Select brand —' },
     ];
     for (const b of brands ?? []) {
-      out.push({ value: b.id, label: b.name });
+      out.push({ value: b.id, label: b.isActive === false ? `${b.name} (hidden)` : b.name });
     }
     if (brandIsLegacyUnknown) {
       out.push({
@@ -500,7 +520,20 @@ export function AdminProductEditor({
         images: form.images,
       };
       if (productId) {
-        await updateProduct(db, productId, payload);
+        // A blank optional field means "remove it": `undefined` would be
+        // stripped from the update and the stored value would survive.
+        const update: ProductUpdateInput = {
+          ...payload,
+          sku: payload.sku ?? deleteField(),
+          barcode: payload.barcode ?? deleteField(),
+          shortDescription: payload.shortDescription ?? deleteField(),
+          details: payload.details ?? deleteField(),
+          weightKg: payload.weightKg ?? deleteField(),
+          color: payload.color ?? deleteField(),
+          taxonomies: payload.taxonomies ?? deleteField(),
+          stock: payload.stock ?? deleteField(),
+        };
+        await updateProduct(db, productId, update);
         toast({ title: 'Product updated' });
       } else {
         await createProduct(db, payload);
@@ -525,14 +558,26 @@ export function AdminProductEditor({
     );
   }
 
+  if (notFound) {
+    return (
+      <div className={className} style={{ maxWidth: 720 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('admin.products.notFound')}</h1>
+        <p style={{ color: '#666', marginTop: 8 }}>{t('admin.products.notFoundHint')}</p>
+        <Button variant="outline" onClick={() => nav.push(afterSaveHref)}>
+          {t('admin.products.backToProducts')}
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className={className} style={{ maxWidth: 720 }}>
+    <div className={cn('caspian-has-sticky-cta', className)} style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
         {productId ? 'Edit product' : 'New product'}
       </h1>
 
       <section style={sectionStyle}>
-        <div style={gridStyle}>
+        <div className="caspian-admin-grid-2" style={gridStyle}>
           <Field label="Name">
             <Input
               value={form.name}
@@ -616,7 +661,7 @@ export function AdminProductEditor({
             minHeight={140}
           />
         </Field>
-        <div style={gridStyle}>
+        <div className="caspian-admin-grid-2" style={gridStyle}>
           <Field label="Price">
             <Input
               type="number"
@@ -637,7 +682,7 @@ export function AdminProductEditor({
             />
           </Field>
         </div>
-        <div style={gridStyle}>
+        <div className="caspian-admin-grid-2" style={gridStyle}>
           <Field label="Category">
             <Select
               value={form.category}
@@ -867,7 +912,7 @@ export function AdminProductEditor({
         )}
       </section>
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <div className="caspian-hide-mobile" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <Button variant="outline" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
           Cancel
         </Button>
@@ -875,15 +920,31 @@ export function AdminProductEditor({
           {saving ? 'Saving…' : productId ? 'Save changes' : 'Create product'}
         </Button>
       </div>
+      <div className="caspian-sticky-cta">
+        <Button onClick={handleSave} loading={saving}>
+          {saving ? 'Saving…' : productId ? 'Save changes' : 'Create product'}
+        </Button>
+        <Button variant="ghost" onClick={() => nav.push(afterSaveHref)} disabled={saving}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }
 
+/**
+ * Labelled form row. When the child is a single component (Input, Select,
+ * Textarea…) it receives a generated `id` so the label is clickable and
+ * announced by screen readers; plain markup children are rendered as-is.
+ */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const generatedId = useId();
+  const bindable = isValidElement<{ id?: string }>(children) && typeof children.type !== 'string';
+  const controlId = bindable ? children.props.id ?? generatedId : undefined;
   return (
     <div style={{ marginBottom: 12 }}>
-      <Label>{label}</Label>
-      {children}
+      <Label htmlFor={controlId}>{label}</Label>
+      {bindable ? cloneElement(children, { id: controlId }) : children}
     </div>
   );
 }
@@ -930,6 +991,7 @@ function ProductStockGrid({
         (always available).
       </p>
       <div
+        className="caspian-stock-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',

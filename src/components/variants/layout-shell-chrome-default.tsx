@@ -28,13 +28,17 @@ export function LayoutShellChromeDefault({
   contentPaddingY,
   children,
 }: LayoutShellChromeProps) {
+  // `caspian-storefront` (globals.css) is where the theme's font, background
+  // and text colour land. Before v15.1 no element carried that class, so the
+  // Appearance font loaded but never applied and a dark theme's background
+  // only showed through the template chrome variants.
   return (
-    <>
+    <div className="caspian-storefront">
       {header !== null && <SiteHeader {...(header ?? {})} />}
       <div style={{ paddingTop: contentPaddingY, paddingBottom: contentPaddingY }}>
         {children}
       </div>
       {footer !== null && <SiteFooter {...(footer ?? {})} />}
-    </>
+    </div>
   );
 }

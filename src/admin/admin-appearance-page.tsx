@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useScriptSettings } from '../context/script-settings-context';
 import { useT } from '../i18n/locale-context';
 import {
@@ -12,8 +12,9 @@ import {
 } from '../theme/catalog';
 import { useThemeUpdateTracker } from '../theme/theme-update-tracker';
 import { ThemeThumbnail } from '../theme/theme-thumbnail';
-import type { FontTokens, ThemeTokens } from '../types';
+import { DEFAULT_SCRIPT_SETTINGS, type FontTokens, type StorefrontCopy, type ThemeTokens } from '../types';
 import { Button } from '../ui/button';
+import { Input, Label, Textarea } from '../ui/input';
 import { useToast } from '../ui/toast';
 
 export interface AdminAppearancePageProps {
@@ -79,16 +80,21 @@ export function AdminAppearancePage({
     setActivatingId(theme.id);
     markSeen(theme.id, theme.version);
     try {
-      const patch: { theme: ThemeTokens; fonts?: FontTokens } = { theme: theme.tokens };
+      // `save` merges nested maps, so every token the previous theme may have
+      // set is written explicitly — otherwise a light theme activated after a
+      // dark one inherits the dark background and font.
       const themeFontFamily = theme.tokens.fontFamily ?? theme.fontFamily;
-      if (theme.googleFamilies?.length || themeFontFamily) {
-        const stack = themeFontFamily ?? 'system-ui, -apple-system, sans-serif';
-        patch.fonts = {
-          body: stack,
-          headline: stack,
-          ...(theme.googleFamilies?.length ? { googleFamilies: theme.googleFamilies } : {}),
-        };
-      }
+      const stack = themeFontFamily ?? DEFAULT_SCRIPT_SETTINGS.theme.fontFamily!;
+      const patch: { theme: ThemeTokens; fonts: FontTokens } = {
+        theme: {
+          ...theme.tokens,
+          background: theme.tokens.background ?? DEFAULT_SCRIPT_SETTINGS.theme.background!,
+          fontFamily: stack,
+        },
+        fonts: themeFontFamily
+          ? { body: stack, headline: stack, googleFamilies: theme.googleFamilies ?? [] }
+          : DEFAULT_SCRIPT_SETTINGS.fonts!,
+      };
       await save(patch);
       toast({ title: t('admin.appearance.activated', { name: theme.name }) });
     } catch (error) {
@@ -112,7 +118,7 @@ export function AdminAppearancePage({
 
   return (
     <div className={className}>
-      <header style={{ marginBottom: 24 }}>
+      <header className="caspian-admin-page-head" style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
           {t('admin.appearance.title')}
         </h1>
@@ -120,6 +126,7 @@ export function AdminAppearancePage({
       </header>
 
       <div
+        className="caspian-admin-subshell"
         style={{
           display: 'grid',
           gridTemplateColumns: '240px minmax(0, 1fr)',
@@ -222,7 +229,124 @@ export function AdminAppearancePage({
       </div>
 
       <ProductCardSettingsSection />
+      <StorefrontCopySection />
     </div>
+  );
+}
+
+const COPY_FIELDS: ReadonlyArray<{ key: keyof StorefrontCopy; multiline?: boolean }> = [
+  { key: 'announcement' },
+  { key: 'tagline' },
+  { key: 'quote', multiline: true },
+  { key: 'quoteAttribution' },
+];
+
+/**
+ * The merchant-authored lines the template chrome bands render. Before
+ * v15.1 the tech and editorial templates hard-coded claims ("free shipping
+ * over $50", "12-month warranty", a signed quote) that no store could edit;
+ * now a band renders only when its line is filled in here.
+ */
+function StorefrontCopySection() {
+  const { settings, saving, save } = useScriptSettings();
+  const { toast } = useToast();
+  const t = useT();
+  const baseId = useId();
+  const [draft, setDraft] = useState<StorefrontCopy>(() => ({ ...(settings.copy ?? {}) }));
+  const [baseline, setBaseline] = useState(() => JSON.stringify(settings.copy ?? {}));
+
+  // Adopt a remote change only while the admin has nothing unsaved.
+  useEffect(() => {
+    const incoming = JSON.stringify(settings.copy ?? {});
+    if (incoming !== baseline && JSON.stringify(draft) === baseline) {
+      setDraft({ ...(settings.copy ?? {}) });
+      setBaseline(incoming);
+    }
+  }, [settings.copy, baseline, draft]);
+
+  const dirty = JSON.stringify(draft) !== baseline;
+
+  const handleSave = async () => {
+    const next: StorefrontCopy = {};
+    for (const { key } of COPY_FIELDS) {
+      const value = (draft[key] ?? '').trim();
+      if (value) next[key] = value;
+    }
+    try {
+      await save({ copy: next });
+      setBaseline(JSON.stringify(next));
+      setDraft(next);
+      toast({ title: t('admin.appearance.copy.saved'), variant: 'success' });
+    } catch (error) {
+      console.error('[caspian-store] Failed to save storefront copy:', error);
+      toast({ title: t('admin.appearance.copy.saveFailed'), variant: 'destructive' });
+    }
+  };
+
+  return (
+    <section
+      style={{
+        marginTop: 32,
+        paddingTop: 24,
+        borderTop: '1px solid rgba(0,0,0,0.08)',
+      }}
+    >
+      <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 4px' }}>
+        {t('admin.appearance.copy.title')}
+      </h2>
+      <p style={{ color: '#666', margin: '0 0 16px', fontSize: 14 }}>
+        {t('admin.appearance.copy.subtitle')}
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSave();
+        }}
+        style={{ display: 'grid', gap: 14, maxWidth: 640 }}
+      >
+        {COPY_FIELDS.map(({ key, multiline }) => {
+          const id = `${baseId}-${key}`;
+          const common = {
+            id,
+            value: draft[key] ?? '',
+            disabled: saving,
+            placeholder: t(`admin.appearance.copy.${key}.placeholder`),
+          };
+          return (
+            <div key={key}>
+              <Label htmlFor={id}>{t(`admin.appearance.copy.${key}.label`)}</Label>
+              {multiline ? (
+                <Textarea
+                  {...common}
+                  rows={3}
+                  onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
+                />
+              ) : (
+                <Input
+                  {...common}
+                  onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
+                />
+              )}
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: '#777' }}>
+                {t(`admin.appearance.copy.${key}.help`)}
+              </p>
+            </div>
+          );
+        })}
+        <div className="caspian-hide-mobile">
+          <Button type="submit" loading={saving} disabled={!dirty || saving}>
+            {t('common.save')}
+          </Button>
+        </div>
+        {dirty && (
+          <div className="caspian-sticky-cta">
+            <Button type="submit" loading={saving} disabled={saving}>
+              {t('common.save')}
+            </Button>
+          </div>
+        )}
+      </form>
+    </section>
   );
 }
 
@@ -423,6 +547,7 @@ function tokensEqual(a: ThemeTokens, b: ThemeTokens): boolean {
     a.primary === b.primary &&
     a.primaryForeground === b.primaryForeground &&
     a.accent === b.accent &&
-    a.radius === b.radius
+    a.radius === b.radius &&
+    (a.background ?? '#ffffff') === (b.background ?? '#ffffff')
   );
 }

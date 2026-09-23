@@ -51,10 +51,18 @@ export const runRetentionCleanup = onSchedule(
 
     if (typeof privacy.retainInactiveAccountsDays === 'number') {
       const cutoffMs = cutoff(privacy.retainInactiveAccountsDays);
-      const deleted = await deleteInactiveAccounts(db, cutoffMs);
-      logger.info(
-        `[retention] Deleted ${deleted} inactive accounts older than ${privacy.retainInactiveAccountsDays} days.`,
-      );
+      // Isolated so a failure here (the query needs the `users (role,
+      // createdAt)` composite index — a missing index throws) still lets the
+      // order and error-log buckets below run.
+      try {
+        const deleted = await deleteInactiveAccounts(db, cutoffMs);
+        logger.info(
+          `[retention] Deleted ${deleted} inactive accounts older than ${privacy.retainInactiveAccountsDays} days.`,
+        );
+      } catch (err) {
+        logger.warn(`[retention] Inactive-account cleanup failed: ${String(err)}`);
+        void reportFunctionError('retention-cleanup.inactiveAccounts', err);
+      }
     }
 
     if (typeof privacy.retainCancelledOrdersDays === 'number') {

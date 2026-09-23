@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '../utils/cn';
+import { useT } from '../i18n/locale-context';
 import { StarIcon } from './star-icon';
 
 export interface StarRatingInputProps {
@@ -22,9 +23,10 @@ export function StarRatingInput({
   value,
   onChange,
   size = 'lg',
-  ariaLabel = 'Rating',
+  ariaLabel,
   className,
 }: StarRatingInputProps) {
+  const t = useT();
   const [hover, setHover] = useState(0);
   const display = hover || value;
   const px = SIZE_PX[size];
@@ -32,7 +34,7 @@ export function StarRatingInput({
   return (
     <div
       role="radiogroup"
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('reviews.ratingLabel')}
       className={cn('caspian-flex caspian-items-center caspian-gap-1', className)}
       style={{ display: 'inline-flex', gap: 4 }}
       onMouseLeave={() => setHover(0)}
@@ -45,7 +47,7 @@ export function StarRatingInput({
             type="button"
             role="radio"
             aria-checked={value === i}
-            aria-label={`${i} star${i === 1 ? '' : 's'}`}
+            aria-label={t('reviews.starsLabel', { count: i })}
             onClick={() => onChange(i)}
             onMouseEnter={() => setHover(i)}
             onFocus={() => setHover(i)}

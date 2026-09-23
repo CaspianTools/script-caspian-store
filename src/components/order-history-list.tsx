@@ -5,8 +5,10 @@ import type { Order } from '../types';
 import { getOrdersByUser } from '../services/order-service';
 import { useAuth } from '../context/auth-context';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
-import { useT } from '../i18n/locale-context';
+import { useScriptSettings } from '../context/script-settings-context';
+import { useFormatCurrency, useLocale, useT } from '../i18n/locale-context';
 import { Skeleton, Badge } from '../ui/misc';
+import { ChevronRightIcon } from '../ui/icons';
 
 export interface OrderHistoryListProps {
   getOrderHref?: (orderId: string) => string;
@@ -18,7 +20,7 @@ export interface OrderHistoryListProps {
 
 export function OrderHistoryList({
   getOrderHref = (id) => `/orders/${id}`,
-  formatPrice = (n) => `$${n.toFixed(2)}`,
+  formatPrice: formatPriceProp,
   max = 50,
   emptyMessage,
   className,
@@ -27,8 +29,13 @@ export function OrderHistoryList({
   const { db } = useCaspianFirebase();
   const Link = useCaspianLink();
   const t = useT();
+  const locale = useLocale();
+  const { settings } = useScriptSettings();
+  const currencyFormat = useFormatCurrency(settings.defaultCurrency);
+  const formatPrice = formatPriceProp ?? ((n: number) => currencyFormat.format(n));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -38,9 +45,13 @@ export function OrderHistoryList({
     let alive = true;
     (async () => {
       setLoading(true);
+      setFailed(false);
       try {
         const data = await getOrdersByUser(db, user.uid, max);
         if (alive) setOrders(data);
+      } catch (err) {
+        console.error('[caspian-store] Failed to load order history:', err);
+        if (alive) setFailed(true);
       } finally {
         if (alive) setLoading(false);
       }
@@ -64,6 +75,14 @@ export function OrderHistoryList({
     return <p className={className} style={{ color: '#888' }}>{t('orderHistory.signInHint')}</p>;
   }
 
+  if (failed) {
+    return (
+      <p className={className} role="alert" style={{ color: '#b91c1c' }}>
+        {t('orderHistory.loadFailed')}
+      </p>
+    );
+  }
+
   if (orders.length === 0) {
     return <p className={className} style={{ color: '#888' }}>{emptyMessage ?? t('orderHistory.empty')}</p>;
   }
@@ -75,13 +94,15 @@ export function OrderHistoryList({
         const count = order.items.reduce((n, i) => n + i.quantity, 0);
         return (
           <li key={order.id}>
-            <Link href={getOrderHref(order.id)}>
+            <Link href={getOrderHref(order.id)} style={{ display: 'block', color: 'inherit' }}>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
-                  padding: 12,
+                  minHeight: 56,
+                  boxSizing: 'border-box',
+                  padding: '10px 12px',
                   border: '1px solid #eee',
                   borderRadius: 'var(--caspian-radius, 6px)',
                 }}
@@ -91,11 +112,16 @@ export function OrderHistoryList({
                     {t('orderHistory.orderPrefix')}{order.id.slice(0, 10)}
                   </p>
                   <p style={{ margin: '2px 0 0', fontSize: 12, color: '#888' }}>
-                    {placed?.toLocaleDateString()} · {t('orderHistory.itemsCount', { count })}
+                    {placed?.toLocaleDateString(locale)} · {t('orderHistory.itemsCount', { count })}
                   </p>
                 </div>
-                <Badge variant="secondary">{order.status}</Badge>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{formatPrice(order.total)}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
+                    {formatPrice(order.total)}
+                  </span>
+                  <Badge variant="secondary">{order.status}</Badge>
+                </div>
+                <ChevronRightIcon size={18} style={{ color: '#999', flexShrink: 0 }} />
               </div>
             </Link>
           </li>
