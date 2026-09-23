@@ -44,6 +44,7 @@ import {
 import { useT } from '../i18n/locale-context';
 import { Badge } from '../ui/misc';
 import { cn } from '../utils/cn';
+import { AdminSetupBanner } from './admin-setup-banner';
 import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { CASPIAN_STORE_VERSION } from '../version';
 import { AdminNotificationsBell } from './admin-notifications-bell';
@@ -634,7 +635,10 @@ export function AdminShell({
           </div>
         </header>
 
-        <main className="caspian-admin-main" style={{ flex: 1, minWidth: 0, padding: 24 }}>{children}</main>
+        <main className="caspian-admin-main" style={{ flex: 1, minWidth: 0, padding: 24 }}>
+          <AdminSetupBanner />
+          {children}
+        </main>
       </div>
     </div>
   );

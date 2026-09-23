@@ -251,6 +251,45 @@ Same as Vite, but read env vars with `process.env.REACT_APP_*`.
 
 ---
 
+## 3.5. Server mode — no Firebase CLI, no Cloud Functions (v15.3.0+, recommended)
+
+Steps 4 and 5 below need the Firebase CLI and deploy rights on the project. A store owner who has neither can run everything from the website's own server instead:
+
+1. Add one route, `src/app/api/caspian-store/[...path]/route.ts` (the scaffolder writes it):
+
+   ```ts
+   import Stripe from 'stripe';                       // only for card payments: npm install stripe
+   import { caspianHandleApi } from '@caspian-explorer/script-caspian-store/server';
+
+   export const runtime = 'nodejs';
+   export const dynamic = 'force-dynamic';
+   export const maxDuration = 300;
+
+   const handle = (req: Request) => caspianHandleApi(req, { stripe: Stripe });
+   export const GET = handle;
+   export const POST = handle;
+   ```
+
+2. Pass `serverApi="/api/caspian-store"` to `<CaspianStoreProvider>`.
+
+3. Open `/admin`. On a brand-new store the first signed-in account presses **Claim admin**. That installs the security rules and indexes and makes the account admin, in one step. After a library update, a banner at the top of the admin offers **Install now** whenever the project's rules or indexes are older than the installed version.
+
+What runs where:
+
+| Needs | Server mode | Classic |
+| --- | --- | --- |
+| Firestore + Storage rules, composite indexes | Admin banner, one click | `firebase deploy` (step 4) |
+| Checkout, order lookup, admin roles, guest-order linking | `/api/caspian-store/call/*` | Cloud Functions (step 5) |
+| Stripe webhook | `https://<site>/api/caspian-store/stripe/webhook` | Cloud Function URL |
+| `/admin/about` Update button | `/api/caspian-store/update` | same |
+| Emails, scheduled publishing, retention cleanup, verified-purchase badges | still Cloud Functions (optional) | Cloud Functions |
+
+**Credentials.** On Firebase App Hosting (and Cloud Run) the server uses the backend's own service account; there is nothing to paste. On Vercel or a VPS, set `FIREBASE_SERVICE_ACCOUNT` to a service-account JSON key. To install rules and indexes, that account needs **Firebase Rules Admin** and **Cloud Datastore Index Admin**. If it lacks them, the admin banner names the account and links to the IAM page to grant them.
+
+**Secrets.** Card payments read `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` from the host environment. On App Hosting, run `firebase apphosting:secrets:set STRIPE_SECRET_KEY` (repeat for `STRIPE_WEBHOOK_SECRET`) and map both in `apphosting.yaml`.
+
+The same code runs in both modes: the server entry bundles the Cloud Functions sources with a small shim for the Functions runtime. A store can switch modes, or run both, without anything drifting.
+
 ## 4. Deploy Firestore rules + indexes + Storage rules
 
 The package ships deployable files under `firebase/`.

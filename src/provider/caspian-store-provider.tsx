@@ -27,6 +27,7 @@ import { DEFAULT_SCRIPT_SETTINGS, type ScriptSettings } from '../types';
 import { ErrorBoundary } from '../components/error-boundary';
 import { logError } from '../services/error-log-service';
 import { getLocalePrefix, stripLocalePrefix, withLocalePrefix } from '../utils/strip-locale-prefix';
+import { registerCaspianServerApi } from '../services/caspian-callable';
 
 export interface CaspianStoreProviderProps {
   /**
@@ -75,6 +76,15 @@ export interface CaspianStoreProviderProps {
    * `useRouter`), or links get prefixed twice. Added in v15.3.0.
    */
   localeInUrl?: boolean;
+  /**
+   * URL of the host's server API (`caspianHandleApi` from the `./server`
+   * entry), usually `/api/caspian-store`. When set, the Cloud Functions
+   * callables (checkout, admin roles, guest-order lookup, …) run there
+   * instead, and the admin can install the store's security rules and
+   * indexes with one button — nothing to deploy with the Firebase CLI.
+   * Added in v15.3.0.
+   */
+  serverApi?: string;
   /** Optional Firebase app name when mounting more than one store per page. */
   appName?: string;
   /** Locale code (BCP-47). Default: `en`. Does not change the messages dict on its own — pair with `messages` or `messagesByLocale`. */
@@ -96,6 +106,8 @@ export interface CaspianStoreContextValue {
   collections: CaspianCollections | null;
   adapters: FrameworkAdapters;
   standalone: boolean;
+  /** `serverApi` prop, or null when the store runs on Cloud Functions. */
+  serverApi: string | null;
 }
 
 const CaspianStoreContext = createContext<CaspianStoreContextValue | null>(null);
@@ -141,6 +153,7 @@ export function CaspianStoreProvider({
   functionsRegion,
   adapters,
   localeInUrl = false,
+  serverApi,
   appName,
   locale,
   messages,
@@ -155,7 +168,7 @@ export function CaspianStoreProvider({
     };
     const resolvedAdapters = localeInUrl ? withLocaleInUrl(baseAdapters) : baseAdapters;
     if (standalone) {
-      return { firebase: null, collections: null, adapters: resolvedAdapters, standalone: true };
+      return { firebase: null, collections: null, adapters: resolvedAdapters, standalone: true, serverApi: null };
     }
     const resolvedConfig = resolveFirebaseConfig(firebaseConfig ?? {});
     const firebase = initCaspianFirebase({
@@ -164,7 +177,8 @@ export function CaspianStoreProvider({
       name: appName,
     });
     const collections = caspianCollections(firebase.db);
-    return { firebase, collections, adapters: resolvedAdapters, standalone: false };
+    registerCaspianServerApi(firebase.app.name, serverApi);
+    return { firebase, collections, adapters: resolvedAdapters, standalone: false, serverApi: serverApi ?? null };
     // Intentionally stable per mount; consumers should not swap these at runtime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -366,6 +380,11 @@ function withLocaleInUrl(base: FrameworkAdapters): FrameworkAdapters {
     };
   }
   return { ...base, Link: LocaleLink, useNavigation: useLocaleNavigation };
+}
+
+/** The host's server API URL (`serverApi` prop), or null. */
+export function useCaspianServerApi(): string | null {
+  return useCaspianStore().serverApi;
 }
 
 /** Convenience hooks for framework adapters. */

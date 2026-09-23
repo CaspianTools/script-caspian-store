@@ -1,9 +1,10 @@
 'use client';
 
+import { caspianCallable } from '../services/caspian-callable';
 import { useState, type ReactNode } from 'react';
-import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../context/auth-context';
-import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
+import { useCaspianFirebase, useCaspianLink, useCaspianServerApi } from '../provider/caspian-store-provider';
+import { callCaspianServer } from '../services/caspian-callable';
 import { useT } from '../i18n/locale-context';
 import { Skeleton } from '../ui/misc';
 
@@ -61,6 +62,7 @@ type ClaimState =
 
 function AccessDenied({ uid }: { uid: string }) {
   const { auth, functions } = useCaspianFirebase();
+  const serverApi = useCaspianServerApi();
   const { refreshProfile } = useAuth();
   const t = useT();
   const [copied, setCopied] = useState(false);
@@ -77,7 +79,19 @@ function AccessDenied({ uid }: { uid: string }) {
   const claimAdmin = async () => {
     setClaim({ status: 'claiming' });
     try {
-      await httpsCallable(functions, 'claimAdmin')({});
+      if (serverApi) {
+        // On a server-API store this also installs the security rules, which
+        // a brand-new project doesn't have yet — without them the new admin
+        // could not even read their own profile. Refused once an admin exists.
+        const result = await callCaspianServer<{ promotedToAdmin?: boolean; error?: string; permissionMissing?: unknown }>(
+          functions,
+          'setup/install',
+        );
+        if (result.permissionMissing) throw new Error(t('admin.setup.permissionTitle'));
+        if (!result.promotedToAdmin) throw new Error(result.error ?? t('admin.guard.claimFailed'));
+      } else {
+        await caspianCallable(functions, 'claimAdmin')({});
+      }
       // v8.5.0: claimAdmin now also sets a Firebase Auth custom claim
       // (role='admin') used by storage.rules + firestore.rules. The claim
       // only appears on the ID token after a refresh — without forcing

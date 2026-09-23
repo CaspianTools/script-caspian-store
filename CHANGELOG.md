@@ -54,6 +54,27 @@ that the library lacked, carried into the library so every store gets them.
   navigation. The Stripe success and cancel URLs that `CaspianRoot` infers now
   keep it too. New helpers `getLocalePrefix` and `withLocalePrefix`.
 - Order statuses are translated on the shopper pages (`order.status.*`).
+- **Server mode — no Firebase CLI, no Cloud Functions.**
+  - New `caspianHandleApi` (`./server` entry) for one route,
+    `app/api/caspian-store/[...path]/route.ts`, plus a new
+    `<CaspianStoreProvider serverApi>` prop.
+  - With both in place, the checkout, admin-role, guest-order and Stripe
+    webhook calls run on the host's server.
+  - The admin installs the Firestore rules, Storage rules and indexes from a
+    banner (`<AdminSetupBanner>`). On a fresh store, **Claim admin** installs
+    them and promotes the first account.
+  - Uses the host's own Google credentials: automatic on App Hosting,
+    `FIREBASE_SERVICE_ACCOUNT` elsewhere.
+  - The Cloud Functions sources are bundled into this entry behind a
+    `firebase-functions` shim, so both modes share one implementation.
+  - New exports: `caspianCallable`, `callCaspianServer`,
+    `CaspianCallableError`, `useCaspianServerApi`, `AdminSetupBanner`;
+    server-side `caspianHandleApi`, `getFirebaseSetupStatus`,
+    `installFirebaseSetup`. See INSTALL.md §3.5.
+- **The About page and the Update button see tagged versions.** They used to
+  read only GitHub Releases, so a version that was tagged but never released
+  (v13–v15) was invisible and the page reported v12 as the latest. They now
+  merge in `vX.Y.Z` tags as well.
 - **One-click updates cover Firebase too:**
   - A new GitHub Actions workflow template,
     `scaffold/caspian-firebase-deploy.yml`, which the scaffolder writes to

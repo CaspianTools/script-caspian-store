@@ -5,6 +5,7 @@ export {
   useCaspianLink,
   useCaspianImage,
   useCaspianNavigation,
+  useCaspianServerApi,
   useCaspianCollections,
   useCaspianCollectionsOptional,
   useCaspianFirebase,
@@ -825,6 +826,7 @@ export { tryLinkGuestOrders } from './services/guest-order-link-service';
 // --- Admin surface ---
 export {
   AdminGuard,
+  AdminSetupBanner,
   AdminShell,
   AdminSettingsShell,
   AdminTaxonomiesShell,
@@ -1136,3 +1138,8 @@ export {
   type UseAdminNotificationsOptions,
   type UseAdminNotificationsResult,
 } from './hooks/use-admin-notifications';
+export {
+  caspianCallable,
+  callCaspianServer,
+  CaspianCallableError,
+} from './services/caspian-callable';

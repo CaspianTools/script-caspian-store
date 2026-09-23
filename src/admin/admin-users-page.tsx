@@ -1,7 +1,7 @@
 'use client';
 
+import { caspianCallable } from '../services/caspian-callable';
 import { useEffect, useMemo, useState } from 'react';
-import { httpsCallable } from 'firebase/functions';
 import { USER_ROLES, type UserProfile, type UserRole } from '../types';
 import { listUsers } from '../services/user-service';
 import { reportServiceError } from '../services/error-log-service';
@@ -72,7 +72,7 @@ export function AdminUsersPage({ className }: AdminUsersPageProps) {
     try {
       // `setUserRole` supersedes the two-role promoteUserToAdmin /
       // demoteAdminToCustomer callables, which stay deployed for back-compat.
-      await httpsCallable(functions, 'setUserRole')({ uid: target.uid, role: nextRole });
+      await caspianCallable(functions, 'setUserRole')({ uid: target.uid, role: nextRole });
       // Optimistic local update — avoid a refetch round-trip.
       setUsers((prev) =>
         prev ? prev.map((u) => (u.uid === target.uid ? { ...u, role: nextRole } : u)) : prev,

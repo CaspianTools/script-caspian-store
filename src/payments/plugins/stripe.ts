@@ -1,5 +1,5 @@
+import { caspianCallable } from '../../services/caspian-callable';
 import { getIdToken } from 'firebase/auth';
-import { httpsCallable } from 'firebase/functions';
 import type {
   PaymentPlugin,
   PaymentPluginCheckoutCtx,
@@ -81,7 +81,7 @@ async function startCheckout(
     }
     data = (await response.json()) as StripeCallableResponse;
   } else {
-    const callable = httpsCallable<StripeCallablePayload, StripeCallableResponse>(
+    const callable = caspianCallable<StripeCallablePayload, StripeCallableResponse>(
       ctx.functions,
       'createStripeCheckoutSession',
     );

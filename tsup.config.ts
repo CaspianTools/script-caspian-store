@@ -127,8 +127,24 @@ export default defineConfig({
     'firebase-admin',
     'firebase-admin/app',
     'firebase-admin/auth',
+    'firebase-admin/firestore',
+    'firebase-admin/security-rules',
     'node:child_process',
   ],
+  // The ./server entry bundles the Cloud Functions sources (firebase/functions-*)
+  // so the host's Next.js route can run them; these shims stand in for the
+  // Cloud Functions runtime there. See src/server/api.ts.
+  esbuildOptions(options) {
+    options.alias = {
+      ...(options.alias ?? {}),
+      'firebase-functions/v2/https': './src/server/functions-shim/https.ts',
+      'firebase-functions/v2/firestore': './src/server/functions-shim/triggers.ts',
+      'firebase-functions/v2/scheduler': './src/server/functions-shim/triggers.ts',
+      'firebase-functions/params': './src/server/functions-shim/params.ts',
+      'firebase-functions': './src/server/functions-shim/logger.ts',
+      stripe: './src/server/functions-shim/stripe.ts',
+    };
+  },
   // Prepend a raw `'use client';` to the main-entry bundles only. esbuild's
   // `banner` strips module-level directives during bundling ("Module level
   // directives cause errors when bundled"), so we patch post-write.

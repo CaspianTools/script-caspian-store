@@ -14,3 +14,15 @@ export {
   caspianHandleSelfUpdate,
   type CaspianHandleSelfUpdateOptions,
 } from './self-update';
+export {
+  caspianHandleApi,
+  CASPIAN_SERVER_CALLABLES,
+  type CaspianHandleApiOptions,
+} from './api';
+export {
+  getFirebaseSetupStatus,
+  installFirebaseSetup,
+  type FirebaseSetupStatus,
+  type FirebaseSetupResult,
+  type RulesState,
+} from './firebase-setup';

@@ -11,6 +11,7 @@ export const DEFAULT_REPO_OWNER = 'CaspianTools';
 export const DEFAULT_REPO_NAME = 'script-caspian-store';
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
+const SEMVER_TAG = /^v\d+\.\d+\.\d+$/;
 const cache = new Map<string, { at: number; data: GithubRelease[] }>();
 
 interface RawRelease {
@@ -55,15 +56,22 @@ export async function fetchRecentReleases(
   if (!options.force && hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return hit.data;
   }
+  const headers = { Accept: 'application/vnd.github+json' };
+  const get = (path: string) =>
+    fetch(`https://api.github.com/repos/${owner}/${repo}/${path}`, { headers, signal: options.signal });
   let res: Response;
+  let tagsRes: Response | null;
   try {
-    res = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/releases?per_page=${limit}`,
-      {
-        headers: { Accept: 'application/vnd.github+json' },
-        signal: options.signal,
-      },
-    );
+    [res, tagsRes] = await Promise.all([
+      get('releases?per_page=30'),
+      // Tags too: a version that was tagged but never published as a GitHub
+      // Release would otherwise be invisible here, and the Update button could
+      // not offer it. A failed tags request only loses that fallback.
+      get('tags?per_page=50').catch((err: unknown) => {
+        if (err instanceof Error && err.name === 'AbortError') throw err;
+        return null;
+      }),
+    ]);
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') throw err;
     if (err instanceof TypeError) throw new Error('Network error');
@@ -72,10 +80,26 @@ export async function fetchRecentReleases(
   if (!res.ok) {
     throw new Error(describeHttpError(res.status, res.statusText));
   }
-  const json = (await res.json()) as RawRelease[];
-  const data = json
+  const released = ((await res.json()) as RawRelease[])
     .filter((r) => !r.draft && !r.prerelease)
-    .map(toRelease)
+    .map(toRelease);
+  const tags =
+    tagsRes && tagsRes.ok ? ((await tagsRes.json().catch(() => [])) as Array<{ name?: string }>) : [];
+  const seen = new Set(released.map((r) => r.tagName));
+  const tagOnly: GithubRelease[] = tags
+    .map((t) => t.name ?? '')
+    .filter((name) => SEMVER_TAG.test(name) && !seen.has(name))
+    .map((tagName) => ({
+      tagName,
+      version: tagName.replace(/^v/, ''),
+      name: tagName,
+      body: '',
+      htmlUrl: `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(tagName)}`,
+      publishedAt: '',
+    }));
+  // Library versions only (tags like `desktop/v1.0.1` belong to other products), newest first.
+  const data = [...released.filter((r) => SEMVER_TAG.test(r.tagName)), ...tagOnly]
+    .sort((a, b) => compareVersions(b.version, a.version))
     .slice(0, limit);
   cache.set(key, { at: Date.now(), data });
   return data;

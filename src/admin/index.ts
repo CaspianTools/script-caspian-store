@@ -1,4 +1,5 @@
 export { AdminGuard, type AdminGuardProps } from './admin-guard';
+export { AdminSetupBanner } from './admin-setup-banner';
 export {
   AdminShell,
   DEFAULT_ADMIN_NAV,

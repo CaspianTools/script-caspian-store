@@ -1,5 +1,6 @@
 'use client';
 
+import { caspianCallable } from '../../../services/caspian-callable';
 import { useState, type CSSProperties } from 'react';
 import {
   GoogleAuthProvider,
@@ -7,7 +8,6 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from 'firebase/auth';
-import { httpsCallable } from 'firebase/functions';
 import { Timestamp, doc, setDoc } from 'firebase/firestore';
 import { useT } from '../../../i18n';
 import { useCaspianFirebase } from '../../../provider/caspian-store-provider';
@@ -51,7 +51,7 @@ export function SuperAdminStep({ draft, onChange }: SuperAdminStepProps) {
   };
 
   const claimAdminCallable = async () => {
-    const result = await httpsCallable<unknown, { ok: boolean }>(
+    const result = await caspianCallable<unknown, { ok: boolean }>(
       functions,
       'claimAdmin',
     )({});

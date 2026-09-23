@@ -1,4 +1,5 @@
-import { httpsCallable, type Functions } from 'firebase/functions';
+import { caspianCallable } from './caspian-callable';
+import type { Functions } from 'firebase/functions';
 import type { Auth } from 'firebase/auth';
 
 interface LinkGuestOrdersResult {
@@ -26,7 +27,7 @@ export async function tryLinkGuestOrders({
   const user = auth.currentUser;
   if (!user || user.isAnonymous || !user.emailVerified) return 0;
   try {
-    const callable = httpsCallable<unknown, LinkGuestOrdersResult>(functions, 'linkMyGuestOrders');
+    const callable = caspianCallable<unknown, LinkGuestOrdersResult>(functions, 'linkMyGuestOrders');
     const result = await callable({});
     return result.data?.linked ?? 0;
   } catch {

@@ -1,7 +1,7 @@
 'use client';
 
+import { caspianCallable } from '../services/caspian-callable';
 import { useEffect, useMemo, useState } from 'react';
-import { httpsCallable } from 'firebase/functions';
 import {
   USER_ROLES,
   type ContactSubmission,
@@ -153,7 +153,7 @@ export function AdminUserDetail({
     try {
       // `setUserRole` supersedes promoteUserToAdmin / demoteAdminToCustomer,
       // which only knew two roles and cannot express staff.
-      await httpsCallable(functions, 'setUserRole')({ uid: profile.uid, role: nextRole });
+      await caspianCallable(functions, 'setUserRole')({ uid: profile.uid, role: nextRole });
       setRole(nextRole);
       toast({ title: t('admin.users.action.roleChanged') });
     } catch (error) {

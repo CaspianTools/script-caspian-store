@@ -1,3 +1,4 @@
+import { caspianCallable } from './caspian-callable';
 import {
   deleteObject,
   getDownloadURL,
@@ -7,7 +8,7 @@ import {
 } from 'firebase/storage';
 import { doc, getDoc, updateDoc, Timestamp, type Firestore } from 'firebase/firestore';
 import { updateProfile, type Auth } from 'firebase/auth';
-import { httpsCallable, type Functions } from 'firebase/functions';
+import type { Functions } from 'firebase/functions';
 
 const PROFILE_PHOTO_PATH = (uid: string, ext: string) => `users/${uid}/avatar.${ext}`;
 const LEGACY_PROFILE_PHOTO_PATHS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -154,7 +155,7 @@ export async function tryEnsureAdminClaim({
 }): Promise<boolean> {
   if (!auth.currentUser) return false;
   try {
-    const callable = httpsCallable<unknown, EnsureAdminClaimResult>(
+    const callable = caspianCallable<unknown, EnsureAdminClaimResult>(
       functions,
       'ensureAdminClaim',
     );

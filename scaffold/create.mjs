@@ -204,6 +204,9 @@ const ourDeps = {
   // <=6.8.0, uuid <14) flagged critical/high by `npm audit`. 13.8.0 pulls
   // patched versions of all four.
   'firebase-admin': '^13.8.0',
+  // Card payments through the server API (/api/caspian-store). Imported by
+  // the scaffolded route so the host bundles it.
+  stripe: '^17.4.0',
 };
 const ourDevDeps = {};
 
@@ -491,6 +494,7 @@ export function Providers({ children }: { children: ReactNode }) {
         Image: CaspianNextImage,
         useNavigation: useCaspianNextNavigation,
       }}
+      serverApi="/api/caspian-store"
     >
       {children}
     </CaspianStoreProvider>
@@ -869,15 +873,20 @@ export async function POST(request: Request) {
 // `npm install` instead of asking consumers to re-scaffold or hand-edit.
 // Everything below is just the Next.js bindings (runtime + dynamic +
 // maxDuration + the POST export).
-write('src/app/api/caspian-store/update/route.ts', `import { caspianHandleSelfUpdate } from '@caspian-explorer/script-caspian-store/server';
+write('src/app/api/caspian-store/[...path]/route.ts', `import Stripe from 'stripe';
+import { caspianHandleApi } from '@caspian-explorer/script-caspian-store/server';
 
+// Server API for the store (v15.3.0+): installs security rules + indexes from
+// the admin, runs checkout / admin-role / guest-order calls and the Stripe
+// webhook (/api/caspian-store/stripe/webhook), and the /admin/about Update
+// button. Runs on this host's own Google credentials — no Cloud Functions.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-export async function POST(req: Request) {
-  return caspianHandleSelfUpdate(req);
-}
+const handle = (req: Request) => caspianHandleApi(req, { stripe: Stripe });
+export const GET = handle;
+export const POST = handle;
 `);
 
 // ---- One-click updates: redeploy Firebase on every package bump ----
