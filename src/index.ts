@@ -1067,6 +1067,15 @@ export { redactError, redactString } from './utils/redact-error';
 export type { ErrorLog, ErrorLogSource } from './types';
 
 // --- Utilities ---
+export {
+  validateProductDraft,
+  isValidImageUrl,
+  PRODUCT_NAME_MIN_LENGTH,
+  PRODUCT_DESCRIPTION_MIN_LENGTH,
+  type ProductDraft,
+  type ProductDraftErrors,
+  type ProductValidationOptions,
+} from './admin/product-validation';
 export { cn } from './utils/cn';
 export { slugify } from './utils/slugify';
 export {

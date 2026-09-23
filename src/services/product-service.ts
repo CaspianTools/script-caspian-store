@@ -220,6 +220,7 @@ type ClearableProductKey =
   | 'details'
   | 'weightKg'
   | 'color'
+  | 'colorVariants'
   | 'taxonomies'
   | 'stock';
 

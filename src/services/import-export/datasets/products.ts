@@ -1,4 +1,4 @@
-import type { Product, ProductImage } from '../../../types';
+import type { ColorVariant, Product, ProductImage } from '../../../types';
 import {
   createProduct,
   listAllProducts,
@@ -77,6 +77,11 @@ const columns: ColumnMeta[] = [
   { header: 'isNew', sample: 'false' },
   { header: 'limited', sample: 'false' },
   { header: 'images', sample: 'https://example.com/jacket.jpg', help: 'Public image URLs, separated by ; (stored as-is).' },
+  {
+    header: 'colorVariants',
+    sample: 'Black|https://example.com/jacket-black.jpg;Brown|https://example.com/jacket-brown.jpg',
+    help: 'Colour swatches as name|imageUrl pairs, separated by ;',
+  },
   ...TAXONOMY_COLUMN_IDS.map(
     (id): ColumnMeta => ({
       header: id,
@@ -85,6 +90,28 @@ const columns: ColumnMeta[] = [
     }),
   ),
 ];
+
+/** `name|url;name|url` — the colour-variant cell format. */
+function joinColorVariants(variants: readonly ColorVariant[] | undefined): string {
+  return (variants ?? []).map((v) => `${v.name}|${v.imageUrl}`).join(';');
+}
+
+/**
+ * Inverse of {@link joinColorVariants}. Always splits on `;` (not
+ * `parseList`'s comma fallback — a lone image URL may contain commas) and on
+ * the first `|` of each pair. Pairs missing a name or URL are dropped.
+ */
+function parseColorVariants(raw: string | undefined): ColorVariant[] {
+  const out: ColorVariant[] = [];
+  for (const pair of (raw ?? '').split(';')) {
+    const bar = pair.indexOf('|');
+    if (bar === -1) continue;
+    const name = pair.slice(0, bar).trim();
+    const imageUrl = pair.slice(bar + 1).trim();
+    if (name && imageUrl) out.push({ name, imageUrl });
+  }
+  return out;
+}
 
 function buildPayload(rec: Record<string, string>): { payload: ProductPayload } | { error: string } {
   const name = (rec.name ?? '').trim();
@@ -102,6 +129,7 @@ function buildPayload(rec: Record<string, string>): { payload: ProductPayload } 
     alt: name,
     hint: '',
   }));
+  const colorVariants = parseColorVariants(rec.colorVariants);
 
   const base: ProductWriteInput = {
     name,
@@ -122,6 +150,7 @@ function buildPayload(rec: Record<string, string>): { payload: ProductPayload } 
     ...(rec.color?.trim() ? { color: rec.color.trim() } : {}),
     ...(weightKg !== null ? { weightKg } : {}),
     ...(Object.keys(stock).length ? { stock } : {}),
+    ...(colorVariants.length ? { colorVariants } : {}),
   };
 
   const taxonomyRefs: Record<string, string[]> = {};
@@ -183,6 +212,7 @@ export const PRODUCTS_DATASET: DatasetDescriptor = {
       p.isNew ?? false,
       p.limited ?? false,
       joinList(p.images.map((i) => i.url)),
+      joinColorVariants(p.colorVariants),
       ...TAXONOMY_COLUMN_IDS.map((id) => {
         const names = termNameByType.get(id)!;
         return joinList((p.taxonomies?.[id] ?? []).map((tid) => names.get(tid) ?? tid));
