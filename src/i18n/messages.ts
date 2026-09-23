@@ -1612,10 +1612,9 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.setup.recheck': 'Check again',
   'admin.setup.permissionTitle': 'The website server is not allowed to change the Firebase setup yet',
   'admin.setup.permissionBody':
-    'In Google Cloud → IAM, give the account {account} these two roles, then press Check again:',
+    'In Google Cloud → IAM, give the account {account} this role, then press Check again:',
   'admin.setup.permissionAccountUnknown': 'your website server uses',
-  'admin.setup.roleRules': 'Firebase Rules Admin',
-  'admin.setup.roleIndexes': 'Cloud Datastore Index Admin',
+  'admin.setup.roleFirebaseAdmin': 'Firebase Admin',
   'admin.setup.openIam': 'Open IAM',
   'admin.setup.errorTitle': 'Could not check the store setup',
   'order.status.pending': 'Pending',

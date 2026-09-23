@@ -22,7 +22,8 @@
 import type { CallableRequest, ShimCallable, ShimOnRequest, ShimResponse } from './functions-shim/https';
 import { HttpsError } from './functions-shim/https';
 import { getCaspianAdminApp } from './admin-app';
-import { getFirebaseSetupStatus, installFirebaseSetup } from './firebase-setup';
+import { getFirebaseSetupStatus, installFirebaseSetup, isPermissionError, permissionHint } from './firebase-setup';
+import { resolveProjectId } from './admin-app';
 import { caspianHandleSelfUpdate } from './self-update';
 import { registerStripe } from './functions-shim/stripe';
 
@@ -97,7 +98,10 @@ async function verifyCaller(req: Request): Promise<DecodedToken | null> {
     // checkRevoked: a demoted admin's refresh tokens are revoked, and this
     // makes their still-unexpired ID token stop working here too.
     return (await getAuth().verifyIdToken(idToken, true)) as DecodedToken;
-  } catch {
+  } catch (err) {
+    // checkRevoked looks the user up with the server's account; a missing IAM
+    // role must surface as a permission problem, not as "signed out".
+    if (isPermissionError(err)) throw err;
     throw new HttpsError('unauthenticated', 'Your sign-in has expired. Reload the page and try again.');
   }
 }
@@ -278,6 +282,13 @@ export async function caspianHandleApi(req: Request, options: CaspianHandleApiOp
     }
     return json({ error: { code: 'not-found', message: `No handler for ${req.method} ${path || '/'}` } }, 404);
   } catch (err) {
+    // The admin check itself reads Firestore/Auth with the server's account;
+    // if that account lacks access, say which role fixes it rather than
+    // failing with a bare "Internal error".
+    const projectId = resolveProjectId();
+    if (path.startsWith('setup/') && projectId && !(err instanceof HttpsError) && isPermissionError(err)) {
+      return json({ ready: false, permissionMissing: await permissionHint(projectId) });
+    }
     return errorResponse(err);
   }
 }

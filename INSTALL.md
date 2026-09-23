@@ -284,7 +284,7 @@ What runs where:
 | `/admin/about` Update button | `/api/caspian-store/update` | same |
 | Emails, scheduled publishing, retention cleanup, verified-purchase badges | still Cloud Functions (optional) | Cloud Functions |
 
-**Credentials.** On Firebase App Hosting (and Cloud Run) the server uses the backend's own service account; there is nothing to paste. On Vercel or a VPS, set `FIREBASE_SERVICE_ACCOUNT` to a service-account JSON key. To install rules and indexes, that account needs **Firebase Rules Admin** and **Cloud Datastore Index Admin**. If it lacks them, the admin banner names the account and links to the IAM page to grant them.
+**Credentials.** On Firebase App Hosting (and Cloud Run) the server uses the backend's own service account; there is nothing to paste. On Vercel or a VPS, set `FIREBASE_SERVICE_ACCOUNT` to a service-account JSON key. That account needs the **Firebase Admin** role (`roles/firebase.admin`), which covers the rules, indexes, Firestore and Auth access the server uses. If it lacks the role, the admin banner names the account and links to the IAM page to grant it.
 
 **Secrets.** Card payments read `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` from the host environment. On App Hosting, run `firebase apphosting:secrets:set STRIPE_SECRET_KEY` (repeat for `STRIPE_WEBHOOK_SECRET`) and map both in `apphosting.yaml`.
 

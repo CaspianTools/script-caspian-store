@@ -141,8 +141,7 @@ export function AdminSetupBanner() {
               })}
             </div>
             <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-              <li>{t('admin.setup.roleRules')}</li>
-              <li>{t('admin.setup.roleIndexes')}</li>
+              <li>{t('admin.setup.roleFirebaseAdmin')}</li>
             </ul>
           </>
         )}

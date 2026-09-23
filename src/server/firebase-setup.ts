@@ -4,10 +4,11 @@
  * Firebase CLI, no `firebase deploy`. Used by the admin "Install / repair"
  * banner and the first-run setup.
  *
- * Needs the server's credentials (see admin-app.ts) to hold, in Google Cloud
- * IAM: Firebase Rules Admin (`roles/firebaserules.admin`) and Cloud Datastore
- * Index Admin (`roles/datastore.indexAdmin`). When they don't, every call
- * reports `permissionMissing` with the console link that grants them.
+ * Needs the server's credentials (see admin-app.ts) to hold the Firebase
+ * Admin role (`roles/firebase.admin`) in Google Cloud IAM: it covers the
+ * rules, indexes, Firestore reads and Auth lookups the server API makes.
+ * When it is missing, every call reports `permissionMissing` with the
+ * console link that grants it.
  */
 
 import { CASPIAN_FIRESTORE_RULES, CASPIAN_STORAGE_RULES } from '../firebase/rules.generated';
@@ -37,11 +38,11 @@ export interface FirebaseSetupStatus {
   error?: string;
 }
 
-const REQUIRED_ROLES = ['roles/firebaserules.admin', 'roles/datastore.indexAdmin'];
+const REQUIRED_ROLES = ['roles/firebase.admin'];
 
 const normalize = (s: string) => s.replace(/\r\n/g, '\n').trim();
 
-function isPermissionError(err: unknown): boolean {
+export function isPermissionError(err: unknown): boolean {
   const e = err as { code?: string | number; status?: number; message?: string };
   const msg = String(e?.message ?? '');
   return (
@@ -74,7 +75,7 @@ async function serviceAccountEmail(): Promise<string | null> {
   }
 }
 
-async function permissionHint(projectId: string): Promise<FirebaseSetupStatus['permissionMissing']> {
+export async function permissionHint(projectId: string): Promise<FirebaseSetupStatus['permissionMissing']> {
   return {
     roles: REQUIRED_ROLES,
     serviceAccount: await serviceAccountEmail(),
