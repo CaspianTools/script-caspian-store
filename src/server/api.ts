@@ -80,9 +80,9 @@ function errorResponse(err: unknown): Response {
   if (err instanceof HttpsError) {
     return json({ error: { code: err.code, message: err.message, details: err.details } }, err.httpStatus);
   }
+  // Like Cloud Functions: details stay in the server log, never in the response.
   console.error('[caspian-store] server API error:', err);
-  const message = err instanceof Error ? err.message : 'Internal error';
-  return json({ error: { code: 'internal', message } }, 500);
+  return json({ error: { code: 'internal', message: 'Internal error' } }, 500);
 }
 
 type DecodedToken = Record<string, any> & { uid: string };
@@ -94,14 +94,16 @@ async function verifyCaller(req: Request): Promise<DecodedToken | null> {
   await getCaspianAdminApp();
   const { getAuth } = await import('firebase-admin/auth');
   try {
-    return (await getAuth().verifyIdToken(idToken)) as DecodedToken;
+    // checkRevoked: a demoted admin's refresh tokens are revoked, and this
+    // makes their still-unexpired ID token stop working here too.
+    return (await getAuth().verifyIdToken(idToken, true)) as DecodedToken;
   } catch {
     throw new HttpsError('unauthenticated', 'Your sign-in has expired. Reload the page and try again.');
   }
 }
 
+/** The profile's role is authoritative; a `role` claim can outlive a demotion by an hour. */
 async function isAdmin(token: DecodedToken): Promise<boolean> {
-  if (token.role === 'admin') return true;
   const { getFirestore } = await import('firebase-admin/firestore');
   const snap = await getFirestore().collection('users').doc(token.uid).get();
   return snap.exists && snap.get('role') === 'admin';
@@ -147,8 +149,27 @@ async function authorizeSetup(req: Request): Promise<{ token: DecodedToken; boot
     throw new HttpsError('permission-denied', 'Sign in with an account first.');
   }
   if (await isAdmin(token)) return { token, bootstrap: false };
-  if (!(await anyAdminExists())) return { token, bootstrap: true };
+  if (!(await anyAdminExists()) && (await claimBootstrapSlot(token.uid))) return { token, bootstrap: true };
   throw new HttpsError('permission-denied', 'Only an admin can change the store setup.');
+}
+
+/**
+ * First-run lock. Installing takes seconds, and promotion only happens at
+ * the end, so without this two sign-ins racing through that window would
+ * both become admin. The first caller creates the doc; only that uid may
+ * bootstrap afterwards (including a retry after a failed install). The
+ * collection has no security rule, so clients can never read or write it.
+ */
+async function claimBootstrapSlot(uid: string): Promise<boolean> {
+  const { getFirestore, FieldValue } = await import('firebase-admin/firestore');
+  const db = getFirestore();
+  const ref = db.collection('caspianServer').doc('bootstrapAdmin');
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists) return snap.get('uid') === uid;
+    tx.create(ref, { uid, claimedAt: FieldValue.serverTimestamp() });
+    return true;
+  });
 }
 
 async function runCallable(name: string, req: Request): Promise<Response> {
@@ -224,6 +245,17 @@ export async function caspianHandleApi(req: Request, options: CaspianHandleApiOp
   const path = subPath(req, options.basePath ?? '/api/caspian-store');
   if (options.stripe) registerStripe(options.stripe);
   try {
+    // Every route needs the Admin app, including callables with no signed-in
+    // caller (guest order lookup), which never reach verifyCaller's init.
+    try {
+      await getCaspianAdminApp();
+    } catch (err) {
+      console.error('[caspian-store] server API cannot start:', err);
+      throw new HttpsError(
+        'failed-precondition',
+        err instanceof Error ? err.message : 'The server has no Firebase credentials.',
+      );
+    }
     if (path === 'setup/status' && req.method === 'GET') {
       const { bootstrap } = await authorizeSetup(req);
       return json({ ...(await getFirebaseSetupStatus()), bootstrap });

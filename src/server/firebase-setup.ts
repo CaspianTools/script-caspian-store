@@ -166,19 +166,24 @@ export async function getFirebaseSetupStatus(): Promise<FirebaseSetupStatus> {
         }
       }, CASPIAN_FIRESTORE_RULES),
       rulesState(async () => {
-        try {
-          return (await rules.getStorageRuleset(bucket)).source[0]?.content ?? '';
-        } catch (err) {
-          if (/not.?found/i.test(String((err as Error)?.message))) return null;
-          throw err;
+        for (const b of [bucket, ...storageBuckets(projectId).filter((x) => x !== bucket)]) {
+          try {
+            return (await rules.getStorageRuleset(b)).source[0]?.content ?? '';
+          } catch (err) {
+            if (!/not.?found/i.test(String((err as Error)?.message))) throw err;
+          }
         }
+        return null;
       }, CASPIAN_STORAGE_RULES),
       listExistingIndexKeys(projectId),
     ]);
     status.firestoreRules = fs;
     status.storageRules = st;
     status.missingIndexes = missingIndexes(existing).length;
-    status.ready = fs === 'current' && st === 'current' && status.missingIndexes === 0;
+    // Storage rules only block "ready" when they are present but stale: a
+    // project without Storage enabled has none to install, and must not show
+    // the banner forever. (A fresh install still publishes them.)
+    status.ready = fs === 'current' && st !== 'outdated' && status.missingIndexes === 0;
   } catch (err) {
     if (isPermissionError(err)) status.permissionMissing = await permissionHint(projectId);
     else status.error = err instanceof Error ? err.message : String(err);
@@ -195,6 +200,30 @@ export interface FirebaseSetupResult {
   indexesBuilding: boolean;
   permissionMissing?: FirebaseSetupStatus['permissionMissing'];
   error?: string;
+  /** Storage rules could not be published (e.g. Storage not enabled); the rest still ran. */
+  storageError?: string;
+}
+
+/** Candidate buckets: the configured one, then both default naming schemes. */
+function storageBuckets(projectId: string): string[] {
+  return [...new Set([resolveStorageBucket(projectId), `${projectId}.firebasestorage.app`, `${projectId}.appspot.com`])];
+}
+
+async function releaseStorageRules(
+  rules: import('firebase-admin/security-rules').SecurityRules,
+  projectId: string,
+): Promise<void> {
+  let lastErr: unknown;
+  for (const bucket of storageBuckets(projectId)) {
+    try {
+      await rules.releaseStorageRulesetFromSource(CASPIAN_STORAGE_RULES, bucket);
+      return;
+    } catch (err) {
+      if (isPermissionError(err)) throw err;
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 /** Publishes the bundled rules and creates any missing composite indexes. */
@@ -217,8 +246,15 @@ export async function installFirebaseSetup(): Promise<FirebaseSetupResult> {
     const rules = getSecurityRules();
     await rules.releaseFirestoreRulesetFromSource(CASPIAN_FIRESTORE_RULES);
     result.firestoreRules = true;
-    await rules.releaseStorageRulesetFromSource(CASPIAN_STORAGE_RULES, resolveStorageBucket(projectId));
-    result.storageRules = true;
+    // Storage is optional (not every project enables it) and its bucket name
+    // varies, so a failure here must not stop the indexes below.
+    try {
+      await releaseStorageRules(rules, projectId);
+      result.storageRules = true;
+    } catch (err) {
+      if (isPermissionError(err)) throw err;
+      result.storageError = err instanceof Error ? err.message : String(err);
+    }
 
     const existing = await listExistingIndexKeys(projectId);
     const toCreate = missingIndexes(existing);
