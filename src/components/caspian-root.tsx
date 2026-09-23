@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useCaspianNavigation, useCaspianStandalone } from '../provider/caspian-store-provider';
-import { stripLocalePrefix } from '../utils/strip-locale-prefix';
+import { getLocalePrefix, stripLocalePrefix } from '../utils/strip-locale-prefix';
 
 import { HomePage } from './home';
 import { ProductDetailPage } from './product-detail-page';
@@ -54,10 +54,11 @@ export interface CaspianRootProps {
   fallback?: (args: { pathname: string }) => ReactNode;
   /**
    * Where the payment provider redirects after a successful checkout.
-   * Default infers `${window.location.origin}/orders/success?session_id={CHECKOUT_SESSION_ID}`.
+   * Default infers `${window.location.origin}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
+   * keeping a leading locale segment (`/fr/orders/success…`) when the page has one.
    */
   checkoutSuccessUrl?: string;
-  /** Where the payment provider redirects on cancel. Default `${origin}/checkout`. */
+  /** Where the payment provider redirects on cancel. Default `${origin}/checkout` (locale segment kept). */
   checkoutCancelUrl?: string;
   /** Where the setup wizard sends the admin after "Open my store". Default `/`. */
   setupFinishHref?: string;
@@ -253,14 +254,20 @@ function toTitle(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
+// The payment provider redirects with a full URL, which no Link adapter ever
+// sees, so the locale segment the shopper is browsing under (`/fr/checkout`)
+// has to be carried over here or they come back in the default language.
+function currentOriginAndLocale(): string {
+  if (typeof window === 'undefined') return '';
+  return `${window.location.origin}${getLocalePrefix(window.location.pathname)}`;
+}
+
 function inferCheckoutSuccessUrl(): string {
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/orders/success?session_id={CHECKOUT_SESSION_ID}`;
+  return `${currentOriginAndLocale()}/orders/success?session_id={CHECKOUT_SESSION_ID}`;
 }
 
 function inferCheckoutCancelUrl(): string {
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/checkout`;
+  return `${currentOriginAndLocale()}/checkout`;
 }
 
 /**

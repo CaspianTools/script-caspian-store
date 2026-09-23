@@ -151,7 +151,7 @@ export {
   type WebManifestInput,
   type WebManifestIcon,
 } from './pwa/build-manifest';
-export { stripLocalePrefix } from './utils/strip-locale-prefix';
+export { stripLocalePrefix, getLocalePrefix, withLocalePrefix } from './utils/strip-locale-prefix';
 
 // Homepage surface (v1.2). `<Hero>` is the dispatcher; the per-variant
 // implementations live under `./components/home/variants/` and are

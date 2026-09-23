@@ -10,6 +10,8 @@ import {
   DefaultCaspianImage,
   useDefaultCaspianNavigation,
   type FrameworkAdapters,
+  type CaspianLinkProps,
+  type CaspianNavigation,
 } from '../primitives';
 import { AuthProvider } from '../context/auth-context';
 import { CartProvider } from '../context/cart-context';
@@ -24,6 +26,7 @@ import type { MessageDict } from '../i18n/messages';
 import { DEFAULT_SCRIPT_SETTINGS, type ScriptSettings } from '../types';
 import { ErrorBoundary } from '../components/error-boundary';
 import { logError } from '../services/error-log-service';
+import { getLocalePrefix, withLocalePrefix } from '../utils/strip-locale-prefix';
 
 export interface CaspianStoreProviderProps {
   /**
@@ -61,6 +64,17 @@ export interface CaspianStoreProviderProps {
    * for Next.js, or `react-router-dom`'s Link + a useNavigate wrapper.
    */
   adapters?: Partial<FrameworkAdapters>;
+  /**
+   * Set when the host app puts the locale in the URL (`/fr/cart`, e.g. a
+   * next-intl `[locale]` segment) and its Link / router adapters do NOT add it
+   * themselves. The library then prefixes every root-relative href it renders
+   * or navigates to with the current page's locale segment, so `/cart` from
+   * `/fr/product/x` goes to `/fr/cart` instead of bouncing through a
+   * middleware redirect that may pick a different language. Leave it off when
+   * the adapters are already locale-aware (next-intl's own `Link` /
+   * `useRouter`), or links get prefixed twice. Added in v15.3.0.
+   */
+  localeInUrl?: boolean;
   /** Optional Firebase app name when mounting more than one store per page. */
   appName?: string;
   /** Locale code (BCP-47). Default: `en`. Does not change the messages dict on its own — pair with `messages` or `messagesByLocale`. */
@@ -126,6 +140,7 @@ export function CaspianStoreProvider({
   scriptSettings,
   functionsRegion,
   adapters,
+  localeInUrl = false,
   appName,
   locale,
   messages,
@@ -133,11 +148,12 @@ export function CaspianStoreProvider({
   children,
 }: CaspianStoreProviderProps) {
   const value = useMemo<CaspianStoreContextValue>(() => {
-    const resolvedAdapters: FrameworkAdapters = {
+    const baseAdapters: FrameworkAdapters = {
       Link: adapters?.Link ?? DefaultCaspianLink,
       Image: adapters?.Image ?? DefaultCaspianImage,
       useNavigation: adapters?.useNavigation ?? useDefaultCaspianNavigation,
     };
+    const resolvedAdapters = localeInUrl ? withLocaleInUrl(baseAdapters) : baseAdapters;
     if (standalone) {
       return { firebase: null, collections: null, adapters: resolvedAdapters, standalone: true };
     }
@@ -323,6 +339,30 @@ export function useCaspianStore(): CaspianStoreContextValue {
     );
   }
   return ctx;
+}
+
+/**
+ * Wraps the Link and navigation adapters so root-relative hrefs carry the
+ * current page's locale segment. Built once per provider mount (the adapters
+ * are stable per mount), so the wrapper component identities never change.
+ */
+function withLocaleInUrl(base: FrameworkAdapters): FrameworkAdapters {
+  const BaseLink = base.Link;
+  const useBaseNavigation = base.useNavigation;
+  function LocaleLink(props: CaspianLinkProps) {
+    const prefix = getLocalePrefix(useBaseNavigation().pathname);
+    return <BaseLink {...props} href={withLocalePrefix(props.href, prefix)} />;
+  }
+  function useLocaleNavigation(): CaspianNavigation {
+    const nav = useBaseNavigation();
+    const prefix = getLocalePrefix(nav.pathname);
+    return {
+      ...nav,
+      push: (href: string) => nav.push(withLocalePrefix(href, prefix)),
+      replace: (href: string) => nav.replace(withLocalePrefix(href, prefix)),
+    };
+  }
+  return { ...base, Link: LocaleLink, useNavigation: useLocaleNavigation };
 }
 
 /** Convenience hooks for framework adapters. */
