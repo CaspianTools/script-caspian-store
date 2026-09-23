@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useCaspianNavigation } from '../provider/caspian-store-provider';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { AdminDashboard } from './admin-dashboard';
 import { AdminProductsList } from './admin-products-list';
 import { AdminProductEditor } from './admin-product-editor';
@@ -50,7 +51,7 @@ import { AdminAccountPage } from './admin-account-page';
  *  - Legacy `/admin/plugins/shipping|payments|email-providers` redirect to the unified list.
  */
 export function AdminRoot(): ReactNode {
-  const { pathname } = useCaspianNavigation();
+  const pathname = stripLocalePrefix(useCaspianNavigation().pathname);
   const after = pathname.replace(/^\/admin\/?/, '');
   if (!after) return <AdminDashboard />;
   const [head, a, b] = after.split('/');

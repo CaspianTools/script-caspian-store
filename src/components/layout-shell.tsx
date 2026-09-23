@@ -120,7 +120,14 @@ export function LayoutShell({
 
   return (
     <LayoutShellMountedContext.Provider value={true}>
-      <ChromeComponent header={header ?? null} footer={footer ?? null} contentPaddingY={contentPaddingY}>
+      {/* `undefined` means "the default header/footer"; only an explicit
+          `null` hides them. Collapsing both to null (`header ?? null`) hid
+          the chrome on every <CaspianRoot /> mounted without these props. */}
+      <ChromeComponent
+        header={header === null ? null : (header ?? {})}
+        footer={footer === null ? null : (footer ?? {})}
+        contentPaddingY={contentPaddingY}
+      >
         {children}
       </ChromeComponent>
     </LayoutShellMountedContext.Provider>

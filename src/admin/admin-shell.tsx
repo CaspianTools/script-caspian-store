@@ -44,6 +44,7 @@ import {
 import { useT } from '../i18n/locale-context';
 import { Badge } from '../ui/misc';
 import { cn } from '../utils/cn';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { CASPIAN_STORE_VERSION } from '../version';
 import { AdminNotificationsBell } from './admin-notifications-bell';
 import { AdminOnboardingProgress } from './admin-onboarding-progress';
@@ -306,8 +307,9 @@ export function AdminShell({
     [navItems, enabledInstalls],
   );
 
+  const pathname = stripLocalePrefix(nav.pathname);
   const isActive = (href: string) =>
-    nav.pathname === href || (href !== '/admin' && nav.pathname.startsWith(href));
+    pathname === href || (href !== '/admin' && pathname.startsWith(href));
 
   // Seed sidebar open/closed and per-group expanded state from localStorage.
   // Auto-expand the group containing the active route so a hard refresh on

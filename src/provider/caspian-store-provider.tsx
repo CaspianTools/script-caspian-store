@@ -26,7 +26,7 @@ import type { MessageDict } from '../i18n/messages';
 import { DEFAULT_SCRIPT_SETTINGS, type ScriptSettings } from '../types';
 import { ErrorBoundary } from '../components/error-boundary';
 import { logError } from '../services/error-log-service';
-import { getLocalePrefix, withLocalePrefix } from '../utils/strip-locale-prefix';
+import { getLocalePrefix, stripLocalePrefix, withLocalePrefix } from '../utils/strip-locale-prefix';
 
 export interface CaspianStoreProviderProps {
   /**
@@ -358,6 +358,9 @@ function withLocaleInUrl(base: FrameworkAdapters): FrameworkAdapters {
     const prefix = getLocalePrefix(nav.pathname);
     return {
       ...nav,
+      // Every library router matches unprefixed paths (`/admin/products`);
+      // the prefix only matters on the way out, which push/replace re-add.
+      pathname: stripLocalePrefix(nav.pathname) || '/',
       push: (href: string) => nav.push(withLocalePrefix(href, prefix)),
       replace: (href: string) => nav.replace(withLocalePrefix(href, prefix)),
     };

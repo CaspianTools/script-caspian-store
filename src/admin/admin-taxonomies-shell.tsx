@@ -8,6 +8,7 @@ import {
 } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { getSiteSettings } from '../services/site-settings-service';
 import { COMMON_TAXONOMIES, enabledTaxonomyDefs } from '../taxonomies/catalog';
 import { Skeleton } from '../ui/misc';
@@ -74,7 +75,7 @@ export function AdminTaxonomiesShell({ className }: AdminTaxonomiesShellProps) {
       }))
     : [];
   const validSlugs = visible.map((v) => v.slug);
-  const rest = parseRest(nav.pathname);
+  const rest = parseRest(stripLocalePrefix(nav.pathname));
   const activeSlug = rest && validSlugs.includes(rest) ? rest : (validSlugs[0] ?? null);
 
   useEffect(() => {

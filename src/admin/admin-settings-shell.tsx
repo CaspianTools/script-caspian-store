@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from 'react';
 import { useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
 import { cn } from '../utils/cn';
+import { stripLocalePrefix } from '../utils/strip-locale-prefix';
 import { SETTINGS_SUB_NAV } from './admin-shell';
 import { AdminSiteSettingsPage } from './admin-site-settings-page';
 import { AdminSettingsTaxonomiesPage } from './admin-settings-taxonomies-page';
@@ -31,7 +32,8 @@ export function AdminSettingsShell({ className }: AdminSettingsShellProps) {
   const Link = useCaspianLink();
   const t = useT();
 
-  const raw = deriveRawSlug(nav.pathname);
+  const pathname = stripLocalePrefix(nav.pathname);
+  const raw = deriveRawSlug(pathname);
 
   useEffect(() => {
     if (raw === null) {
@@ -85,7 +87,7 @@ export function AdminSettingsShell({ className }: AdminSettingsShellProps) {
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column' }}>
             {SETTINGS_SUB_NAV.map((item) => {
-              const active = nav.pathname === item.href;
+              const active = pathname === item.href;
               // `t` returns the key itself when no translation exists, so
               // fall back to the hard-coded label rather than showing it.
               const labelFor = (i: { label: string; labelKey?: string }) => {
