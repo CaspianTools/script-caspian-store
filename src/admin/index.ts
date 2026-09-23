@@ -41,6 +41,15 @@ export {
   AdminProductEditor,
   type AdminProductEditorProps,
 } from './admin-product-editor';
+export {
+  validateProductDraft,
+  isValidImageUrl,
+  PRODUCT_NAME_MIN_LENGTH,
+  PRODUCT_DESCRIPTION_MIN_LENGTH,
+  type ProductDraft,
+  type ProductDraftErrors,
+  type ProductValidationOptions,
+} from './product-validation';
 export { AdminOrdersList, type AdminOrdersListProps } from './admin-orders-list';
 export { AdminOrderDetail, type AdminOrderDetailProps } from './admin-order-detail';
 export { AdminReviewsModeration } from './admin-reviews-moderation';

@@ -2986,7 +2986,7 @@ h4.pb-w-heading {
   .caspian-stock-grid {
     grid-template-columns: 1fr !important;
   }
-  .caspian-stock-grid > * {
+  .caspian-stock-grid label {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -3144,7 +3144,7 @@ h4.pb-w-heading {
     padding-bottom: 1px;
     -webkit-overflow-scrolling: touch;
   }
-  .caspian-stock-grid > label > span {
+  .caspian-stock-grid label > span {
     min-width: 56px !important;
   }
   .caspian-image-upload__body {
