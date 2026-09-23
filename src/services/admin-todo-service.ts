@@ -164,7 +164,7 @@ export const DEFAULT_ADMIN_TODOS: Array<{ id: string; title: string; description
     id: 'verify-shipping-plugins',
     title: 'Verify shipping plugins',
     description:
-      'Open /admin/plugins/shipping and confirm the seeded flat-rate + free-over-threshold installs match your pricing. The checkout rate picker reads `shippingPluginInstalls` live.',
+      'Open /admin/plugins?filter=shipping, open Settings on each switched-on shipping plugin and confirm the seeded flat-rate + free-over-threshold methods match your pricing. The checkout rate picker reads `shippingPluginInstalls` live.',
   },
   {
     id: 'edit-homepage-hero',

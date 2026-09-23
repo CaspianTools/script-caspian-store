@@ -357,7 +357,7 @@ firebase functions:secrets:set CASPIAN_EMAIL_BREVO_API_KEY        # xkeysib-…
 npm run deploy:email    # v3.0.0+ helper
 ```
 
-After deploy, configure the provider at `/admin/plugins/email-providers`: browse the catalog (SendGrid, Brevo), install the one whose secret you set, click **Enable**. The install record in `emailPluginInstalls/{id}` only carries the merchant-facing display name + which provider is active; the actual API key never touches Firestore. If no provider is installed (or the secret value is empty), order + contact triggers log a warning and return without sending — harmless for stores that don't use email.
+After deploy, go to `/admin/plugins` and switch on the provider whose secret you set (SendGrid or Brevo): the switch opens its settings page (`/admin/plugins/sendgrid` or `/admin/plugins/brevo`), where **Save** switches it on. The install record in `emailPluginInstalls/{id}` only carries the merchant-facing display name + which provider is active; the actual API key never touches Firestore. If no provider is switched on (or the secret value is empty), order + contact triggers log a warning and return without sending — harmless for stores that don't use email.
 
 > **Upgrading from pre-v8.0.0?** Your existing installs have `config.apiKey` in Firestore — that field is no longer read. Run the `firebase functions:secrets:set` commands above with the same key you have in Firestore, redeploy `caspian-email`, and the existing install records keep working unchanged. You can clear the legacy `config.apiKey` from Firestore at your leisure (the new dispatcher ignores it either way).
 
@@ -378,7 +378,7 @@ https://<region>-<project-id>.cloudfunctions.net/stripeWebhook
 
 Subscribe to `checkout.session.completed`. Paste the resulting `whsec_…` into the `STRIPE_WEBHOOK_SECRET` secret and redeploy.
 
-**Install Stripe in the admin UI.** Once the Cloud Functions are deployed, sign in as admin and go to `/admin/plugins/payments`. Click **Browse providers** → **Install** on the Stripe card, paste your publishable key (`pk_live_…` or `pk_test_…`), save, then click **Enable**. The publishable key is stored in Firestore under `paymentPluginInstalls`; only the secret/webhook keys live in Cloud Functions secrets. `useCheckout` picks up enabled plugin installs automatically — no redeploy needed after flipping a provider on or off.
+**Switch Stripe on in the admin UI.** Once the Cloud Functions are deployed, sign in as admin, go to `/admin/plugins` and click the **Enable** switch on the Stripe card. It opens Stripe's settings page (`/admin/plugins/stripe`); paste your publishable key (`pk_live_…` or `pk_test_…`) and click **Save**, which switches it on. The publishable key is stored in Firestore under `paymentPluginInstalls`; only the secret/webhook keys live in Cloud Functions secrets. `useCheckout` picks up enabled plugin installs automatically — no redeploy needed after flipping a provider on or off.
 
 **Instagram codebase (v9.21.0+ — only when you run the Instagram channel):**
 

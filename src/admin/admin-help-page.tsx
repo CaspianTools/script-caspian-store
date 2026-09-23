@@ -145,24 +145,25 @@ const HELP_SECTIONS: HelpSection[] = [
     body: (
       <>
         <p>
-          Shipping, payment, and email providers are <b>plugins</b>: browse the catalog under{' '}
-          <b>Plugins</b>, <b>Install</b> the one you need, <b>configure</b> it, then switch it on with
-          its <b>Enabled</b> toggle. A provider can’t be enabled until its config validates.
+          Shipping, payment, and email providers are <b>plugins</b>. Every plugin has a card under{' '}
+          <b>Plugins</b> with an <b>Enable</b> switch; <b>Settings</b> opens that plugin’s own page. A
+          plugin that needs details first (Stripe keys, bank details, an email provider) opens its
+          settings page when you switch it on, and can’t be switched on until its settings are valid.
         </p>
         <ul>
           <li>
             <b>Payments</b> — e.g. Stripe (cards) and manual methods such as cash on delivery, bank transfer
-            or cheque. The Stripe <b>publishable</b> key lives in the install record; the <b>secret</b> key
+            or cheque. The Stripe <b>publishable</b> key lives in the plugin’s settings; the <b>secret</b> key
             and webhook secret are <b>Cloud Functions secrets</b> (never stored in the database).
           </li>
           <li>
-            <b>Email</b> — SendGrid or Brevo for order and contact emails. The provider API key is saved
-            in the install record, which only admins can read; deploy the email functions, then install
-            and enable the provider. Sender identity and templates are edited under Settings → Emails.
+            <b>Email</b> — SendGrid or Brevo for order and contact emails. The provider API key is a{' '}
+            <b>Cloud Functions secret</b>, not a setting in the admin; set it, deploy the email functions,
+            then switch the provider on. Sender identity and templates are edited under Settings → Emails.
           </li>
           <li>
-            <b>Shipping</b> — rate methods shown at checkout; configure each and enable the ones shoppers
-            should see.
+            <b>Shipping</b> — rate methods shown at checkout. One shipping plugin can hold several
+            methods (say, Standard and Express flat rates), each with its own settings.
           </li>
         </ul>
       </>

@@ -25,6 +25,10 @@ export {
   type AdminPluginInstallPageProps,
 } from './admin-plugin-install-page';
 export {
+  AdminPluginSettingsPage,
+  type AdminPluginSettingsPageProps,
+} from './admin-plugin-settings-page';
+export {
   AdminShippingOptionsPage,
   type AdminShippingOptionsPageProps,
 } from './admin-shipping-options-page';

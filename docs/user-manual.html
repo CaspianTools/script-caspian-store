@@ -2903,7 +2903,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Filling this screen in is not enough on its own. You also need an email provider (SendGrid or Brevo) installed and switched on under Plugins, and its key set up in the Firebase project by whoever manages it. Without that, nothing sends and the failure is only visible in the server logs.",
+              "Filling this screen in is not enough on its own. You also need an email provider (SendGrid or Brevo) switched on under Plugins, and its key set up in the Firebase project by whoever manages it. Without that, nothing sends and the failure is only visible in the server logs.",
               "On a brand new shop every template shows Enabled in the list, but none of them has actually been saved yet, and the sending job skips a template that has never been saved. Open each template you want and click Save template once. The list does not warn you about this.",
               "The master switch is off on a new shop. Turn it on or no order emails go out.",
               "Send test ignores the master switch. It will send even when the master switch is off, so a successful test does not prove live emails are switched on.",
@@ -2917,19 +2917,19 @@ const MANUAL = {
           },
           {
             "id": "plugins-overview",
-            "title": "The Plugins screen: finding, installing and turning plugins on",
+            "title": "The Plugins screen: switching plugins on and off",
             "audience": "owner",
             "route": "/admin/plugins",
-            "summary": "Plugins are the add-ons that work out how much delivery costs, take the customer's money, and send your store's emails. They all live on one screen in the admin, listed as cards. Each card is either something you have already added to your store (marked Installed) or something available for you to add. There are three kinds: Shipping, Payments and Email.",
+            "summary": "Plugins are the add-ons that work out how much delivery costs, take the customer's money, and send your store's emails. Every plugin the store offers has one card on the Plugins screen, whether you use it or not. There are three kinds: Shipping, Payments and Email. Each card has an Enable switch that turns the plugin on or off, and a Settings button that opens the plugin's own page.",
             "steps": [
-              "Click Plugins in the admin sidebar to open the list of cards.",
+              "Click Plugins in the admin sidebar. The cards are grouped under Shipping, Payments and Email.",
               "Type in the search box to narrow the list. It matches the plugin name and its description.",
-              "Use the Status dropdown to show only what you have already added (Installed) or only what you could add (Available).",
-              "Use the Category dropdown to show only Shipping, only Payments or only Email.",
-              "On a card you have not added yet, click Install. This takes you to the screen for that whole category (Shipping, Payments or Email), not straight into the plugin.",
-              "On that category screen, click the Browse button at the top right, then click Install on the plugin you want. A settings box opens.",
-              "Fill in the settings and click Save. You are returned to the Plugins list, where the plugin now shows an Installed badge.",
-              "On a card you have already added, click Configure to reopen its settings box."
+              "Use the Category dropdown to show only Shipping, only Payments or only Email, and the Status dropdown to show only plugins that are Enabled or Disabled.",
+              "Read the status line at the bottom of each card: Enabled, Disabled or Needs setup. Needs setup means the plugin cannot work until you fill in some details.",
+              "To turn a plugin on, click its Enable switch. If the plugin works with its standard settings (for example Flat Rate, Free Shipping, Cheque or Cash on delivery), it is switched on straight away and a confirmation appears.",
+              "If the plugin needs details first (Stripe keys, bank details, or an email provider), the switch opens that plugin's settings page instead, with the notice Fill in these settings, then switch it on. Fill them in and click Save: the plugin is switched on as it saves.",
+              "To turn a plugin off, click its Enable switch again. Its settings are kept, so switching it back on later picks up where you left off.",
+              "Click Settings on a card to open that plugin's own page, where you change its settings or remove it."
             ],
             "fields": [
               {
@@ -2937,21 +2937,21 @@ const MANUAL = {
                 "what": "Free-text box. Filters the cards by name, description or the plugin's internal id."
               },
               {
-                "name": "Status",
-                "what": "Dropdown: All, Installed, Available."
-              },
-              {
                 "name": "Category",
                 "what": "Dropdown: All, Shipping, Payments, Email."
+              },
+              {
+                "name": "Status",
+                "what": "Dropdown: All, Enabled, Disabled. Disabled also lists the plugins that need setup."
               }
             ],
             "notes": [
-              "The Install button on a card does not open that plugin's settings directly. It opens the category screen, where you still have to click Browse and pick the plugin again. This is two clicks more than it looks.",
-              "Once you have added a plugin, its Available card disappears from the list. If you want a second copy of the same plugin (for example a second Stripe account), the Plugins list will not offer it. Go to the category screen and use its Browse button instead.",
-              "Each plugin you have added, whether on or off, also appears as its own entry underneath Plugins in the sidebar. Clicking one opens its settings box straight away.",
-              "The sidebar list refreshes when you switch back to the browser tab, so a change made in another tab shows up when you return.",
-              "The three category screens (Shipping, Payments, Email providers) are not in the sidebar. You reach them only through an Install button on the Plugins list, or by typing the address: /admin/plugins/manage/shipping, /admin/plugins/manage/payments, /admin/plugins/manage/email-providers.",
-              "Old bookmarks to /admin/plugins/shipping, /admin/plugins/payments or /admin/plugins/email-providers still work: they send you to the Plugins list with the matching category filter already applied.",
+              "There is one card per plugin, even when a plugin is used more than once. A shipping plugin used for two delivery methods (for example a Standard and an Express flat rate) still has one card, and its status line says how many methods it holds.",
+              "Switching such a card off turns off every method in it. Switching it on turns on every method whose settings are valid. To turn a single method on or off, use the switch next to that method on the plugin's settings page.",
+              "Every plugin that is switched on also appears as its own entry underneath Plugins in the sidebar. Clicking one opens that plugin's settings page.",
+              "If a switch cannot save, an error message appears and the switch flips back. If the message says your store's security rules are out of date, click Install now in the banner at the top of the admin, then try again.",
+              "Old addresses still work: /admin/plugins/shipping, /admin/plugins/payments, /admin/plugins/email-providers and the /admin/plugins/manage/ addresses open this screen with the matching category already selected.",
+              "Switching on more than one payment plugin, or more than one email provider, does not give anyone a choice. Only the one with the lowest Order number is used; see the Payments and Email sections.",
               "There is no way to add your own plugin from inside the admin. The list of available plugins is fixed in the software."
             ]
           },
@@ -2959,17 +2959,17 @@ const MANUAL = {
             "id": "payment-plugins",
             "title": "Payment plugins: how customers pay you",
             "audience": "owner",
-            "route": "/admin/plugins/manage/payments",
-            "summary": "A payment plugin is how money reaches you. There are four: Stripe for card payments, and three manual methods where the customer promises to pay and you confirm it yourself later (bank transfer, cheque, and cash on delivery). Your store cannot take any orders until one payment plugin is added and switched on.",
+            "route": "/admin/plugins?filter=payment",
+            "summary": "A payment plugin is how money reaches you. There are four: Stripe for card payments, and three manual methods where the customer promises to pay and you confirm it yourself later (bank transfer, cheque, and cash on delivery). Your store cannot take any orders until one payment plugin is switched on.",
             "steps": [
-              "Open the Plugins list and click Install on any Payments card, or go straight to /admin/plugins/manage/payments.",
-              "Click Browse providers at the top right to see the four options with a description each.",
-              "Click Install under the one you want. The settings box opens.",
+              "Open Plugins in the sidebar and choose Payments in the Category dropdown. There are four cards: Stripe, Direct bank transfer (BACS), Cheque and Cash on delivery.",
+              "For Cheque or Cash on delivery you can simply click the Enable switch: the plugin is switched on with ready-made instructions for shoppers. Click Settings afterwards to change them.",
+              "For Stripe or bank transfer, clicking the Enable switch opens the plugin's settings page instead, because the keys or bank details must be filled in first.",
               "Type a Display name for your own reference, such as Stripe production or Bank transfer.",
               "Optionally type a Checkout description and set the Order number.",
-              "Fill in the provider settings (see the field list). Anything invalid is refused with a message telling you what is wrong.",
-              "Click Save. You are returned to the Plugins list. The first time you add a given provider it is switched on for you; a second copy of the same provider starts switched off.",
-              "Back on the Payments screen, each row has Enable or Disable, a Set up or Manage button that reopens the settings, and Remove.",
+              "Fill in the provider settings (see the field list). Anything invalid is shown in red under the form with a message telling you what is wrong, and nothing is saved.",
+              "Click Save. If you arrived from the Enable switch, the plugin is switched on as it saves; otherwise use the Enable switch at the top of the page.",
+              "To remove the plugin and its settings, click Remove plugin at the bottom of its settings page and confirm.",
               "For Stripe only: a developer must also deploy the payment Cloud Functions and set the matching secret keys before checkout will work."
             ],
             "fields": [
@@ -2980,7 +2980,7 @@ const MANUAL = {
               },
               {
                 "name": "Checkout description",
-                "what": "Free text. Shows underneath the name in the admin Payments table."
+                "what": "Free text. Saved with the plugin; see the notes for where it shows."
               },
               {
                 "name": "Order",
@@ -3052,7 +3052,7 @@ const MANUAL = {
               "The Eligible shipping methods box on cash on delivery is saved but nothing reads it. Cash on delivery is offered regardless of what you type there.",
               "The Checkout description is not shown on the checkout page. The checkout only shows the provider's brand name in small print near the pay button.",
               "Promo code discounts are not applied to bank transfer, cheque or cash on delivery orders. The discount is recorded as zero and you would have to adjust it by hand.",
-              "The button in each row reads Set up when the settings are incomplete and Manage when they are valid. These two words are always in English and are not translated.",
+              "While the settings are incomplete the card says Needs setup, and the Enable switch opens the settings page rather than switching the plugin on.",
               "Payment settings are readable by anyone visiting your storefront, by design. Never paste a secret key into these boxes."
             ]
           },
@@ -3060,19 +3060,20 @@ const MANUAL = {
             "id": "shipping-plugins",
             "title": "Shipping plugins: what delivery costs your customer",
             "audience": "owner",
-            "route": "/admin/plugins/manage/shipping",
-            "summary": "A shipping plugin works out the delivery price a customer sees at checkout. You can add as many as you like, and each one you add becomes a separate delivery choice the customer picks from. There are four to choose from: a fixed price, free, free above a spend amount, and price by weight. None of them need any technical setup or extra deployment.",
+            "route": "/admin/plugins?filter=shipping",
+            "summary": "A shipping plugin works out the delivery price a customer sees at checkout. Every delivery method you set up becomes a separate choice the customer picks from, and one plugin can hold several methods, for example a Standard and an Express flat rate. There are four plugins: a fixed price, free, free above a spend amount, and price by weight. None of them need any technical setup or extra deployment.",
             "steps": [
-              "Open the Plugins list and click Install on any Shipping card, or go straight to /admin/plugins/manage/shipping.",
-              "Click Browse plugins at the top right. A box opens showing all four shipping plugins with a short description each.",
-              "Click Install under the one you want. The settings box opens.",
+              "Open Plugins in the sidebar and choose Shipping in the Category dropdown. There are four cards: Flat Rate, Free Shipping, Free Over Threshold and Weight-Based.",
+              "Click a card's Enable switch to switch the plugin on straight away with its starting settings: Flat Rate charges 5; Free Over Threshold is free from 50 and 5 below that; Weight-Based charges 4 plus 2 per kg; delivery is 3 to 7 days. The method is named after the plugin until you rename it.",
+              "Click Settings on the card to open the plugin's own page.",
               "Type a Display name. This is the wording the customer reads at checkout and on your public shipping page, so use something like Standard delivery, not the plugin's own name.",
               "Set Min days and Max days for how long delivery takes. Both start at 3 and 7.",
               "Set Order. This is the position in the list, so 1 shows first.",
               "Fill in the price settings, which differ per plugin (see the field list).",
               "If you only deliver to certain countries with this method, click Pick countries, tick them and confirm. Leave it empty to offer the method everywhere.",
-              "Click Save. You are returned to the Plugins list and the method is switched on straight away.",
-              "Back on the Shipping screen, each row has Enable or Disable to turn a method on and off, Configure to edit it, and Remove to delete it."
+              "Click Save. Invalid prices are shown in red under the form and nothing is saved.",
+              "To offer a second method from the same plugin (for example Express next to Standard), click the Add another … method button under the form, fill in the new box and click Save. Once a plugin has more than one method, each method's box gets its own on/off switch and a Remove this method button.",
+              "To delete the plugin and every method in it, click Remove plugin at the bottom of the page and confirm."
             ],
             "fields": [
               {
@@ -3131,8 +3132,8 @@ const MANUAL = {
             ],
             "notes": [
               "Prices are typed as plain numbers with no currency symbol on the field. They are in your store's currency.",
-              "Clicking Save on a delivery method always switches it back on, even if you had deliberately turned it off. If you only wanted to tweak the price of a paused method, it will be live again after you save.",
-              "Removing every country from Eligible countries and saving opens the method to every country again. Configure also leaves a switched-off method switched off: saving its settings no longer turns it back on.",
+              "Saving a method's settings does not switch it on or off. A method you switched off stays off after you save.",
+              "Removing every country from Eligible countries and saving opens the method to every country again.",
               "The country picker only offers the countries listed in your site settings. If you have not set a country list there, it offers the full world list.",
               "Weight-Based only appears at checkout if at least one product in the basket has a weight filled in (Products, edit a product, the Weight (kg) box). If nothing is weighed, the method silently disappears from the checkout.",
               "If a method's settings are invalid, it is quietly dropped from checkout rather than showing an error to the customer. Always test your own checkout after editing.",
@@ -3146,17 +3147,17 @@ const MANUAL = {
             "id": "email-plugins",
             "title": "Email providers: sending order and contact emails",
             "audience": "owner",
-            "route": "/admin/plugins/manage/email-providers",
-            "summary": "An email provider is the outside service that actually delivers your store's emails, such as order confirmations and contact form replies. Two are supported: SendGrid and Brevo. Adding one in the admin only records which service to use. The secret key itself is set by a developer using a command line, never typed into the admin.",
+            "route": "/admin/plugins?filter=email",
+            "summary": "An email provider is the outside service that actually delivers your store's emails, such as order confirmations and contact form replies. Two are supported: SendGrid and Brevo. Switching one on in the admin only records which service to use. The secret key itself is set by a developer using a command line, never typed into the admin.",
             "steps": [
-              "Open the Plugins list and click Install on an Email card, or go straight to /admin/plugins/manage/email-providers.",
-              "Click Browse providers at the top right to see SendGrid and Brevo.",
-              "Click Install under the one you want. The settings box opens.",
+              "Open Plugins in the sidebar and choose Email in the Category dropdown to see SendGrid and Brevo. Both say Needs setup until you have saved one of them.",
+              "Click the Enable switch on the one you want. Its settings page opens with the notice Fill in these settings, then switch it on.",
               "Type a Display name for your own reference and set the Order number.",
-              "Read the grey panel in the box. It shows the exact command a developer must run, which is firebase functions:secrets:set followed by CASPIAN_EMAIL_SENDGRID_API_KEY for SendGrid or CASPIAN_EMAIL_BREVO_API_KEY for Brevo.",
-              "Click Save. You are returned to the Plugins list. The first provider you add is switched on for you.",
+              "Read the grey panel on the page. It shows the exact command a developer must run, which is firebase functions:secrets:set followed by CASPIAN_EMAIL_SENDGRID_API_KEY for SendGrid or CASPIAN_EMAIL_BREVO_API_KEY for Brevo.",
+              "Click Save. The provider is switched on as it saves.",
               "Have a developer run that command with the API key from your SendGrid or Brevo account, then deploy the email functions with firebase deploy --only functions:caspian-email.",
-              "Check it works: go to Settings, Emails, open any template, type an address in Send test to, and click Send test. A green confirmation means email is working; a red Test send failed means the key or the deployment is missing."
+              "Check it works: go to Settings, Emails, open any template, type an address in Send test to, and click Send test. A green confirmation means email is working; a red Test send failed means the key or the deployment is missing.",
+              "To stop using a provider, click its Enable switch off, on the Plugins screen or at the top of its settings page. Remove plugin at the bottom of that page deletes it."
             ],
             "fields": [
               {
@@ -3174,7 +3175,7 @@ const MANUAL = {
               "There is deliberately no API key box on this screen. The key is stored in Google's secret store, outside the database, and can only be set with a command line.",
               "Nothing needs deploying to add the provider record itself, but no email will ever send until the caspian-email Cloud Functions are deployed and the secret key is set.",
               "Only one provider is ever used: the switched-on one with the lowest Order number. Adding a second one does not create a backup or a fallback.",
-              "The screen always shows Manage rather than Set up, even when the key has never been set. The admin cannot tell you whether the key is present.",
+              "Once saved, the card shows Enabled or Disabled even when the key has never been set. The admin cannot tell you whether the key is present.",
               "Nothing appears in the admin when the key is missing. Emails simply do not arrive. The Send test button on Settings, Emails is the only way to check from inside the admin.",
               "Sender name, sender address and the wording of every email are not set here. They live at Settings, Emails.",
               "Once working, emails are sent automatically when an order becomes paid or processing, shipped or delivered, refunded, or cancelled, and when someone uses the contact form. Order statuses with no matching template send nothing.",
@@ -5792,7 +5793,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Bu ekranı doldurmaq tək başına kifayət etmir. Həmçinin Plaginlər bölməsində e-poçt provayderi (SendGrid və ya Brevo) quraşdırılıb aktiv edilməli, onun açarı isə Firebase layihəsinə onu idarə edən şəxs tərəfindən əlavə olunmalıdır. Bu olmadan heç nə göndərilmir və nasazlıq yalnız server jurnallarında görünür.",
+              "Bu ekranı doldurmaq tək başına kifayət etmir. Həmçinin Plaginlər bölməsində e-poçt provayderi (SendGrid və ya Brevo) aktiv edilməli, onun açarı isə Firebase layihəsinə onu idarə edən şəxs tərəfindən əlavə olunmalıdır. Bu olmadan heç nə göndərilmir və nasazlıq yalnız server jurnallarında görünür.",
               "Yepyeni mağazada siyahıda hər şablon Enabled görünür, amma heç biri əslində yadda saxlanmayıb və göndərmə prosesi heç vaxt yadda saxlanmamış şablonu atlayır. İstədiyiniz hər şablonu açıb bir dəfə Şablonu yadda saxla düyməsinə basın. Siyahı bu barədə sizi xəbərdar etmir.",
               "Yeni mağazada əsas açar söndürülüdür. Onu aktiv etməsəniz, heç bir sifariş e-poçtu göndərilmir.",
               "Sınaq göndərmə əsas açara məhəl qoymur. Əsas açar söndürülü olsa belə mesaj gedir, ona görə də uğurlu sınaq canlı e-poçtların aktiv olduğunu sübut etmir.",
@@ -5806,17 +5807,17 @@ const MANUAL = {
           },
           {
             "id": "plugins-overview",
-            "title": "Plaginlər ekranı: plagini tapmaq, quraşdırmaq və aktiv etmək",
-            "summary": "Plaginlər çatdırılmanın neçəyə başa gəldiyini hesablayan, müştərinin pulunu qəbul edən və mağazanızın e-poçtlarını göndərən əlavələrdir. Hamısı admin panelində tək bir ekranda kart şəklində sadalanır. Hər kart ya mağazanıza artıq əlavə etdiyiniz plagindir (Installed işarəsi ilə), ya da əlavə edə biləcəyiniz plagindir. Üç növü var: Shipping (çatdırılma), Payments (ödənişlər) və Email (e-poçt).",
+            "title": "Plaginlər ekranı: plaginləri aktiv və deaktiv etmək",
+            "summary": "Plaginlər çatdırılmanın neçəyə başa gəldiyini hesablayan, müştərinin pulunu qəbul edən və mağazanızın e-poçtlarını göndərən əlavələrdir. Mağazanın təklif etdiyi hər plaginin, istifadə etsəniz də, etməsəniz də, Plaginlər (Plugins) ekranında bir kartı var. Üç növü var: Shipping (çatdırılma), Payments (ödənişlər) və Email (e-poçt). Hər kartda plagini aktiv və ya deaktiv edən Enable (aktiv et) açarı və plaginin öz səhifəsini açan Settings (tənzimləmələr) düyməsi var.",
             "steps": [
-              "Kartların siyahısını açmaq üçün admin yan panelində Plaginlər (Plugins) bəndinə klikləyin.",
+              "Admin yan panelində Plaginlər (Plugins) bəndinə klikləyin. Kartlar Shipping, Payments və Email başlıqları altında qruplaşdırılıb.",
               "Siyahını daraltmaq üçün axtarış xanasına yazın. Axtarış plaginin adı və təsviri üzrə uyğunluq tapır.",
-              "Yalnız artıq əlavə etdiklərinizi (Installed) və ya yalnız əlavə edə biləcəklərinizi (Available) görmək üçün Status siyahısından istifadə edin.",
-              "Yalnız Shipping, yalnız Payments və ya yalnız Email göstərmək üçün Category (kateqoriya) siyahısından istifadə edin.",
-              "Hələ əlavə etmədiyiniz kartda Install (quraşdır) düyməsinə klikləyin. Bu, sizi plaginin özünə deyil, həmin bütöv kateqoriyanın ekranına (Shipping, Payments və ya Email) aparır.",
-              "Həmin kateqoriya ekranında sağ yuxarıdakı Browse (siyahıya bax) düyməsinə, sonra istədiyiniz plaginin üzərindəki Install düyməsinə klikləyin. Tənzimləmə pəncərəsi açılır.",
-              "Tənzimləmələri doldurub Yadda saxla (Save) düyməsinə basın. Siz Plaginlər siyahısına qayıdırsınız və plagin artıq Installed nişanı ilə görünür.",
-              "Artıq əlavə etdiyiniz kartda tənzimləmə pəncərəsini yenidən açmaq üçün Configure (tənzimlə) düyməsinə klikləyin."
+              "Yalnız Shipping, yalnız Payments və ya yalnız Email göstərmək üçün Category (kateqoriya) siyahısından, yalnız aktiv (Enabled) və ya deaktiv (Disabled) plaginləri göstərmək üçün isə Status siyahısından istifadə edin.",
+              "Hər kartın altındakı status sətrini oxuyun: Enabled (aktiv), Disabled (deaktiv) və ya Needs setup (quraşdırma tələb olunur). Needs setup o deməkdir ki, bəzi məlumatları doldurmayana qədər plagin işləyə bilməz.",
+              "Plagini aktiv etmək üçün onun Enable açarına klikləyin. Plagin standart tənzimləmələrlə işləyirsə (məsələn Flat Rate, Free Shipping, Cheque və ya Cash on delivery), dərhal aktiv olur və təsdiq mesajı görünür.",
+              "Plagin əvvəlcə məlumat tələb edirsə (Stripe açarları, bank rekvizitləri və ya e-poçt provayderi), açar bunun əvəzinə həmin plaginin tənzimləmələr səhifəsini \"Fill in these settings, then switch it on\" (bu tənzimləmələri doldurun, sonra aktiv edin) bildirişi ilə açır. Onları doldurub Yadda saxla (Save) düyməsinə basın: plagin yadda saxlanan anda aktiv olur.",
+              "Plagini deaktiv etmək üçün Enable açarına yenidən klikləyin. Tənzimləmələri saxlanılır, ona görə də sonra yenidən aktiv etdikdə hər şey qaldığı yerdən davam edir.",
+              "Plaginin öz səhifəsini açmaq üçün kartda Settings düyməsinə klikləyin. Orada tənzimləmələri dəyişə və ya plagini silə bilərsiniz."
             ],
             "fields": [
               {
@@ -5824,37 +5825,37 @@ const MANUAL = {
                 "what": "Sərbəst mətn xanası. Kartları ada, təsvirə və ya plaginin daxili identifikatoruna görə süzgəcdən keçirir."
               },
               {
-                "name": "Status",
-                "what": "Açılan siyahı: All (hamısı), Installed (quraşdırılmış), Available (mövcud)."
-              },
-              {
                 "name": "Category",
                 "what": "Açılan siyahı: All, Shipping, Payments, Email."
+              },
+              {
+                "name": "Status",
+                "what": "Açılan siyahı: All (hamısı), Enabled (aktiv), Disabled (deaktiv). Disabled quraşdırma tələb edən plaginləri də göstərir."
               }
             ],
             "notes": [
-              "Kartdakı Install düyməsi həmin plaginin tənzimləmələrini birbaşa açmır. O, kateqoriya ekranını açır və orada yenə Browse düyməsinə basıb plagini bir daha seçməlisiniz. Bu, göründüyündən iki klik artıqdır.",
-              "Plagini əlavə etdikdən sonra onun Available kartı siyahıdan yox olur. Eyni plaginin ikinci nüsxəsini istəyirsinizsə (məsələn ikinci Stripe hesabı), Plaginlər siyahısı bunu təklif etməyəcək. Kateqoriya ekranına keçib onun Browse düyməsindən istifadə edin.",
-              "Əlavə etdiyiniz hər plagin, aktiv olsun və ya olmasın, yan paneldə Plaginlərin altında ayrıca bənd kimi də görünür. Bəndin üzərinə klikləmək onun tənzimləmə pəncərəsini dərhal açır.",
-              "Yan paneldəki siyahı brauzer tabına qayıdanda yenilənir, ona görə də başqa tabda edilən dəyişiklik siz qayıdan kimi görünür.",
-              "Üç kateqoriya ekranı (Shipping, Payments, Email providers) yan paneldə yoxdur. Onlara yalnız Plaginlər siyahısındakı Install düyməsi vasitəsilə və ya ünvanı yazaraq daxil olursunuz: /admin/plugins/manage/shipping, /admin/plugins/manage/payments, /admin/plugins/manage/email-providers.",
-              "/admin/plugins/shipping, /admin/plugins/payments və ya /admin/plugins/email-providers ünvanlarına köhnə əlfəcinlər hələ də işləyir: onlar sizi uyğun kateqoriya süzgəci artıq tətbiq olunmuş Plaginlər siyahısına aparır.",
+              "Plagin bir neçə dəfə istifadə olunsa belə, hər plaginin bir kartı var. İki çatdırılma üsulu üçün istifadə olunan çatdırılma plagininin (məsələn Standart və Ekspress sabit qiymət) yenə bir kartı olur, status sətrində isə neçə üsulu olduğu yazılır.",
+              "Belə kartı deaktiv etmək içindəki bütün üsulları deaktiv edir. Aktiv etmək isə tənzimləmələri düzgün olan bütün üsulları aktiv edir. Tək bir üsulu aktiv və ya deaktiv etmək üçün plaginin tənzimləmələr səhifəsində həmin üsulun yanındakı açardan istifadə edin.",
+              "Aktiv olan hər plagin yan paneldə Plaginlərin altında ayrıca bənd kimi də görünür. Bəndin üzərinə klikləmək həmin plaginin tənzimləmələr səhifəsini açır.",
+              "Açar yadda saxlaya bilməsə, xəta mesajı görünür və açar əvvəlki vəziyyətinə qayıdır. Mesajda mağazanızın təhlükəsizlik qaydalarının köhnəldiyi yazılıbsa, admin panelinin yuxarısındakı bannerdə Install now (indi quraşdır) düyməsinə basın, sonra yenidən cəhd edin.",
+              "Köhnə ünvanlar hələ də işləyir: /admin/plugins/shipping, /admin/plugins/payments, /admin/plugins/email-providers və /admin/plugins/manage/ ünvanları bu ekranı uyğun kateqoriya artıq seçilmiş halda açır.",
+              "Birdən çox ödəniş plaginini və ya birdən çox e-poçt provayderini aktiv etmək heç kimə seçim imkanı vermir. Yalnız Order (sıra) nömrəsi ən kiçik olan istifadə olunur; Payments və Email bölmələrinə baxın.",
               "Admin panelinin içindən öz plagininizi əlavə etmək mümkün deyil. Mövcud plaginlərin siyahısı proqram təminatında sabitdir."
             ]
           },
           {
             "id": "payment-plugins",
             "title": "Ödəniş plaginləri: müştərilər sizə necə ödəyir",
-            "summary": "Ödəniş plagini pulun sizə çatma yoludur. Dörd variant var: kart ödənişləri üçün Stripe və müştərinin ödəməyi vəd etdiyi, sizin isə sonradan özünüz təsdiqlədiyiniz üç əl üsulu (bank köçürməsi, çek və çatdırılma zamanı nağd ödəniş). Ən azı bir ödəniş plagini əlavə edilib aktiv olmayana qədər mağazanız heç bir sifariş qəbul edə bilməz.",
+            "summary": "Ödəniş plagini pulun sizə çatma yoludur. Dörd variant var: kart ödənişləri üçün Stripe və müştərinin ödəməyi vəd etdiyi, sizin isə sonradan özünüz təsdiqlədiyiniz üç əl üsulu (bank köçürməsi, çek və çatdırılma zamanı nağd ödəniş). Ən azı bir ödəniş plagini aktiv olmayana qədər mağazanız heç bir sifariş qəbul edə bilməz.",
             "steps": [
-              "Plaginlər siyahısını açıb istənilən Payments kartında Install düyməsinə klikləyin və ya birbaşa /admin/plugins/manage/payments ünvanına keçin.",
-              "Hər birinin təsviri ilə birlikdə dörd variantı görmək üçün sağ yuxarıdakı Browse providers (provayderlərə bax) düyməsinə klikləyin.",
-              "İstədiyinizin altındakı Install düyməsinə klikləyin. Tənzimləmə pəncərəsi açılır.",
+              "Yan paneldə Plaginlər (Plugins) bəndini açın və Category siyahısında Payments seçin. Dörd kart var: Stripe, Direct bank transfer (BACS), Cheque və Cash on delivery.",
+              "Cheque və ya Cash on delivery üçün sadəcə Enable (aktiv et) açarına klikləyə bilərsiniz: plagin müştərilər üçün hazır təlimatlarla aktiv olur. Onları dəyişmək üçün sonra Settings (tənzimləmələr) düyməsinə klikləyin.",
+              "Stripe və ya bank köçürməsi üçün Enable açarına klikləmək bunun əvəzinə plaginin tənzimləmələr səhifəsini açır, çünki əvvəlcə açarlar və ya bank rekvizitləri doldurulmalıdır.",
               "Öz istifadəniz üçün Görünən ad (Display name) yazın, məsələn Stripe production və ya Bank köçürməsi.",
               "İstəyə görə Ödəniş təsviri (Checkout description) yazın və Sıra (Order) nömrəsini təyin edin.",
-              "Provayder tənzimləmələrini doldurun (xanaların siyahısına baxın). Səhv olan hər şey qəbul edilmir və nəyin səhv olduğunu bildirən mesaj çıxır.",
-              "Yadda saxla düyməsinə klikləyin. Siz Plaginlər siyahısına qayıdırsınız. Konkret provayderi ilk dəfə əlavə edəndə o, sizin üçün aktiv edilir; eyni provayderin ikinci nüsxəsi isə söndürülü başlayır.",
-              "Payments ekranına qayıdanda hər sətirdə Enable (aktiv et) və ya Disable (söndür), tənzimləmələri yenidən açan Set up (qur) və ya Manage (idarə et) düyməsi, həmçinin Remove (sil) düyməsi olur.",
+              "Provayder tənzimləmələrini doldurun (sahələr siyahısına baxın). Yanlış olan hər şey formanın altında qırmızı rəngdə, nəyin səhv olduğunu bildirən mesajla göstərilir və heç nə yadda saxlanmır.",
+              "Yadda saxla (Save) düyməsinə basın. Enable açarından gəlmisinizsə, plagin yadda saxlanan anda aktiv olur; əks halda səhifənin yuxarısındakı Enable açarından istifadə edin.",
+              "Plagini və onun tənzimləmələrini silmək üçün tənzimləmələr səhifəsinin aşağısında Remove plugin (plagini sil) düyməsinə klikləyin və təsdiqləyin.",
               "Yalnız Stripe üçün: ödəniş mərhələsinin işləməsi üçün developer həm də ödəniş Cloud Functions funksiyalarını yerləşdirməli və uyğun gizli açarları təyin etməlidir."
             ],
             "fields": [
@@ -5865,7 +5866,7 @@ const MANUAL = {
               },
               {
                 "name": "Ödəniş təsviri (Checkout description)",
-                "what": "Sərbəst mətn. Admin panelindəki Payments cədvəlində adın altında görünür."
+                "what": "Sərbəst mətn. Plaginlə birlikdə yadda saxlanılır; harada göründüyü üçün qeydlərə baxın."
               },
               {
                 "name": "Sıra (Order)",
@@ -5937,25 +5938,26 @@ const MANUAL = {
               "Çatdırılma zamanı nağd ödənişdəki Uyğun çatdırılma üsulları xanası yadda saxlanır, amma onu heç nə oxumur. Orada nə yazsanız da, çatdırılma zamanı nağd ödəniş hər halda təklif olunur.",
               "Ödəniş təsviri ödəniş səhifəsində göstərilmir. Ödəniş səhifəsi yalnız provayderin brend adını ödəniş düyməsinin yanında xırda şriftlə yazır.",
               "Promokod endirimləri bank köçürməsi, çek və çatdırılma zamanı nağd ödəniş sifarişlərinə tətbiq olunmur. Endirim sıfır kimi qeyd edilir və siz onu əl ilə düzəltməli olacaqsınız.",
-              "Hər sətirdəki düymə tənzimləmələr natamam olanda Set up, düzgün olanda Manage yazır. Bu iki söz həmişə ingiliscə qalır və tərcümə olunmur.",
+              "Tənzimləmələr natamam olduqca kartda Needs setup (quraşdırma tələb olunur) yazılır və Enable açarı plagini aktiv etmək əvəzinə tənzimləmələr səhifəsini açır.",
               "Ödəniş tənzimləmələri dizayn etibarilə mağazanızı ziyarət edən hər kəs üçün oxunaqlıdır. Bu xanalara heç vaxt gizli açar yapışdırmayın."
             ]
           },
           {
             "id": "shipping-plugins",
             "title": "Çatdırılma plaginləri: müştəriyə çatdırılma neçəyə başa gəlir",
-            "summary": "Çatdırılma plagini müştərinin ödəniş mərhələsində gördüyü çatdırılma qiymətini hesablayır. İstədiyiniz qədər əlavə edə bilərsiniz və əlavə etdiyiniz hər biri müştərinin seçəcəyi ayrıca çatdırılma variantına çevrilir. Seçim üçün dörd variant var: sabit qiymət, pulsuz, müəyyən məbləğdən yuxarı pulsuz və çəkiyə görə qiymət. Heç biri texniki quraşdırma və ya əlavə yerləşdirmə tələb etmir.",
+            "summary": "Çatdırılma plagini müştərinin ödəniş mərhələsində gördüyü çatdırılma qiymətini hesablayır. Qurduğunuz hər çatdırılma üsulu müştərinin seçəcəyi ayrıca variantdır, bir plagində isə bir neçə üsul ola bilər, məsələn Standart və Ekspress sabit qiymət. Dörd plagin var: sabit qiymət, pulsuz, müəyyən məbləğdən yuxarı pulsuz və çəkiyə görə qiymət. Heç biri texniki quraşdırma və ya əlavə yerləşdirmə tələb etmir.",
             "steps": [
-              "Plaginlər siyahısını açıb istənilən Shipping kartında Install düyməsinə klikləyin və ya birbaşa /admin/plugins/manage/shipping ünvanına keçin.",
-              "Sağ yuxarıdakı Browse plugins (plaginlərə bax) düyməsinə klikləyin. Açılan pəncərədə dörd çatdırılma plagininin hamısı qısa təsvirlə görünür.",
-              "İstədiyinizin altındakı Install düyməsinə klikləyin. Tənzimləmə pəncərəsi açılır.",
+              "Yan paneldə Plaginlər (Plugins) bəndini açın və Category siyahısında Shipping seçin. Dörd kart var: Flat Rate, Free Shipping, Free Over Threshold və Weight-Based.",
+              "Plagini başlanğıc tənzimləmələri ilə dərhal aktiv etmək üçün kartın Enable (aktiv et) açarına klikləyin: Flat Rate 5 tutur; Free Over Threshold 50-dən pulsuzdur, ondan aşağı 5 tutur; Weight-Based 4 üstəgəl hər kq üçün 2 tutur; çatdırılma 3–7 gündür. Siz adını dəyişənə qədər üsul plaginin adını daşıyır.",
+              "Plaginin öz səhifəsini açmaq üçün kartda Settings (tənzimləmələr) düyməsinə klikləyin.",
               "Görünən ad (Display name) yazın. Müştəri ödəniş mərhələsində və ictimai çatdırılma səhifənizdə məhz bu mətni oxuyur, ona görə də plaginin öz adını yox, Standart çatdırılma kimi bir ad yazın.",
               "Çatdırılmanın nə qədər çəkdiyini göstərmək üçün Minimum gün (Min days) və Maksimum gün (Max days) təyin edin. Başlanğıc dəyərləri 3 və 7-dir.",
               "Sıra (Order) təyin edin. Bu, siyahıdakı mövqedir: 1 birinci görünür.",
               "Qiymət tənzimləmələrini doldurun — onlar plagindən plaginə fərqlənir (xanaların siyahısına baxın).",
               "Bu üsulla yalnız müəyyən ölkələrə çatdırırsınızsa, Pick countries (ölkələri seç) düyməsinə klikləyin, ölkələri işarələyin və təsdiqləyin. Üsulun hər yerdə təklif olunması üçün siyahını boş buraxın.",
-              "Yadda saxla düyməsinə klikləyin. Siz Plaginlər siyahısına qayıdırsınız və üsul dərhal aktiv olur.",
-              "Shipping ekranına qayıdanda hər sətirdə üsulu açıb-söndürmək üçün Enable və ya Disable, redaktə üçün Configure, silmək üçün Remove düyməsi olur."
+              "Yadda saxla (Save) düyməsinə basın. Yanlış qiymətlər formanın altında qırmızı rəngdə göstərilir və heç nə yadda saxlanmır.",
+              "Eyni plagindən ikinci üsul təklif etmək üçün (məsələn Standartın yanında Ekspress) formanın altındakı Add another … method (daha bir üsul əlavə et) düyməsinə klikləyin, yeni bloku doldurun və Yadda saxla düyməsinə basın. Plagində birdən çox üsul olduqda hər üsulun blokunda öz aktiv/deaktiv açarı və Remove this method (bu üsulu sil) düyməsi olur.",
+              "Plagini və içindəki bütün üsulları silmək üçün səhifənin aşağısında Remove plugin (plagini sil) düyməsinə klikləyin və təsdiqləyin."
             ],
             "fields": [
               {
@@ -6014,8 +6016,8 @@ const MANUAL = {
             ],
             "notes": [
               "Qiymətlər valyuta işarəsi olmadan, sadə rəqəmlə yazılır. Onlar mağazanızın valyutasındadır.",
-              "Çatdırılma üsulunda Yadda saxla düyməsinə basmaq onu həmişə yenidən aktiv edir, hətta siz onu qəsdən söndürmüş olsanız belə. Sadəcə dayandırılmış üsulun qiymətini dəyişmək istəsəniz, yadda saxladıqdan sonra o, yenidən canlı olacaq.",
-              "Uyğun ölkələr siyahısından bütün ölkələri silib yadda saxlamaq üsulu yenidən bütün ölkələrə açır. Configure söndürülmüş üsulu da söndürülmüş saxlayır: tənzimləmələrini yadda saxlamaq onu artıq yenidən yandırmır.",
+              "Üsulun tənzimləmələrini yadda saxlamaq onu aktiv və ya deaktiv etmir. Deaktiv etdiyiniz üsul yadda saxladıqdan sonra da deaktiv qalır.",
+              "Uyğun ölkələr (Eligible countries) siyahısından bütün ölkələri silib yadda saxlamaq üsulu yenidən bütün ölkələrə açır.",
               "Ölkə seçicisi yalnız sayt tənzimləmələrinizdə sadalanan ölkələri təklif edir. Orada ölkə siyahısı təyin etməmisinizsə, tam dünya siyahısı təklif olunur.",
               "Weight-Based yalnız səbətdəki ən azı bir məhsulun çəkisi doldurulubsa ödəniş mərhələsində görünür (Məhsullar, məhsulu redaktə edin, Weight (kg) xanası). Heç nə çəkilməyibsə, üsul ödəniş mərhələsindən səssizcə yox olur.",
               "Üsulun tənzimləmələri səhvdirsə, müştəriyə xəta göstərilmir — üsul sadəcə ödəniş mərhələsindən çıxarılır. Redaktədən sonra həmişə öz ödəniş prosesinizi sınaqdan keçirin.",
@@ -6028,16 +6030,16 @@ const MANUAL = {
           {
             "id": "email-plugins",
             "title": "E-poçt provayderləri: sifariş və əlaqə məktublarının göndərilməsi",
-            "summary": "E-poçt provayderi mağazanızın məktublarını — sifariş təsdiqlərini, əlaqə formasına cavabları — real olaraq çatdıran kənar xidmətdir. İki provayder dəstəklənir: SendGrid və Brevo. İdarə panelində provayder əlavə etməklə yalnız hansı xidmətin işlədiləcəyi qeyd olunur. Gizli açarın özünü isə developer əmr sətri ilə təyin edir; o, heç vaxt idarə panelinə yazılmır.",
+            "summary": "E-poçt provayderi mağazanızın məktublarını — sifariş təsdiqlərini, əlaqə formasına cavabları — real olaraq çatdıran kənar xidmətdir. İki provayder dəstəklənir: SendGrid və Brevo. İdarə panelində provayderi aktiv etməklə yalnız hansı xidmətin işlədiləcəyi qeyd olunur. Gizli açarın özünü isə developer əmr sətri ilə təyin edir; o, heç vaxt idarə panelinə yazılmır.",
             "steps": [
-              "Plaginlər (Plugins) siyahısını açıb E-poçt (Email) kartında Quraşdır (Install) düyməsini basın, ya da birbaşa /admin/plugins/manage/email-providers ünvanına keçin.",
-              "Yuxarı sağdakı Provayderlərə bax (Browse providers) düyməsini basın — SendGrid və Brevo görünəcək.",
-              "İstədiyinizin altındakı Quraşdır düyməsini basın. Tənzimləmə pəncərəsi açılır.",
+              "SendGrid və Brevo-nu görmək üçün yan paneldə Plaginlər (Plugins) bəndini açın və Category siyahısında Email seçin. Onlardan birini yadda saxlayana qədər hər ikisində Needs setup (quraşdırma tələb olunur) yazılır.",
+              "İstədiyiniz provayderin Enable (aktiv et) açarına klikləyin. Onun tənzimləmələr səhifəsi \"Fill in these settings, then switch it on\" (bu tənzimləmələri doldurun, sonra aktiv edin) bildirişi ilə açılır.",
               "Öz istinadınız üçün Ekran adı (Display name) yazın və Sıra (Order) nömrəsini təyin edin.",
-              "Pəncərədəki boz paneli oxuyun. Orada developerin icra etməli olduğu dəqiq əmr göstərilir: firebase functions:secrets:set, ardınca SendGrid üçün CASPIAN_EMAIL_SENDGRID_API_KEY, Brevo üçün isə CASPIAN_EMAIL_BREVO_API_KEY.",
-              "Yadda saxla (Save) düyməsini basın. Sizi plaginlər siyahısına qaytaracaq. Əlavə etdiyiniz ilk provayder avtomatik olaraq aktivləşdirilir.",
+              "Səhifədəki boz paneli oxuyun. Orada developerin icra etməli olduğu dəqiq əmr göstərilir: firebase functions:secrets:set, ardınca SendGrid üçün CASPIAN_EMAIL_SENDGRID_API_KEY, Brevo üçün isə CASPIAN_EMAIL_BREVO_API_KEY.",
+              "Yadda saxla (Save) düyməsinə basın. Provayder yadda saxlanan anda aktiv olur.",
               "Developerdən həmin əmri SendGrid və ya Brevo hesabınızdakı API açarı ilə icra etməsini, sonra isə firebase deploy --only functions:caspian-email əmri ilə e-poçt funksiyalarını yerləşdirməsini xahiş edin.",
-              "İşlədiyini yoxlayın: Tənzimləmələr (Settings), sonra E-poçtlar (Emails) bölməsinə keçin, istənilən şablonu açın, Test göndərilsin (Send test to) sahəsinə bir ünvan yazın və Test göndər (Send test) düyməsini basın. Yaşıl təsdiq e-poçtun işlədiyini bildirir; qırmızı Test göndərilmədi (Test send failed) mesajı isə açarın və ya yerləşdirmənin olmadığını göstərir."
+              "İşlədiyini yoxlayın: Tənzimləmələr (Settings), sonra E-poçtlar (Emails) bölməsinə keçin, istənilən şablonu açın, Test göndərilsin (Send test to) sahəsinə bir ünvan yazın və Test göndər (Send test) düyməsini basın. Yaşıl təsdiq e-poçtun işlədiyini bildirir; qırmızı Test göndərilmədi (Test send failed) mesajı isə açarın və ya yerləşdirmənin olmadığını göstərir.",
+              "Provayderdən istifadəni dayandırmaq üçün Plaginlər ekranında və ya onun tənzimləmələr səhifəsinin yuxarısında Enable açarını söndürün. Həmin səhifənin aşağısındakı Remove plugin (plagini sil) düyməsi onu silir."
             ],
             "fields": [
               {
@@ -6055,7 +6057,7 @@ const MANUAL = {
               "Bu ekranda API açarı üçün xana qəsdən yoxdur. Açar bazadan kənarda, Google-un gizli açar anbarında saxlanılır və yalnız əmr sətri ilə təyin edilə bilər.",
               "Provayder qeydinin özünü əlavə etmək üçün heç nə yerləşdirmək lazım deyil, amma caspian-email Cloud Functions yerləşdirilməyənə və gizli açar təyin olunmayana qədər heç bir məktub göndərilməyəcək.",
               "Həmişə yalnız bir provayder işlədilir: ən kiçik Sıra nömrəsi olan aktiv provayder. İkinci provayder əlavə etmək nə ehtiyat nüsxə, nə də əvəzedici variant yaradır.",
-              "Açar heç vaxt təyin edilməsə belə, ekranda həmişə Set up yox, İdarə et (Manage) yazısı görünür. İdarə paneli açarın mövcud olub-olmadığını sizə bildirə bilmir.",
+              "Yadda saxladıqdan sonra açar heç vaxt təyin edilməsə belə kartda Enabled (aktiv) və ya Disabled (deaktiv) görünür. İdarə paneli açarın mövcud olub-olmadığını sizə bildirə bilmir.",
               "Açar olmadıqda idarə panelində heç bir xəbərdarlıq görünmür. Məktublar sadəcə gəlib çatmır. İdarə panelinin içindən yoxlamağın yeganə yolu Tənzimləmələr, sonra E-poçtlar səhifəsindəki Test göndər düyməsidir.",
               "Göndərənin adı, göndərənin ünvanı və hər məktubun mətni burada təyin olunmur. Onlar Tənzimləmələr, sonra E-poçtlar bölməsindədir.",
               "İşə düşdükdən sonra məktublar avtomatik göndərilir: sifariş ödənilib və ya işlənir, göndərilib, çatdırılıb, geri qaytarılıb, yaxud ləğv edilib statusuna keçəndə, həmçinin kimsə əlaqə formasından istifadə edəndə. Uyğun şablonu olmayan sifariş statusları heç nə göndərmir.",
@@ -8650,7 +8652,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Заполнить этот экран недостаточно. Нужен ещё почтовый провайдер (SendGrid или Brevo), установленный и включённый в разделе Плагины (Plugins), и его ключ, прописанный в проекте Firebase тем, кто им управляет. Без этого ничего не отправляется, а сбой виден только в логах сервера.",
+              "Заполнить этот экран недостаточно. Нужен ещё почтовый провайдер (SendGrid или Brevo), включённый в разделе Плагины (Plugins), и его ключ, прописанный в проекте Firebase тем, кто им управляет. Без этого ничего не отправляется, а сбой виден только в логах сервера.",
               "В новом магазине все шаблоны в списке показаны как Enabled, но на самом деле ни один из них ещё не сохраняли, а задание рассылки пропускает шаблон, который ни разу не сохраняли. Откройте каждый нужный шаблон и один раз нажмите Сохранить шаблон. Список об этом не предупреждает.",
               "В новом магазине главный выключатель выключен. Включите его, иначе письма о заказах не пойдут.",
               "Отправка теста игнорирует главный выключатель: тест уходит даже когда выключатель выключен, поэтому успешный тест не доказывает, что рабочие письма включены.",
@@ -8664,17 +8666,17 @@ const MANUAL = {
           },
           {
             "id": "plugins-overview",
-            "title": "Экран Плагины (Plugins): как найти, установить и включить плагин",
-            "summary": "Плагины — это дополнения, которые считают стоимость доставки, принимают деньги покупателя и отправляют письма вашего магазина. Все они собраны на одном экране админки в виде карточек. Карточка — это либо то, что вы уже добавили в магазин (с пометкой Installed), либо то, что доступно для добавления. Видов три: доставка (Shipping), платежи (Payments) и письма (Email).",
+            "title": "Экран Плагины (Plugins): как включать и выключать плагины",
+            "summary": "Плагины — это дополнения, которые считают стоимость доставки, принимают деньги покупателя и отправляют письма вашего магазина. У каждого плагина, который предлагает магазин, есть одна карточка на экране Плагины (Plugins) — пользуетесь вы им или нет. Видов три: доставка (Shipping), платежи (Payments) и письма (Email). На каждой карточке есть переключатель Включить (Enable), который включает или выключает плагин, и кнопка Настройки (Settings), открывающая собственную страницу плагина.",
             "steps": [
-              "Нажмите Плагины в боковом меню админки, чтобы открыть список карточек.",
+              "Нажмите Плагины в боковом меню админки. Карточки сгруппированы по разделам Shipping, Payments и Email.",
               "Введите текст в поле поиска, чтобы сузить список. Поиск идёт по названию плагина и по его описанию.",
-              "Выпадающий список Статус (Status) оставит только уже добавленное (Installed) или только доступное к добавлению (Available).",
-              "Выпадающий список Категория (Category) оставит только доставку, только платежи или только письма.",
-              "На карточке того, что ещё не добавлено, нажмите Установить (Install). Откроется экран всей категории (доставка, платежи или письма), а не сам плагин.",
-              "На экране категории нажмите кнопку Обзор (Browse) справа вверху, затем нажмите Установить у нужного плагина. Откроется окно настроек.",
-              "Заполните настройки и нажмите Сохранить (Save). Вы вернётесь в список плагинов, где у плагина появится пометка Installed.",
-              "На карточке уже добавленного плагина нажмите Настроить (Configure), чтобы снова открыть окно его настроек."
+              "Выпадающий список Категория (Category) оставит только доставку, только платежи или только письма, а список Статус (Status) — только включённые (Enabled) или выключенные (Disabled) плагины.",
+              "Посмотрите строку статуса внизу карточки: Enabled (включён), Disabled (выключен) или Needs setup (нужна настройка). Needs setup означает, что плагин не заработает, пока вы не заполните некоторые данные.",
+              "Чтобы включить плагин, нажмите его переключатель Enable. Если плагин работает со стандартными настройками (например, Flat Rate, Free Shipping, Cheque или Cash on delivery), он сразу включается и появляется подтверждение.",
+              "Если плагину сначала нужны данные (ключи Stripe, банковские реквизиты или почтовый провайдер), переключатель вместо этого открывает страницу настроек плагина с уведомлением «Fill in these settings, then switch it on» (заполните настройки, затем включите). Заполните их и нажмите Сохранить (Save): плагин включится при сохранении.",
+              "Чтобы выключить плагин, снова нажмите его переключатель Enable. Настройки сохраняются, поэтому при повторном включении всё продолжится с того же места.",
+              "Нажмите Настройки (Settings) на карточке, чтобы открыть собственную страницу плагина: там меняются его настройки и там же его можно удалить."
             ],
             "fields": [
               {
@@ -8682,37 +8684,37 @@ const MANUAL = {
                 "what": "Поле свободного текста. Фильтрует карточки по названию, описанию или внутреннему идентификатору плагина."
               },
               {
-                "name": "Статус (Status)",
-                "what": "Выпадающий список: Все (All), Установленные (Installed), Доступные (Available)."
-              },
-              {
                 "name": "Категория (Category)",
                 "what": "Выпадающий список: Все (All), Доставка (Shipping), Платежи (Payments), Письма (Email)."
+              },
+              {
+                "name": "Статус (Status)",
+                "what": "Выпадающий список: Все (All), Включённые (Enabled), Выключенные (Disabled). В Disabled попадают и плагины, которым нужна настройка."
               }
             ],
             "notes": [
-              "Кнопка Установить на карточке не открывает настройки плагина напрямую. Она открывает экран категории, где нужно ещё нажать Обзор и снова выбрать плагин. Это на два клика больше, чем кажется.",
-              "После добавления плагина его карточка пропадает из списка доступных. Если нужна вторая копия того же плагина (например, второй аккаунт Stripe), список плагинов её не предложит. Зайдите на экран категории и воспользуйтесь кнопкой Обзор там.",
-              "Каждый добавленный плагин — включённый или нет — появляется отдельным пунктом под разделом Плагины в боковом меню. Нажатие на такой пункт сразу открывает окно настроек.",
-              "Список в боковом меню обновляется, когда вы возвращаетесь на вкладку браузера, поэтому изменение, сделанное в другой вкладке, появится по возвращении.",
-              "Трёх экранов категорий (доставка, платежи, почтовые провайдеры) в боковом меню нет. Попасть на них можно только через кнопку Установить в списке плагинов или по прямому адресу: /admin/plugins/manage/shipping, /admin/plugins/manage/payments, /admin/plugins/manage/email-providers.",
-              "Старые закладки на /admin/plugins/shipping, /admin/plugins/payments или /admin/plugins/email-providers по-прежнему работают: они открывают список плагинов с уже выставленным фильтром категории.",
+              "У каждого плагина одна карточка, даже если он используется несколько раз. Плагин доставки, на котором настроены два способа доставки (например, стандартная и экспресс-доставка по фиксированной цене), всё равно занимает одну карточку, а в строке статуса указано, сколько в нём способов.",
+              "Выключение такой карточки выключает все способы внутри неё. Включение включает все способы с корректными настройками. Чтобы включить или выключить один способ, используйте переключатель рядом с ним на странице настроек плагина.",
+              "Каждый включённый плагин также появляется отдельным пунктом под разделом Плагины в боковом меню. Нажатие на такой пункт открывает страницу настроек плагина.",
+              "Если переключатель не может сохранить изменение, появляется сообщение об ошибке и переключатель возвращается в прежнее положение. Если в сообщении сказано, что правила безопасности магазина устарели, нажмите Install now (установить сейчас) в баннере вверху админки и попробуйте снова.",
+              "Старые адреса по-прежнему работают: /admin/plugins/shipping, /admin/plugins/payments, /admin/plugins/email-providers и адреса /admin/plugins/manage/ открывают этот экран с уже выбранной категорией.",
+              "Если включить несколько платёжных плагинов или несколько почтовых провайдеров, выбора это никому не даёт. Используется только тот, у которого наименьший номер в поле Порядок (Order); см. разделы о платежах и письмах.",
               "Добавить собственный плагин из админки нельзя. Список доступных плагинов зашит в программу."
             ]
           },
           {
             "id": "payment-plugins",
             "title": "Платёжные плагины: как покупатели вам платят",
-            "summary": "Платёжный плагин — это способ, которым деньги доходят до вас. Их четыре: Stripe для оплаты картой и три ручных способа, при которых покупатель обещает заплатить, а вы позже сами подтверждаете оплату (банковский перевод, чек и наложенный платёж). Пока не добавлен и не включён хотя бы один платёжный плагин, магазин не примет ни одного заказа.",
+            "summary": "Платёжный плагин — это способ, которым деньги доходят до вас. Их четыре: Stripe для оплаты картой и три ручных способа, при которых покупатель обещает заплатить, а вы позже сами подтверждаете оплату (банковский перевод, чек и наложенный платёж). Пока не включён хотя бы один платёжный плагин, магазин не примет ни одного заказа.",
             "steps": [
-              "Откройте список плагинов и нажмите Установить (Install) на любой карточке из категории платежей, либо перейдите сразу на /admin/plugins/manage/payments.",
-              "Нажмите Обзор провайдеров (Browse providers) справа вверху, чтобы увидеть все четыре варианта с описанием каждого.",
-              "Нажмите Установить под нужным вариантом. Откроется окно настроек.",
+              "Откройте Плагины в боковом меню и выберите Payments в списке Категория (Category). Карточек четыре: Stripe, Direct bank transfer (BACS), Cheque и Cash on delivery.",
+              "Для Cheque или Cash on delivery достаточно нажать переключатель Включить (Enable): плагин включится с готовыми инструкциями для покупателей. Чтобы их изменить, затем нажмите Настройки (Settings).",
+              "Для Stripe или банковского перевода переключатель Enable вместо этого открывает страницу настроек плагина, потому что сначала нужно заполнить ключи или банковские реквизиты.",
               "Введите Отображаемое имя (Display name) для себя, например Stripe production или Банковский перевод.",
               "При желании введите Описание при оформлении заказа (Checkout description) и задайте Порядок (Order).",
-              "Заполните настройки провайдера (см. список полей). Неверные данные сохранить не удастся — появится сообщение о том, что именно не так.",
-              "Нажмите Сохранить (Save). Вы вернётесь в список плагинов. При первом добавлении провайдера он включается сразу; вторая копия того же провайдера создаётся выключенной.",
-              "На экране платежей у каждой строки есть Включить или Отключить (Enable / Disable), кнопка Set up или Manage, открывающая настройки, и Удалить (Remove).",
+              "Заполните настройки провайдера (см. список полей). Всё некорректное показывается красным под формой с сообщением о том, что не так, и ничего не сохраняется.",
+              "Нажмите Сохранить (Save). Если вы пришли сюда через переключатель Enable, плагин включится при сохранении; иначе воспользуйтесь переключателем Enable вверху страницы.",
+              "Чтобы удалить плагин вместе с настройками, нажмите Remove plugin (удалить плагин) внизу страницы настроек и подтвердите.",
               "Только для Stripe: разработчик должен дополнительно развернуть платёжные Cloud Functions и прописать соответствующие секретные ключи, иначе оформление заказа работать не будет."
             ],
             "fields": [
@@ -8723,7 +8725,7 @@ const MANUAL = {
               },
               {
                 "name": "Описание при оформлении заказа (Checkout description)",
-                "what": "Свободный текст. Показывается под названием в таблице платежей в админке."
+                "what": "Свободный текст. Сохраняется вместе с плагином; где он показывается, см. в примечаниях."
               },
               {
                 "name": "Порядок (Order)",
@@ -8795,25 +8797,26 @@ const MANUAL = {
               "Поле подходящих способов доставки у наложенного платежа сохраняется, но его никто не читает. Наложенный платёж предлагается независимо от того, что там указано.",
               "Описание при оформлении заказа на самой странице оформления не показывается. Там выводится только название провайдера мелким шрифтом рядом с кнопкой оплаты.",
               "Скидки по промокодам не применяются к заказам с банковским переводом, чеком или наложенным платежом. Скидка записывается как ноль, и корректировать её придётся вручную.",
-              "Кнопка в строке называется Set up, когда настройки заполнены не полностью, и Manage, когда они корректны. Эти два слова всегда на английском и не переводятся.",
+              "Пока настройки не заполнены, на карточке написано Needs setup (нужна настройка), а переключатель Enable открывает страницу настроек вместо того, чтобы включить плагин.",
               "Платёжные настройки по замыслу доступны для чтения любому посетителю вашего магазина. Никогда не вставляйте в эти поля секретный ключ."
             ]
           },
           {
             "id": "shipping-plugins",
             "title": "Плагины доставки: во сколько доставка обходится покупателю",
-            "summary": "Плагин доставки считает цену доставки, которую покупатель видит при оформлении заказа. Их можно добавить сколько угодно, и каждый добавленный становится отдельным вариантом доставки на выбор покупателя. Выбрать можно из четырёх: фиксированная цена, бесплатная доставка, бесплатная от определённой суммы и цена по весу. Ни один из них не требует технической настройки или отдельного развёртывания.",
+            "summary": "Плагин доставки считает цену доставки, которую покупатель видит при оформлении заказа. Каждый настроенный вами способ доставки становится отдельным вариантом на выбор покупателя, и в одном плагине может быть несколько способов — например, стандартная и экспресс-доставка по фиксированной цене. Плагинов четыре: фиксированная цена, бесплатная доставка, бесплатная от определённой суммы и цена по весу. Ни один из них не требует технической настройки или отдельного развёртывания.",
             "steps": [
-              "Откройте список плагинов и нажмите Установить (Install) на любой карточке доставки, либо перейдите сразу на /admin/plugins/manage/shipping.",
-              "Нажмите Обзор плагинов (Browse plugins) справа вверху. Откроется окно со всеми четырьмя плагинами доставки и коротким описанием каждого.",
-              "Нажмите Установить под нужным. Откроется окно настроек.",
+              "Откройте Плагины в боковом меню и выберите Shipping в списке Категория (Category). Карточек четыре: Flat Rate, Free Shipping, Free Over Threshold и Weight-Based.",
+              "Нажмите переключатель Включить (Enable) на карточке, чтобы сразу включить плагин с начальными настройками: Flat Rate стоит 5; Free Over Threshold бесплатна от 50, а ниже стоит 5; Weight-Based стоит 4 плюс 2 за кг; срок доставки 3–7 дней. Пока вы его не переименуете, способ называется как плагин.",
+              "Нажмите Настройки (Settings) на карточке, чтобы открыть собственную страницу плагина.",
               "Введите Отображаемое имя (Display name). Именно этот текст покупатель читает при оформлении заказа и на вашей публичной странице доставки, поэтому пишите что-то вроде «Стандартная доставка», а не название плагина.",
               "Задайте Мин. дней (Min days) и Макс. дней (Max days) — срок доставки. Изначально стоят 3 и 7.",
               "Задайте Порядок (Order) — позицию в списке: 1 показывается первым.",
               "Заполните настройки цены, у каждого плагина они свои (см. список полей).",
               "Если этим способом вы доставляете только в отдельные страны, нажмите Выбрать страны (Pick countries), отметьте их и подтвердите. Оставьте список пустым, чтобы способ предлагался везде.",
-              "Нажмите Сохранить (Save). Вы вернётесь в список плагинов, и способ доставки сразу включится.",
-              "На экране доставки у каждой строки есть Включить или Отключить (Enable / Disable), Настроить (Configure) для изменения и Удалить (Remove)."
+              "Нажмите Сохранить (Save). Некорректные цены показываются красным под формой, и ничего не сохраняется.",
+              "Чтобы предложить второй способ на том же плагине (например, экспресс рядом со стандартной), нажмите кнопку Add another … method (добавить ещё один способ) под формой, заполните новый блок и нажмите Сохранить. Когда в плагине больше одного способа, у блока каждого способа появляется свой переключатель и кнопка Remove this method (удалить этот способ).",
+              "Чтобы удалить плагин со всеми его способами, нажмите Remove plugin (удалить плагин) внизу страницы и подтвердите."
             ],
             "fields": [
               {
@@ -8872,8 +8875,8 @@ const MANUAL = {
             ],
             "notes": [
               "Цены вводятся обычными числами, без символа валюты в поле. Они указываются в валюте вашего магазина.",
-              "Нажатие Сохранить у способа доставки всегда снова его включает, даже если вы специально его отключали. Если вы хотели только поправить цену приостановленного способа, после сохранения он снова станет доступен покупателям.",
-              "Если удалить все страны из списка подходящих стран и сохранить, способ доставки снова открывается для всех стран. Configure также оставляет выключенный способ выключенным: сохранение его настроек больше не включает его обратно.",
+              "Сохранение настроек способа не включает и не выключает его. Выключенный вами способ остаётся выключенным после сохранения.",
+              "Если удалить все страны из списка подходящих стран (Eligible countries) и сохранить, способ доставки снова открывается для всех стран.",
               "Окно выбора стран предлагает только те страны, что перечислены в настройках сайта. Если список стран там не задан, предлагается полный список стран мира.",
               "Weight-Based появляется при оформлении заказа, только если хотя бы у одного товара в корзине заполнен вес (раздел Товары (Products), редактирование товара, поле Вес, кг (Weight (kg))). Если ничего не взвешено, способ молча пропадает из оформления заказа.",
               "Если настройки способа доставки неверны, он просто убирается из оформления заказа, а покупателю ошибка не показывается. После правок всегда проверяйте оформление заказа сами.",
@@ -8886,16 +8889,16 @@ const MANUAL = {
           {
             "id": "email-plugins",
             "title": "Почтовые провайдеры: отправка писем о заказах и с формы обратной связи",
-            "summary": "Почтовый провайдер — это внешний сервис, который фактически доставляет письма вашего магазина: подтверждения заказов и ответы на сообщения из формы обратной связи. Поддерживаются два: SendGrid и Brevo. Добавление провайдера в админ-панели лишь фиксирует, какой сервис использовать. Сам секретный ключ задаёт разработчик из командной строки — в админ-панели его никогда не вводят.",
+            "summary": "Почтовый провайдер — это внешний сервис, который фактически доставляет письма вашего магазина: подтверждения заказов и ответы на сообщения из формы обратной связи. Поддерживаются два: SendGrid и Brevo. Включение провайдера в админ-панели лишь фиксирует, какой сервис использовать. Сам секретный ключ задаёт разработчик из командной строки — в админ-панели его никогда не вводят.",
             "steps": [
-              "Откройте список плагинов (Plugins) и нажмите Установить (Install) на карточке Email либо сразу откройте /admin/plugins/manage/email-providers.",
-              "Нажмите Обзор провайдеров (Browse providers) в правом верхнем углу — появятся SendGrid и Brevo.",
-              "Нажмите Установить (Install) под нужным провайдером. Откроется окно настроек.",
+              "Откройте Плагины в боковом меню и выберите Email в списке Категория (Category), чтобы увидеть SendGrid и Brevo. Пока вы не сохраните один из них, на обоих написано Needs setup (нужна настройка).",
+              "Нажмите переключатель Включить (Enable) у нужного провайдера. Откроется его страница настроек с уведомлением «Fill in these settings, then switch it on» (заполните настройки, затем включите).",
               "Введите Отображаемое имя (Display name) для себя и укажите номер в поле Порядок (Order).",
-              "Прочитайте серую панель в этом окне. В ней приведена точная команда, которую должен выполнить разработчик: firebase functions:secrets:set, а затем CASPIAN_EMAIL_SENDGRID_API_KEY для SendGrid или CASPIAN_EMAIL_BREVO_API_KEY для Brevo.",
-              "Нажмите Сохранить (Save). Вы вернётесь к списку плагинов. Первый добавленный провайдер включается автоматически.",
+              "Прочитайте серую панель на странице. В ней приведена точная команда, которую должен выполнить разработчик: firebase functions:secrets:set, а затем CASPIAN_EMAIL_SENDGRID_API_KEY для SendGrid или CASPIAN_EMAIL_BREVO_API_KEY для Brevo.",
+              "Нажмите Сохранить (Save). Провайдер включится при сохранении.",
               "Попросите разработчика выполнить эту команду с API-ключом из вашего аккаунта SendGrid или Brevo, а затем развернуть почтовые функции командой firebase deploy --only functions:caspian-email.",
-              "Проверьте, что всё работает: откройте Настройки (Settings), Письма (Emails), откройте любой шаблон, введите адрес в поле Отправить тест на (Send test to) и нажмите Отправить тест (Send test). Зелёное подтверждение означает, что почта работает; красное Test send failed — что ключ не задан или функции не развёрнуты."
+              "Проверьте, что всё работает: откройте Настройки (Settings), Письма (Emails), откройте любой шаблон, введите адрес в поле Отправить тест на (Send test to) и нажмите Отправить тест (Send test). Зелёное подтверждение означает, что почта работает; красное Test send failed — что ключ не задан или функции не развёрнуты.",
+              "Чтобы перестать пользоваться провайдером, выключите его переключатель Enable на экране Плагины или вверху его страницы настроек. Кнопка Remove plugin (удалить плагин) внизу этой страницы удаляет его."
             ],
             "fields": [
               {
@@ -8913,7 +8916,7 @@ const MANUAL = {
               "Поля для API-ключа на этом экране нет намеренно. Ключ хранится в секретном хранилище Google, вне базы данных, и задать его можно только из командной строки.",
               "Чтобы добавить саму запись о провайдере, разворачивать ничего не нужно, но ни одно письмо не уйдёт, пока не развёрнуты Cloud Functions caspian-email и не задан секретный ключ.",
               "Всегда используется только один провайдер — включённый, с наименьшим номером в поле Порядок (Order). Добавление второго не создаёт ни резерв, ни запасной вариант.",
-              "На экране всегда написано Управление (Manage), а не Настроить (Set up), даже если ключ никогда не задавался. Админ-панель не может сообщить вам, задан ключ или нет.",
+              "После сохранения на карточке написано Enabled или Disabled, даже если ключ никогда не задавался. Админ-панель не может сообщить вам, задан ключ или нет.",
               "Когда ключ не задан, в админ-панели ничего не появляется. Письма просто не приходят. Кнопка Отправить тест (Send test) в разделе Настройки, Письма — единственный способ проверить это изнутри админ-панели.",
               "Имя отправителя, адрес отправителя и текст всех писем задаются не здесь, а в разделе Настройки, Письма.",
               "Когда всё настроено, письма отправляются автоматически: когда заказ становится оплаченным или в обработке, отправленным или доставленным, возвращённым или отменённым, а также когда кто-то пишет через форму обратной связи. Для статусов заказа, у которых нет подходящего шаблона, письма не отправляются.",
@@ -11508,7 +11511,7 @@ const MANUAL = {
               }
             ],
             "notes": [
-              "Bu ekranı doldurmak tek başına yeterli değildir. Ayrıca Eklentiler (Plugins) bölümünde kurulu ve açık bir e-posta sağlayıcısı (SendGrid veya Brevo) ve projeyi yöneten kişinin Firebase projesinde tanımladığı bir anahtar gerekir. Bunlar olmadan hiçbir şey gönderilmez ve hata yalnızca sunucu günlüklerinde görünür.",
+              "Bu ekranı doldurmak tek başına yeterli değildir. Ayrıca Eklentiler (Plugins) bölümünde açık bir e-posta sağlayıcısı (SendGrid veya Brevo) ve projeyi yöneten kişinin Firebase projesinde tanımladığı bir anahtar gerekir. Bunlar olmadan hiçbir şey gönderilmez ve hata yalnızca sunucu günlüklerinde görünür.",
               "Yepyeni bir mağazada listedeki her şablon Enabled görünür, ama hiçbiri gerçekte kaydedilmemiştir ve gönderim işi, hiç kaydedilmemiş bir şablonu atlar. Göndermek istediğiniz her şablonu açıp bir kez Şablonu kaydet düğmesine tıklayın. Liste sizi bu konuda uyarmaz.",
               "Ana anahtar yeni bir mağazada kapalıdır. Açmazsanız hiçbir sipariş e-postası gitmez.",
               "Testi gönder işlemi ana anahtarı dikkate almaz. Ana anahtar kapalıyken bile gönderim yapar; yani başarılı bir test, canlı e-postaların açık olduğunu kanıtlamaz.",
@@ -11522,17 +11525,17 @@ const MANUAL = {
           },
           {
             "id": "plugins-overview",
-            "title": "Eklentiler (Plugins) ekranı: eklenti bulma, kurma ve açma",
-            "summary": "Eklentiler; teslimatın ne kadar tutacağını hesaplayan, müşteriden parayı tahsil eden ve mağazanızın e-postalarını gönderen ek yazılımlardır. Hepsi yönetim panelinde tek bir ekranda, kartlar hâlinde listelenir. Her kart ya mağazanıza daha önce eklediğiniz bir eklentidir (Kurulu / Installed olarak işaretlidir) ya da ekleyebileceğiniz bir eklentidir. Üç tür vardır: Kargo (Shipping), Ödemeler (Payments) ve E-posta (Email).",
+            "title": "Eklentiler (Plugins) ekranı: eklentileri açma ve kapatma",
+            "summary": "Eklentiler; teslimatın ne kadar tutacağını hesaplayan, müşteriden parayı tahsil eden ve mağazanızın e-postalarını gönderen ek yazılımlardır. Mağazanın sunduğu her eklentinin, kullansanız da kullanmasanız da, Eklentiler (Plugins) ekranında bir kartı vardır. Üç tür vardır: Kargo (Shipping), Ödemeler (Payments) ve E-posta (Email). Her kartta eklentiyi açıp kapatan bir Etkinleştir (Enable) anahtarı ve eklentinin kendi sayfasını açan bir Ayarlar (Settings) düğmesi bulunur.",
             "steps": [
-              "Kart listesini açmak için yönetim menüsünde Eklentiler (Plugins) bağlantısına tıklayın.",
+              "Yönetim menüsünde Eklentiler (Plugins) bağlantısına tıklayın. Kartlar Shipping, Payments ve Email başlıkları altında gruplanmıştır.",
               "Listeyi daraltmak için arama kutusuna yazın. Arama, eklentinin adıyla ve açıklamasıyla eşleşir.",
-              "Yalnızca eklediklerinizi (Installed) veya yalnızca ekleyebileceklerinizi (Available) görmek için Durum (Status) açılır listesini kullanın.",
-              "Yalnızca Kargo, yalnızca Ödemeler ya da yalnızca E-posta görmek için Kategori (Category) açılır listesini kullanın.",
-              "Henüz eklemediğiniz bir kartta Kur (Install) düğmesine tıklayın. Bu sizi doğrudan eklentiye değil, o kategorinin (Kargo, Ödemeler veya E-posta) tamamına ait ekrana götürür.",
-              "Açılan kategori ekranında sağ üstteki Gözat (Browse) düğmesine tıklayın, ardından istediğiniz eklentide Kur düğmesine basın. Bir ayar penceresi açılır.",
-              "Ayarları doldurup Kaydet (Save) düğmesine tıklayın. Eklentiler listesine geri dönersiniz; eklenti artık Installed rozetiyle görünür.",
-              "Daha önce eklediğiniz bir kartta, ayar penceresini yeniden açmak için Yapılandır (Configure) düğmesine tıklayın."
+              "Yalnızca Kargo, yalnızca Ödemeler ya da yalnızca E-posta görmek için Kategori (Category) açılır listesini; yalnızca açık (Enabled) veya kapalı (Disabled) eklentileri görmek için Durum (Status) açılır listesini kullanın.",
+              "Her kartın altındaki durum satırını okuyun: Enabled (açık), Disabled (kapalı) veya Needs setup (kurulum gerekiyor). Needs setup, bazı bilgileri doldurana kadar eklentinin çalışamayacağı anlamına gelir.",
+              "Bir eklentiyi açmak için Enable anahtarına tıklayın. Eklenti standart ayarlarıyla çalışıyorsa (örneğin Flat Rate, Free Shipping, Cheque veya Cash on delivery) hemen açılır ve bir onay mesajı görünür.",
+              "Eklenti önce bilgi gerektiriyorsa (Stripe anahtarları, banka bilgileri veya bir e-posta sağlayıcısı), anahtar bunun yerine o eklentinin ayarlar sayfasını \"Fill in these settings, then switch it on\" (bu ayarları doldurun, ardından açın) uyarısıyla açar. Bilgileri doldurup Kaydet (Save) düğmesine tıklayın: eklenti kaydedilirken açılır.",
+              "Bir eklentiyi kapatmak için Enable anahtarına yeniden tıklayın. Ayarları saklanır; daha sonra yeniden açtığınızda kaldığınız yerden devam eder.",
+              "Eklentinin kendi sayfasını açmak için karttaki Ayarlar (Settings) düğmesine tıklayın; ayarlarını orada değiştirir veya eklentiyi orada kaldırırsınız."
             ],
             "fields": [
               {
@@ -11540,37 +11543,37 @@ const MANUAL = {
                 "what": "Serbest metin kutusu. Kartları ada, açıklamaya veya eklentinin dahili kimliğine göre filtreler."
               },
               {
-                "name": "Durum (Status)",
-                "what": "Açılır liste: Tümü (All), Kurulu (Installed), Kurulabilir (Available)."
-              },
-              {
                 "name": "Kategori (Category)",
                 "what": "Açılır liste: Tümü (All), Kargo (Shipping), Ödemeler (Payments), E-posta (Email)."
+              },
+              {
+                "name": "Durum (Status)",
+                "what": "Açılır liste: Tümü (All), Açık (Enabled), Kapalı (Disabled). Disabled, kurulum gerektiren eklentileri de listeler."
               }
             ],
             "notes": [
-              "Karttaki Kur düğmesi o eklentinin ayarlarını doğrudan açmaz. Kategori ekranını açar; orada yine Gözat düğmesine tıklayıp eklentiyi tekrar seçmeniz gerekir. Yani göründüğünden iki tık fazladır.",
-              "Bir eklentiyi ekledikten sonra o eklentinin Available kartı listeden kaybolur. Aynı eklentiden ikinci bir kopya istiyorsanız (örneğin ikinci bir Stripe hesabı), Eklentiler listesi bunu sunmaz. Bunun yerine kategori ekranına gidip oradaki Gözat düğmesini kullanın.",
-              "Eklediğiniz her eklenti, açık ya da kapalı olsun, menüde Eklentiler'in altında kendi satırı olarak da görünür. Birine tıklamak ayar penceresini doğrudan açar.",
-              "Menüdeki bu liste, tarayıcı sekmesine geri döndüğünüzde yenilenir; böylece başka bir sekmede yapılan değişiklik siz döndüğünüzde görünür.",
-              "Üç kategori ekranı (Kargo, Ödemeler, E-posta sağlayıcıları) menüde yer almaz. Bunlara yalnızca Eklentiler listesindeki bir Kur düğmesiyle veya adresi yazarak ulaşırsınız: /admin/plugins/manage/shipping, /admin/plugins/manage/payments, /admin/plugins/manage/email-providers.",
-              "/admin/plugins/shipping, /admin/plugins/payments veya /admin/plugins/email-providers adreslerine ait eski yer imleri hâlâ çalışır: sizi ilgili kategori filtresi uygulanmış hâlde Eklentiler listesine götürür.",
+              "Bir eklenti birden fazla kez kullanılsa bile her eklentinin tek bir kartı vardır. İki teslimat yöntemi için kullanılan bir kargo eklentisinin (örneğin Standart ve Ekspres sabit fiyat) yine tek kartı olur; durum satırı içinde kaç yöntem olduğunu belirtir.",
+              "Böyle bir kartı kapatmak içindeki tüm yöntemleri kapatır. Açmak ise ayarları geçerli olan tüm yöntemleri açar. Tek bir yöntemi açıp kapatmak için eklentinin ayarlar sayfasında o yöntemin yanındaki anahtarı kullanın.",
+              "Açık olan her eklenti, menüde Eklentiler'in altında kendi satırı olarak da görünür. Birine tıklamak o eklentinin ayarlar sayfasını açar.",
+              "Anahtar değişikliği kaydedemezse bir hata mesajı görünür ve anahtar eski konumuna döner. Mesaj mağazanızın güvenlik kurallarının eskidiğini söylüyorsa, yönetim panelinin üstündeki bantta Install now (şimdi kur) düğmesine tıklayın ve yeniden deneyin.",
+              "Eski adresler hâlâ çalışır: /admin/plugins/shipping, /admin/plugins/payments, /admin/plugins/email-providers ve /admin/plugins/manage/ adresleri bu ekranı ilgili kategori seçili olarak açar.",
+              "Birden fazla ödeme eklentisini veya birden fazla e-posta sağlayıcısını açmak kimseye seçim imkânı vermez. Yalnızca Sıra (Order) numarası en küçük olan kullanılır; Ödemeler ve E-posta bölümlerine bakın.",
               "Yönetim panelinden kendi eklentinizi ekleyemezsiniz. Kurulabilir eklentilerin listesi yazılımda sabittir."
             ]
           },
           {
             "id": "payment-plugins",
             "title": "Ödeme eklentileri: müşteriler size nasıl ödeme yapar",
-            "summary": "Ödeme eklentisi, paranın size ulaşma yoludur. Dört tane vardır: kartlı ödemeler için Stripe ve müşterinin ödeme sözü verdiği, sizin daha sonra kendiniz onayladığınız üç manuel yöntem (banka havalesi, çek ve kapıda ödeme). En az bir ödeme eklentisi eklenip açılmadan mağazanız hiç sipariş alamaz.",
+            "summary": "Ödeme eklentisi, paranın size ulaşma yoludur. Dört tane vardır: kartlı ödemeler için Stripe ve müşterinin ödeme sözü verdiği, sizin daha sonra kendiniz onayladığınız üç manuel yöntem (banka havalesi, çek ve kapıda ödeme). En az bir ödeme eklentisi açılmadan mağazanız hiç sipariş alamaz.",
             "steps": [
-              "Eklentiler listesini açıp herhangi bir Ödemeler (Payments) kartında Kur (Install) düğmesine tıklayın veya doğrudan /admin/plugins/manage/payments adresine gidin.",
-              "Her birinin açıklamasıyla birlikte dört seçeneği görmek için sağ üstteki Sağlayıcılara gözat (Browse providers) düğmesine tıklayın.",
-              "İstediğiniz seçeneğin altındaki Kur düğmesine tıklayın. Ayar penceresi açılır.",
+              "Menüden Eklentiler (Plugins) ekranını açın ve Kategori (Category) listesinde Payments seçin. Dört kart vardır: Stripe, Direct bank transfer (BACS), Cheque ve Cash on delivery.",
+              "Cheque veya Cash on delivery için Etkinleştir (Enable) anahtarına tıklamanız yeterlidir: eklenti, müşteriler için hazır talimatlarla açılır. Bunları değiştirmek için ardından Ayarlar (Settings) düğmesine tıklayın.",
+              "Stripe veya banka havalesi için Enable anahtarı bunun yerine eklentinin ayarlar sayfasını açar; çünkü önce anahtarların veya banka bilgilerinin doldurulması gerekir.",
               "Kendi kullanımınız için bir Görünen ad (Display name) yazın; örneğin Stripe production veya Banka havalesi.",
               "İsterseniz bir Ödeme açıklaması (Checkout description) yazın ve Sıra numarasını (Order number) belirleyin.",
-              "Sağlayıcı ayarlarını doldurun (alan listesine bakın). Geçersiz bir değer, neyin yanlış olduğunu söyleyen bir mesajla reddedilir.",
-              "Kaydet (Save) düğmesine tıklayın. Eklentiler listesine dönersiniz. Bir sağlayıcıyı ilk kez eklediğinizde sizin için açık duruma getirilir; aynı sağlayıcının ikinci kopyası kapalı başlar.",
-              "Ödemeler ekranına döndüğünüzde her satırda Aç (Enable) veya Kapat (Disable), ayarları yeniden açan Kur (Set up) ya da Yönet (Manage) düğmesi ve Kaldır (Remove) bulunur.",
+              "Sağlayıcı ayarlarını doldurun (alan listesine bakın). Geçersiz olan her şey, neyin yanlış olduğunu söyleyen bir mesajla formun altında kırmızı gösterilir ve hiçbir şey kaydedilmez.",
+              "Kaydet (Save) düğmesine tıklayın. Enable anahtarından geldiyseniz eklenti kaydedilirken açılır; aksi hâlde sayfanın üstündeki Enable anahtarını kullanın.",
+              "Eklentiyi ve ayarlarını kaldırmak için ayarlar sayfasının altındaki Remove plugin (eklentiyi kaldır) düğmesine tıklayın ve onaylayın.",
               "Yalnızca Stripe için: ödeme adımının çalışması için bir geliştiricinin ayrıca ödeme Cloud Functions bileşenlerini dağıtması ve ilgili gizli anahtarları tanımlaması gerekir."
             ],
             "fields": [
@@ -11581,7 +11584,7 @@ const MANUAL = {
               },
               {
                 "name": "Ödeme açıklaması (Checkout description)",
-                "what": "Serbest metin. Yönetim panelindeki Ödemeler tablosunda adın altında görünür."
+                "what": "Serbest metin. Eklentiyle birlikte kaydedilir; nerede göründüğü için notlara bakın."
               },
               {
                 "name": "Sıra (Order)",
@@ -11653,25 +11656,26 @@ const MANUAL = {
               "Kapıda ödemedeki Uygun kargo yöntemleri alanı kaydedilir, ama hiçbir yer bu bilgiyi okumaz. Oraya ne yazarsanız yazın kapıda ödeme her durumda sunulur.",
               "Ödeme açıklaması, ödeme sayfasında gösterilmez. Ödeme sayfasında yalnızca sağlayıcının marka adı, ödeme düğmesinin yakınında küçük punto ile görünür.",
               "İndirim kodu indirimleri banka havalesi, çek veya kapıda ödeme siparişlerine uygulanmaz. İndirim sıfır olarak kaydedilir ve düzeltmeyi elle yapmanız gerekir.",
-              "Her satırdaki düğme, ayarlar eksikse Set up, geçerliyse Manage yazar. Bu iki kelime her zaman İngilizce kalır ve çevrilmez.",
+              "Ayarlar eksik olduğu sürece kartta Needs setup (kurulum gerekiyor) yazar ve Enable anahtarı eklentiyi açmak yerine ayarlar sayfasını açar.",
               "Ödeme ayarları, tasarım gereği mağazanızı ziyaret eden herkes tarafından okunabilir. Bu alanlara asla gizli anahtar yapıştırmayın."
             ]
           },
           {
             "id": "shipping-plugins",
             "title": "Kargo eklentileri: teslimat müşterinize ne kadara mal olur",
-            "summary": "Kargo eklentisi, müşterinin ödeme adımında göreceği teslimat fiyatını hesaplar. İstediğiniz kadar ekleyebilirsiniz; eklediğiniz her biri, müşterinin seçebileceği ayrı bir teslimat seçeneği olur. Dört seçenek vardır: sabit fiyat, ücretsiz, belirli tutarın üzerinde ücretsiz ve ağırlığa göre fiyat. Hiçbiri teknik kurulum veya ek dağıtım gerektirmez.",
+            "summary": "Kargo eklentisi, müşterinin ödeme adımında göreceği teslimat fiyatını hesaplar. Kurduğunuz her teslimat yöntemi müşterinin seçebileceği ayrı bir seçenek olur ve bir eklenti birden fazla yöntem barındırabilir; örneğin Standart ve Ekspres sabit fiyat. Dört eklenti vardır: sabit fiyat, ücretsiz, belirli tutarın üzerinde ücretsiz ve ağırlığa göre fiyat. Hiçbiri teknik kurulum veya ek dağıtım gerektirmez.",
             "steps": [
-              "Eklentiler listesini açıp herhangi bir Kargo (Shipping) kartında Kur (Install) düğmesine tıklayın veya doğrudan /admin/plugins/manage/shipping adresine gidin.",
-              "Sağ üstteki Eklentilere gözat (Browse plugins) düğmesine tıklayın. Dört kargo eklentisinin tamamını kısa açıklamalarıyla gösteren bir pencere açılır.",
-              "İstediğiniz eklentinin altındaki Kur düğmesine tıklayın. Ayar penceresi açılır.",
+              "Menüden Eklentiler (Plugins) ekranını açın ve Kategori (Category) listesinde Shipping seçin. Dört kart vardır: Flat Rate, Free Shipping, Free Over Threshold ve Weight-Based.",
+              "Eklentiyi başlangıç ayarlarıyla hemen açmak için kartın Etkinleştir (Enable) anahtarına tıklayın: Flat Rate 5 alır; Free Over Threshold 50 ve üzerinde ücretsizdir, altında 5 alır; Weight-Based 4 artı kg başına 2 alır; teslimat süresi 3–7 gündür. Siz yeniden adlandırana kadar yöntem eklentinin adını taşır.",
+              "Eklentinin kendi sayfasını açmak için karttaki Ayarlar (Settings) düğmesine tıklayın.",
               "Bir Görünen ad (Display name) yazın. Müşterinin ödeme adımında ve herkese açık kargo sayfanızda okuyacağı metin budur; bu yüzden eklentinin kendi adını değil, Standart teslimat gibi bir ifade kullanın.",
               "Teslimatın ne kadar süreceği için Min gün (Min days) ve Maks gün (Max days) değerlerini ayarlayın. Başlangıç değerleri 3 ve 7'dir.",
               "Sıra (Order) değerini ayarlayın. Bu, listedeki konumdur; 1 ilk sırada görünür.",
               "Eklentiye göre değişen fiyat ayarlarını doldurun (alan listesine bakın).",
               "Bu yöntemle yalnızca belirli ülkelere teslimat yapıyorsanız Ülkeleri seç (Pick countries) düğmesine tıklayın, ülkeleri işaretleyin ve onaylayın. Yöntemi her yerde sunmak için boş bırakın.",
-              "Kaydet (Save) düğmesine tıklayın. Eklentiler listesine dönersiniz ve yöntem hemen açık duruma gelir.",
-              "Kargo ekranına döndüğünüzde her satırda yöntemi açıp kapatmak için Aç (Enable) veya Kapat (Disable), düzenlemek için Yapılandır (Configure) ve silmek için Kaldır (Remove) bulunur."
+              "Kaydet (Save) düğmesine tıklayın. Geçersiz fiyatlar formun altında kırmızı gösterilir ve hiçbir şey kaydedilmez.",
+              "Aynı eklentiden ikinci bir yöntem sunmak için (örneğin Standart'ın yanında Ekspres) formun altındaki Add another … method (bir yöntem daha ekle) düğmesine tıklayın, yeni kutuyu doldurun ve Kaydet'e tıklayın. Bir eklentide birden fazla yöntem olduğunda her yöntemin kutusunda kendi aç/kapat anahtarı ve Remove this method (bu yöntemi kaldır) düğmesi bulunur.",
+              "Eklentiyi ve içindeki tüm yöntemleri silmek için sayfanın altındaki Remove plugin (eklentiyi kaldır) düğmesine tıklayın ve onaylayın."
             ],
             "fields": [
               {
@@ -11730,8 +11734,8 @@ const MANUAL = {
             ],
             "notes": [
               "Fiyatlar alanlara para birimi simgesi olmadan düz sayı olarak yazılır. Mağazanızın para birimi cinsindendir.",
-              "Bir teslimat yönteminde Kaydet düğmesine tıklamak, yöntemi bilerek kapatmış olsanız bile onu her zaman yeniden açar. Duraklattığınız bir yöntemin yalnızca fiyatını düzeltmek istediyseniz, kaydettikten sonra yöntem yeniden yayında olur.",
-              "Uygun ülkeler listesindeki tüm ülkeleri kaldırıp kaydetmek yöntemi yeniden tüm ülkelere açar. Configure kapalı bir yöntemi de kapalı bırakır: ayarlarını kaydetmek onu artık yeniden açmaz.",
+              "Bir yöntemin ayarlarını kaydetmek onu açmaz veya kapatmaz. Kapattığınız bir yöntem kaydettikten sonra da kapalı kalır.",
+              "Uygun ülkeler (Eligible countries) listesindeki tüm ülkeleri kaldırıp kaydetmek yöntemi yeniden tüm ülkelere açar.",
               "Ülke seçici yalnızca site ayarlarınızda listelenen ülkeleri sunar. Orada bir ülke listesi belirlemediyseniz tüm dünya listesini sunar.",
               "Weight-Based yöntemi, ödeme adımında yalnızca sepetteki en az bir üründe ağırlık girilmişse görünür (Ürünler > bir ürünü düzenleyin > Weight (kg) alanı). Hiçbir ürünün ağırlığı yoksa yöntem ödeme adımından sessizce kaybolur.",
               "Bir yöntemin ayarları geçersizse müşteriye hata gösterilmez; yöntem sessizce ödeme adımından çıkarılır. Düzenleme yaptıktan sonra kendi ödeme akışınızı mutlaka test edin.",
@@ -11744,16 +11748,16 @@ const MANUAL = {
           {
             "id": "email-plugins",
             "title": "E-posta sağlayıcıları: sipariş ve iletişim e-postalarının gönderilmesi",
-            "summary": "E-posta sağlayıcısı, mağazanızın sipariş onayları ve iletişim formu yanıtları gibi e-postalarını fiilen teslim eden dış hizmettir. İki hizmet desteklenir: SendGrid ve Brevo. Yönetim panelinde bir sağlayıcı eklemek yalnızca hangi hizmetin kullanılacağını kaydeder. Gizli anahtarın kendisi hiçbir zaman yönetim paneline yazılmaz; bir geliştirici tarafından komut satırından ayarlanır.",
+            "summary": "E-posta sağlayıcısı, mağazanızın sipariş onayları ve iletişim formu yanıtları gibi e-postalarını fiilen teslim eden dış hizmettir. İki hizmet desteklenir: SendGrid ve Brevo. Yönetim panelinde bir sağlayıcıyı açmak yalnızca hangi hizmetin kullanılacağını kaydeder. Gizli anahtarın kendisi hiçbir zaman yönetim paneline yazılmaz; bir geliştirici tarafından komut satırından ayarlanır.",
             "steps": [
-              "Eklentiler (Plugins) listesini açıp bir E-posta (Email) kartındaki Kur (Install) düğmesine tıklayın veya doğrudan /admin/plugins/manage/email-providers adresine gidin.",
-              "SendGrid'i ve Brevo'yu görmek için sağ üstteki Sağlayıcılara göz at (Browse providers) düğmesine tıklayın.",
-              "İstediğiniz sağlayıcının altındaki Kur (Install) düğmesine tıklayın. Ayar kutusu açılır.",
+              "SendGrid ve Brevo'yu görmek için menüden Eklentiler (Plugins) ekranını açın ve Kategori (Category) listesinde Email seçin. Birini kaydedene kadar ikisinde de Needs setup (kurulum gerekiyor) yazar.",
+              "İstediğiniz sağlayıcının Etkinleştir (Enable) anahtarına tıklayın. Ayarlar sayfası \"Fill in these settings, then switch it on\" (bu ayarları doldurun, ardından açın) uyarısıyla açılır.",
               "Kendi takibiniz için bir Görünen ad (Display name) yazın ve Sıra (Order) numarasını girin.",
-              "Kutudaki gri paneli okuyun. Bir geliştiricinin çalıştırması gereken tam komutu gösterir: firebase functions:secrets:set komutunun ardından SendGrid için CASPIAN_EMAIL_SENDGRID_API_KEY, Brevo için CASPIAN_EMAIL_BREVO_API_KEY gelir.",
-              "Kaydet (Save) düğmesine tıklayın. Eklentiler listesine geri dönersiniz. Eklediğiniz ilk sağlayıcı sizin için otomatik olarak açılır.",
+              "Sayfadaki gri paneli okuyun. Bir geliştiricinin çalıştırması gereken tam komutu gösterir: firebase functions:secrets:set komutunun ardından SendGrid için CASPIAN_EMAIL_SENDGRID_API_KEY, Brevo için CASPIAN_EMAIL_BREVO_API_KEY gelir.",
+              "Kaydet (Save) düğmesine tıklayın. Sağlayıcı kaydedilirken açılır.",
               "Bir geliştiricinin, SendGrid veya Brevo hesabınızdaki API anahtarıyla bu komutu çalıştırmasını sağlayın; ardından e-posta fonksiyonlarını firebase deploy --only functions:caspian-email komutuyla dağıtsın.",
-              "Çalıştığını kontrol edin: Ayarlar (Settings) bölümüne, oradan E-postalar (Emails) bölümüne gidin, herhangi bir şablonu açın, Test gönderilecek adres (Send test to) alanına bir adres yazın ve Test gönder (Send test) düğmesine tıklayın. Yeşil bir onay e-postanın çalıştığı anlamına gelir; kırmızı bir Test gönderimi başarısız (Test send failed) mesajı ise anahtarın ya da dağıtımın eksik olduğu anlamına gelir."
+              "Çalıştığını kontrol edin: Ayarlar (Settings) bölümüne, oradan E-postalar (Emails) bölümüne gidin, herhangi bir şablonu açın, Test gönderilecek adres (Send test to) alanına bir adres yazın ve Test gönder (Send test) düğmesine tıklayın. Yeşil bir onay e-postanın çalıştığı anlamına gelir; kırmızı bir Test gönderimi başarısız (Test send failed) mesajı ise anahtarın ya da dağıtımın eksik olduğu anlamına gelir.",
+              "Bir sağlayıcıyı kullanmayı bırakmak için Eklentiler ekranında veya ayarlar sayfasının üstünde Enable anahtarını kapatın. O sayfanın altındaki Remove plugin (eklentiyi kaldır) düğmesi onu siler."
             ],
             "fields": [
               {
@@ -11771,7 +11775,7 @@ const MANUAL = {
               "Bu ekranda bilerek API anahtarı kutusu bulunmaz. Anahtar, veritabanının dışında Google'ın gizli anahtar deposunda saklanır ve yalnızca komut satırından ayarlanabilir.",
               "Sağlayıcı kaydının kendisini eklemek için herhangi bir dağıtım gerekmez; ancak caspian-email Cloud Functions dağıtılmadan ve gizli anahtar ayarlanmadan hiçbir e-posta gönderilmez.",
               "Her zaman tek bir sağlayıcı kullanılır: en küçük Sıra (Order) numarasına sahip, açık durumdaki sağlayıcı. İkinci bir sağlayıcı eklemek yedek ya da alternatif oluşturmaz.",
-              "Anahtar hiç ayarlanmamış olsa bile ekranda her zaman Yönet (Manage) yazar, Kur (Set up) yazmaz. Yönetim paneli size anahtarın mevcut olup olmadığını söyleyemez.",
+              "Kaydedildikten sonra, anahtar hiç ayarlanmamış olsa bile kartta Enabled veya Disabled yazar. Yönetim paneli size anahtarın mevcut olup olmadığını söyleyemez.",
               "Anahtar eksik olduğunda yönetim panelinde hiçbir uyarı görünmez. E-postalar sadece ulaşmaz. Ayarlar (Settings) bölümündeki E-postalar (Emails) sayfasında bulunan Test gönder (Send test) düğmesi, yönetim panelinin içinden kontrol etmenin tek yoludur.",
               "Gönderen adı, gönderen adresi ve e-postaların metinleri burada ayarlanmaz. Bunlar Ayarlar (Settings) bölümündeki E-postalar (Emails) sayfasında bulunur.",
               "Çalışmaya başladıktan sonra e-postalar; bir sipariş ödendi ya da işleniyor, kargolandı, teslim edildi, iade edildi veya iptal edildi durumuna geçtiğinde ve biri iletişim formunu kullandığında otomatik olarak gönderilir. Eşleşen şablonu olmayan sipariş durumları hiçbir e-posta göndermez.",

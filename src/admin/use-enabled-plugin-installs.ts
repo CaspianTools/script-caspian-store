@@ -6,6 +6,17 @@ import { listShippingPluginInstalls } from '../services/shipping-plugin-service'
 import { listPaymentPluginInstalls } from '../services/payment-plugin-service';
 import { listEmailPluginInstalls } from '../services/email-plugin-service';
 
+/**
+ * Fired on `window` after the admin writes a plugin install, so the sidebar's
+ * plugin children update without waiting for a window focus.
+ */
+const PLUGIN_INSTALLS_CHANGED_EVENT = 'caspian:plugin-installs-changed';
+
+export function notifyPluginInstallsChanged(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event(PLUGIN_INSTALLS_CHANGED_EVENT));
+}
+
 export type EnabledPluginCategory = 'shipping' | 'payment' | 'email';
 
 export interface EnabledPluginInstall {
@@ -34,13 +45,15 @@ export interface UseEnabledPluginInstallsOptions {
  * email collections, merged into one list.
  *
  * Added in v7.1.0 to power two surfaces:
- * 1. The unified `<AdminPluginsPage>` list view.
+ * 1. The unified `<AdminPluginsPage>` list view (now read through
+ *    `admin-plugin-registry`, which also needs each install's config).
  * 2. Dynamic sidebar children under the Plugins nav group in `<AdminShell>` —
- *    each enabled install becomes a sidebar leaf linking to
- *    `/admin/plugins/<pluginId>/<installId>`.
+ *    each plugin with an enabled install becomes a sidebar leaf linking to
+ *    its settings page, `/admin/plugins/<pluginId>`.
  *
  * Re-fetches on window focus so a merchant who enables/disables a plugin in
- * another tab sees the sidebar update when they come back. Firestore reads
+ * another tab sees the sidebar update when they come back, and on
+ * `notifyPluginInstallsChanged()` for changes made in this tab. Firestore reads
  * are cheap and bounded (3 queries × small install counts) so the trade-off
  * is fine without a snapshot listener.
  */
@@ -113,7 +126,11 @@ export function useEnabledPluginInstalls(
     if (typeof window === 'undefined') return;
     const onFocus = () => setRefreshTick((n) => n + 1);
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    window.addEventListener(PLUGIN_INSTALLS_CHANGED_EVENT, onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener(PLUGIN_INSTALLS_CHANGED_EVENT, onFocus);
+    };
   }, []);
 
   return { installs, loading, refresh: () => setRefreshTick((n) => n + 1) };

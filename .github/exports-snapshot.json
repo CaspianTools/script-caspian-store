@@ -28,6 +28,7 @@
     "AdminPagesPage",
     "AdminPaymentPluginsPage",
     "AdminPluginInstallPage",
+    "AdminPluginSettingsPage",
     "AdminPluginsPage",
     "AdminProductBrandsPage",
     "AdminProductCategoriesPage",

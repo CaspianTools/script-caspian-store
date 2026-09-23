@@ -1,176 +1,174 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCaspianFirebase, useCaspianLink, useCaspianNavigation } from '../provider/caspian-store-provider';
 import { useT } from '../i18n/locale-context';
-import { SHIPPING_PLUGIN_CATALOG } from '../shipping/catalog';
-import { PAYMENT_PLUGIN_CATALOG } from '../payments/catalog';
-import { EMAIL_PLUGIN_CATALOG } from '../email/catalog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select } from '../ui/select';
-import { Badge } from '../ui/misc';
+import { Badge, Skeleton } from '../ui/misc';
+import { Switch } from '../ui/switch';
 import {
-  useEnabledPluginInstalls,
-  type EnabledPluginCategory,
-} from './use-enabled-plugin-installs';
+  PLUGIN_CATEGORIES,
+  listCatalogPlugins,
+  listPluginInstalls,
+  pluginSettingsHref,
+  pluginStatus,
+  pluginWriteErrorMessage,
+  type AnyPluginInstall,
+  type CatalogPlugin,
+  type PluginCategory,
+  type PluginStatus,
+} from './admin-plugin-registry';
+import { usePluginEnableToggle } from './use-plugin-enable-toggle';
 
-type StatusFilter = 'all' | 'installed' | 'available';
-type CategoryFilter = 'all' | EnabledPluginCategory;
-
-type PluginEntry =
-  | {
-      kind: 'install';
-      category: EnabledPluginCategory;
-      pluginId: string;
-      installId: string;
-      name: string;
-      description: string;
-      enabled: boolean;
-    }
-  | {
-      kind: 'catalog';
-      category: EnabledPluginCategory;
-      pluginId: string;
-      name: string;
-      description: string;
-    };
+type StatusFilter = 'all' | 'enabled' | 'disabled';
+type CategoryFilter = 'all' | PluginCategory;
 
 export interface AdminPluginsPageProps {
   className?: string;
+  /**
+   * Show only this category and hide the category filter. Used by the
+   * `AdminShippingPluginsPage` / `AdminPaymentPluginsPage` /
+   * `AdminEmailPluginsPage` wrappers.
+   */
+  category?: PluginCategory;
+}
+
+function parseCategory(raw: string | null | undefined): CategoryFilter {
+  return raw === 'shipping' || raw === 'payment' || raw === 'email' ? raw : 'all';
+}
+
+function parseStatus(raw: string | null | undefined): StatusFilter {
+  return raw === 'enabled' || raw === 'disabled' ? raw : 'all';
 }
 
 /**
- * Unified plugin browser. One card grid covers both enabled installs and
- * catalog entries; status becomes a badge on the card, not a section
- * boundary. Filters are two dropdowns (Status × Category) sitting next
- * to the search input.
- *
- * Introduced v7.1.0 as split Installed-table + Available-grid. Rebuilt
- * in v7.3.1 into a single grid with dropdown filters per user feedback:
- * merchants searching for "stripe" don't care whether it's shipped
- * out-of-the-box or installed — the card is the same shape either way.
+ * The one Plugins screen: a card per catalog plugin (not per install), each
+ * with an Enable switch and a link to that plugin's own settings page at
+ * `/admin/plugins/<pluginId>`. Switching a plugin on creates its install from
+ * the catalog defaults when those are valid; otherwise it opens the settings
+ * page with `?enable=1` so the owner fills in what is missing first.
  */
-export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
-  useCaspianFirebase();
-  const Link = useCaspianLink();
+export function AdminPluginsPage({ className, category: lockedCategory }: AdminPluginsPageProps) {
+  const { db } = useCaspianFirebase();
   const nav = useCaspianNavigation();
   const t = useT();
-  // Include disabled installs so a freshly-installed plugin (which starts
-  // disabled for additional instances per the category page's handleSave) is
-  // still visible on the unified list — otherwise the merchant has no way to
-  // discover or re-enable it from here.
-  const { installs, loading } = useEnabledPluginInstalls({ onlyEnabled: false });
 
+  const [installs, setInstalls] = useState<AnyPluginInstall[] | null>(null);
+  const [failedCategories, setFailedCategories] = useState<PluginCategory[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const urlFilter = nav.searchParams?.get('filter');
   const [search, setSearch] = useState(() => nav.searchParams?.get('q') ?? '');
-  const [status, setStatus] = useState<StatusFilter>(() => {
-    const raw = nav.searchParams?.get('status') ?? '';
-    return raw === 'installed' || raw === 'available' ? raw : 'all';
-  });
-  const [category, setCategory] = useState<CategoryFilter>(() => {
-    const raw = nav.searchParams?.get('filter') ?? '';
-    return raw === 'shipping' || raw === 'payment' || raw === 'email' ? raw : 'all';
-  });
+  const [status, setStatus] = useState<StatusFilter>(() =>
+    parseStatus(nav.searchParams?.get('status')),
+  );
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(() =>
+    parseCategory(urlFilter),
+  );
+  // The page stays mounted when only the query string changes (a sidebar
+  // click from `?filter=shipping` back to bare `/admin/plugins`).
+  useEffect(() => {
+    setCategoryFilter(parseCategory(urlFilter));
+  }, [urlFilter]);
+  const category: CategoryFilter = lockedCategory ?? categoryFilter;
 
-  const descriptionFor = (cat: EnabledPluginCategory, pluginId: string): string => {
-    const catalog =
-      cat === 'shipping'
-        ? SHIPPING_PLUGIN_CATALOG
-        : cat === 'payment'
-          ? PAYMENT_PLUGIN_CATALOG
-          : EMAIL_PLUGIN_CATALOG;
-    return (catalog as Record<string, { description?: string }>)[pluginId]?.description ?? '';
-  };
-
-  const entries = useMemo<PluginEntry[]>(() => {
-    const out: PluginEntry[] = [];
-    // Track which `${category}:${pluginId}` pairs already have an install so
-    // we can suppress the catalog card for the same plugin. Without this the
-    // grid renders two cards per installed plugin — one "Configure" (from
-    // the install) and one "Install" (from the static catalog) — which made
-    // the page look like the install never happened. Re-installing a second
-    // instance still works via /admin/plugins/manage/<category>.
-    const installedKeys = new Set<string>();
-    for (const x of installs) {
-      installedKeys.add(`${x.category}:${x.pluginId}`);
-      out.push({
-        kind: 'install',
-        category: x.category,
-        pluginId: x.pluginId,
-        installId: x.installId,
-        name: x.name,
-        description: descriptionFor(x.category, x.pluginId),
-        enabled: x.enabled,
+  useEffect(() => {
+    let alive = true;
+    Promise.allSettled(PLUGIN_CATEGORIES.map((c) => listPluginInstalls(db, c))).then((results) => {
+      if (!alive) return;
+      const loaded: AnyPluginInstall[] = [];
+      const failed: PluginCategory[] = [];
+      let firstError: unknown = null;
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled') loaded.push(...r.value);
+        else {
+          failed.push(PLUGIN_CATEGORIES[i]);
+          firstError ??= r.reason;
+          console.error('[caspian-store] Failed to list plugin installs:', r.reason);
+        }
       });
-    }
-    for (const [cat, catalog] of [
-      ['shipping', SHIPPING_PLUGIN_CATALOG],
-      ['payment', PAYMENT_PLUGIN_CATALOG],
-      ['email', EMAIL_PLUGIN_CATALOG],
-    ] as const) {
-      for (const entry of Object.values(catalog)) {
-        if (installedKeys.has(`${cat}:${entry.id}`)) continue;
-        out.push({
-          kind: 'catalog',
-          category: cat,
-          pluginId: entry.id,
-          name: entry.name,
-          description: entry.description ?? '',
-        });
-      }
-    }
-    const categoryOrder: Record<EnabledPluginCategory, number> = {
-      shipping: 0,
-      payment: 1,
-      email: 2,
-    };
-    out.sort((a, b) => {
-      if (a.category !== b.category) return categoryOrder[a.category] - categoryOrder[b.category];
-      if (a.kind !== b.kind) return a.kind === 'install' ? -1 : 1;
-      return a.name.localeCompare(b.name);
+      setInstalls(loaded);
+      setFailedCategories(failed);
+      setLoadError(failed.length ? pluginWriteErrorMessage(t, firstError) : null);
     });
-    return out;
-    // descriptionFor is pure wrt the catalogs it references; catalogs are
-    // module-scope constants so deps collapse to `installs`.
+    return () => {
+      alive = false;
+    };
+    // Reloading on a locale switch is not needed; only the db matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db]);
+
+  const { toggle, busy } = usePluginEnableToggle({
+    installs: installs ?? [],
+    setInstalls,
+    onNeedsSettings: (plugin) => nav.push(pluginSettingsHref(plugin.id, { enable: true })),
+  });
+
+  const cards = useMemo(() => {
+    const byPlugin = new Map<string, AnyPluginInstall[]>();
+    for (const x of installs ?? []) {
+      const list = byPlugin.get(x.pluginId) ?? [];
+      list.push(x);
+      byPlugin.set(x.pluginId, list);
+    }
+    return listCatalogPlugins().map((plugin) => {
+      const mine = byPlugin.get(plugin.id) ?? [];
+      return { plugin, installs: mine, status: pluginStatus(plugin, mine) };
+    });
   }, [installs]);
 
   const normalized = search.trim().toLowerCase();
+  const visible = cards.filter(({ plugin, status: s }) => {
+    if (category !== 'all' && plugin.category !== category) return false;
+    if (status === 'enabled' && s !== 'enabled') return false;
+    if (status === 'disabled' && s === 'enabled') return false;
+    if (!normalized) return true;
+    return (
+      plugin.name.toLowerCase().includes(normalized) ||
+      plugin.description.toLowerCase().includes(normalized) ||
+      plugin.id.toLowerCase().includes(normalized)
+    );
+  });
 
-  const filtered = useMemo(
-    () =>
-      entries.filter((x) => {
-        if (status === 'installed' && x.kind !== 'install') return false;
-        if (status === 'available' && x.kind !== 'catalog') return false;
-        if (category !== 'all' && x.category !== category) return false;
-        if (!normalized) return true;
-        return (
-          x.name.toLowerCase().includes(normalized) ||
-          x.description.toLowerCase().includes(normalized) ||
-          x.pluginId.toLowerCase().includes(normalized)
-        );
-      }),
-    [entries, status, category, normalized],
+  const groups = PLUGIN_CATEGORIES.map((c) => ({
+    category: c,
+    cards: visible.filter((x) => x.plugin.category === c),
+  })).filter((g) => g.cards.length > 0);
+
+  const renderGrid = (list: typeof visible) => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: 16,
+      }}
+    >
+      {list.map(({ plugin, installs: mine, status: s }) => (
+        <PluginCard
+          key={plugin.id}
+          plugin={plugin}
+          status={s}
+          installCount={mine.length}
+          // A category whose installs failed to load can't be toggled safely:
+          // "no install" might be wrong and switching on would duplicate it.
+          busy={!!busy[plugin.id] || failedCategories.includes(plugin.category)}
+          onToggle={(next) => void toggle(plugin, next)}
+        />
+      ))}
+    </div>
   );
-
-  const manageHrefFor = (cat: EnabledPluginCategory): string => {
-    switch (cat) {
-      case 'shipping':
-        return '/admin/plugins/manage/shipping';
-      case 'payment':
-        return '/admin/plugins/manage/payments';
-      case 'email':
-        return '/admin/plugins/manage/email-providers';
-    }
-  };
 
   return (
     <div className={className}>
       <header className="caspian-admin-page-head" style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
-          {t('admin.plugins.title')}
+          {lockedCategory ? t(`admin.plugins.filter.${lockedCategory}`) : t('admin.plugins.title')}
         </h1>
-        <p style={{ color: '#666', marginTop: 4 }}>{t('admin.plugins.subtitle')}</p>
+        <p style={{ color: '#666', marginTop: 4, marginBottom: 0 }}>
+          {t('admin.plugins.subtitle')}
+        </p>
       </header>
 
       <div
@@ -178,75 +176,109 @@ export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
           display: 'flex',
           gap: 12,
           alignItems: 'center',
-          marginBottom: 20,
+          marginBottom: 24,
           flexWrap: 'wrap',
         }}
       >
         <Input
+          type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('admin.plugins.search.placeholder')}
-          style={{ flex: '1 1 280px', maxWidth: 420 }}
+          style={{ flex: '1 1 260px', maxWidth: 420 }}
           aria-label={t('admin.plugins.search.placeholder')}
         />
+        {!lockedCategory && (
+          <Select
+            aria-label={t('admin.plugins.filter.label')}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+            options={[
+              { value: 'all', label: t('admin.plugins.filter.all') },
+              { value: 'shipping', label: t('admin.plugins.filter.shipping') },
+              { value: 'payment', label: t('admin.plugins.filter.payment') },
+              { value: 'email', label: t('admin.plugins.filter.email') },
+            ]}
+          />
+        )}
         <Select
           aria-label={t('admin.plugins.status.label')}
           value={status}
           onChange={(e) => setStatus(e.target.value as StatusFilter)}
           options={[
             { value: 'all', label: t('admin.plugins.status.all') },
-            { value: 'installed', label: t('admin.plugins.status.installed') },
-            { value: 'available', label: t('admin.plugins.status.available') },
-          ]}
-        />
-        <Select
-          aria-label={t('admin.plugins.filter.label')}
-          value={category}
-          onChange={(e) => setCategory(e.target.value as CategoryFilter)}
-          options={[
-            { value: 'all', label: t('admin.plugins.filter.all') },
-            { value: 'shipping', label: t('admin.plugins.filter.shipping') },
-            { value: 'payment', label: t('admin.plugins.filter.payment') },
-            { value: 'email', label: t('admin.plugins.filter.email') },
+            { value: 'enabled', label: t('admin.plugins.status.enabled') },
+            { value: 'disabled', label: t('admin.plugins.status.disabled') },
           ]}
         />
       </div>
 
-      {loading ? (
-        <div style={{ color: '#999', padding: 16 }}>{t('common.loading')}</div>
-      ) : filtered.length === 0 ? (
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 20,
+            padding: '12px 14px',
+            borderRadius: 10,
+            border: '1px solid #fecaca',
+            background: '#fef2f2',
+            color: '#991b1b',
+            fontSize: 13,
+          }}
+        >
+          <strong style={{ display: 'block', marginBottom: 2 }}>
+            {t('admin.plugins.errors.loadFailed')}
+          </strong>
+          {loadError}
+        </div>
+      )}
+
+      {installs === null ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} style={{ height: 176, borderRadius: 12 }} />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
         <div
           style={{
             padding: 48,
             textAlign: 'center',
             color: '#888',
             border: '1px dashed #ddd',
-            borderRadius: 'var(--caspian-radius, 8px)',
+            borderRadius: 12,
             background: '#fafafa',
           }}
         >
           {t('admin.plugins.empty.all')}
         </div>
+      ) : category !== 'all' ? (
+        renderGrid(visible)
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 12,
-          }}
-        >
-          {filtered.map((entry) => (
-            <PluginCard
-              key={
-                entry.kind === 'install'
-                  ? `install-${entry.installId}`
-                  : `catalog-${entry.category}-${entry.pluginId}`
-              }
-              entry={entry}
-              Link={Link}
-              t={t}
-              manageHrefFor={manageHrefFor}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {groups.map((g) => (
+            <section key={g.category} aria-labelledby={`caspian-plugins-${g.category}`}>
+              <h2
+                id={`caspian-plugins-${g.category}`}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  color: '#666',
+                  margin: '0 0 12px',
+                }}
+              >
+                {t(`admin.plugins.filter.${g.category}`)}
+              </h2>
+              {renderGrid(g.cards)}
+            </section>
           ))}
         </div>
       )}
@@ -254,60 +286,125 @@ export function AdminPluginsPage({ className }: AdminPluginsPageProps) {
   );
 }
 
-function PluginCard({
-  entry,
-  Link,
-  t,
-  manageHrefFor,
-}: {
-  entry: PluginEntry;
-  Link: ReturnType<typeof useCaspianLink>;
-  t: ReturnType<typeof useT>;
-  manageHrefFor: (cat: EnabledPluginCategory) => string;
-}) {
-  const href =
-    entry.kind === 'install'
-      ? `/admin/plugins/${entry.pluginId}/${entry.installId}`
-      : manageHrefFor(entry.category);
-  const actionLabel =
-    entry.kind === 'install' ? t('admin.plugins.configure') : t('admin.plugins.install');
+const STATUS_COLOR: Record<PluginStatus, string> = {
+  enabled: '#16a34a',
+  disabled: '#9ca3af',
+  'needs-setup': '#d97706',
+};
+
+const PLUGIN_STATUS_KEY: Record<PluginStatus, string> = {
+  enabled: 'admin.plugins.status.enabled',
+  disabled: 'admin.plugins.status.disabled',
+  'needs-setup': 'admin.plugins.status.needsSetup',
+};
+
+export function PluginStatusLabel({ status }: { status: PluginStatus }) {
+  const t = useT();
   return (
-    <div
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <span
+        aria-hidden
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: STATUS_COLOR[status],
+          flexShrink: 0,
+        }}
+      />
+      {t(PLUGIN_STATUS_KEY[status])}
+    </span>
+  );
+}
+
+function PluginCard({
+  plugin,
+  status,
+  installCount,
+  busy,
+  onToggle,
+}: {
+  plugin: CatalogPlugin;
+  status: PluginStatus;
+  installCount: number;
+  busy: boolean;
+  onToggle: (next: boolean) => void;
+}) {
+  const Link = useCaspianLink();
+  const t = useT();
+  const href = pluginSettingsHref(plugin.id);
+  return (
+    <article
       style={{
-        border: '1px solid #eee',
-        borderRadius: 'var(--caspian-radius, 8px)',
-        padding: 14,
+        border: '1px solid rgba(0,0,0,0.09)',
+        borderRadius: 12,
+        padding: 18,
         background: '#fff',
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
+        gap: 10,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Badge variant="outline">
-          {t(`admin.plugins.filter.${entry.category}`)}
-        </Badge>
-        <span style={{ fontWeight: 600, fontSize: 14, flex: 1, minWidth: 0 }}>{entry.name}</span>
-        {entry.kind === 'install' && (
-          <Badge>{t('admin.plugins.badge.installed')}</Badge>
-        )}
-        {entry.kind === 'install' && !entry.enabled && (
-          <Badge variant="outline">{t('admin.plugins.badge.disabled')}</Badge>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <Badge variant="outline">{t(`admin.plugins.filter.${plugin.category}`)}</Badge>
+        <Switch
+          checked={status === 'enabled'}
+          disabled={busy}
+          onChange={onToggle}
+          ariaLabel={t('admin.plugins.enableAria', { name: plugin.name })}
+        />
       </div>
-      {entry.kind === 'install' && (
-        <div style={{ color: '#888', fontSize: 12, fontFamily: 'ui-monospace, monospace' }}>
-          {entry.pluginId}
-        </div>
-      )}
-      <p style={{ color: '#666', fontSize: 13, margin: 0, minHeight: 36 }}>
-        {entry.description || '—'}
+      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>
+        <Link href={href} style={{ color: 'inherit', textDecoration: 'none' }}>
+          {plugin.name}
+        </Link>
+      </h3>
+      <p
+        style={{
+          margin: 0,
+          color: '#666',
+          fontSize: 13,
+          lineHeight: 1.5,
+          flex: 1,
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        {plugin.description}
       </p>
-      <Link href={href}>
-        <Button size="sm" variant="outline" style={{ alignSelf: 'flex-start' }}>
-          {actionLabel}
-        </Button>
-      </Link>
-    </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          paddingTop: 12,
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+        }}
+      >
+        <span style={{ fontSize: 13, color: '#444' }}>
+          <PluginStatusLabel status={status} />
+          {installCount > 1 && (
+            <span style={{ color: '#888' }}>
+              {' · '}
+              {t(
+                plugin.category === 'shipping'
+                  ? 'admin.plugins.card.countShipping'
+                  : 'admin.plugins.card.count',
+                { count: installCount },
+              )}
+            </span>
+          )}
+        </span>
+        <Link href={href} aria-label={t('admin.plugins.settingsAria', { name: plugin.name })}>
+          <Button size="sm" variant="outline" tabIndex={-1}>
+            {t('admin.plugins.settings')}
+          </Button>
+        </Link>
+      </div>
+    </article>
   );
 }

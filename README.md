@@ -85,8 +85,8 @@ See [INSTALL.md](./INSTALL.md) for the **one-command scaffolder**, **Vite** / **
 | Firebase init (BYOF), auth context, user profile bootstrap | ✅ |
 | **Script Settings** — `<ScriptSettingsPage />`, theme tokens via CSS vars | ✅ |
 | `firebase/firestore.rules` + `firebase/firestore.indexes.json` + `firebase/storage.rules` | ✅ |
-| **Payment plugins** — pluggable providers (Stripe included); install/configure at `/admin/plugins/payments` | ✅ |
-| **Email plugins** — pluggable providers (SendGrid + Brevo); install at `/admin/plugins/email-providers`; API keys held in Google Cloud Secret Manager (`firebase functions:secrets:set …`) | ✅ (v8.0.0+) |
+| **Payment plugins** — pluggable providers (Stripe included); switch on and configure at `/admin/plugins` (settings at `/admin/plugins/stripe` etc.) | ✅ |
+| **Email plugins** — pluggable providers (SendGrid + Brevo); switch on at `/admin/plugins`; API keys held in Google Cloud Secret Manager (`firebase functions:secrets:set …`) | ✅ (v8.0.0+) |
 | Cloud Functions — Stripe callable + webhook; transactional-email dispatcher (caspian-email codebase) | ✅ (deployed as scaffold) |
 | **Storefront — PLP:** `<ProductListPage />`, `<ProductGrid />`, `<ProductCard />` | ✅ |
 | **Storefront — PDP:** `<ProductDetailPage />`, `<ProductGallery />`, size/qty pickers, Add to cart | ✅ |

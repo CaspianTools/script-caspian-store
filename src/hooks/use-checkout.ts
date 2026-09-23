@@ -23,9 +23,9 @@ interface ActiveCheckout {
  * Client hook to start a checkout session via the active payment plugin.
  *
  * Picks the first enabled install in `paymentPluginInstalls` (by `order`).
- * If none is installed-and-enabled, `startCheckout` throws and the returned
+ * If none is enabled, `startCheckout` throws and the returned
  * `activeInstall` / `activePlugin` are null so the UI can render guidance
- * toward `/admin/plugins/payments`. `ready` is false until the installs
+ * toward `/admin/plugins?filter=payment`. `ready` is false until the installs
  * query has settled, so callers can hold a loading state instead of flashing
  * the "no provider" message.
  *

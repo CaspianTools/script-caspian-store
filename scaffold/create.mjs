@@ -13,7 +13,7 @@
  *                                    #   + webhook) — admin codebase is always scaffolded
  *     [--with-email]                # also copy firebase/functions-email/ (transactional
  *                                    #   email via SendGrid/Brevo plugins — configure at
- *                                    #   /admin/plugins/email-providers after deploy)
+ *                                    #   /admin/plugins/sendgrid or /admin/plugins/brevo)
  *     [--with-instagram]            # also copy firebase/functions-instagram/ (Instagram
  *                                    #   feed + comment moderation for store staff;
  *                                    #   set META_APP_ID / META_APP_SECRET then deploy)
@@ -1068,7 +1068,7 @@ npm run dev                  # http://localhost:3000
    npm run deploy:stripe
    \`\`\`
 
-   Then go to \`/admin/plugins/payments\`, click **Browse providers → Install** on the Stripe card, paste your publishable (\`pk_...\`) key, save, and click **Enable**. The publishable key lives in Firestore under \`paymentPluginInstalls\`; only server-side secrets live in Cloud Functions secrets.
+   Then go to \`/admin/plugins\` and switch on **Stripe** — it opens Stripe's settings page, where you paste your publishable (\`pk_...\`) key and click **Save** (or go straight to \`/admin/plugins/stripe\`). The publishable key lives in Firestore under \`paymentPluginInstalls\`; only server-side secrets live in Cloud Functions secrets.
 
    If you also scaffolded with \`--with-email\`, deploy the email codebase. The provider API key is a **Cloud Functions secret**, not a Firestore field — set both secrets before the first deploy (the deploy fails fast if a referenced secret is missing; leave the one you don't use empty):
    \`\`\`bash
@@ -1078,7 +1078,7 @@ npm run dev                  # http://localhost:3000
    npm run deploy:email
    \`\`\`
 
-   Then go to \`/admin/plugins/email-providers\`, click **Browse providers → Install** on SendGrid or Brevo, save, and click **Enable** — the install only records which provider is active; the key stays in Secret Manager. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
+   Then go to \`/admin/plugins\` and switch on **SendGrid** or **Brevo** — it opens the provider's settings page; click **Save** there. That only records which provider is active; the key stays in Secret Manager. Order-lifecycle and contact-form emails will start firing the next time a shopper triggers one. Configure sender identity + templates at \`/admin/settings/emails\`.
 
    If you also scaffolded with \`--with-instagram\`, deploy the Instagram codebase — it lets store staff view the feed, moderate comments, **publish a product as a post**, and **delete posts** (the Meta app secret + token stay server-side). Set the Meta app credentials first, then deploy:
    \`\`\`bash
@@ -1145,9 +1145,8 @@ npm run dev                  # http://localhost:3000
 - \`/admin/appearance\` — theme catalog grid (preview + activate)
 - \`/admin-preview/appearance\` — dummy-data preview window (outside \`/admin\` so it escapes the admin shell)
 - \`/admin/settings/general\` — brand / logo / favicon / social / privacy
-- \`/admin/plugins/shipping\` — install / configure shipping providers
-- \`/admin/plugins/payments\` — install / configure payment providers (Stripe, …)
-- \`/admin/plugins/email-providers\` — install / configure email providers (SendGrid, Brevo)
+- \`/admin/plugins\` — switch shipping, payment and email plugins on or off
+- \`/admin/plugins/<plugin>\` — one plugin's settings (e.g. \`/admin/plugins/flat-rate\`, \`/admin/plugins/stripe\`, \`/admin/plugins/sendgrid\`)
 - \`/admin/settings/emails\` — edit transactional email templates
 - \`/admin/settings/languages\` — enable / disable locales
 - \`/admin/about\` — library info + error-log triage surface

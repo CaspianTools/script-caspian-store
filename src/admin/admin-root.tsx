@@ -28,9 +28,7 @@ import { AdminTemplatesPage } from './admin-templates-page';
 import { AdminSettingsShell } from './admin-settings-shell';
 import { AdminPluginsPage } from './admin-plugins-page';
 import { AdminPluginInstallPage } from './admin-plugin-install-page';
-import { AdminShippingPluginsPage } from './admin-shipping-plugins-page';
-import { AdminPaymentPluginsPage } from './admin-payment-plugins-page';
-import { AdminEmailPluginsPage } from './admin-email-plugins-page';
+import { AdminPluginSettingsPage } from './admin-plugin-settings-page';
 import { AdminAccountPage } from './admin-account-page';
 
 /**
@@ -44,11 +42,12 @@ import { AdminAccountPage } from './admin-account-page';
  *  - `/admin/appearance` → top-level again (Settings sidebar child); legacy
  *    `/admin/settings/appearance` redirects here for one release.
  *
- * v7.1.0 reshuffle:
- *  - `/admin/plugins` → unified `<AdminPluginsPage>` (search + filter + catalog).
- *  - `/admin/plugins/manage/<category>` → the old per-category page (for installing new plugins).
- *  - `/admin/plugins/<pluginId>/<installId>` → `<AdminPluginInstallPage>` per-install configure.
- *  - Legacy `/admin/plugins/shipping|payments|email-providers` redirect to the unified list.
+ * Plugins:
+ *  - `/admin/plugins` → `<AdminPluginsPage>`, one card per catalog plugin with an Enable switch.
+ *  - `/admin/plugins/<pluginId>` → `<AdminPluginSettingsPage>`, that plugin's own settings.
+ *  - `/admin/plugins/<pluginId>/<installId>` → the same page scrolled to that install.
+ *  - Legacy `/admin/plugins/manage/<category>` and
+ *    `/admin/plugins/shipping|payments|email-providers` redirect to the filtered list.
  */
 export function AdminRoot(): ReactNode {
   const pathname = stripLocalePrefix(useCaspianNavigation().pathname);
@@ -113,31 +112,26 @@ export function AdminRoot(): ReactNode {
 function PluginsDispatch({ segments }: { segments: [string | undefined, string | undefined] }): ReactNode {
   const [a, b] = segments;
 
-  // Bare /admin/plugins — the unified list.
   if (!a) return <AdminPluginsPage />;
 
-  // /admin/plugins/manage/<category> — legacy per-category install surface.
-  // Kept so "Install" buttons on the unified catalog open the category page
-  // that owns the install flow for that category's plugins.
+  // Legacy category URLs — the v7 per-category screens and the v5 roots
+  // before them — land on the one list with that category filtered.
   if (a === 'manage') {
-    if (b === 'shipping') return <AdminShippingPluginsPage />;
-    if (b === 'payments') return <AdminPaymentPluginsPage />;
-    if (b === 'email-providers') return <AdminEmailPluginsPage />;
-    return <AdminPluginsPage />;
+    const filter = b ? LEGACY_PLUGIN_CATEGORY.get(b) : undefined;
+    return <LegacyRedirect to={filter ? `/admin/plugins?filter=${filter}` : '/admin/plugins'} />;
   }
+  const legacyFilter = LEGACY_PLUGIN_CATEGORY.get(a);
+  if (legacyFilter) return <LegacyRedirect to={`/admin/plugins?filter=${legacyFilter}`} />;
 
-  // Legacy v5 category-root URLs redirect to the unified list with a
-  // preselected filter. One release of grace, then remove.
-  if (a === 'shipping') return <LegacyRedirect to="/admin/plugins?filter=shipping" />;
-  if (a === 'payments') return <LegacyRedirect to="/admin/plugins?filter=payment" />;
-  if (a === 'email-providers') return <LegacyRedirect to="/admin/plugins?filter=email" />;
-
-  // /admin/plugins/:pluginId/:installId — per-install configure.
   if (b) return <AdminPluginInstallPage pluginId={a} installId={b} />;
-
-  // /admin/plugins/:something unexpected — fall back to the unified list.
-  return <AdminPluginsPage />;
+  return <AdminPluginSettingsPage pluginId={a} />;
 }
+
+const LEGACY_PLUGIN_CATEGORY = new Map<string, string>([
+  ['shipping', 'shipping'],
+  ['payments', 'payment'],
+  ['email-providers', 'email'],
+]);
 
 function LegacyRedirect({ to }: { to: string }): ReactNode {
   const nav = useCaspianNavigation();

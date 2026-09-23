@@ -427,95 +427,45 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'settings.theme.primaryForeground': 'Primary foreground',
   'settings.theme.accent': 'Accent',
   'settings.theme.radius': 'Corner radius',
-  // Admin — payment plugins
-  'admin.paymentPlugins.title': 'Payments',
-  'admin.paymentPlugins.subtitle':
-    'Install and configure payment providers. Only enabled providers can process checkouts.',
-  'admin.paymentPlugins.browse': 'Browse providers',
-  'admin.paymentPlugins.browseTitle': 'Available payment providers',
-  'admin.paymentPlugins.browseSubtitle':
-    'Pick a provider to install. You can edit configuration after installing.',
-  'admin.paymentPlugins.install': 'Install',
-  'admin.paymentPlugins.empty':
-    'No payment providers installed yet. Install one to enable checkout.',
-  'admin.paymentPlugins.confirmRemove': 'Remove this payment provider install?',
-  'admin.paymentPlugins.installTitle': 'Install payment provider',
-  'admin.paymentPlugins.configureTitle': 'Configure payment provider',
-  'admin.paymentPlugins.col.order': 'Order',
-  'admin.paymentPlugins.col.name': 'Name',
-  'admin.paymentPlugins.col.plugin': 'Provider',
-  'admin.paymentPlugins.col.status': 'Status',
-  'admin.paymentPlugins.col.actions': 'Actions',
-  'admin.paymentPlugins.status.enabled': 'Enabled',
-  'admin.paymentPlugins.status.disabled': 'Disabled',
-  'admin.paymentPlugins.action.enable': 'Enable',
-  'admin.paymentPlugins.action.disable': 'Disable',
-  'admin.paymentPlugins.action.configure': 'Configure',
-  'admin.paymentPlugins.action.remove': 'Remove',
-  'admin.paymentPlugins.field.name': 'Display name',
-  'admin.paymentPlugins.field.nameHint':
-    'Label shown in admin — e.g. "Stripe — Production" or "Stripe — Test".',
-  'admin.paymentPlugins.field.order': 'Order',
+  // Admin — payment plugin settings fields
   'admin.paymentPlugins.field.stripe.mode': 'Mode',
   'admin.paymentPlugins.field.stripe.modeTest': 'Test',
   'admin.paymentPlugins.field.stripe.modeLive': 'Live',
   'admin.paymentPlugins.field.stripe.modeHint':
     'Which key pair is active. Keep the Cloud Functions `STRIPE_SECRET_KEY` in sync with this mode.',
-  'admin.paymentPlugins.field.stripe.publishableKey': 'Publishable key',
   'admin.paymentPlugins.field.stripe.publishableKeyTest': 'Test publishable key',
   'admin.paymentPlugins.field.stripe.publishableKeyLive': 'Live publishable key',
   'admin.paymentPlugins.field.stripe.publishableKeyHint':
     'The `pk_test_...` / `pk_live_...` keys from your Stripe dashboard. Secret keys live in Cloud Functions secrets, not here.',
-  'admin.paymentPlugins.toasts.installed': 'Provider installed',
-  'admin.paymentPlugins.toasts.updated': 'Provider updated',
-  'admin.paymentPlugins.toasts.removed': 'Provider removed',
-  'admin.paymentPlugins.errors.nameRequired': 'Display name is required',
-  'admin.paymentPlugins.errors.invalidConfig': 'Invalid configuration',
-  'admin.paymentPlugins.errors.saveFailed': 'Save failed',
-  'admin.paymentPlugins.errors.removeFailed': 'Remove failed',
-  'admin.paymentPlugins.errors.toggleFailed': 'Toggle failed',
+  'admin.paymentPlugins.field.description': 'Checkout description (optional)',
+  'admin.paymentPlugins.field.descriptionHint':
+    "Leave blank to use the plugin's own description.",
+  'admin.paymentPlugins.field.instructions': 'Instructions shown to shoppers',
+  'admin.paymentPlugins.field.instructionsPlaceholder.bacs':
+    "Please transfer the total amount to the account below. We'll ship once payment clears.",
+  'admin.paymentPlugins.field.instructionsPlaceholder.cheque':
+    "Please mail your cheque to the address below. We'll ship once it clears.",
+  'admin.paymentPlugins.field.instructionsPlaceholder.cod':
+    'Pay with cash when you receive your order.',
+  'admin.paymentPlugins.field.bacs.accountName': 'Account name',
+  'admin.paymentPlugins.field.bacs.accountNumber': 'Account number',
+  'admin.paymentPlugins.field.bacs.sortCode': 'Sort code',
+  'admin.paymentPlugins.field.bacs.iban': 'IBAN',
+  'admin.paymentPlugins.field.bacs.swift': 'SWIFT/BIC',
+  'admin.paymentPlugins.field.bacs.hint':
+    'Either an account number or an IBAN is required. Sort code and SWIFT are optional.',
+  'admin.paymentPlugins.field.cheque.payableTo': 'Make cheques payable to',
+  'admin.paymentPlugins.field.cheque.postalAddress': 'Postal address',
+  'admin.paymentPlugins.field.cod.shippingMethods': 'Eligible shipping methods (comma-separated)',
+  'admin.paymentPlugins.field.cod.shippingMethodsHint':
+    'Leave blank to offer cash on delivery with every shipping method. Enter the display names of the shipping methods you want to allow.',
 
-  // Admin — email plugins (v2.14)
-  'admin.emailPlugins.title': 'Email providers',
-  'admin.emailPlugins.subtitle':
-    'Install and configure a transactional-email provider. Only enabled installs are used — the first enabled install wins.',
-  'admin.emailPlugins.browse': 'Browse providers',
-  'admin.emailPlugins.browseTitle': 'Available email providers',
-  'admin.emailPlugins.browseSubtitle':
-    'Pick a provider to install. You can edit configuration after installing.',
-  'admin.emailPlugins.install': 'Install',
-  'admin.emailPlugins.empty':
-    'No email providers installed yet. Install one so order emails and contact-form auto-replies can send.',
-  'admin.emailPlugins.confirmRemove': 'Remove this email provider install?',
-  'admin.emailPlugins.installTitle': 'Install email provider',
-  'admin.emailPlugins.configureTitle': 'Configure email provider',
-  'admin.emailPlugins.col.order': 'Order',
-  'admin.emailPlugins.col.name': 'Name',
-  'admin.emailPlugins.col.plugin': 'Provider',
-  'admin.emailPlugins.col.status': 'Status',
-  'admin.emailPlugins.col.actions': 'Actions',
-  'admin.emailPlugins.status.enabled': 'Enabled',
-  'admin.emailPlugins.status.disabled': 'Disabled',
-  'admin.emailPlugins.action.enable': 'Enable',
-  'admin.emailPlugins.action.disable': 'Disable',
-  'admin.emailPlugins.action.remove': 'Remove',
-  'admin.emailPlugins.field.name': 'Display name',
-  'admin.emailPlugins.field.nameHint':
-    'Label shown in admin — e.g. "SendGrid — production" or "Brevo — staging".',
-  'admin.emailPlugins.field.order': 'Order',
+  // Admin — email plugin settings (v2.14)
   'admin.emailPlugins.secretSetup.title': 'API key — set via Cloud Secret Manager',
   'admin.emailPlugins.secretSetup.body':
     'For security, the provider API key is no longer stored in the database. Run this command in your project root, paste the API key when prompted, then redeploy the email functions.',
   'admin.emailPlugins.secretSetup.deployHint':
     'After setting the secret: `firebase deploy --only functions:caspian-email`',
-  'admin.emailPlugins.toasts.installed': 'Provider installed',
-  'admin.emailPlugins.toasts.updated': 'Provider updated',
-  'admin.emailPlugins.toasts.removed': 'Provider removed',
-  'admin.emailPlugins.errors.nameRequired': 'Display name is required',
-  'admin.emailPlugins.errors.invalidConfig': 'Invalid configuration',
-  'admin.emailPlugins.errors.saveFailed': 'Save failed',
-  'admin.emailPlugins.errors.removeFailed': 'Remove failed',
-  'admin.emailPlugins.errors.toggleFailed': 'Toggle failed',
 
   'admin.appearance.title': 'Appearance',
   'admin.appearance.subtitle': 'Pick a preset or fine-tune the storefront theme tokens.',
@@ -623,38 +573,9 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'shipping.plugins.weight-based.description':
     'Charge a base rate plus a per-kilogram surcharge. Requires each product to have a weight.',
 
-  // Admin — Shipping plugins page
-  'admin.shippingPlugins.title': 'Shipping plugins',
-  'admin.shippingPlugins.subtitle':
-    'Install shipping calculators and configure the rates shown at checkout.',
-  'admin.shippingPlugins.browse': '+ Browse plugins',
-  'admin.shippingPlugins.browseTitle': 'Available shipping plugins',
-  'admin.shippingPlugins.browseSubtitle':
-    'Pick a plugin to install. You can install more than one — each install shows up as a separate option at checkout.',
-  'admin.shippingPlugins.install': 'Install',
-  'admin.shippingPlugins.installTitle': 'Install shipping plugin',
-  'admin.shippingPlugins.configureTitle': 'Configure shipping plugin',
-  'admin.shippingPlugins.empty': 'No shipping plugins installed yet.',
-  'admin.shippingPlugins.daysSuffix': 'days',
-  'admin.shippingPlugins.confirmRemove': 'Remove this shipping plugin install?',
-  'admin.shippingPlugins.col.order': 'Order',
-  'admin.shippingPlugins.col.name': 'Name',
-  'admin.shippingPlugins.col.plugin': 'Plugin',
-  'admin.shippingPlugins.col.delivery': 'Delivery',
-  'admin.shippingPlugins.col.status': 'Status',
-  'admin.shippingPlugins.col.actions': 'Actions',
-  'admin.shippingPlugins.status.enabled': 'Enabled',
-  'admin.shippingPlugins.status.disabled': 'Disabled',
-  'admin.shippingPlugins.action.enable': 'Enable',
-  'admin.shippingPlugins.action.disable': 'Disable',
-  'admin.shippingPlugins.action.configure': 'Configure',
-  'admin.shippingPlugins.action.remove': 'Remove',
-  'admin.shippingPlugins.field.name': 'Display name',
-  'admin.shippingPlugins.field.nameHint':
-    'Shown to shoppers at checkout and on the public Shipping page.',
+  // Admin — shipping plugin settings fields
   'admin.shippingPlugins.field.minDays': 'Min days',
   'admin.shippingPlugins.field.maxDays': 'Max days',
-  'admin.shippingPlugins.field.order': 'Order',
   'admin.shippingPlugins.field.flatRate.price': 'Price',
   'admin.shippingPlugins.field.freeShipping.hint':
     'Free Shipping needs no configuration — it always returns a rate of 0.',
@@ -669,6 +590,7 @@ export const DEFAULT_MESSAGES: MessageDict = {
     'Available in every supported country (no restriction).',
   'admin.shippingPlugins.field.pickCountries': '+ Pick countries',
   'admin.shippingPlugins.field.editCountries': 'Edit ({count} selected)',
+  'admin.shippingPlugins.field.removeCountry': 'Remove {code}',
   'admin.shippingPlugins.pickCountriesTitle': 'Eligible countries for this method',
 
   'admin.countryPicker.title': 'Select countries',
@@ -679,14 +601,6 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.countryPicker.clearAll': 'Clear all',
   'admin.countryPicker.selectAllVisible': 'Select visible ({count})',
   'admin.countryPicker.confirm': 'Confirm ({count})',
-  'admin.shippingPlugins.toasts.installed': 'Shipping plugin installed',
-  'admin.shippingPlugins.toasts.updated': 'Shipping plugin updated',
-  'admin.shippingPlugins.toasts.removed': 'Shipping plugin removed',
-  'admin.shippingPlugins.errors.nameRequired': 'Display name is required',
-  'admin.shippingPlugins.errors.invalidConfig': 'Invalid plugin configuration',
-  'admin.shippingPlugins.errors.saveFailed': 'Save failed',
-  'admin.shippingPlugins.errors.removeFailed': 'Remove failed',
-  'admin.shippingPlugins.errors.toggleFailed': 'Action failed',
 
   // Site shell — header
   'navigation.brand': 'STORE',
@@ -1202,13 +1116,11 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.importExport.dataset.reviews': 'Reviews',
   'admin.importExport.dataset.reviews.desc': 'Product reviews (export only).',
 
-  // Admin plugins (v5.0.0, mod1197) — separate page for pluggable providers
-  // v7.1.0 reshuffle: unified list + search + filter chips + per-install
-  // sidebar children (mod1197 follow-up).
+  // Admin plugins — one list of catalog plugins with an Enable switch each,
+  // plus a settings page per plugin at /admin/plugins/<pluginId>.
   'admin.plugins.title': 'Plugins',
   'admin.plugins.subtitle':
-    'Manage shipping carriers, payment gateways, and email providers.',
-  'admin.plugins.categories': 'Categories',
+    'Switch on the shipping methods, payment methods and email provider your store uses. Open Settings to change how each one works.',
   'admin.plugins.search.placeholder': 'Search plugins…',
   'admin.plugins.filter.label': 'Category',
   'admin.plugins.filter.all': 'All',
@@ -1217,13 +1129,64 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'admin.plugins.filter.email': 'Email',
   'admin.plugins.status.label': 'Status',
   'admin.plugins.status.all': 'All',
-  'admin.plugins.status.installed': 'Installed',
-  'admin.plugins.status.available': 'Available',
-  'admin.plugins.badge.installed': 'Installed',
-  'admin.plugins.badge.disabled': 'Disabled',
+  'admin.plugins.status.enabled': 'Enabled',
+  'admin.plugins.status.disabled': 'Disabled',
+  'admin.plugins.status.needsSetup': 'Needs setup',
   'admin.plugins.empty.all': 'No plugins match your filters.',
-  'admin.plugins.configure': 'Configure',
-  'admin.plugins.install': 'Install',
+  'admin.plugins.settings': 'Settings',
+  'admin.plugins.settingsAria': '{name} settings',
+  'admin.plugins.enableAria': 'Enable {name}',
+  'admin.plugins.card.count': '{count} configurations',
+  'admin.plugins.card.countShipping': '{count} delivery methods',
+  'admin.plugins.field.name': 'Display name',
+  'admin.plugins.field.nameHint.shipping':
+    'Shown to shoppers at checkout and on the public Shipping page.',
+  'admin.plugins.field.nameHint.payment':
+    'Label shown in the admin, e.g. "Stripe — Production".',
+  'admin.plugins.field.nameHint.email':
+    'Label shown in the admin, e.g. "SendGrid — production".',
+  'admin.plugins.field.order': 'Order',
+  'admin.plugins.field.orderHint.shipping':
+    'Position in the checkout list. Lower numbers show first.',
+  'admin.plugins.field.orderHint.payment':
+    'When several payment plugins are on, the one with the lowest number is used.',
+  'admin.plugins.field.orderHint.email':
+    'When several email providers are on, the one with the lowest number is used.',
+  'admin.plugins.settingsPage.enableNotice': 'Fill in these settings, then switch it on.',
+  'admin.plugins.settingsPage.enableOnSave': 'Switch on when saved',
+  'admin.plugins.settingsPage.addAnother': 'Add another {name} method',
+  'admin.plugins.settingsPage.newMethod': 'New delivery method',
+  'admin.plugins.settingsPage.newSetup': 'New configuration',
+  'admin.plugins.settingsPage.unsaved': 'Not saved yet',
+  'admin.plugins.settingsPage.removeMethod': 'Remove this method',
+  'admin.plugins.settingsPage.removeSetup': 'Remove this configuration',
+  'admin.plugins.settingsPage.removeOneConfirm': 'Remove "{name}"? This cannot be undone.',
+  'admin.plugins.settingsPage.removeTitle': 'Remove plugin',
+  'admin.plugins.settingsPage.removeBody':
+    'Deletes its saved settings. You can switch it on again later from the Plugins list.',
+  'admin.plugins.settingsPage.remove': 'Remove plugin',
+  'admin.plugins.settingsPage.removeConfirmTitle': 'Remove {name}?',
+  'admin.plugins.settingsPage.removeConfirmOne':
+    'Its settings are deleted and it stops working in your store straight away.',
+  'admin.plugins.settingsPage.removeConfirmMany':
+    'All {count} of its saved configurations are deleted and it stops working in your store straight away.',
+  'admin.plugins.toasts.enabled': '{name} is on',
+  'admin.plugins.toasts.disabled': '{name} is off',
+  'admin.plugins.toasts.saved': '"{name}" saved',
+  'admin.plugins.toasts.savedEnabled': '"{name}" saved and switched on',
+  'admin.plugins.toasts.removed': '{name} removed',
+  'admin.plugins.errors.enableFailed': "Couldn't switch on {name}",
+  'admin.plugins.errors.disableFailed': "Couldn't switch off {name}",
+  'admin.plugins.errors.saveFailed': "Couldn't save the settings",
+  'admin.plugins.errors.removeFailed': "Couldn't remove the plugin",
+  'admin.plugins.errors.loadFailed': "Couldn't load your plugins",
+  'admin.plugins.errors.nameRequired': 'Display name is required.',
+  'admin.plugins.errors.permissionDenied':
+    "Your store's security rules are out of date — use Install now at the top of the admin.",
+  'admin.plugins.errors.offline': "Can't reach the database. Check your connection and try again.",
+  'admin.plugins.errors.generic': 'Something went wrong. Please try again.',
+  'admin.plugins.unknown.title': 'Unknown plugin',
+  'admin.plugins.unknown.body': '"{id}" is not one of the plugins this store offers.',
 
   // Admin About — errors on this installation (mod1182)
   'admin.about.errors.title': 'Errors on this installation',
