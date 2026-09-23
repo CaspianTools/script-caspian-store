@@ -5,7 +5,7 @@ import { Button } from '../../ui/button';
 import { HtmlContent } from '../../ui/html-content';
 import { Badge, Separator, Skeleton } from '../../ui/misc';
 import { ProductGallery } from '../product-gallery';
-import { QuantitySelector, SizeSelector } from '../product-selectors';
+import { ColorSelector, QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
@@ -37,6 +37,9 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
     brandName,
     blurb,
     selectedSize,
+    selectedColor,
+    setSelectedColor,
+    galleryImages,
     setSelectedSize,
     sizeSelectorRef,
     quantity,
@@ -97,7 +100,7 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
       style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 0' }}
     >
       <div className="caspian-pdp-grid" style={gridStyle}>
-        <ProductGallery images={product.images} />
+        <ProductGallery key={selectedColor ?? ''} images={galleryImages} />
         <div className="caspian-pdp-default-info" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             {product.isNew && <Badge variant="secondary">{t('storefront.badges.new')}</Badge>}
@@ -133,6 +136,20 @@ export function ProductDetailDefault(props: ProductDetailPageProps) {
               }}
             >
               {t('storefront.stock.outOfStock')}
+            </div>
+          )}
+
+          {derived.hasColors && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>
+                {t('product.color')}
+                {selectedColor ? `: ${selectedColor}` : ''}
+              </p>
+              <ColorSelector
+                variants={product.colorVariants!}
+                value={selectedColor}
+                onChange={setSelectedColor}
+              />
             </div>
           )}
 

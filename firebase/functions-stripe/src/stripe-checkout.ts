@@ -4,6 +4,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { resolveStoreCurrency, toStripeAmount } from './currency';
 import { assertShippingCost, type ShippingCartLine } from './shipping-rates';
+import { computeTax } from './tax';
 
 const STRIPE_SECRET = defineSecret('STRIPE_SECRET_KEY');
 
@@ -72,6 +73,8 @@ export interface PendingCheckout {
   items: PendingOrderItem[];
   shippingInfo: CheckoutShippingInfo | null;
   shippingCost: number;
+  /** Computed server-side from `settings/site` (v15.2+); absent on older pending docs. */
+  tax: number;
   discount: number;
   promoCode: string | null;
   currency: string;
@@ -97,8 +100,10 @@ function computeDiscount(subtotal: number, promo: FirebaseFirestore.DocumentData
  * 2. Computes subtotal server-side (never trust client).
  * 3. Verifies the requested shipping cost against the store's enabled
  *    shipping installs and adds it as a line item when > 0.
- * 4. Resolves & validates promo code against the `promoCodes` collection.
- * 5. Writes the priced cart to `pendingCheckouts/{id}` and creates a Stripe
+ * 4. Computes tax from `settings/site` (same rule as the checkout page's
+ *    estimate) and adds it as a line item when > 0.
+ * 5. Resolves & validates promo code against the `promoCodes` collection.
+ * 6. Writes the priced cart to `pendingCheckouts/{id}` and creates a Stripe
  *    Checkout Session whose metadata points at it, so the webhook can
  *    reconstruct the order.
  *
@@ -233,6 +238,19 @@ export const createStripeCheckoutSession = onCall(
       });
     }
 
+    // --- Tax: recomputed server-side, never taken from the client ---
+    const tax = await computeTax(db, subtotal, data.shippingInfo?.country);
+    if (tax > 0) {
+      lineItems.push({
+        price_data: {
+          currency,
+          unit_amount: toStripeAmount(tax, currency),
+          product_data: { name: 'Tax' },
+        },
+        quantity: 1,
+      });
+    }
+
     // --- Server-side promo code validation ---
     let discount = 0;
     let appliedPromoCode: string | null = null;
@@ -266,6 +284,7 @@ export const createStripeCheckoutSession = onCall(
       items: orderItems,
       shippingInfo: data.shippingInfo ?? null,
       shippingCost,
+      tax,
       discount,
       promoCode: appliedPromoCode,
       currency,

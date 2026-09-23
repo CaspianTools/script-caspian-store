@@ -45,8 +45,8 @@ node /tmp/scs/scaffold/create.mjs my-store --package-tag v8.0.0
 ## 1. Install the package
 
 ```bash
-npm install github:CaspianTools/script-caspian-store#v15.1.0 firebase
-# v15.1.0 is the current release. For other versions, see:
+npm install github:CaspianTools/script-caspian-store#v15.2.0 firebase
+# v15.2.0 is the current release. For other versions, see:
 #   https://github.com/CaspianTools/script-caspian-store/releases
 # Pinning to a specific sha is also fine:
 # npm install github:CaspianTools/script-caspian-store#<sha>
@@ -276,7 +276,7 @@ v1.16.0+ ships **three codebases** so you can deploy admin triggers without havi
 
 - `caspian-admin` — `onUserCreate` (auto-promote first user to admin), `claimAdmin`, scheduled retention cleanup, `linkGuestOrdersOnUserCreate` (re-stamps prior guest orders to a newly-registered account with the same **verified** email — v9.1+, verification required from v15.1.0) plus the `linkMyGuestOrders` callable the library calls itself once a password account verifies its email, `stampVerifiedPurchase` (sets the review "verified purchase" badge server-side — v15.1.0), `getGuestOrder` (unauthenticated HTTPS callable that powers `<GuestOrderLookupPage />` at `/order-status` — v9.1+). **No secrets**, no provider deps. Always deployable.
 - `caspian-email` (v3.0.0+) — transactional email triggers (`runEmailOnOrderCreate`, `runEmailOnOrderUpdate`, `runEmailOnContactCreate`) + `sendTestEmail` callable. **v8.0.0+ requires Cloud Secret Manager:** before deploy, run `firebase functions:secrets:set CASPIAN_EMAIL_SENDGRID_API_KEY` and/or `CASPIAN_EMAIL_BREVO_API_KEY` (you only need the secrets for providers you actually use). Functions read the keys via `defineSecret(...)` at runtime.
-- `caspian-stripe` — `createStripeCheckoutSession`, `stripeWebhook`, `getStripeSession`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as Functions secrets. Charges in the currency set under **Settings → General** (`settings/site.currency`, falling back to `scriptSettings.defaultCurrency`, then USD) — before v15.1.0 every session was created in USD regardless.
+- `caspian-stripe` — `createStripeCheckoutSession`, `stripeWebhook`, `getStripeSession`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as Functions secrets. Charges in the currency set under **Settings → General** (`settings/site.currency`, falling back to `scriptSettings.defaultCurrency`, then USD) — before v15.1.0 every session was created in USD regardless. From v15.2.0 it also charges tax as its own line, computed from **Settings → Tax** by the same rule as the checkout page's tax row; before that, Stripe orders never collected the tax the checkout showed.
 - `caspian-pos` (v10.0.0–v14.0.0) — the in-person register's `commitPosSale` and `getPosCatalogDelta`. **Dormant since v14.0.0** and no longer scaffolded: nothing on a generated site calls them. Kept in the package so stores that already deployed them are not broken.
 - `caspian-instagram` (v9.21.0+) — the Instagram channel for store staff: `linkInstagram` / `unlinkInstagram`, `instagramInbox` (feed + comments), `replyInstagramComment` / `setInstagramCommentHidden` / `deleteInstagramComment`, `publishInstagramMedia` (publish a product), `deleteInstagramMedia`, and a scheduled token refresh. Requires `META_APP_ID` + `META_APP_SECRET` as Functions secrets (`defineSecret`). Scaffold it with `--with-instagram`.
 

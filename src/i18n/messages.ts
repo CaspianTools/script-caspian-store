@@ -228,6 +228,8 @@ export const DEFAULT_MESSAGES: MessageDict = {
   'product.addToCart': 'Add to cart',
   'product.addedToCart': 'Added to cart',
   'product.selectSize': 'Select a size',
+  'product.color': 'Color',
+  'product.selectColor': 'Select a color',
   'product.description': 'Description',
   'product.notFound': 'Product not found.',
   'product.reviewsSummary': '{avg} ★ · {count} reviews',

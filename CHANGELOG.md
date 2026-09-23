@@ -16,6 +16,48 @@ Do not omit the heading, rename it, or fold it into `### Notes`. This is how
 customers tell at a glance whether an upgrade needs attention.
 -->
 
+## v15.2.0 — Stripe charges the tax it shows, the success page finds the order, and colour variants are buyable
+
+Three storefront defects found while comparing the library with the hadiyyam
+shop it was extracted from. hadiyyam handled each of these; the library did not.
+
+### Fixed
+
+- **Stripe checkout now charges tax.** The checkout page showed a tax row and a
+  total that included it, but `createStripeCheckoutSession` never added it and
+  the webhook never wrote `Order.tax`, so every Stripe order under-collected by
+  the tax shown. The callable now recomputes tax server-side from
+  `settings/site` (`taxMode`, `flatTaxRate`, `supportedCountries[].taxRate`,
+  `taxConfig.taxBasedOn`) with the same rule as the checkout page, adds it as a
+  "Tax" line item, and the webhook stores it on the order and in `total`.
+- **The Stripe success page shows the order.** `/orders/success?session_id=cs_…`
+  looked the order up by the session id, but the webhook keys orders by
+  `H{timestamp}`, so the page always fell through to "still processing". It now
+  resolves a Stripe session id with an owner-scoped query on
+  `payment.stripeSessionId` (new `getOrderByStripeSession`), and still reads
+  manual-payment orders by document id.
+- **Colour variants can be chosen on the product page.** `Product.colorVariants`
+  was stored and counted in the admin list but never shown to shoppers, so a
+  colour never reached the cart. All three product-detail layouts now render a
+  `<ColorSelector>` (image swatches), lead the gallery with the chosen colour's
+  image, require a colour before adding to cart, and pass it as `selectedColor`.
+
+### Added
+
+- `ColorSelector` / `ColorSelectorProps`, `getOrderByStripeSession`,
+  `isStripeSessionId` exports.
+- i18n keys `product.color`, `product.selectColor`.
+
+### Consumer action required on upgrade
+
+Redeploy the Stripe Functions so card payments charge tax. Stores with no tax
+configured (`taxMode` unset or `none`) see no change in what they charge.
+
+```bash
+npm install github:CaspianTools/script-caspian-store#v15.2.0 firebase
+firebase deploy --only functions:caspian-stripe
+```
+
 ## v15.1.0 — Full review: the bugs a shop would have hit, and a storefront that feels finished
 
 A top-to-bottom review of the library — storefront, cart and checkout, admin

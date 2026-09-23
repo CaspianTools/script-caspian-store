@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Order } from '../types';
-import { getOrderById } from '../services/order-service';
+import { getOrderById, getOrderByStripeSession, isStripeSessionId } from '../services/order-service';
+import { useAuth } from '../context/auth-context';
 import { useCart } from '../context/cart-context';
 import { useScriptSettings } from '../context/script-settings-context';
 import { useCaspianFirebase, useCaspianLink } from '../provider/caspian-store-provider';
@@ -15,9 +16,10 @@ const POLL_INTERVAL_MS = 1500;
 
 export interface OrderConfirmationPageProps {
   /**
-   * The order ID to look up. The checkout webhook writes the order document
-   * under the provider's session/reference id, so pass the success URL's
-   * session id query parameter directly (e.g. `session_id` for Stripe).
+   * The order to show: either the order document id (manual-payment flows
+   * redirect with it) or a Stripe Checkout session id (`cs_…`, the success
+   * URL's `session_id`). A session id is resolved to the order the webhook
+   * wrote for it, since orders are keyed by `H{timestamp}`, not session id.
    */
   orderId: string;
   continueHref?: string;
@@ -37,6 +39,8 @@ export function OrderConfirmationPage({
   const locale = useLocale();
   const { settings } = useScriptSettings();
   const { clearCart } = useCart();
+  const { user, loading: authLoading } = useAuth();
+  const uid = user?.uid ?? null;
   const currencyFormat = useFormatCurrency(settings.defaultCurrency);
   const formatPrice = formatPriceProp ?? ((n: number) => currencyFormat.format(n));
   const [order, setOrder] = useState<Order | null>(null);
@@ -48,12 +52,20 @@ export function OrderConfirmationPage({
   // counter lives inside the effect: React state would be read through a
   // stale closure and never stop the loop.
   useEffect(() => {
+    const bySession = isStripeSessionId(orderId);
+    // A session lookup queries by owner, so it needs the signed-in uid; auth
+    // restores asynchronously after the redirect back from Stripe.
+    if (bySession && authLoading) return;
     let alive = true;
     let attempts = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const load = async () => {
       try {
-        const o = await getOrderById(db, orderId);
+        const o = bySession
+          ? uid
+            ? await getOrderByStripeSession(db, uid, orderId)
+            : null
+          : await getOrderById(db, orderId);
         if (!alive) return;
         if (o) {
           setOrder(o);
@@ -74,7 +86,7 @@ export function OrderConfirmationPage({
       alive = false;
       if (timer) clearTimeout(timer);
     };
-  }, [db, orderId]);
+  }, [db, orderId, uid, authLoading]);
 
   // The checkout hook leaves the cart intact so a cancelled hosted payment
   // returns to a full cart; the order document existing is the signal that

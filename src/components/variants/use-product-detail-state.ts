@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CartBehavior, InventorySettings, Product } from '../../types';
+import type { CartBehavior, InventorySettings, Product, ProductImage } from '../../types';
 import { getProductBySlugOrId } from '../../services/product-service';
 import { getSiteSettings } from '../../services/site-settings-service';
 import { getApprovedReviewsForProduct } from '../../services/review-service';
@@ -58,6 +58,7 @@ export function useProductDetailState({
   const [product, setProduct] = useState<Product | null>(externalProduct ?? null);
   const [loading, setLoading] = useState(!externalProduct);
   const [selectedSize, setSelectedSize] = useState<string | undefined>();
+  const [selectedColor, setSelectedColor] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   const [avg, setAvg] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
@@ -92,6 +93,7 @@ export function useProductDetailState({
   // and swapping `productSlugOrId` gets the same reset here.
   useEffect(() => {
     setSelectedSize(undefined);
+    setSelectedColor(undefined);
     setQuantity(1);
     setActiveTab('details');
     setAvg(0);
@@ -105,6 +107,7 @@ export function useProductDetailState({
       if (externalProduct.sizes && externalProduct.sizes.length > 0) {
         setSelectedSize(externalProduct.sizes[0]);
       }
+      setSelectedColor(externalProduct.colorVariants?.[0]?.name);
       return;
     }
     if (!lookupKey) return;
@@ -120,6 +123,7 @@ export function useProductDetailState({
         } else {
           setProduct(p);
           if (p.sizes && p.sizes.length > 0) setSelectedSize(p.sizes[0]);
+          setSelectedColor(p.colorVariants?.[0]?.name);
         }
       } finally {
         if (alive) setLoading(false);
@@ -163,6 +167,7 @@ export function useProductDetailState({
     if (!product) {
       return {
         hasSizes: false,
+        hasColors: false,
         hasDetails: false,
         hasLongDescription: false,
         detailsTabHasContent: false,
@@ -172,6 +177,7 @@ export function useProductDetailState({
       };
     }
     const hasSizes = !!(product.sizes && product.sizes.length > 0);
+    const hasColors = !!(product.colorVariants && product.colorVariants.length > 0);
     const hasDetails = Boolean(product.details && product.details.trim());
     const hasLongDescription = Boolean(
       product.description && product.description.trim() && product.description.trim() !== blurb,
@@ -185,6 +191,7 @@ export function useProductDetailState({
     const allOut = inventoryActive && isProductOutOfStock(product, inventory);
     return {
       hasSizes,
+      hasColors,
       hasDetails,
       hasLongDescription,
       detailsTabHasContent,
@@ -193,6 +200,19 @@ export function useProductDetailState({
       allOut,
     };
   }, [product, blurb, inventory]);
+
+  // The chosen colour's image leads the gallery; the product's own images
+  // follow (minus a duplicate of the variant image). Variants are keyed on
+  // the gallery by colour so switching colour resets it to that image.
+  const galleryImages = useMemo<ProductImage[]>(() => {
+    const images = product?.images ?? [];
+    const variant = product?.colorVariants?.find((v) => v.name === selectedColor);
+    if (!variant?.imageUrl) return images;
+    return [
+      { id: `color-${variant.name}`, url: variant.imageUrl, alt: variant.name, hint: '' },
+      ...images.filter((img) => img.url !== variant.imageUrl),
+    ];
+  }, [product, selectedColor]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -204,6 +224,10 @@ export function useProductDetailState({
       toast({ title: t('product.selectSize'), variant: 'destructive' });
       return;
     }
+    if (derived.hasColors && !selectedColor) {
+      toast({ title: t('product.selectColor'), variant: 'destructive' });
+      return;
+    }
     if (
       derived.inventoryActive &&
       selectedSize &&
@@ -212,7 +236,7 @@ export function useProductDetailState({
       toast({ title: t('product.sizeOutOfStock'), variant: 'destructive' });
       return;
     }
-    addToCart(product, quantity, selectedSize);
+    addToCart(product, quantity, selectedSize, derived.hasColors ? selectedColor : undefined);
     toast({ title: t('product.addedToCart'), description: product.name, variant: 'success' });
     setQuantity(1);
     if (cartBehavior?.redirectToCartAfterAdd) {
@@ -250,6 +274,9 @@ export function useProductDetailState({
     blurb,
     selectedSize,
     setSelectedSize,
+    selectedColor,
+    setSelectedColor,
+    galleryImages,
     sizeSelectorRef,
     handleStickyAddToCart,
     stickyHint,

@@ -73,8 +73,10 @@ export { SearchDialog, type SearchDialogProps } from './components/search-dialog
 export { ProductGallery } from './components/product-gallery';
 export {
   SizeSelector,
+  ColorSelector,
   QuantitySelector,
   type SizeSelectorProps,
+  type ColorSelectorProps,
 } from './components/product-selectors';
 export { ProductDetailPage, type ProductDetailPageProps } from './components/product-detail-page';
 export { CartSheet, type CartSheetProps } from './components/cart-sheet';
@@ -523,6 +525,8 @@ export {
 export {
   hasUserPurchasedProduct,
   getOrderById,
+  getOrderByStripeSession,
+  isStripeSessionId,
   getOrdersByUser,
   listAllOrders,
   updateOrderStatus,

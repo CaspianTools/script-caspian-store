@@ -5,7 +5,7 @@ import { Button } from '../../ui/button';
 import { HtmlContent } from '../../ui/html-content';
 import { Badge, Skeleton } from '../../ui/misc';
 import { ProductGallery } from '../product-gallery';
-import { QuantitySelector, SizeSelector } from '../product-selectors';
+import { ColorSelector, QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
@@ -36,6 +36,9 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
     brandName,
     blurb,
     selectedSize,
+    selectedColor,
+    setSelectedColor,
+    galleryImages,
     setSelectedSize,
     sizeSelectorRef,
     quantity,
@@ -155,6 +158,20 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
             </div>
           )}
 
+          {derived.hasColors && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>
+                {t('product.color')}
+                {selectedColor ? `: ${selectedColor}` : ''}
+              </p>
+              <ColorSelector
+                variants={product.colorVariants!}
+                value={selectedColor}
+                onChange={setSelectedColor}
+              />
+            </div>
+          )}
+
           {derived.hasSizes && (
             <div ref={sizeSelectorRef} tabIndex={-1} style={{ marginBottom: 16, outline: 'none' }}>
               <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('product.size')}</p>
@@ -176,7 +193,7 @@ export function ProductDetailTech(props: ProductDetailPageProps) {
             {t('product.addToCart')} →
           </Button>
         </div>
-        <ProductGallery images={product.images} />
+        <ProductGallery key={selectedColor ?? ''} images={galleryImages} />
       </div>
 
       <div className="caspian-sticky-cta">

@@ -1,7 +1,9 @@
 'use client';
 
+import type { ColorVariant } from '../types';
 import { cn } from '../utils/cn';
 import { useT } from '../i18n/locale-context';
+import { useCaspianImage } from '../provider/caspian-store-provider';
 
 export interface SizeSelectorProps {
   sizes: string[];
@@ -56,6 +58,61 @@ export function SizeSelector({
             }}
           >
             {s}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export interface ColorSelectorProps {
+  variants: ColorVariant[];
+  value?: string;
+  onChange: (colorName: string) => void;
+  className?: string;
+}
+
+/**
+ * Image-swatch picker for `Product.colorVariants`. Each swatch shows the
+ * variant's own image; the chosen name is what lands on the cart line as
+ * `selectedColor`. Renders nothing when the product has no variants.
+ */
+export function ColorSelector({ variants, value, onChange, className }: ColorSelectorProps) {
+  const Image = useCaspianImage();
+  if (variants.length === 0) return null;
+  return (
+    <div
+      className={cn('caspian-color-selector', className)}
+      role="group"
+      style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}
+    >
+      {variants.map((v) => {
+        const active = v.name === value;
+        return (
+          <button
+            key={v.name}
+            type="button"
+            onClick={() => onChange(v.name)}
+            aria-pressed={active}
+            aria-label={v.name}
+            title={v.name}
+            style={{
+              position: 'relative',
+              width: 56,
+              height: 56,
+              padding: 0,
+              overflow: 'hidden',
+              border: `2px solid ${active ? 'var(--caspian-primary, #111)' : 'rgba(0,0,0,0.12)'}`,
+              borderRadius: 'var(--caspian-radius, 6px)',
+              background: 'rgba(0,0,0,0.04)',
+              cursor: 'pointer',
+            }}
+          >
+            {v.imageUrl ? (
+              <Image src={v.imageUrl} alt={v.name} fill />
+            ) : (
+              <span style={{ fontSize: 11, padding: 4 }}>{v.name}</span>
+            )}
           </button>
         );
       })}

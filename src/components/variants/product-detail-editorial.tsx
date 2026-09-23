@@ -5,7 +5,7 @@ import { Button } from '../../ui/button';
 import { HtmlContent } from '../../ui/html-content';
 import { Badge, Skeleton } from '../../ui/misc';
 import { ProductGallery } from '../product-gallery';
-import { QuantitySelector, SizeSelector } from '../product-selectors';
+import { ColorSelector, QuantitySelector, SizeSelector } from '../product-selectors';
 import { ProductReviews } from '../reviews/product-reviews';
 import type { ProductDetailPageProps } from '../product-detail-page';
 import { useProductDetailState } from './use-product-detail-state';
@@ -35,6 +35,9 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
     brandName,
     blurb,
     selectedSize,
+    selectedColor,
+    setSelectedColor,
+    galleryImages,
     setSelectedSize,
     sizeSelectorRef,
     quantity,
@@ -75,7 +78,7 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
       style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px 0' }}
     >
       <div className="caspian-pdp-editorial-gallery" style={{ maxWidth: 720, margin: '0 auto' }}>
-        <ProductGallery images={product.images} />
+        <ProductGallery key={selectedColor ?? ''} images={galleryImages} />
       </div>
 
       <div
@@ -169,6 +172,20 @@ export function ProductDetailEditorial(props: ProductDetailPageProps) {
         )}
 
         <div style={purchaseRow}>
+          {derived.hasColors && (
+            <div>
+              <p style={selectorLabel}>
+                {t('product.color')}
+                {selectedColor ? `: ${selectedColor}` : ''}
+              </p>
+              <ColorSelector
+                variants={product.colorVariants!}
+                value={selectedColor}
+                onChange={setSelectedColor}
+              />
+            </div>
+          )}
+
           {derived.hasSizes && (
             <div ref={sizeSelectorRef} tabIndex={-1} style={{ outline: 'none' }}>
               <p style={selectorLabel}>{t('product.size')}</p>

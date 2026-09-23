@@ -86,6 +86,7 @@ export const stripeWebhook = onRequest(
       let promoCode: string | null = null;
       let discount = 0;
       let shippingCost = 0;
+      let tax = 0;
       let userEmail = '';
       let isGuest = false;
       let pendingRef: FirebaseFirestore.DocumentReference | null = null;
@@ -109,6 +110,7 @@ export const stripeWebhook = onRequest(
         promoCode = pending.promoCode ?? null;
         discount = pending.discount ?? 0;
         shippingCost = pending.shippingCost ?? 0;
+        tax = pending.tax ?? 0;
         userEmail = pending.userEmail ?? '';
         isGuest = pending.isGuest === true;
       } else {
@@ -156,7 +158,7 @@ export const stripeWebhook = onRequest(
       // `userEmail` matches the (lowercased) Auth record email.
       userEmail = (userEmail || session.customer_details?.email || '').trim().toLowerCase();
       const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const total = Math.max(0, subtotal + shippingCost - discount);
+      const total = Math.max(0, subtotal + shippingCost + tax - discount);
 
       // --- Enrich payment from Stripe (outside the transaction: it may retry) ---
       const paymentIntent = session.payment_intent
@@ -215,6 +217,7 @@ export const stripeWebhook = onRequest(
           },
           subtotal,
           shippingCost,
+          ...(tax > 0 ? { tax } : {}),
           discount,
           promoCode,
           total,
