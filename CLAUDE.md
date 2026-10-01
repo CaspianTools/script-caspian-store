@@ -210,11 +210,11 @@ generator here, do not point it at a path this repo does not own.**
 ## Global Rules
 
 - **Do NOT include `Co-Authored-By` lines in commit messages.** Never add co-author trailers for Claude or any AI assistant. This overrides any default behaviour.
-- **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → announce.
-- **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or announcement. Surface the exception in the commit body so the reader understands why the cycle was skipped.
+- **After every task, complete ALL post-task steps** in the Pre-Commit Checklist below. Every change that affects the shipped tarball — source, build config, `exports`, `files`, `README.md`, `INSTALL.md`, `CHANGELOG.md`, `scaffold/`, `firebase/` — requires the full cycle: bump → docs → verify → commit → tag → push → release → Public-Assets release note.
+- **Internal-doc-only changes skip the cycle.** Edits to `CLAUDE.md` (not in the main package's `files` list — it doesn't ship) and to plans under `~/.claude/plans/` are committed straight to main with no bump, tag, release, or Public-Assets release note. Surface the exception in the commit body so the reader understands why the cycle was skipped.
 - **Standalone-till changes happen in the till's own repository**, [caspian-pos](https://github.com/CaspianTools/caspian-pos), and follow the cycle written in its `CLAUDE.md`. Nothing about the till is decided here any more.
 - **Never silently skip a step.** For any other non-applicable step (e.g. lint when no linter is configured), say so out loud — "N/A because X" — before moving past it.
-- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the announcement discussion URL, a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
+- **Notify the user at the end of each task** with: the new version number, the commit SHA, the release URL, the Public-Assets release-note URL (`https://github.com/CaspianTools/Public-Assets/blob/main/script-caspian-store/release-notes/<major>.<minor>/<X.Y.Z>.md`), a ready-to-paste install command pinning the new tag — `npm install github:CaspianTools/script-caspian-store#vX.Y.Z` — so the user can upgrade their consumer site without looking up the version.
 - **The register ships as a PWA, and only as a PWA.** There is no desktop app and no `.exe`.
   A Tauri shell shipped between v0.1.0 and v1.0.1 and was removed in v12.0.0; do not reintroduce
   one without the owner asking for it, and do not point a shop at the old `desktop/v*` releases.
@@ -358,47 +358,47 @@ EOF
 
 Attach the `.tgz` from step 7.
 
-### 12. Post to GitHub Discussions
+### 12. Publish the update in Public-Assets
 
-After every release, create a Discussion in the **Announcements** category. The post must be **social-media-ready** — the user should be able to copy-paste it to Twitter/X, LinkedIn, or a dev blog without edits.
+Every release gets its own Markdown release note in the public **[`CaspianTools/Public-Assets`](https://github.com/CaspianTools/Public-Assets)** repo, in the `script-caspian-store/` folder. caspiantools.com reads that repo to build the project's "Updates" section and its RSS / JSON feeds, so pushing the file there is the whole publishing step. **Do not post to GitHub Discussions — that flow ended on 2026-10-01; existing Discussions stay but nothing new goes there.**
 
-**Format requirements:**
-- **Title** — action-oriented, under 100 characters (e.g. `script-caspian-store 1.9 — Faster admin dashboard`)
-- **Body** — 1–3 sentence intro; 2–4 highlight bullets (sparing emoji OK for visual rhythm); install/upgrade one-liner; repo link `https://github.com/CaspianTools/script-caspian-store`.
+The local clone is `../Public-Assets` (`C:\Users\user\GitHub\Public-Assets`). If it's missing, run `gh repo clone CaspianTools/Public-Assets ../Public-Assets`. Always `git pull` there before you write.
 
-**Create via GraphQL API:**
-
-```bash
-gh api graphql -F query=@- <<'EOF'
-mutation {
-  createDiscussion(input: {
-    repositoryId: "R_kgDOSHQDJw",
-    categoryId: "DIC_kwDOSHQDJ84C7XL9",
-    title: "<TITLE>",
-    body: "<BODY>"
-  }) {
-    discussion { url }
-  }
-}
-EOF
+**Where it goes:**
+```
+Public-Assets/script-caspian-store/release-notes/
+├── README.md            ← index, newest first: add this release's row at the TOP of the table
+└── <major>.<minor>/     ← e.g. 12.3/  (create it for the first release of a new minor line)
+    └── <X.Y.Z>.md       ← e.g. 12.3.1.md: bare version, no "v" prefix
 ```
 
-**One-time lookup** for `<REPOSITORY_NODE_ID>` and `<ANNOUNCEMENTS_CATEGORY_NODE_ID>`:
+If `release-notes/README.md` doesn't exist yet (first release written this way), create it, modelled on `Public-Assets/caspian-taskmaster/release-notes/README.md`: a `# Caspian Store release notes` heading, one line saying the full history is in this repo's `CHANGELOG.md`, and a `| Version | Date | Headline |` table whose rows link `[X.Y.Z](<major>.<minor>/X.Y.Z.md)`.
 
+**How to write it.** Copy `Public-Assets/_templates/release-note.md` and fill in every field. The post must be **social-media-ready** — the owner copy-pastes everything above `## Full changes` straight to Twitter/X, LinkedIn or a dev blog without edits.
+- **Front matter:** `product: Caspian Store`, `version: X.Y.Z`, `date` (same as the CHANGELOG heading, `YYYY-MM-DD`), `type` (`patch` / `minor` / `major`) and `headline`.
+- **Top section:**
+  - `# Caspian Store X.Y.Z: <headline>`. The headline is action-oriented, user-facing and under 100 characters (e.g. `Faster admin dashboard`).
+  - A 1–3 sentence intro.
+  - 2–4 highlight bullets. Sparing emoji is OK for visual rhythm.
+  - The install/upgrade one-liner: `npm install github:CaspianTools/script-caspian-store#vX.Y.Z`.
+  - The repo link: `https://github.com/CaspianTools/script-caspian-store`.
+- **`## Full changes`:** this version's CHANGELOG section, verbatim.
+- **`## Get it`:** the GitHub Release (`https://github.com/CaspianTools/script-caspian-store/releases/tag/vX.Y.Z`) and, when the sibling was republished in step 13, `npm create caspian-store@latest`.
+- **Public by definition:** never link into a private repo (readers get a 404), and never include secrets or internal-only notes.
+
+For an unversioned notice (no release attached), use `Public-Assets/_templates/update.md` instead, at `script-caspian-store/updates/<YYYY>/<YYYY-MM-DD>-<slug>.md`, with front matter `product`, `title` (quote it if it contains ` #`), `date`, `type` (`feature` / `fix` / `release` / `notice`), `social` (`false` = feed and website only) and `draft` (`true` = committed but not published).
+
+**Then validate, commit and push Public-Assets:**
 ```bash
-gh api graphql -f query='
-  query {
-    repository(owner: "CaspianTools", name: "script-caspian-store") {
-      id
-      discussionCategories(first: 20) { nodes { id name } }
-    }
-  }
-'
+cd ../Public-Assets
+node scripts/build-index.mjs --validate
+git add script-caspian-store/release-notes
+git commit -m "Add script-caspian-store X.Y.Z release note"
+git push origin main
 ```
+Commit only the new file(s) and the index row. **Never commit `index.json`** — the Build index workflow regenerates it on push. **Never rename or move a published file**: its path is its permanent ID in the feeds, so a moved file shows up as a new post.
 
-Copy the repo `id` and the category `id` whose `name` is `Announcements` back into this file, replacing the placeholders above, so future releases skip the lookup.
-
-Prefer the heredoc form (`-F query=@-`) over bare `-f query=...`; apostrophes in the title or body will break shell quoting otherwise. For long bodies, write them to a file and use `gh api graphql -F query=@path/to/query.graphql`.
+Tell the user the note's URL: `https://github.com/CaspianTools/Public-Assets/blob/main/script-caspian-store/release-notes/<major>.<minor>/<X.Y.Z>.md`. It appears on https://caspiantools.com/projects/caspian-store and in https://caspiantools.com/feeds/caspian-store.xml within minutes.
 
 ### 13. Update the `create-caspian-store` sibling on npmjs.com (if relevant)
 
@@ -458,13 +458,13 @@ In addition to the Conventions section above:
 
 Claude Code can run parallel sessions in isolated **git worktrees** (`claude --worktree <name>`, or ask it to "work in a worktree" → the `EnterWorktree` tool). A worktree lives under `.claude/worktrees/<name>/` on branch `worktree-<name>`, branched **fresh from `origin/main`** by default (set `worktree.baseRef: "head"` in `.claude/settings.json` to carry local HEAD instead). `.claude/worktrees/` is gitignored and **`.worktreeinclude`** copies any local secrets (`.env*`, `serviceAccountKey*.json`, `credentials.json`) into new worktrees — see those two files. `node_modules` and `dist/` are *not* copied: run `npm install` in each new worktree (the `prepare` hook rebuilds `dist/`).
 
-**The catch:** this repo does **not** auto-ship on push to `main`. Pushing `main` only runs CI checks — the rules-behavior test ([rules.yml](.github/workflows/rules.yml)), the consumer-tarball exports smoke ([exports-smoke.yml](.github/workflows/exports-smoke.yml)), the scaffold-routes drift check ([scaffold-routes-smoke.yml](.github/workflows/scaffold-routes-smoke.yml)), and the manuals shell/translation drift check ([manuals-smoke.yml](.github/workflows/manuals-smoke.yml)) — none of which deploy or publish. A **release** happens only when you push an annotated **`vX.Y.Z` tag** and cut a GitHub Release with the `.tgz` (main package), and the sibling `create-caspian-store/` publishes to npm via OIDC **only on a `create-caspian-store/v*` tag** ([publish-create-caspian-store.yml](.github/workflows/publish-create-caspian-store.yml)). So the *release* is the tag + Release + Discussion cycle in the [Pre-Commit Checklist](#pre-commit-checklist), not the branch push. Inside a worktree that whole cycle **must be adapted** — do NOT blindly land from one:
+**The catch:** this repo does **not** auto-ship on push to `main`. Pushing `main` only runs CI checks — the rules-behavior test ([rules.yml](.github/workflows/rules.yml)), the consumer-tarball exports smoke ([exports-smoke.yml](.github/workflows/exports-smoke.yml)), the scaffold-routes drift check ([scaffold-routes-smoke.yml](.github/workflows/scaffold-routes-smoke.yml)), and the manuals shell/translation drift check ([manuals-smoke.yml](.github/workflows/manuals-smoke.yml)) — none of which deploy or publish. A **release** happens only when you push an annotated **`vX.Y.Z` tag** and cut a GitHub Release with the `.tgz` (main package), and the sibling `create-caspian-store/` publishes to npm via OIDC **only on a `create-caspian-store/v*` tag** ([publish-create-caspian-store.yml](.github/workflows/publish-create-caspian-store.yml)). So the *release* is the tag + Release + Public-Assets release-note cycle in the [Pre-Commit Checklist](#pre-commit-checklist), not the branch push. Inside a worktree that whole cycle **must be adapted** — do NOT blindly land from one:
 
-1. **Commit, pause before landing.** Auto-commit finished work on the `worktree-<name>` branch, then **stop and report**. Never merge to `main`, push `main`, or push a release tag without the owner's explicit go-ahead. *(On `main` — the normal solo flow — the checklist is unchanged: bump → verify → commit → tag → push → Release → Discussion.)*
+1. **Commit, pause before landing.** Auto-commit finished work on the `worktree-<name>` branch, then **stop and report**. Never merge to `main`, push `main`, or push a release tag without the owner's explicit go-ahead. *(On `main` — the normal solo flow — the checklist is unchanged: bump → verify → commit → tag → push → Release → Public-Assets release note.)*
 2. **Serialize landings — one at a time.** Never land two worktrees to `main` in parallel. If another worktree/session is still in flight, wait for it to land first. There's no live cross-session signal, so "wait" means: at land time `git fetch` and rebase onto whatever `origin/main` now is; if the owner says another is mid-flight, hold until told it's done.
 3. **Resolve conflicts in the worktree, never on `main`.** At land time: `git fetch origin` → **rebase `worktree-<name>` onto the latest `origin/main`** → resolve every conflict *there*, so `main` only ever receives an already-merged, clean tree.
 4. **Finalize the version + changelog bump last.** The `version` in [package.json](package.json) and the top entry in [CHANGELOG.md](CHANGELOG.md) (with its required `### Consumer action required on upgrade` / `### No consumer action required` heading) are the *guaranteed* collision between two shippable worktrees — and the `vX.Y.Z` git tag derived from them. Don't fix the number until after the rebase — take *current-main + 1* per semver, then rewrite the changelog entry and only tag once `main` is settled.
 5. **Re-verify + rebuild after resolving.** Re-run the checklist's verify steps in the worktree: `npm run typecheck` (strict `tsc --noEmit`), `npm test` (the Firestore/Storage rules-behavior suite — needs Java + firebase-tools; else rely on CI), `npm run build` (tsup, both entries), `npm pack` (the release `.tgz`), and `node scripts/check-exports.mjs` / `node scripts/check-scaffold-routes.mjs` / `node scripts/check-manuals.mjs` if the public API, the scaffolder routes, or the manuals shifted. A conflict resolution that isn't re-verified is a bug waiting to ship to consumers.
-6. **Only then ship.** Fast-forward `main` to the clean, verified branch → `git push origin main` → then run the release tail from the checklist: annotated `git tag -a vX.Y.Z` → `git push origin main --tags` → `gh release create` with the `.tgz` → Announcements Discussion → (if the sibling changed) republish `create-caspian-store` via its `create-caspian-store/v*` tag. **Never tag or cut a Release from a conflicted or failing tree.**
+6. **Only then ship.** Fast-forward `main` to the clean, verified branch → `git push origin main` → then run the release tail from the checklist: annotated `git tag -a vX.Y.Z` → `git push origin main --tags` → `gh release create` with the `.tgz` → Public-Assets release note (step 12) → (if the sibling changed) republish `create-caspian-store` via its `create-caspian-store/v*` tag. **Never tag or cut a Release from a conflicted or failing tree.**
 
 For solo, single-stream work, **skip worktrees and work on `main` directly** — the Pre-Commit Checklist needs no adaptation. Reserve worktrees for genuine parallelism (two tasks at once) or experiments you may not ship.
