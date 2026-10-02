@@ -398,7 +398,7 @@ git push origin main
 ```
 Commit only the new file(s) and the index row. **Never commit `index.json`** — the Build index workflow regenerates it on push. **Never rename or move a published file**: its path is its permanent ID in the feeds, so a moved file shows up as a new post.
 
-Tell the user the note's URL: `https://github.com/CaspianTools/Public-Assets/blob/main/script-caspian-store/release-notes/<major>.<minor>/<X.Y.Z>.md`. It appears on https://caspiantools.com/projects/caspian-store and in https://caspiantools.com/feeds/caspian-store.xml within minutes.
+Tell the user the note's URL: `https://github.com/CaspianTools/Public-Assets/blob/main/script-caspian-store/release-notes/<major>.<minor>/<X.Y.Z>.md`. It appears on https://caspiantools.com/projects/caspian-store and in https://caspiantools.com/feeds/caspian-store.xml after the next daily site rebuild (05:00 UTC).
 
 ### 13. Update the `create-caspian-store` sibling on npmjs.com (if relevant)
 
